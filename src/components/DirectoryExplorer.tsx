@@ -160,7 +160,7 @@ export const DirectoryExplorer: React.FC = () => {
             )}
           </div>
 
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             {/* Region Selector Tabs (Functional Segmented Buttons) */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
               <span className="text-xs font-semibold text-slate-400 mr-2 shrink-0">Region:</span>
@@ -179,14 +179,17 @@ export const DirectoryExplorer: React.FC = () => {
               ))}
             </div>
 
-            {/* Sort & Reset */}
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 shrink-0">Sort By:</span>
+            {/* Highlighted Sort By & Reset Controls */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 via-amber-50/90 to-orange-50 border border-orange-200/90 px-3 py-1.5 rounded-xl shadow-2xs">
+                <span className="text-xs font-bold text-orange-900 flex items-center gap-1.5 shrink-0">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Sort By:</span>
+                </span>
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value as any)}
-                  className="px-2.5 py-1.5 text-xs font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  className="px-2.5 py-1 text-xs font-bold text-slate-900 border border-orange-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white hover:border-orange-400 transition-colors cursor-pointer shadow-2xs"
                 >
                   <option value="recommended">Curated Haven Match</option>
                   <option value="budget-asc">Lowest Cost of Living</option>
@@ -202,17 +205,17 @@ export const DirectoryExplorer: React.FC = () => {
 
               <button
                 onClick={resetFilters}
-                className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1"
-                title="Reset all filters"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0"
+                title="Reset all filters to default"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset</span>
               </button>
             </div>
           </div>
 
-          {/* Granular Sliders and Micro-filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+          {/* Granular Sliders and Micro-filters (No surrounding border lines) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
             
             {/* Budget Slider */}
             <div className="space-y-1.5">
@@ -229,7 +232,7 @@ export const DirectoryExplorer: React.FC = () => {
                 step={50}
                 value={budgetMax}
                 onChange={e => setBudgetMax(Number(e.target.value))}
-                className="w-full accent-orange-600 cursor-pointer"
+                className="w-full accent-orange-600 cursor-pointer border-0 outline-none focus:outline-none focus:ring-0"
               />
               <div className="flex justify-between text-[10px] text-slate-400 font-mono">
                 <span>$1,100</span>
@@ -244,7 +247,7 @@ export const DirectoryExplorer: React.FC = () => {
               <select
                 value={selectedClimate}
                 onChange={e => setSelectedClimate(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-slate-50/70 hover:bg-white transition-colors"
               >
                 {climates.map(c => (
                   <option key={c} value={c}>
@@ -268,7 +271,7 @@ export const DirectoryExplorer: React.FC = () => {
                 max={5}
                 value={visaDifficultyMax}
                 onChange={e => setVisaDifficultyMax(Number(e.target.value))}
-                className="w-full accent-orange-600 cursor-pointer"
+                className="w-full accent-orange-600 cursor-pointer border-0 outline-none focus:outline-none focus:ring-0"
               />
               <div className="flex justify-between text-[10px] text-slate-400">
                 <span>1 (Easiest)</span>
@@ -292,7 +295,7 @@ export const DirectoryExplorer: React.FC = () => {
                 step={100}
                 value={visaIncomeMax}
                 onChange={e => setVisaIncomeMax(Number(e.target.value))}
-                className="w-full accent-orange-600 cursor-pointer"
+                className="w-full accent-orange-600 cursor-pointer border-0 outline-none focus:outline-none focus:ring-0"
               />
               <div className="flex justify-between text-[10px] text-slate-400 font-mono">
                 <span>$700</span>
@@ -304,7 +307,7 @@ export const DirectoryExplorer: React.FC = () => {
           </div>
 
           {/* Discreet Lifestyle Toggle Notification Strip */}
-          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 border-t border-slate-100 gap-2">
+          <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-2">
             <span>
               Showing <strong className="font-mono text-slate-900">{filteredCountries.length}</strong> of{' '}
               <strong className="font-mono text-slate-900">{countries.length}</strong> verified retirement havens
