@@ -21,16 +21,6 @@ import {
   Briefcase, GraduationCap, HeartHandshake, ShieldCheck, AlertTriangle,
   Zap, Globe, PiggyBank, Percent, Clock, Check, ChevronRight
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ReferenceLine,
-} from 'recharts';
 
 type FireTierMode = 'lean' | 'standard' | 'fat' | 'barista';
 
@@ -1732,97 +1722,6 @@ export const FireCalculatorTracker: React.FC = () => {
               <span>Save & Recalculate FIRE Plan</span>
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* WEALTH & FIRE CROSSOVER TRAJECTORY CHART */}
-      <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-orange-600" />
-              <span>25-Year FIRE Wealth Compounding vs. Inflation-Adjusted Target</span>
-            </h3>
-            <p className="text-xs text-slate-500">
-              Includes your Monthly SIPs (+{sipStepUpPct}%/yr step-up), automatic EMI roll-ins as loans pay off, and deductions for Future Family Milestones.
-            </p>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-teal-800">
-              <span className="w-3 h-3 rounded-full bg-teal-600 inline-block" />
-              Projected FIRE Corpus
-            </span>
-            <span className="flex items-center gap-1.5 text-orange-800">
-              <span className="w-3 h-3 rounded-full bg-orange-500 inline-block" />
-              Inflation-Adjusted FIRE Target
-            </span>
-          </div>
-        </div>
-
-        <div className="h-64 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={fireAnalysis.trajectory.slice(0, 21)} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="corpusGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#0d9488" stopOpacity={0.02} />
-                </linearGradient>
-                <linearGradient id="targetGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis
-                dataKey="year"
-                tick={{ fontSize: 11, fill: '#64748b' }}
-                tickFormatter={(yr) => `${yr} (Age ${currentAge + (yr - currentYear)})`}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: '#64748b' }}
-                tickFormatter={(v) => `$${Math.round(v / 1000)}k`}
-              />
-              <Tooltip
-                formatter={((value: any, name: any) => [
-                  formatDualCurrency(Number(value), countryMacro, true),
-                  name === 'projectedCorpusUSD' ? 'Projected Net Corpus' : 'Inflation-Adj FIRE Target',
-                ]) as any}
-                labelFormatter={(yr) => `Year ${yr} (Age ${currentAge + (Number(yr) - currentYear)})`}
-                contentStyle={{ borderRadius: '12px', fontSize: '12px', borderColor: '#cbd5e1' }}
-              />
-              {fireAnalysis.crossoverYear && (
-                <ReferenceLine
-                  x={fireAnalysis.crossoverYear}
-                  stroke="#10b981"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: `FIRE in ${fireAnalysis.crossoverYear}`,
-                    position: 'top',
-                    fill: '#047857',
-                    fontSize: 11,
-                    fontWeight: 700,
-                  }}
-                />
-              )}
-              <Area
-                type="monotone"
-                dataKey="projectedCorpusUSD"
-                stroke="#0d9488"
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#corpusGrad)"
-              />
-              <Area
-                type="monotone"
-                dataKey="fireTargetUSD"
-                stroke="#f97316"
-                strokeWidth={2}
-                strokeDasharray="5 3"
-                fillOpacity={1}
-                fill="url(#targetGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
