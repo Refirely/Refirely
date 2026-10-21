@@ -12,6 +12,7 @@ import {
   getWorldCountryFlag,
 } from '../data/userAccounts';
 import { CurrencyAmountInput } from './CurrencyAmountInput';
+import { CountryFlag } from './CountryFlag';
 import {
   X, User, Image, Globe, Languages, Heart, Plus, Trash2,
   Check, Star, Sparkles, Upload, AlertCircle, Save, MapPin,
@@ -1358,9 +1359,13 @@ export const EditProfileModal: React.FC = () => {
                       className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <span className="text-2xl shrink-0" role="img" aria-label={item.countryName}>
-                          {item.flag || '🌍'}
-                        </span>
+                        <CountryFlag
+                          countryCode={item.countryCode}
+                          countryName={item.countryName}
+                          fallbackEmoji={item.flag}
+                          size="lg"
+                          className="w-7 h-5 rounded-xs shrink-0 mt-0.5"
+                        />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="text-sm font-bold text-slate-900">{item.countryName}</h4>

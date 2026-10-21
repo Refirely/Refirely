@@ -32,6 +32,21 @@ export const getCountryCodeFromEmoji = (emoji?: string): string | null => {
   return null;
 };
 
+const COMMON_COUNTRY_ALIASES: Record<string, string> = {
+  'usa': 'US',
+  'united states of america': 'US',
+  'united states': 'US',
+  'uk': 'GB',
+  'united kingdom': 'GB',
+  'uae': 'AE',
+  'united arab emirates': 'AE',
+  'south korea': 'KR',
+  'korea': 'KR',
+  'vietnam': 'VN',
+  'czechia': 'CZ',
+  'czech republic': 'CZ',
+};
+
 // Size presets for standard usage
 const SIZE_CLASSES: Record<NonNullable<CountryFlagProps['size']>, { container: string; text: string }> = {
   xs: { container: 'w-4 h-2.5', text: 'text-xs' },
@@ -68,12 +83,17 @@ export const CountryFlag: React.FC<CountryFlagProps> = ({
   let emoji = fallbackEmoji;
 
   if (!iso && countryName) {
-    const match = WORLD_COUNTRIES.find(
-      c => c.name.toLowerCase() === countryName.trim().toLowerCase()
-    );
-    if (match) {
-      iso = match.code;
-      if (!emoji) emoji = match.flag;
+    const cleanName = countryName.trim().toLowerCase();
+    if (COMMON_COUNTRY_ALIASES[cleanName]) {
+      iso = COMMON_COUNTRY_ALIASES[cleanName];
+    } else {
+      const match = WORLD_COUNTRIES.find(
+        c => c.name.toLowerCase() === cleanName
+      );
+      if (match) {
+        iso = match.code;
+        if (!emoji) emoji = match.flag;
+      }
     }
   }
 
