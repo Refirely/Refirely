@@ -1,0 +1,217 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access unless explicitly allowed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        (request.auth.token.email.lower() == 'ganesh.indireddy@gmail.com' ||
+         request.auth.token.email.lower() == 'ganesh.photolife@gmail.com');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidInterestLevel(level) {
+      return level in [
+        'Top Contender',
+        'Strong Interest',
+        'Moderate Interest',
+        'Casual Exploration',
+        'Ruled Out'
+      ];
+    }
+
+    function isValidUserProfile(docId, data) {
+      return data.id == docId &&
+        (docId == request.auth.uid || data.userId == request.auth.uid) &&
+        data.name is string &&
+        data.name.size() > 0 &&
+        data.name.size() <= 100 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+        (!('activeAccountId' in data) || (data.activeAccountId is string && data.activeAccountId.size() <= 128)) &&
+        (!('role' in data) || data.role in ['member', 'admin']);
+    }
+
+    function isValidSavedAccount(ownerUid, accountId, data) {
+      return data.id == accountId &&
+        data.userId == ownerUid &&
+        data.name is string &&
+        data.name.size() > 0 &&
+        data.name.size() <= 100 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+        (!('username' in data) || (data.username is string && data.username.size() <= 64)) &&
+        data.profile is map;
+    }
+
+    function isValidJournalEntry(ownerUid, countryId, data) {
+      return data.userId == ownerUid &&
+        data.countryId == countryId &&
+        data.countryName is string &&
+        data.countryName.size() > 0 &&
+        data.countryName.size() <= 100 &&
+        isValidInterestLevel(data.interestLevel) &&
+        (!('privateNotes' in data) || (data.privateNotes is string && data.privateNotes.size() <= 5000)) &&
+        (!('tags' in data) || (data.tags is list && data.tags.size() <= 20)) &&
+        (!('scoutingTimeline' in data) || (data.scoutingTimeline is string && data.scoutingTimeline.size() <= 100));
+    }
+
+    function isValidWorkspaceDoc(ownerUid, docId, data) {
+      return data.id == docId &&
+        data.userId == ownerUid &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40));
+    }
+
+    // 1. Root /users/{userId} collection: stores primary auth session AND all User IDs (usr-ganesh, usr-elena, usr-marcus, etc.)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (userId == request.auth.uid || resource == null || resource.data.userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidUserProfile(userId, incoming()) &&
+        (!('role' in incoming()) || incoming().role == 'member' || isBootstrappedAdmin());
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        (userId == request.auth.uid || existing().userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin()) &&
+        isValidUserProfile(userId, incoming()) &&
+        (!('role' in incoming()) || incoming().role == 'member' || incoming().role == existing().role || isBootstrappedAdmin());
+      allow delete: if isSignedIn() &&
+        isValidId(userId) &&
+        (userId == request.auth.uid || resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+
+      // Subcollection: Saved Custom User IDs / Expat Persona Accounts
+      match /savedAccounts/{accountId} {
+        allow get: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId) && isValidId(accountId);
+        allow list: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(accountId) &&
+          isValidSavedAccount(userId, accountId, incoming());
+        allow update: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(accountId) &&
+          isValidSavedAccount(userId, accountId, incoming());
+        allow delete: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(accountId);
+      }
+
+      // Subcollection: Private Country Journal
+      match /journalEntries/{countryId} {
+        allow get: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId) && isValidId(countryId);
+        allow list: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(countryId) &&
+          isValidJournalEntry(userId, countryId, incoming());
+        allow update: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(countryId) &&
+          isValidJournalEntry(userId, countryId, incoming());
+        allow delete: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(countryId);
+      }
+
+      // Subcollection: User Workspace state
+      match /workspace/{docId} {
+        allow get: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId) && isValidId(docId);
+        allow list: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          isValidWorkspaceDoc(userId, docId, incoming());
+        allow update: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          isValidWorkspaceDoc(userId, docId, incoming());
+        allow delete: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(docId);
+      }
+    }
+
+    // 2. Top-level /savedAccounts/{accountId} collection (All User IDs visible at root level)
+    match /savedAccounts/{accountId} {
+      allow get: if isSignedIn() && isValidId(accountId) && (resource == null || resource.data.userId == request.auth.uid || accountId.matches('^usr-.*') || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(accountId) &&
+        isValidSavedAccount(request.auth.uid, accountId, incoming());
+      allow delete: if isSignedIn() &&
+        isValidId(accountId) &&
+        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    // 3. Top-level /countryJournals/{countryId} collection
+    match /countryJournals/{countryId} {
+      allow get: if isSignedIn() && isValidId(countryId) && (resource == null || resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(countryId) &&
+        isValidJournalEntry(request.auth.uid, countryId, incoming());
+      allow delete: if isSignedIn() &&
+        isValidId(countryId) &&
+        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    // 4. Top-level /communityThreads/{threadId} collection
+    match /communityThreads/{threadId} {
+      allow get: if isSignedIn() && isValidId(threadId) && (resource == null || resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(threadId) &&
+        isValidWorkspaceDoc(request.auth.uid, threadId, incoming());
+      allow delete: if isSignedIn() &&
+        isValidId(threadId) &&
+        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    // 5. Top-level /expatMeetups/{meetupId} collection
+    match /expatMeetups/{meetupId} {
+      allow get: if isSignedIn() && isValidId(meetupId) && (resource == null || resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(meetupId) &&
+        isValidWorkspaceDoc(request.auth.uid, meetupId, incoming());
+      allow delete: if isSignedIn() &&
+        isValidId(meetupId) &&
+        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    // 6. Top-level /relocationChecklists/{accountId} collection
+    match /relocationChecklists/{accountId} {
+      allow get: if isSignedIn() && isValidId(accountId) && (resource == null || resource.data.userId == request.auth.uid || accountId.matches('^usr-.*') || isBootstrappedAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow create, update: if isSignedIn() &&
+        isValidId(accountId) &&
+        isValidWorkspaceDoc(request.auth.uid, accountId, incoming());
+      allow delete: if isSignedIn() &&
+        isValidId(accountId) &&
+        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+  }
+}

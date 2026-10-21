@@ -1,0 +1,8 @@
+{
+  "name": "ReFirely - Where Your Freedom Goes Further",
+  "description": "Factual guide and community platform to choose the right retirement country based on visa rules, cost of living, climate, demographics, lifestyle metrics, and real expat connections.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

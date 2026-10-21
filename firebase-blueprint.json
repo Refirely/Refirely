@@ -1,0 +1,298 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile, active account pointer, and relocation preferences",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User unique identifier matching auth UID",
+          "maxLength": 128
+        },
+        "activeAccountId": {
+          "type": "string",
+          "description": "Currently active custom User ID or persona ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "originCountry": {
+          "type": "string",
+          "description": "Country of origin / nationality",
+          "maxLength": 100
+        },
+        "residingCountry": {
+          "type": "string",
+          "description": "Current residing country",
+          "maxLength": 100
+        },
+        "originCity": {
+          "type": "string",
+          "description": "City of origin",
+          "maxLength": 100
+        },
+        "targetCountry": {
+          "type": "string",
+          "description": "Primary retirement target country",
+          "maxLength": 100
+        },
+        "retirementTimelineYear": {
+          "type": "number",
+          "description": "Planned retirement target departure year"
+        },
+        "monthlyBudgetUSD": {
+          "type": "number",
+          "description": "Expected monthly retirement budget in USD"
+        },
+        "preferredClimate": {
+          "type": "string",
+          "description": "Preferred climate category",
+          "maxLength": 50
+        },
+        "relocationStatus": {
+          "type": "string",
+          "description": "Relocation readiness status stage",
+          "maxLength": 60
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short bio or tagline",
+          "maxLength": 500
+        },
+        "aboutMe": {
+          "type": "string",
+          "description": "Detailed background story and retirement vision",
+          "maxLength": 2000
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Profile picture URL",
+          "maxLength": 500
+        },
+        "role": {
+          "type": "string",
+          "description": "User system role",
+          "enum": ["member", "admin"]
+        },
+        "savedCountryIds": {
+          "type": "array",
+          "description": "List of favorited country IDs"
+        },
+        "rsvpMeetupIds": {
+          "type": "array",
+          "description": "List of RSVPed meetup IDs"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last profile update"
+        }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "SavedUserAccount": {
+      "title": "SavedUserAccount",
+      "description": "Custom created user ID account record and profile snapshot persisted in Firestore",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Custom User ID or generated account identifier",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID",
+          "maxLength": 128
+        },
+        "username": {
+          "type": "string",
+          "description": "User-chosen login handle / User ID",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name for this user account",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address associated with this user account",
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation date string",
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last sync",
+          "maxLength": 40
+        },
+        "profile": {
+          "type": "object",
+          "description": "Complete UserProfile data for this User ID"
+        },
+        "checklist": {
+          "type": "array",
+          "description": "Relocation checklist tasks specific to this User ID"
+        }
+      },
+      "required": ["id", "userId", "name", "email", "profile"]
+    },
+    "CountryJournalEntry": {
+      "title": "CountryJournalEntry",
+      "description": "Private country journal note and interest tracking entry for a user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Journal entry identifier usually countryId",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "accountId": {
+          "type": "string",
+          "description": "Optional custom User ID this journal entry belongs to",
+          "maxLength": 128
+        },
+        "countryId": {
+          "type": "string",
+          "description": "Unique slug of the country",
+          "maxLength": 64
+        },
+        "countryName": {
+          "type": "string",
+          "description": "Display name of the country",
+          "maxLength": 100
+        },
+        "countryFlag": {
+          "type": "string",
+          "description": "Emoji flag of the country",
+          "maxLength": 16
+        },
+        "interestLevel": {
+          "type": "string",
+          "description": "Retirement interest level rating",
+          "enum": [
+            "Top Contender",
+            "Strong Interest",
+            "Moderate Interest",
+            "Casual Exploration",
+            "Ruled Out"
+          ]
+        },
+        "privateNotes": {
+          "type": "string",
+          "description": "Private expat journal notes, questions, and research findings",
+          "maxLength": 5000
+        },
+        "tags": {
+          "type": "array",
+          "description": "Quick custom or preset tags for this destination"
+        },
+        "scoutingTimeline": {
+          "type": "string",
+          "description": "Planned trip or scouting visit window",
+          "maxLength": 100
+        },
+        "personalBudgetEstimateUSD": {
+          "type": "number",
+          "description": "Custom projected monthly budget in USD"
+        },
+        "visitedBefore": {
+          "type": "boolean",
+          "description": "Whether the user has physically visited this country"
+        },
+        "isFavorited": {
+          "type": "boolean",
+          "description": "Whether the user has bookmarked or favorited this country"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["id", "userId", "countryId", "countryName", "interestLevel"]
+    },
+    "UserWorkspaceDoc": {
+      "title": "UserWorkspaceDoc",
+      "description": "Synced workspace collections (community threads, meetups, direct messages, and custom country data)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Workspace document key (e.g. community, countries)",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last save",
+          "maxLength": 40
+        }
+      },
+      "required": ["id", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Root users collection storing all User IDs (usr-ganesh, usr-elena, usr-marcus, custom IDs) and primary auth session document"
+    },
+    "/savedAccounts/{accountId}": {
+      "schema": "SavedUserAccount",
+      "description": "Top-level collection storing all registered User IDs and full expat profiles"
+    },
+    "/countryJournals/{countryId}": {
+      "schema": "CountryJournalEntry",
+      "description": "Top-level collection storing private country journal notes and interest ratings"
+    },
+    "/communityThreads/{threadId}": {
+      "schema": "UserWorkspaceDoc",
+      "description": "Top-level collection storing community forum discussion threads and comments"
+    },
+    "/expatMeetups/{meetupId}": {
+      "schema": "UserWorkspaceDoc",
+      "description": "Top-level collection storing expat meetups and RSVP status"
+    },
+    "/relocationChecklists/{accountId}": {
+      "schema": "UserWorkspaceDoc",
+      "description": "Top-level collection storing relocation readiness checklists per User ID"
+    },
+    "/users/{userId}/savedAccounts/{accountId}": {
+      "schema": "SavedUserAccount",
+      "description": "Subcollection storing all custom User IDs and expat profiles created by the user"
+    },
+    "/users/{userId}/journalEntries/{countryId}": {
+      "schema": "CountryJournalEntry",
+      "description": "Private subcollection containing individual country journal records and interest tracking"
+    },
+    "/users/{userId}/workspace/{docId}": {
+      "schema": "UserWorkspaceDoc",
+      "description": "Subcollection storing synced community threads, meetups, messages, and country customizations"
+    }
+  }
+}
