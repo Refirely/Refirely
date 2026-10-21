@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import { HavenMatcherWidget } from './HavenMatcherWidget';
 import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
-import { FireProgressChart } from './FireProgressChart';
 import { FireCalculatorTracker } from './FireCalculatorTracker';
 import { WORLD_COUNTRIES, getWorldCountryFlag } from '../data/userAccounts';
 import { CountryFlag } from './CountryFlag';
@@ -367,10 +366,7 @@ export const UserDashboard: React.FC = () => {
       {/* SECTION: FINANCIAL PORTFOLIO & 5 INVESTMENT SCHEMES */}
       <UserFinancialsDashboard />
 
-      {/* SECTION: FIRE PROGRESS CHART (CURRENT ASSETS VS TARGET CORPUS & TIMELINE PROJECTION) */}
-      <FireProgressChart />
-
-      {/* SECTION: FIRE CALCULATOR, MILESTONE PLANNER & INDEPENDENCE TRACKER */}
+      {/* SECTION: UNIFIED FIRE CALCULATOR, VISUAL PATH, MILESTONE PLANNER & INDEPENDENCE TRACKER */}
       <FireCalculatorTracker />
 
       {/* SECTION: UNIFIED HAVEN MATCHER AI RECOMMENDATION & FINANCIAL POTENTIAL ENGINE */}

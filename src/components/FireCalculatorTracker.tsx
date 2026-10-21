@@ -15,6 +15,8 @@ import {
   formatDualCurrency,
 } from '../data/userAccounts';
 import { CurrencyAmountInput } from './CurrencyAmountInput';
+import { FireProgressChart, FireTrajectoryPoint } from './FireProgressChart';
+import { CountryFlag } from './CountryFlag';
 import {
   Flame, TrendingUp, DollarSign, ShieldAlert, CheckCircle2, Plus, Trash2,
   Sparkles, Calendar, Award, Sliders, ArrowRight, RefreshCw, Landmark,
@@ -483,23 +485,21 @@ export const FireCalculatorTracker: React.FC = () => {
     );
 
     // 2. Year-by-Year Nominal & Real Wealth Trajectory Simulation (25-Year Horizon)
-    const trajectory: {
-      year: number;
-      age: number;
-      projectedCorpusUSD: number;
-      fireTargetUSD: number;
-      milestonesDeductedUSD: number;
-      annualSipInvestedUSD: number;
-      freedEmiBonusUSD: number;
-    }[] = [];
+    const trajectory: FireTrajectoryPoint[] = [];
 
     let simCorpusNominal = startingCorpusTodayUSD;
+    let simCumulativeContributions = startingCorpusTodayUSD;
     let simMonthlySip = monthlySipUSD;
     let crossoverYear: number | null =
-      startingCorpusTodayUSD >= activeFireTargetTodayUSD ? currentYear : null;
+      startingCorpusTodayUSD >= comprehensiveFireNumberTodayUSD ? currentYear : null;
     let crossoverAge: number | null =
-      startingCorpusTodayUSD >= activeFireTargetTodayUSD ? currentAge : null;
-    let yearsToFireExact = startingCorpusTodayUSD >= activeFireTargetTodayUSD ? 0 : -1;
+      startingCorpusTodayUSD >= comprehensiveFireNumberTodayUSD ? currentAge : null;
+    let yearsToFireExact = startingCorpusTodayUSD >= comprehensiveFireNumberTodayUSD ? 0 : -1;
+
+    const targetHavenNetMonthlyNeedUSD = Math.max(
+      300,
+      defaultTargetHavenMonthlyExpenseUSD * tierMultiplier - retirementContinuingPassiveMonthlyUSD
+    );
 
     for (let yrOffset = 0; yrOffset <= 25; yrOffset++) {
       const yr = currentYear + yrOffset;
@@ -515,6 +515,13 @@ export const FireCalculatorTracker: React.FC = () => {
 
       const dynamicFireTargetNominal = Math.round(
         inflatedAnnualLivingNeed / swrDecimal + remainingGoalsPV
+      );
+
+      // Target Haven geo-arbitrage corpus in year `yr`
+      const inflatedHavenAnnualNeed =
+        targetHavenNetMonthlyNeedUSD * 12 * Math.pow(1 + inflationDec, yrOffset);
+      const targetHavenCorpusNominal = Math.round(
+        inflatedHavenAnnualNeed / swrDecimal + remainingGoalsPV
       );
 
       // Milestones occurring in this specific year
@@ -537,6 +544,7 @@ export const FireCalculatorTracker: React.FC = () => {
             prevCorpus * (1 + nominalReturnDec) + annualSipContribution - yearMilestonesUSD
           )
         );
+        simCumulativeContributions += annualSipContribution;
 
         // Check if FIRE crossover happened during this year
         if (crossoverYear === null && simCorpusNominal >= dynamicFireTargetNominal) {
@@ -560,14 +568,24 @@ export const FireCalculatorTracker: React.FC = () => {
         }
       }
 
+      const compoundingGainsUSD = Math.max(0, simCorpusNominal - simCumulativeContributions);
+      const fundingRatioPct =
+        dynamicFireTargetNominal > 0
+          ? Math.min(250, Math.round((simCorpusNominal / dynamicFireTargetNominal) * 100))
+          : 100;
+
       trajectory.push({
         year: yr,
         age,
         projectedCorpusUSD: simCorpusNominal,
+        cumulativeContributionsUSD: simCumulativeContributions,
+        compoundingGainsUSD,
         fireTargetUSD: dynamicFireTargetNominal,
+        targetHavenCorpusUSD: targetHavenCorpusNominal,
         milestonesDeductedUSD: yearMilestonesUSD,
         annualSipInvestedUSD: yrOffset === 0 ? monthlySipUSD * 12 : annualSipContribution,
         freedEmiBonusUSD: freedMonthlyEmiUSD * 12,
+        fundingRatioPct,
       });
     }
 
@@ -902,14 +920,15 @@ export const FireCalculatorTracker: React.FC = () => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                  FIRE Calculator, Milestone Planner & Independence Tracker
+                  FIRE Calculator, Visual Trajectory &amp; Independence Planner
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-950 border border-orange-200 uppercase tracking-wider">
-                  {getWorldCountryFlag(selectedBasisCountry)} {selectedBasisCountry} ({countryMacro.currencyCode}) + $ USD Dual Ledger
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-950 border border-orange-200 uppercase tracking-wider inline-flex items-center gap-1.5">
+                  <CountryFlag countryName={selectedBasisCountry} size="xs" className="rounded-xs" />
+                  <span>{selectedBasisCountry} ({countryMacro.currencyCode}) + $ USD Dual Ledger</span>
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Calculates your exact Financial Independence number using your <strong>Residing Country ({selectedBasisCountry})</strong> inflation ({inflationPct}%), expected returns ({expectedReturnPct}%), Monthly Current Expenses, Monthly SIPs, Loans, Side Income, and Future Family Milestones.
+                Unified FIRE calculator, cash-flow simulator, retirement corpus benchmark comparison, and multi-horizon compounding trajectory for <strong>{selectedBasisCountry}</strong> ({inflationPct}% inflation, {expectedReturnPct}% return) &amp; <strong>{targetHavenCountryName}</strong>.
               </p>
             </div>
           </div>
@@ -955,7 +974,7 @@ export const FireCalculatorTracker: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Save & Recalculate FIRE Plan</span>
+            <span>Save &amp; Recalculate FIRE Plan</span>
           </button>
         </div>
       </div>
@@ -967,7 +986,7 @@ export const FireCalculatorTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Top 4 Dual-Currency FIRE KPI Cards */}
+      {/* Top 4 Unified Executive FIRE KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* KPI 1: Current Net FIRE Corpus */}
@@ -977,7 +996,7 @@ export const FireCalculatorTracker: React.FC = () => {
               1. Current Net FIRE Corpus
             </span>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-teal-100 text-teal-800">
-              {fireAnalysis.fireProgressPct}% of Target
+              {fireAnalysis.fireProgressPct}% Funded
             </span>
           </div>
           <div>
@@ -989,13 +1008,16 @@ export const FireCalculatorTracker: React.FC = () => {
             <div className="text-xs font-mono text-slate-600 font-semibold mt-0.5">
               ${fireAnalysis.startingCorpusTodayUSD.toLocaleString()} USD
             </div>
+            <div className="text-[11px] text-slate-500 mt-1">
+              Liquid: ${fireAnalysis.liquidAssets.toLocaleString()} · Debt: -${fireAnalysis.totalLoanPrincipalUSD.toLocaleString()}
+            </div>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>{includePrimaryHome ? 'Includes Home Equity' : 'Liquid Assets Net of Debt'}</span>
+            <span>{includePrimaryHome ? 'Includes Home Equity' : 'Liquid Net of Debt'}</span>
             <button
               type="button"
               onClick={() => setIncludePrimaryHome(!includePrimaryHome)}
-              className="text-orange-700 font-semibold hover:underline"
+              className="text-orange-700 font-semibold hover:underline cursor-pointer"
             >
               {includePrimaryHome ? 'Exclude Home' : '+ Include Home'}
             </button>
@@ -1019,9 +1041,12 @@ export const FireCalculatorTracker: React.FC = () => {
             <div className="text-xs font-mono text-purple-900 font-semibold mt-0.5">
               ${fireAnalysis.comprehensiveFireNumberTodayUSD.toLocaleString()} USD
             </div>
+            <div className="text-[11px] text-orange-950/75 mt-1">
+              Living: ${fireAnalysis.activeFireTargetTodayUSD.toLocaleString()} + Goals: ${fireAnalysis.totalFutureGoalsTodayUSD.toLocaleString()}
+            </div>
           </div>
           <div className="mt-3 pt-2 border-t border-orange-200/70 text-[11px] text-orange-950/80 flex items-center justify-between">
-            <span>Current Exp: ${fireAnalysis.currentExpensesMo.toLocaleString()}/mo</span>
+            <span>Retire Exp: ${fireAnalysis.effectiveMonthlyExpenseTodayUSD.toLocaleString()}/mo</span>
             <span className="font-mono font-bold">{swrPct.toFixed(1)}% SWR</span>
           </div>
         </div>
@@ -1030,7 +1055,7 @@ export const FireCalculatorTracker: React.FC = () => {
         <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              3. MonthlySIP & Current Expenses
+              3. Monthly SIP &amp; Expenses
             </span>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
               {fireAnalysis.savingsRatePct}% SIP Rate
@@ -1047,7 +1072,7 @@ export const FireCalculatorTracker: React.FC = () => {
             </div>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between">
-            <span>Monthly Current Expenses:</span>
+            <span>Current Expenses:</span>
             <span className="font-mono font-bold text-rose-700">
               {countryMacro.currencyCode !== 'USD'
                 ? `${formatLocalCurrency(fireAnalysis.currentExpensesMo, countryMacro, false)} ($${fireAnalysis.currentExpensesMo.toLocaleString()})`
@@ -1060,7 +1085,7 @@ export const FireCalculatorTracker: React.FC = () => {
         <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              4. Time & Distance to FIRE
+              4. Time &amp; Distance to FIRE
             </span>
             <Clock className="w-4 h-4 text-purple-600" />
           </div>
@@ -1089,6 +1114,11 @@ export const FireCalculatorTracker: React.FC = () => {
                 </div>
               </>
             )}
+            <div className="text-[11px] text-slate-500 mt-1">
+              {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD
+                ? `Coast FIRE Passed (${formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro, true)})`
+                : `${formatDualCurrency(Math.max(0, fireAnalysis.coastFireTargetTodayUSD - fireAnalysis.startingCorpusTodayUSD), countryMacro, true)} to Coast FIRE`}
+            </div>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
             <span>Projected FIRE Age:</span>
@@ -1100,13 +1130,17 @@ export const FireCalculatorTracker: React.FC = () => {
 
       </div>
 
+      {/* ===================================================================== */}
+      {/* PART 1: INTERACTIVE FIRE CALCULATOR & CASH-FLOW CONTROLS (FIRST)      */}
+      {/* ===================================================================== */}
+
       {/* CURRENT MONTHLY CASH FLOW & EXPENSE LEDGER BAR */}
       <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-purple-50/50 border border-orange-200/80 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-orange-600" />
             <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-              Current Monthly Income, Monthly Current Expenses & SIP Cash-Flow Ledger
+              Current Monthly Income, Monthly Current Expenses &amp; SIP Cash-Flow Ledger
             </span>
           </div>
           <span className="text-[11px] text-slate-600">
@@ -1135,7 +1169,7 @@ export const FireCalculatorTracker: React.FC = () => {
               {formatDualCurrency(fireAnalysis.currentExpensesMo, countryMacro, false)}
             </div>
             <span className="text-[10px] text-rose-700/80 block mt-0.5">
-              Household & living ({Math.round((fireAnalysis.currentExpensesMo / Math.max(1, fireAnalysis.totalMonthlyInflow)) * 100)}% of inflow)
+              Household &amp; living ({Math.round((fireAnalysis.currentExpensesMo / Math.max(1, fireAnalysis.totalMonthlyInflow)) * 100)}% of inflow)
             </span>
           </div>
 
@@ -1197,108 +1231,13 @@ export const FireCalculatorTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* VISUAL FIRE PROGRESS SCALE & MILESTONE THERMOMETER */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                FIRE Independence Thermometer & Tier Scale
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 mt-0.5">
-              {fireAnalysis.yearsToFireExact === 0
-                ? `Congratulations! Your current corpus covers 100%+ of your ${fireTier.toUpperCase()} FIRE target including future family milestones.`
-                : `You have completed ${fireAnalysis.fireProgressPct}% of your journey toward ${fireTier.toUpperCase()} FIRE in ${costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName}.`}
-            </p>
-          </div>
-
-          {/* FIRE Tier Selector Pills */}
-          <div className="inline-flex flex-wrap rounded-xl bg-white/10 p-1 text-xs font-semibold gap-1">
-            {[
-              { id: 'barista', label: 'Barista FIRE (72%)' },
-              { id: 'lean', label: 'Lean FIRE (80%)' },
-              { id: 'standard', label: 'Standard FIRE (100%)' },
-              { id: 'fat', label: 'Fat FIRE (135%)' },
-            ].map(t => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setFireTier(t.id as FireTierMode)}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  fireTier === t.id
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-extrabold shadow-xs'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Progress Bar Track */}
-        <div className="space-y-2">
-          <div className="w-full h-4 rounded-full bg-white/15 overflow-hidden relative p-0.5">
-            <div
-              style={{ width: `${Math.min(100, fireAnalysis.fireProgressPct)}%` }}
-              className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 transition-all duration-500"
-            />
-          </div>
-
-          {/* 4 Milestone Stage Cards Under Scale */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
-            <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                <span>Stage 1: Coast FIRE</span>
-                {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-              </div>
-              <div className="font-mono font-bold text-sm mt-0.5">
-                {formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro)}
-              </div>
-            </div>
-
-            <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                <span>Stage 2: Lean FIRE</span>
-                {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-              </div>
-              <div className="font-mono font-bold text-sm mt-0.5">
-                {formatDualCurrency(fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-              </div>
-            </div>
-
-            <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                <span>Stage 3: Standard FIRE</span>
-                {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-              </div>
-              <div className="font-mono font-bold text-sm mt-0.5">
-                {formatDualCurrency(fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-              </div>
-            </div>
-
-            <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                <span>Stage 4: Fat FIRE</span>
-                {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-              </div>
-              <div className="font-mono font-bold text-sm mt-0.5">
-                {formatDualCurrency(fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* VARIABLE MACRO & PERSONAL SIMULATION CONTROLS */}
       <div className="p-5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-5 text-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-orange-600" />
             <span className="font-bold text-slate-900 uppercase tracking-wider">
-              Interactive Country, Monthly Current Expenses, Inflation, Return & SIP Simulation Filters
+              Interactive FIRE Calculator: Country, Monthly Expenses, Inflation, Return &amp; SIP Controls
             </span>
           </div>
 
@@ -1307,24 +1246,26 @@ export const FireCalculatorTracker: React.FC = () => {
             <button
               type="button"
               onClick={() => handleSwitchCostBasis('residing')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 costBasisMode === 'residing'
                   ? 'bg-slate-900 text-white font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Retire in Residing Country ({getWorldCountryFlag(selectedBasisCountry)} {selectedBasisCountry})
+              <CountryFlag countryName={selectedBasisCountry} size="xs" className="rounded-xs" />
+              <span>Retire in Residing Country ({selectedBasisCountry})</span>
             </button>
             <button
               type="button"
               onClick={() => handleSwitchCostBasis('target-haven')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 costBasisMode === 'target-haven'
                   ? 'bg-gradient-to-r from-orange-600 to-purple-600 text-white font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Geo-Arbitrage in Target Haven ({getWorldCountryFlag(targetHavenCountryName)} {targetHavenCountryName})
+              <CountryFlag countryName={targetHavenCountryName} size="xs" className="rounded-xs" />
+              <span>Geo-Arbitrage in Target Haven ({targetHavenCountryName})</span>
             </button>
           </div>
         </div>
@@ -1706,7 +1647,7 @@ export const FireCalculatorTracker: React.FC = () => {
           {/* Save & Recalculate Action Bar at bottom of Interactive Controls */}
           <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-200/70">
             <span className="text-[11px] text-slate-600">
-              All values above auto-calculate your <strong>Target FIRE Corpus ({formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)})</strong> and <strong>Countdown ({fireAnalysis.yearsToFireExact === 0 ? 'Achieved!' : `${fireAnalysis.yearsToFireExact} yrs`})</strong> in real time.
+              All values above auto-calculate your <strong>Target FIRE Corpus ({formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)})</strong>, <strong>Countdown ({fireAnalysis.yearsToFireExact === 0 ? 'Achieved!' : `${fireAnalysis.yearsToFireExact} yrs`})</strong>, and the <strong>Visual Path &amp; Trajectory Charts</strong> below in real time.
             </span>
             <button
               type="button"
@@ -1719,13 +1660,142 @@ export const FireCalculatorTracker: React.FC = () => {
               className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Save & Recalculate FIRE Plan</span>
+              <span>Save &amp; Recalculate FIRE Plan</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 4-TAB INTERACTIVE LEDGER & DIAGNOSTICS CONSOLE */}
+      {/* ===================================================================== */}
+      {/* PART 2: VISUAL FIRE PATH, THERMOMETER & TRAJECTORY CHARTS (SECOND)    */}
+      {/* ===================================================================== */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-6">
+        {/* VISUAL FIRE PROGRESS SCALE & MILESTONE THERMOMETER */}
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                  FIRE Independence Thermometer &amp; 4-Stage Milestone Scale
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {fireAnalysis.yearsToFireExact === 0
+                  ? `Congratulations! Your current corpus covers 100%+ of your ${fireTier.toUpperCase()} FIRE target including future family milestones.`
+                  : `You have completed ${fireAnalysis.fireProgressPct}% of your journey toward ${fireTier.toUpperCase()} FIRE in ${costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName}.`}
+              </p>
+            </div>
+
+            {/* FIRE Tier Selector Pills */}
+            <div className="inline-flex flex-wrap rounded-xl bg-white/10 p-1 text-xs font-semibold gap-1">
+              {[
+                { id: 'barista', label: 'Barista FIRE (72%)' },
+                { id: 'lean', label: 'Lean FIRE (80%)' },
+                { id: 'standard', label: 'Standard FIRE (100%)' },
+                { id: 'fat', label: 'Fat FIRE (135%)' },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setFireTier(t.id as FireTierMode)}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    fireTier === t.id
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-extrabold shadow-xs'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress Bar Track */}
+          <div className="space-y-2">
+            <div className="w-full h-4 rounded-full bg-white/15 overflow-hidden relative p-0.5">
+              <div
+                style={{ width: `${Math.min(100, fireAnalysis.fireProgressPct)}%` }}
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 transition-all duration-500"
+              />
+            </div>
+
+            {/* 4 Milestone Stage Cards Under Scale */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
+              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
+                  <span>Stage 1: Coast FIRE</span>
+                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                </div>
+                <div className="font-mono font-bold text-sm mt-0.5">
+                  {formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro)}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
+                  <span>Stage 2: Lean FIRE</span>
+                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                </div>
+                <div className="font-mono font-bold text-sm mt-0.5">
+                  {formatDualCurrency(fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
+                  <span>Stage 3: Standard FIRE</span>
+                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                </div>
+                <div className="font-mono font-bold text-sm mt-0.5">
+                  {formatDualCurrency(fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
+                  <span>Stage 4: Fat FIRE</span>
+                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                </div>
+                <div className="font-mono font-bold text-sm mt-0.5">
+                  {formatDualCurrency(fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RECHARTS VISUAL PATH: BENCHMARK COMPARISON & TIMELINE GROWTH PROJECTION */}
+        <FireProgressChart
+          currentYear={currentYear}
+          currentAge={currentAge}
+          targetFireAge={targetFireAge}
+          selectedBasisCountry={selectedBasisCountry}
+          targetHavenCountryName={targetHavenCountryName}
+          costBasisMode={costBasisMode}
+          countryMacro={countryMacro}
+          expectedReturnPct={expectedReturnPct}
+          inflationPct={inflationPct}
+          sipStepUpPct={sipStepUpPct}
+          investments={investmentsDraft}
+          liquidAssetsUSD={fireAnalysis.liquidAssets}
+          totalGrossAssetsUSD={fireAnalysis.totalGrossAssets}
+          startingCorpusTodayUSD={fireAnalysis.startingCorpusTodayUSD}
+          coastFireTargetTodayUSD={fireAnalysis.coastFireTargetTodayUSD}
+          leanFireTargetTodayUSD={fireAnalysis.leanFireTargetTodayUSD}
+          standardFireTargetTodayUSD={fireAnalysis.standardFireTargetTodayUSD}
+          fatFireTargetTodayUSD={fireAnalysis.fatFireTargetTodayUSD}
+          comprehensiveFireNumberTodayUSD={fireAnalysis.comprehensiveFireNumberTodayUSD}
+          totalFutureGoalsTodayUSD={fireAnalysis.totalFutureGoalsTodayUSD}
+          crossoverYear={fireAnalysis.crossoverYear}
+          crossoverAge={fireAnalysis.crossoverAge}
+          trajectory={fireAnalysis.trajectory}
+        />
+      </div>
+
+      {/* ===================================================================== */}
+      {/* PART 3: 4-TAB INTERACTIVE LEDGER & DIAGNOSTICS CONSOLE (THIRD)        */}
+      {/* ===================================================================== */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2 text-xs font-bold">
           <button
