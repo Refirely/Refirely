@@ -196,6 +196,7 @@ export const DirectoryExplorer: React.FC = () => {
                   <option value="visa-difficulty-asc">Easiest Visa Process (Tier 1-2)</option>
                   <option value="visa-income-asc">Lowest Visa Income Requirement</option>
                   <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
+                  <option value="dating-nightlife-desc">Best Dating & Nightlife</option>
                 </select>
               </div>
 

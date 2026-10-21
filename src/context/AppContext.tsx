@@ -124,8 +124,8 @@ interface AppContextType {
   setVisaIncomeMax: (income: number) => void;
   discreetLifestyleEnabled: boolean;
   setDiscreetLifestyleEnabled: (enabled: boolean) => void;
-  sortBy: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc';
-  setSortBy: (sort: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc') => void;
+  sortBy: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc';
+  setSortBy: (sort: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc') => void;
   resetFilters: () => void;
   filteredCountries: Country[];
 
@@ -354,7 +354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [visaDifficultyMax, setVisaDifficultyMax] = useState(5);
   const [visaIncomeMax, setVisaIncomeMax] = useState(3500);
   const [discreetLifestyleEnabled, setDiscreetLifestyleEnabled] = useState(false);
-  const [sortBy, setSortBy] = useState<'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc'>('recommended');
+  const [sortBy, setSortBy] = useState<'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc'>('recommended');
 
   // Compared countries
   const [comparedCountryIds, setComparedCountryIds] = useState<string[]>(['portugal', 'spain']);
@@ -2269,6 +2269,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (sortBy === 'female-ratio-desc') {
       return (b.demographics.femalesPer100Males || 100) - (a.demographics.femalesPer100Males || 100);
+    }
+    if (sortBy === 'dating-nightlife-desc') {
+      const scoreA = (a.demographics.datingRating || 0) + (a.adultEntertainment.nightlifeScore || 0);
+      const scoreB = (b.demographics.datingRating || 0) + (b.adultEntertainment.nightlifeScore || 0);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      const adultDiff = (b.adultEntertainment.adultEntertainmentScore || 0) - (a.adultEntertainment.adultEntertainmentScore || 0);
+      if (adultDiff !== 0) return adultDiff;
+      return (b.demographics.youngPopulationPercent || 0) - (a.demographics.youngPopulationPercent || 0);
     }
     return 0; // Default recommended
   });

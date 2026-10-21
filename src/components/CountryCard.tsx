@@ -18,6 +18,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
     isCountryCompared,
     toggleCompareCountry,
     discreetLifestyleEnabled,
+    sortBy,
     threads,
     meetups,
     journalEntries,
@@ -177,10 +178,23 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
                 </span>
               </span>
             </div>
+
+            {/* Dating & Nightlife Rating */}
+            <div className="pt-1.5 flex items-center justify-between text-xs">
+              <span className={`font-medium ${sortBy === 'dating-nightlife-desc' ? 'text-purple-700 font-semibold' : 'text-slate-500'}`}>
+                Dating & Nightlife
+              </span>
+              <span className="font-mono tabular-nums text-slate-800 font-semibold">
+                Dating {country.demographics.datingRating}/5 <span className="text-slate-300">·</span> Night {country.adultEntertainment.nightlifeScore}/5
+                <span className="text-[11px] text-purple-700 font-medium ml-1.5">
+                  ({((country.demographics.datingRating + country.adultEntertainment.nightlifeScore) / 2).toFixed(1)}/5)
+                </span>
+              </span>
+            </div>
           </div>
 
           {/* Optional Discreet Lifestyle & Nightlife summary */}
-          {discreetLifestyleEnabled && (
+          {(discreetLifestyleEnabled || sortBy === 'dating-nightlife-desc') && (
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/70 -mx-5 px-5 py-2">
               <div>
                 <span className="text-slate-400 text-[10px] block">Nightlife & Social</span>
