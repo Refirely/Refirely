@@ -1,4 +1,5 @@
 import { Country } from '../types';
+import { ADDITIONAL_COUNTRIES } from './additionalCountries';
 
 export const INITIAL_COUNTRIES: Country[] = [
   {
@@ -6365,6 +6366,7 @@ export const INITIAL_COUNTRIES: Country[] = [
       'Non-EU citizens without Slovak ancestry must maintain documented accommodation for residency renewals',
     ],
   },
+  ...ADDITIONAL_COUNTRIES,
 ];
 
 

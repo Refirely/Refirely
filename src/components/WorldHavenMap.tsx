@@ -83,6 +83,21 @@ export const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   seychelles: [55.4920, -4.6796],
   serbia: [20.4489, 44.7866],
   slovakia: [17.1077, 48.1486],
+  monaco: [7.4246, 43.7384],
+  'united-kingdom': [-1.1743, 52.3555],
+  germany: [10.4515, 51.1657],
+  netherlands: [5.2913, 52.1326],
+  belgium: [4.4699, 50.5039],
+  latvia: [24.1052, 56.9496],
+  lithuania: [25.2797, 54.6872],
+  'north-macedonia': [21.4254, 41.6086],
+  'bosnia-and-herzegovina': [17.6791, 43.9159],
+  armenia: [44.5152, 40.1872],
+  tunisia: [10.1815, 36.8065],
+  namibia: [17.0658, -22.5609],
+  vanuatu: [168.3273, -17.7333],
+  maldives: [73.5093, 4.1755],
+  'turks-and-caicos': [-72.1859, 21.7922],
 };
 
 // Numeric ISO IDs in 110m world atlas
@@ -162,6 +177,21 @@ const COUNTRY_ISO_MAP: Record<string, string> = {
   '690': 'seychelles',
   '688': 'serbia',
   '703': 'slovakia',
+  '492': 'monaco',
+  '826': 'united-kingdom',
+  '276': 'germany',
+  '528': 'netherlands',
+  '056': 'belgium',
+  '428': 'latvia',
+  '440': 'lithuania',
+  '807': 'north-macedonia',
+  '070': 'bosnia-and-herzegovina',
+  '051': 'armenia',
+  '788': 'tunisia',
+  '516': 'namibia',
+  '548': 'vanuatu',
+  '462': 'maldives',
+  '796': 'turks-and-caicos',
 };
 
 export const WorldHavenMap: React.FC = () => {

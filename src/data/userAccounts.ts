@@ -404,6 +404,14 @@ export const getCountryCurrencyMacro = (countryName?: string): CountryCurrencyMa
     'Bermuda': { currencyCode: 'BMD', symbol: 'BD$', rateToUSD: 1.0, defaultInflationPercent: 2.8, defaultReturnPercent: 7.8, typicalMonthlyExpenseUSD: 4600 },
     'Seychelles': { currencyCode: 'SCR', symbol: 'SR ', rateToUSD: 14.2, defaultInflationPercent: 3.3, defaultReturnPercent: 8.0, typicalMonthlyExpenseUSD: 2250 },
     'Serbia': { currencyCode: 'RSD', symbol: 'дин ', rateToUSD: 108.5, defaultInflationPercent: 3.8, defaultReturnPercent: 8.2, typicalMonthlyExpenseUSD: 1450 },
+    'North Macedonia': { currencyCode: 'MKD', symbol: 'ден ', rateToUSD: 56.5, defaultInflationPercent: 3.5, defaultReturnPercent: 8.0, typicalMonthlyExpenseUSD: 1150 },
+    'Bosnia and Herzegovina': { currencyCode: 'BAM', symbol: 'KM ', rateToUSD: 1.80, defaultInflationPercent: 3.2, defaultReturnPercent: 7.8, typicalMonthlyExpenseUSD: 1150 },
+    'Armenia': { currencyCode: 'AMD', symbol: '֏', rateToUSD: 388.0, defaultInflationPercent: 3.4, defaultReturnPercent: 8.5, typicalMonthlyExpenseUSD: 1350 },
+    'Tunisia': { currencyCode: 'TND', symbol: 'DT ', rateToUSD: 3.10, defaultInflationPercent: 5.5, defaultReturnPercent: 8.5, typicalMonthlyExpenseUSD: 1050 },
+    'Namibia': { currencyCode: 'NAD', symbol: 'N$', rateToUSD: 17.8, defaultInflationPercent: 4.5, defaultReturnPercent: 9.0, typicalMonthlyExpenseUSD: 1450 },
+    'Vanuatu': { currencyCode: 'VUV', symbol: 'VT ', rateToUSD: 119.0, defaultInflationPercent: 3.2, defaultReturnPercent: 8.0, typicalMonthlyExpenseUSD: 1750 },
+    'Maldives': { currencyCode: 'MVR', symbol: 'Rf ', rateToUSD: 15.42, defaultInflationPercent: 2.8, defaultReturnPercent: 8.0, typicalMonthlyExpenseUSD: 2350 },
+    'Turks and Caicos Islands': { currencyCode: 'USD', symbol: '$', rateToUSD: 1.0, defaultInflationPercent: 3.0, defaultReturnPercent: 8.2, typicalMonthlyExpenseUSD: 3850 },
   };
 
   if (specificMap[clean]) {
