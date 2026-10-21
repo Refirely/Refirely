@@ -28,27 +28,16 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install --legacy-peer-deps --no-package-lock || yarn install || npm install --force
+          npm install --legacy-peer-deps
 
       - name: Build Project
         run: |
-          npm run build || npx vite build || true
-
-      - name: Locate Output Directory
-        id: set-dist
-        run: |
-          if [ -d "dist" ]; then
-            echo "dir=./dist" >> $GITHUB_OUTPUT
-          elif [ -d "build" ]; then
-            echo "dir=./build" >> $GITHUB_OUTPUT
-          else
-            echo "dir=." >> $GITHUB_OUTPUT
-          fi
+          npm run build
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ steps.set-dist.outputs.dir }}
+          path: ./dist
 
   deploy:
     environment:
