@@ -137,12 +137,11 @@ export const FireProgressChart: React.FC = () => {
 
     const residingMonthlyExpenseUSD =
       finances.monthlyCurrentExpensesUSD ??
-      finances.monthlyExpensesUSD ??
-      residingDossier?.costOfLiving.coupleMonthlyUSD ??
+      residingDossier?.costOfLiving.monthlyBudgetCoupleUSD ??
       3200;
 
     const targetHavenMonthlyExpenseUSD =
-      targetHavenDossier?.costOfLiving.coupleMonthlyUSD ?? 2400;
+      targetHavenDossier?.costOfLiving.monthlyBudgetCoupleUSD ?? 2400;
 
     const activeMonthlyExpenseUSD =
       costBasis === 'residing' ? residingMonthlyExpenseUSD : targetHavenMonthlyExpenseUSD;
@@ -807,10 +806,10 @@ export const FireProgressChart: React.FC = () => {
                     tick={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }}
                   />
                   <Tooltip
-                    formatter={(value: any, _name: string, props: any) => [
+                    formatter={((value: any, _name: any, props: any) => [
                       formatDualCurrency(Number(value), countryMacro, true),
                       props?.payload?.name || 'Amount',
-                    ]}
+                    ]) as any}
                     contentStyle={{
                       borderRadius: '12px',
                       fontSize: '12px',
@@ -950,7 +949,7 @@ export const FireProgressChart: React.FC = () => {
                     tickFormatter={formatAxisValue}
                   />
                   <Tooltip
-                    formatter={(value: any, name: string) => {
+                    formatter={((value: any, name: any) => {
                       const labelMap: Record<string, string> = {
                         projectedAssetsUSD: 'Projected Net Assets',
                         cumulativeContributionsUSD: 'Cumulative Principal + SIPs',
@@ -963,7 +962,7 @@ export const FireProgressChart: React.FC = () => {
                         formatDualCurrency(Number(value), countryMacro, true),
                         labelMap[name] || name,
                       ];
-                    }}
+                    }) as any}
                     labelFormatter={yr =>
                       `Year ${yr} · Age ${
                         chartData.currentAge + (Number(yr) - currentYear)

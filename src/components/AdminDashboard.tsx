@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Country, Region, ClimateCategory } from '../types';
+import { CountryFlag } from './CountryFlag';
 import {
   Shield, Globe, Edit, Trash2, Plus, Users, MessageSquare,
   Calendar, CheckCircle, AlertTriangle, X, Search, SlidersHorizontal, ArrowLeft
@@ -248,7 +249,13 @@ export const AdminDashboard: React.FC = () => {
               {filteredCountries.map(c => (
                 <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
-                    <span className="text-xl">{c.flag}</span>
+                    <CountryFlag
+                      countryCode={c.code}
+                      countryName={c.name}
+                      fallbackEmoji={c.flag}
+                      size="sm"
+                      className="rounded-xs shadow-xs ring-1 ring-slate-200 shrink-0"
+                    />
                     <button
                       onClick={() => navigateToCountry(c.id)}
                       className="hover:text-orange-700 hover:underline text-left font-semibold"

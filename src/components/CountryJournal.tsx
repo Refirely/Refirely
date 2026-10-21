@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { CountryJournalEntry, InterestLevel, Country } from '../types';
+import { CountryFlag } from './CountryFlag';
 import {
   BookOpen, Star, Lock, Edit3, Trash2, Plus, ExternalLink,
   Search, Bookmark, Globe, Check, Cloud, Sparkles, Filter,
@@ -440,9 +441,13 @@ export const CountryJournal: React.FC = () => {
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl shrink-0" role="img" aria-label={country.name}>
-                        {country.flag}
-                      </span>
+                      <CountryFlag
+                        countryCode={country.code}
+                        countryName={country.name}
+                        fallbackEmoji={country.flag}
+                        size="xl"
+                        className="w-9 h-6 rounded-sm shadow-xs ring-1 ring-slate-200 shrink-0"
+                      />
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-base font-extrabold text-slate-900">{country.name}</h3>

@@ -6,6 +6,7 @@ import { UserFinancialsDashboard } from './UserFinancialsDashboard';
 import { FireProgressChart } from './FireProgressChart';
 import { FireCalculatorTracker } from './FireCalculatorTracker';
 import { WORLD_COUNTRIES, getWorldCountryFlag } from '../data/userAccounts';
+import { CountryFlag } from './CountryFlag';
 import {
   User, Bookmark, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
@@ -280,26 +281,30 @@ export const UserDashboard: React.FC = () => {
 
             {/* Clean unboxed metadata with typographic separators */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1.5">
-              <span>
-                Origin Country / Nationality:{' '}
-                <strong className="text-slate-800">
-                  {getWorldCountryFlag(userProfile.originCountry)} {userProfile.originCountry}
+              <span className="inline-flex items-center gap-1.5">
+                <span>Origin Country / Nationality:</span>
+                <strong className="text-slate-800 inline-flex items-center gap-1">
+                  <CountryFlag countryName={userProfile.originCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <span>{userProfile.originCountry}</span>
                 </strong>
               </span>
               <span aria-hidden="true">·</span>
-              <span>
-                Residing Country:{' '}
-                <strong className="text-slate-800">
-                  {getWorldCountryFlag(userProfile.residingCountry || userProfile.originCountry)}{' '}
-                  {userProfile.originCity ? `${userProfile.originCity}, ` : ''}
-                  {userProfile.residingCountry || userProfile.originCountry}
+              <span className="inline-flex items-center gap-1.5">
+                <span>Residing Country:</span>
+                <strong className="text-slate-800 inline-flex items-center gap-1">
+                  <CountryFlag countryName={userProfile.residingCountry || userProfile.originCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <span>
+                    {userProfile.originCity ? `${userProfile.originCity}, ` : ''}
+                    {userProfile.residingCountry || userProfile.originCountry}
+                  </span>
                 </strong>
               </span>
               <span aria-hidden="true">·</span>
-              <span>
-                Target Haven:{' '}
-                <strong className="text-slate-900">
-                  {getWorldCountryFlag(userProfile.targetCountry)} {userProfile.targetCountry}
+              <span className="inline-flex items-center gap-1.5">
+                <span>Target Haven:</span>
+                <strong className="text-slate-900 inline-flex items-center gap-1">
+                  <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <span>{userProfile.targetCountry}</span>
                 </strong>
               </span>
               <span aria-hidden="true">·</span>
@@ -841,7 +846,13 @@ export const UserDashboard: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-3xl">{country.flag}</span>
+                      <CountryFlag
+                        countryCode={country.code}
+                        countryName={country.name}
+                        fallbackEmoji={country.flag}
+                        size="xl"
+                        className="w-9 h-6 rounded-sm shadow-xs ring-1 ring-slate-200"
+                      />
                       <div className="flex items-center gap-1.5">
                         {journal && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">

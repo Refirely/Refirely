@@ -1783,10 +1783,10 @@ export const FireCalculatorTracker: React.FC = () => {
                 tickFormatter={(v) => `$${Math.round(v / 1000)}k`}
               />
               <Tooltip
-                formatter={(value: any, name: string) => [
+                formatter={((value: any, name: any) => [
                   formatDualCurrency(Number(value), countryMacro, true),
                   name === 'projectedCorpusUSD' ? 'Projected Net Corpus' : 'Inflation-Adj FIRE Target',
-                ]}
+                ]) as any}
                 labelFormatter={(yr) => `Year ${yr} (Age ${currentAge + (Number(yr) - currentYear)})`}
                 contentStyle={{ borderRadius: '12px', fontSize: '12px', borderColor: '#cbd5e1' }}
               />

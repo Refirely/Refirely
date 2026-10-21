@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Country, ClimateCategory, UserFinancialPortfolio } from '../types';
 import { DEFAULT_FINANCIAL_PORTFOLIO, WORLD_COUNTRIES, getWorldCountryFlag } from '../data/userAccounts';
+import { CountryFlag } from './CountryFlag';
 import {
   Sparkles, ArrowRight, Heart, Check, Scale, Sun, DollarSign, Shield,
   SlidersHorizontal, Award, Globe, Languages, TrendingUp, CheckCircle2,
@@ -408,9 +409,9 @@ export const HavenMatcherWidget: React.FC = () => {
 
     const healthSafetyPts = Math.round(((country.lifestyle.healthcareScore * 0.6 + country.lifestyle.safetyScore * 0.4) / 100) * 36);
 
-    const datingScore10 = country.lifestyle.datingSceneScore || 7;
-    const nightlifeScore10 = country.lifestyle.nightlifeScore || 7;
-    const femaleRatio = country.demographics.femalesPer100Males || 100;
+    const datingScore10 = country.demographics?.datingRating ? country.demographics.datingRating * 2 : 7;
+    const nightlifeScore10 = country.adultEntertainment?.nightlifeScore ? country.adultEntertainment.nightlifeScore * 2 : 7;
+    const femaleRatio = country.demographics?.femalesPer100Males || 100;
     const rawSocialAvg = (datingScore10 * 0.55 + nightlifeScore10 * 0.45) * 10; // 0 to 100
 
     let socialPts = Math.round((rawSocialAvg / 100) * 32);
@@ -918,9 +919,13 @@ export const HavenMatcherWidget: React.FC = () => {
                 {/* Top Header: Rank, Flag, Country Name, Overall Score & Overall Grade */}
                 <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl leading-none shrink-0" role="img" aria-label={country.name}>
-                      {country.flag}
-                    </span>
+                    <CountryFlag
+                      countryCode={country.code}
+                      countryName={country.name}
+                      fallbackEmoji={country.flag}
+                      size="xl"
+                      className="w-9 h-6 rounded-sm shadow-md ring-1 ring-slate-200 shrink-0"
+                    />
                     <div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white font-mono text-[10px] font-bold uppercase tracking-wider">

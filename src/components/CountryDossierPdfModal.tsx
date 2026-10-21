@@ -13,6 +13,7 @@ import {
   getShortTermVisasForCountry,
 } from '../utils/exportCountryDossierPdf';
 import { getFaqsForCountry } from '../data/countryFaqs';
+import { CountryFlag } from './CountryFlag';
 import {
   X,
   Download,
@@ -331,7 +332,13 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-3.5">
-                    <span className="text-4xl sm:text-5xl leading-none">{country.flag}</span>
+                    <CountryFlag
+                      countryCode={country.code}
+                      countryName={country.name}
+                      fallbackEmoji={country.flag}
+                      size="2xl"
+                      className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-xs shadow-md ring-1 ring-slate-300 shrink-0"
+                    />
                     <div>
                       <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         {country.name} ({country.code})

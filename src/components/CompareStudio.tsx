@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Country } from '../types';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
+import { CountryFlag } from './CountryFlag';
 import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale } from 'lucide-react';
 
 export const CompareStudio: React.FC = () => {
@@ -72,7 +73,7 @@ export const CompareStudio: React.FC = () => {
                 onClick={() => toggleCompareCountry(c.id)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-white text-slate-700 hover:text-orange-950 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors shadow-2xs"
               >
-                <span>{c.flag}</span>
+                <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
                 <span>{c.name}</span>
                 <Plus className="w-3 h-3 text-orange-600 ml-0.5" />
               </button>
@@ -94,9 +95,10 @@ export const CompareStudio: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => toggleCompareCountry(c.id)}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
               >
-                Add {c.flag} {c.name}
+                <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
+                <span>Add {c.name}</span>
               </button>
             ))}
           </div>
@@ -117,7 +119,7 @@ export const CompareStudio: React.FC = () => {
                     <th key={c.id} className="py-4 px-4 min-w-[210px] align-top">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl">{c.flag}</span>
+                          <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="lg" className="rounded-xs shadow-xs ring-1 ring-slate-200" />
                           <div>
                             <span className="text-base font-bold text-slate-900 block leading-tight">
                               {c.name}

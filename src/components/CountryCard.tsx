@@ -2,6 +2,7 @@ import React from 'react';
 import { Country } from '../types';
 import { useApp } from '../context/AppContext';
 import { CountryThumbnail } from './CountryThumbnail';
+import { CountryFlag } from './CountryFlag';
 import { generateCountryDossierPdf } from '../utils/exportCountryDossierPdf';
 import { Sun, Heart, ShieldCheck, ArrowRight, Check, Download } from 'lucide-react';
 
@@ -83,9 +84,13 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
             {/* Bottom-Left Country Title & Clean Unboxed Metadata over Measured Scrim */}
             <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-3xl leading-none drop-shadow-xs shrink-0" role="img" aria-label={country.name}>
-                  {country.flag}
-                </span>
+                <CountryFlag
+                  countryCode={country.code}
+                  countryName={country.name}
+                  fallbackEmoji={country.flag}
+                  size="xl"
+                  className="w-9 h-6 sm:w-10 sm:h-7 rounded-sm shadow-md ring-1 ring-white/40 shrink-0"
+                />
                 <div className="min-w-0">
                   <h3 className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors tracking-wide truncate">
                     {country.name}

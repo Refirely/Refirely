@@ -7,6 +7,7 @@ import { ShortTermVisaOptions } from './ShortTermVisaOptions';
 import { AnnualRetirementBudgetCalculator } from './AnnualRetirementBudgetCalculator';
 import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
+import { CountryFlag } from './CountryFlag';
 import {
   ArrowLeft, Heart, Scale, Sun, DollarSign, Shield,
   FileCheck, Users, MapPin, CheckCircle2, AlertCircle,
@@ -153,9 +154,13 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-4xl sm:text-5xl leading-none drop-shadow-2xs" role="img" aria-label={country.name}>
-                  {country.flag}
-                </span>
+                <CountryFlag
+                  countryCode={country.code}
+                  countryName={country.name}
+                  fallbackEmoji={country.flag}
+                  size="2xl"
+                  className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-sm shadow-md ring-1 ring-slate-300 shrink-0"
+                />
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                     {country.name} Retirement Guide

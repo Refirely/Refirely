@@ -3,6 +3,7 @@ import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere, Zooma
 import worldGeo from 'world-atlas/countries-110m.json';
 import { useApp } from '../context/AppContext';
 import { Country } from '../types';
+import { CountryFlag } from './CountryFlag';
 import { ArrowRight, X, MapPin, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 // Country geographic coordinates [longitude, latitude]
@@ -451,9 +452,13 @@ export const WorldHavenMap: React.FC = () => {
           <div className="absolute top-4 left-4 max-w-xs sm:max-w-sm w-full bg-white/95 border border-orange-200/90 rounded-2xl p-4 sm:p-5 shadow-2xl z-20 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 text-slate-900">
             <div className="flex items-start justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-2.5">
-                <span className="text-3xl leading-none drop-shadow-2xs" role="img" aria-label={activeModalCountry.name}>
-                  {activeModalCountry.flag}
-                </span>
+                <CountryFlag
+                  countryCode={activeModalCountry.code}
+                  countryName={activeModalCountry.name}
+                  fallbackEmoji={activeModalCountry.flag}
+                  size="xl"
+                  className="w-9 h-6 rounded-sm shadow-xs ring-1 ring-slate-200 shrink-0"
+                />
                 <div>
                   <h4 className="text-base font-extrabold text-slate-900 leading-tight">
                     {activeModalCountry.name}
