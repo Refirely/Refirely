@@ -113,7 +113,7 @@ export const CountryFlag: React.FC<CountryFlagProps> = ({
         loading="lazy"
         decoding="async"
         onError={() => setHasError(true)}
-        className="w-full h-full object-cover rounded-[2px] shadow-2xs border border-black/10"
+        className="w-full h-full object-cover rounded-xs"
       />
     </span>
   );

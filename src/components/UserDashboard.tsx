@@ -284,7 +284,7 @@ export const UserDashboard: React.FC = () => {
               <span className="inline-flex items-center gap-1.5">
                 <span>Origin Country / Nationality:</span>
                 <strong className="text-slate-800 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.originCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <CountryFlag countryName={userProfile.originCountry} size="xs" className="rounded-xs" />
                   <span>{userProfile.originCountry}</span>
                 </strong>
               </span>
@@ -292,7 +292,7 @@ export const UserDashboard: React.FC = () => {
               <span className="inline-flex items-center gap-1.5">
                 <span>Residing Country:</span>
                 <strong className="text-slate-800 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.residingCountry || userProfile.originCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <CountryFlag countryName={userProfile.residingCountry || userProfile.originCountry} size="xs" className="rounded-xs" />
                   <span>
                     {userProfile.originCity ? `${userProfile.originCity}, ` : ''}
                     {userProfile.residingCountry || userProfile.originCountry}
@@ -303,7 +303,7 @@ export const UserDashboard: React.FC = () => {
               <span className="inline-flex items-center gap-1.5">
                 <span>Target Haven:</span>
                 <strong className="text-slate-900 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-[2px] shadow-2xs" />
+                  <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-xs" />
                   <span>{userProfile.targetCountry}</span>
                 </strong>
               </span>
@@ -851,7 +851,7 @@ export const UserDashboard: React.FC = () => {
                         countryName={country.name}
                         fallbackEmoji={country.flag}
                         size="xl"
-                        className="w-9 h-6 rounded-sm shadow-xs ring-1 ring-slate-200"
+                        className="w-9 h-6 rounded-xs"
                       />
                       <div className="flex items-center gap-1.5">
                         {journal && (

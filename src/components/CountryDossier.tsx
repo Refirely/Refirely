@@ -159,7 +159,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   countryName={country.name}
                   fallbackEmoji={country.flag}
                   size="2xl"
-                  className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-sm shadow-md ring-1 ring-slate-300 shrink-0"
+                  className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-xs shrink-0"
                 />
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">

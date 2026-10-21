@@ -89,7 +89,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
                   countryName={country.name}
                   fallbackEmoji={country.flag}
                   size="xl"
-                  className="w-9 h-6 sm:w-10 sm:h-7 rounded-sm shadow-md ring-1 ring-white/40 shrink-0"
+                  className="w-9 h-6 sm:w-10 sm:h-7 rounded-xs shrink-0"
                 />
                 <div className="min-w-0">
                   <h3 className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors tracking-wide truncate">

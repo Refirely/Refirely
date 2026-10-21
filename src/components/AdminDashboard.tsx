@@ -254,7 +254,7 @@ export const AdminDashboard: React.FC = () => {
                       countryName={c.name}
                       fallbackEmoji={c.flag}
                       size="sm"
-                      className="rounded-xs shadow-xs ring-1 ring-slate-200 shrink-0"
+                      className="rounded-xs shrink-0"
                     />
                     <button
                       onClick={() => navigateToCountry(c.id)}

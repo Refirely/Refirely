@@ -457,7 +457,7 @@ export const WorldHavenMap: React.FC = () => {
                   countryName={activeModalCountry.name}
                   fallbackEmoji={activeModalCountry.flag}
                   size="xl"
-                  className="w-9 h-6 rounded-sm shadow-xs ring-1 ring-slate-200 shrink-0"
+                  className="w-9 h-6 rounded-xs shrink-0"
                 />
                 <div>
                   <h4 className="text-base font-extrabold text-slate-900 leading-tight">

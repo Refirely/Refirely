@@ -924,7 +924,7 @@ export const HavenMatcherWidget: React.FC = () => {
                       countryName={country.name}
                       fallbackEmoji={country.flag}
                       size="xl"
-                      className="w-9 h-6 rounded-sm shadow-md ring-1 ring-slate-200 shrink-0"
+                      className="w-9 h-6 rounded-xs shrink-0"
                     />
                     <div>
                       <div className="flex flex-wrap items-center gap-1.5">

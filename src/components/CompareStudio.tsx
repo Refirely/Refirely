@@ -119,7 +119,7 @@ export const CompareStudio: React.FC = () => {
                     <th key={c.id} className="py-4 px-4 min-w-[210px] align-top">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
-                          <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="lg" className="rounded-xs shadow-xs ring-1 ring-slate-200" />
+                          <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="lg" className="rounded-xs" />
                           <div>
                             <span className="text-base font-bold text-slate-900 block leading-tight">
                               {c.name}
