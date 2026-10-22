@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Country } from '../types';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
 import { CountryFlag } from './CountryFlag';
-import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale } from 'lucide-react';
+import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale, Search, Award } from 'lucide-react';
+
+const TOP_RETIREMENT_HAVEN_IDS = [
+  'portugal',
+  'spain',
+  'costa-rica',
+  'panama',
+  'mexico',
+  'thailand',
+  'malaysia',
+  'greece',
+  'italy',
+  'vietnam',
+  'philippines',
+  'colombia',
+];
 
 export const CompareStudio: React.FC = () => {
   const {
@@ -16,8 +31,40 @@ export const CompareStudio: React.FC = () => {
     setDiscreetLifestyleEnabled,
   } = useApp();
 
+  const [selectorSearch, setSelectorSearch] = useState('');
+
   const comparedCountries = countries.filter(c => comparedCountryIds.includes(c.id));
-  const availableCountriesToAdd = countries.filter(c => !comparedCountryIds.includes(c.id));
+
+  const availableCountriesToAdd = useMemo(() => {
+    return countries
+      .filter(c => !comparedCountryIds.includes(c.id))
+      .filter(c => {
+        if (!selectorSearch.trim()) return true;
+        const q = selectorSearch.toLowerCase();
+        return (
+          c.name.toLowerCase().includes(q) ||
+          c.region.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [countries, comparedCountryIds, selectorSearch]);
+
+  const topRetirementHavens = useMemo(() => {
+    const havenSet = TOP_RETIREMENT_HAVEN_IDS
+      .map(id => countries.find(c => c.id === id))
+      .filter((c): c is Country => Boolean(c));
+
+    if (havenSet.length >= 8) return havenSet;
+
+    return [...countries]
+      .sort(
+        (a, b) =>
+          b.lifestyle.healthcareScore +
+          b.lifestyle.safetyScore -
+          (a.lifestyle.healthcareScore + a.lifestyle.safetyScore)
+      )
+      .slice(0, 12);
+  }, [countries]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -60,47 +107,138 @@ export const CompareStudio: React.FC = () => {
         </div>
       </div>
 
-      {/* Add country bar if under 4 */}
-      {comparedCountries.length < 4 && availableCountriesToAdd.length > 0 && (
-        <div className="my-6 p-4 rounded-xl bg-orange-50/70 border border-orange-200 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs font-medium text-orange-950">
-            Select another country to add to the matrix ({comparedCountries.length}/4 selected):
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            {availableCountriesToAdd.slice(0, 6).map(c => (
-              <button
-                key={c.id}
-                onClick={() => toggleCompareCountry(c.id)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-white text-slate-700 hover:text-orange-950 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors shadow-2xs"
-              >
-                <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
-                <span>{c.name}</span>
-                <Plus className="w-3 h-3 text-orange-600 ml-0.5" />
-              </button>
-            ))}
+      {/* Add country selector grid with all countries if under 4 */}
+      {comparedCountries.length < 4 && (
+        <div className="my-6 p-4 sm:p-5 rounded-xl bg-orange-50/70 border border-orange-200 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs sm:text-sm font-bold text-orange-950 block">
+                Select another country to add to the matrix ({comparedCountries.length}/4 selected):
+              </span>
+              <span className="text-[11px] text-orange-800/80">
+                Showing {availableCountriesToAdd.length} available retirement destinations — click any country to add it to your side-by-side matrix.
+              </span>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-orange-700/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={selectorSearch}
+                onChange={e => setSelectorSearch(e.target.value)}
+                placeholder="Filter countries or regions..."
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-orange-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              {selectorSearch && (
+                <button
+                  onClick={() => setSelectorSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {availableCountriesToAdd.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-72 overflow-y-auto pr-1 pt-0.5">
+              {availableCountriesToAdd.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => toggleCompareCountry(c.id)}
+                  className="inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-white text-slate-700 hover:text-orange-950 border border-orange-200/90 rounded-lg hover:bg-orange-100/60 hover:border-orange-300 transition-colors shadow-2xs text-left group"
+                >
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
+                    <span className="truncate">{c.name}</span>
+                  </span>
+                  <Plus className="w-3.5 h-3.5 text-orange-600 shrink-0 group-hover:scale-110 transition-transform" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-orange-900/70 py-2">
+              No countries match "{selectorSearch}". Try clearing the search filter above.
+            </p>
+          )}
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State with Top Retirement Havens */}
       {comparedCountries.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-xl border border-slate-200 my-8">
-          <Scale className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-900">No countries in comparison matrix</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
-            Select "Compare" on any country card in the directory or pick from the recommended havens below.
-          </p>
-          <div className="flex justify-center gap-2 flex-wrap">
-            {countries.slice(0, 3).map(c => (
-              <button
-                key={c.id}
-                onClick={() => toggleCompareCountry(c.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
-              >
-                <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
-                <span>Add {c.name}</span>
-              </button>
-            ))}
+        <div className="p-6 sm:p-10 bg-white rounded-xl border border-slate-200 my-8 shadow-2xs">
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <div className="w-12 h-12 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center mx-auto mb-3">
+              <Scale className="w-6 h-6 text-teal-700" />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900">
+              Start Your Side-by-Side Retirement Comparison
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+              Select any destination from the full <strong>{countries.length}-country directory grid</strong> above, click <strong>"Compare"</strong> on any country card in the Explore directory, or choose from our curated <strong>Top Global Retirement Havens</strong> below.
+            </p>
+          </div>
+
+          <div className="border-t border-slate-100 pt-6">
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-600" />
+                <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800">
+                  Top Global Retirement Havens
+                </h4>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Ranked by healthcare, safety, visa accessibility & cost of living
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {topRetirementHavens.map(c => (
+                <div
+                  key={c.id}
+                  className="p-3.5 rounded-xl border border-slate-200 hover:border-teal-500/60 bg-slate-50/60 hover:bg-white transition-all flex flex-col justify-between gap-3 group shadow-2xs"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="md" />
+                        <div className="min-w-0">
+                          <h5 className="text-sm font-bold text-slate-900 truncate">
+                            {c.name}
+                          </h5>
+                          <span className="text-[11px] text-slate-500 block">
+                            {c.region}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md shrink-0">
+                        ${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5 mt-3 text-[11px] text-slate-600">
+                      <div className="bg-white px-2 py-1 rounded border border-slate-200/70">
+                        <span className="text-slate-400 block text-[10px]">Healthcare</span>
+                        <span className="font-mono font-bold text-slate-800">{c.lifestyle.healthcareScore}/100</span>
+                      </div>
+                      <div className="bg-white px-2 py-1 rounded border border-slate-200/70">
+                        <span className="text-slate-400 block text-[10px]">Safety Index</span>
+                        <span className="font-mono font-bold text-slate-800">{c.lifestyle.safetyScore}/100</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => toggleCompareCountry(c.id)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-teal-700 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add {c.name}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
