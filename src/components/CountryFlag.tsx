@@ -45,6 +45,13 @@ const COMMON_COUNTRY_ALIASES: Record<string, string> = {
   'vietnam': 'VN',
   'czechia': 'CZ',
   'czech republic': 'CZ',
+  'indonesia (bali)': 'ID',
+  'tanzania (zanzibar)': 'TZ',
+  'french polynesia (tahiti)': 'PF',
+  'french polynesia': 'PF',
+  'turks and caicos islands': 'TC',
+  'turks and caicos': 'TC',
+  'st. kitts and nevis': 'KN',
 };
 
 // Size presets for standard usage

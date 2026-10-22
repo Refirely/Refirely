@@ -98,6 +98,16 @@ export const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   vanuatu: [168.3273, -17.7333],
   maldives: [73.5093, 4.1755],
   'turks-and-caicos': [-72.1859, 21.7922],
+  dominica: [-61.3710, 15.4150],
+  oman: [58.4059, 23.5880],
+  'cape-verde': [-23.6052, 15.1201],
+  luxembourg: [6.1296, 49.6116],
+  canada: [-123.3656, 48.4284],
+  jordan: [35.9106, 31.9539],
+  kenya: [36.8219, -1.2921],
+  tanzania: [39.2083, -6.1659],
+  'french-polynesia': [-149.5665, -17.5516],
+  finland: [24.9384, 60.1699],
 };
 
 // Numeric ISO IDs in 110m world atlas
@@ -192,6 +202,16 @@ const COUNTRY_ISO_MAP: Record<string, string> = {
   '548': 'vanuatu',
   '462': 'maldives',
   '796': 'turks-and-caicos',
+  '212': 'dominica',
+  '512': 'oman',
+  '132': 'cape-verde',
+  '442': 'luxembourg',
+  '124': 'canada',
+  '400': 'jordan',
+  '404': 'kenya',
+  '834': 'tanzania',
+  '258': 'french-polynesia',
+  '246': 'finland',
 };
 
 export const WorldHavenMap: React.FC = () => {

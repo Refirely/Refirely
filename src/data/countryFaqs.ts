@@ -465,7 +465,9 @@ export function getFaqsForCountry(country: Country): PreRetirementFaqItem[] {
     'mauritius', 'georgia', 'singapore', 'bahamas', 'el-salvador',
     'sri-lanka', 'cambodia', 'laos', 'united-arab-emirates', 'south-africa',
     'fiji', 'st-kitts-and-nevis', 'cayman-islands', 'saint-lucia',
-    'grenada', 'antigua-and-barbuda', 'bermuda', 'seychelles'
+    'grenada', 'antigua-and-barbuda', 'bermuda', 'seychelles',
+    'monaco', 'vanuatu', 'maldives', 'turks-and-caicos',
+    'dominica', 'oman', 'cape-verde', 'jordan', 'kenya', 'tanzania', 'french-polynesia'
   ].includes(country.id);
   const isEurope = country.region === 'Europe';
   const isAsia = country.region === 'Southeast Asia';
