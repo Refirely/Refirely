@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { CountryCard } from './CountryCard';
+import { CountryThumbnail } from './CountryThumbnail';
+import { CountryFlag } from './CountryFlag';
 import { WorldHavenMap } from './WorldHavenMap';
+import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import {
   Search, SlidersHorizontal, Compass, RotateCcw,
-  Sun, Shield, DollarSign, HeartHandshake, Scale, ArrowRight, Map, LayoutGrid, X
+  Sun, Shield, DollarSign, HeartHandshake, Scale, ArrowRight, Map, LayoutGrid, X,
+  Sparkles, ShieldCheck, Plane, ChevronRight, Heart
 } from 'lucide-react';
 
 export const DirectoryExplorer: React.FC = () => {
@@ -30,9 +34,22 @@ export const DirectoryExplorer: React.FC = () => {
     setDiscreetLifestyleEnabled,
     comparedCountryIds,
     setCurrentView,
+    navigateToCountry,
+    isCountrySaved,
+    toggleSaveCountry,
   } = useApp();
 
   const [showMap, setShowMap] = useState(false);
+  const spotlightHavenIds = ['portugal', 'spain', 'costa-rica', 'thailand', 'panama', 'greece'];
+  const [spotlightCountryId, setSpotlightCountryId] = useState<string>('portugal');
+
+  const spotlightCountry = useMemo(() => {
+    return countries.find(c => c.id === spotlightCountryId) || countries[0];
+  }, [countries, spotlightCountryId]);
+
+  const spotlightTravelScore = useMemo(() => {
+    return spotlightCountry ? getCountryTravelLeisureScore(spotlightCountry) : 90;
+  }, [spotlightCountry]);
 
   const regions = ['All', 'Europe', 'Southeast Asia', 'Americas'];
   const climates = ['All', 'Mediterranean', 'Tropical', 'Subtropical', 'Temperate', 'Highlands / Mild'];
@@ -56,77 +73,214 @@ export const DirectoryExplorer: React.FC = () => {
         <div className="absolute top-0 right-0 w-80 h-80 bg-purple-200/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl">
-            {/* Clean unboxed editorial kicker */}
-            <div className="text-xs font-bold text-orange-700 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-orange-600" />
-              <span>Factual Global Relocation Intelligence</span>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-              Choose the Right Country to Retire with{' '}
-              <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 bg-clip-text text-transparent">
-                Confidence
-              </span>
-              .
-            </h1>
-            
-            <p className="text-sm sm:text-base text-slate-600 mt-3 leading-relaxed max-w-2xl">
-              Compare visa rules, actual living costs, climate data, healthcare standards, dating dynamics, and connect directly with fellow retirees already living abroad.
-            </p>
+            {/* Left Column (7 cols): Editorial Title, Search & Quick Filters */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Clean unboxed editorial kicker */}
+              <div className="text-xs font-bold text-orange-700 uppercase tracking-widest flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-orange-600" />
+                <span>Factual Global Relocation Intelligence</span>
+              </div>
+              
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                Choose the Right Country to Retire with{' '}
+                <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 bg-clip-text text-transparent">
+                  Confidence
+                </span>
+                .
+              </h1>
+              
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
+                Compare visa rules, actual living costs, climate data, healthcare standards, dating dynamics, and connect directly with fellow retirees already living abroad.
+              </p>
 
-            {/* Quick Filter Search Box inside Hero */}
-            <div className="mt-7 flex flex-col sm:flex-row items-stretch gap-2.5 max-w-2xl">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                <input
-                  type="text"
-                  aria-label="Search countries by name, climate type, or visa policy keywords"
-                  placeholder="Search by country, climate (e.g. Mediterranean), or visa keyword (e.g. D7, Pensionado, 0% tax)..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-9 py-3 bg-white text-slate-900 placeholder:text-slate-400 text-xs sm:text-sm rounded-xl border border-orange-200/90 shadow-2xs focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                {searchQuery && (
+              {/* Quick Filter Search Box inside Hero */}
+              <div className="pt-1 flex flex-col sm:flex-row items-stretch gap-2.5 max-w-xl">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    aria-label="Search countries by name, climate type, or visa policy keywords"
+                    placeholder="Search by country, climate (e.g. Mediterranean), or visa keyword (e.g. D7, Pensionado, 0% tax)..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-9 py-3 bg-white text-slate-900 placeholder:text-slate-400 text-xs sm:text-sm rounded-xl border border-orange-200/90 shadow-2xs focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
+                      title="Clear search query"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {comparedCountryIds.length >= 2 && (
                   <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
-                    title="Clear search query"
-                    aria-label="Clear search"
+                    onClick={() => setCurrentView('compare')}
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white font-bold text-xs sm:text-sm hover:from-orange-700 hover:to-orange-800 transition-all flex items-center justify-center gap-2 shrink-0 shadow-xs"
                   >
-                    <X className="w-4 h-4" />
+                    <Scale className="w-4 h-4" />
+                    <span>Compare ({comparedCountryIds.length})</span>
                   </button>
                 )}
               </div>
 
-              {comparedCountryIds.length >= 2 && (
-                <button
-                  onClick={() => setCurrentView('compare')}
-                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white font-bold text-xs sm:text-sm hover:from-orange-700 hover:to-orange-800 transition-all flex items-center justify-center gap-2 shrink-0 shadow-xs"
-                >
-                  <Scale className="w-4 h-4" />
-                  <span>Compare ({comparedCountryIds.length})</span>
-                </button>
-              )}
+              {/* Interactive Quick-Filter Keyword Buttons in Curated Saffron & Pastel Hues */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs pt-1">
+                <span className="text-slate-500 font-medium mr-1 text-[11px]">Popular:</span>
+                {quickSearchKeywords.map(kw => (
+                  <button
+                    key={kw.label}
+                    onClick={() => setSearchQuery(searchQuery === kw.label ? '' : kw.label)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap shrink-0 border ${
+                      searchQuery.toLowerCase() === kw.label.toLowerCase()
+                        ? 'bg-orange-600 text-white border-orange-600 shadow-2xs'
+                        : kw.color
+                    }`}
+                  >
+                    {kw.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Empirical Platform Highlights */}
+              <div className="pt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>100 Global Havens Scored</span>
+                </span>
+                <span aria-hidden="true" className="text-slate-300">·</span>
+                <span>28 Empirical Living Factors</span>
+                <span aria-hidden="true" className="text-slate-300">·</span>
+                <span>Vetted Visa Pathways</span>
+              </div>
             </div>
 
-            {/* Interactive Quick-Filter Keyword Buttons in Curated Saffron & Pastel Hues */}
-            <div className="mt-3.5 flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="text-slate-500 font-medium mr-1 text-[11px]">Popular searches:</span>
-              {quickSearchKeywords.map(kw => (
-                <button
-                  key={kw.label}
-                  onClick={() => setSearchQuery(searchQuery === kw.label ? '' : kw.label)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap shrink-0 border ${
-                    searchQuery.toLowerCase() === kw.label.toLowerCase()
-                      ? 'bg-orange-600 text-white border-orange-600 shadow-2xs'
-                      : kw.color
-                  }`}
+            {/* Right Column (5 cols): Spotlight Haven Showcase Card with Stock Photography */}
+            <div className="lg:col-span-5">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-orange-200/90 p-4 shadow-lg shadow-orange-950/5 space-y-3.5">
+                
+                {/* Spotlight Header & Haven Switcher */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-orange-700 uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+                    <span>Haven Spotlight</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium">Select a haven:</span>
+                </div>
+
+                {/* Quick Haven Selector Buttons */}
+                <div className="flex flex-wrap gap-1.5">
+                  {spotlightHavenIds.map(id => {
+                    const countryItem = countries.find(c => c.id === id);
+                    if (!countryItem) return null;
+                    const isSelected = countryItem.id === spotlightCountry.id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setSpotlightCountryId(id)}
+                        className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-2xs scale-[1.02]'
+                            : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <CountryFlag countryName={countryItem.name} countryCode={countryItem.code} fallbackEmoji={countryItem.flag} className="w-3.5 h-3.5 rounded-xs" />
+                        <span>{countryItem.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Stock-Free Photographic Showcase Window */}
+                <div
+                  onClick={() => navigateToCountry(spotlightCountry.id)}
+                  className="h-48 sm:h-52 relative rounded-xl overflow-hidden shadow-2xs group cursor-pointer border border-slate-200/60"
+                  title={`View ${spotlightCountry.name} Dossier`}
                 >
-                  {kw.label}
+                  <CountryThumbnail country={spotlightCountry} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  
+                  {/* Floating Top Badges */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                    <div className="bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-white shadow-xs">
+                      <CountryFlag countryName={spotlightCountry.name} countryCode={spotlightCountry.code} fallbackEmoji={spotlightCountry.flag} className="w-4 h-4 rounded-xs shadow" />
+                      <span className="font-extrabold text-xs text-white drop-shadow">
+                        {spotlightCountry.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-2.5 right-2.5">
+                    <div className="bg-slate-950/80 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-xs">
+                      <Sun className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{spotlightCountry.climate.annualSunnyDays} Sunny Days</span>
+                    </div>
+                  </div>
+
+                  {/* Floating Bottom Info Gradient */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 flex items-end justify-between gap-2">
+                    <div className="text-left">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-orange-400 block">
+                        {spotlightCountry.climate.category} · {spotlightCountry.region}
+                      </span>
+                      <p className="text-[11px] text-slate-200 line-clamp-1 max-w-[210px]">
+                        {spotlightCountry.tagline}
+                      </p>
+                    </div>
+                    <span className="px-2 py-1 rounded-md bg-orange-500 text-white font-extrabold text-xs shadow-xs shrink-0">
+                      ${spotlightCountry.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4 Mini Empirical Stats */}
+                <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                  <div className="p-1.5 rounded-lg bg-orange-50/70 border border-orange-100/80">
+                    <span className="text-[10px] text-slate-500 block">Leisure</span>
+                    <span className="font-extrabold text-orange-600 text-xs flex items-center justify-center gap-0.5">
+                      <Plane className="w-2.5 h-2.5 text-orange-500" />
+                      <span>{spotlightTravelScore}</span>
+                    </span>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-emerald-50/70 border border-emerald-100/80">
+                    <span className="text-[10px] text-slate-500 block">Health</span>
+                    <span className="font-extrabold text-emerald-700 text-xs flex items-center justify-center gap-0.5">
+                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" />
+                      <span>{spotlightCountry.lifestyle.healthcareScore}</span>
+                    </span>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-blue-50/70 border border-blue-100/80">
+                    <span className="text-[10px] text-slate-500 block">Safety</span>
+                    <span className="font-extrabold text-blue-700 text-xs flex items-center justify-center gap-0.5">
+                      <Shield className="w-2.5 h-2.5 text-blue-600" />
+                      <span>{spotlightCountry.lifestyle.safetyScore}</span>
+                    </span>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200/80">
+                    <span className="text-[10px] text-slate-500 block">Visa Min</span>
+                    <span className="font-extrabold text-slate-800 text-xs">
+                      {spotlightCountry.visa.minimumIncomeUSD > 0 ? `$${spotlightCountry.visa.minimumIncomeUSD}` : 'Pass'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dossier Link Action */}
+                <button
+                  onClick={() => navigateToCountry(spotlightCountry.id)}
+                  className="w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer group"
+                >
+                  <span>Explore {spotlightCountry.name} Dossier</span>
+                  <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
-              ))}
+
+              </div>
             </div>
+
           </div>
         </div>
       </section>
