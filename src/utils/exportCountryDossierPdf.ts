@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
+import { getCountryTravelMobility } from '../data/countryTravelMobility';
 
 export interface DossierExportOptions {
   includeExecutiveSummary: boolean;
@@ -17,6 +18,7 @@ export interface DossierExportOptions {
   includeVisaAndLegal: boolean;
   includeShortTermVisas: boolean;
   includeCostAndBudget: boolean;
+  includeTravelAndMobility: boolean;
   includeClimateAndTowns: boolean;
   includeDemographicsAndLifestyle: boolean;
   includeDiscreetNightlife: boolean;
@@ -731,6 +733,88 @@ export function generateCountryDossierPdf(ctx: DossierExportContext): void {
         0: { fontStyle: 'bold' },
       },
       bodyStyles: { fontSize: 8 },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 4;
+  }
+
+  // =========================================================================
+  // SECTION: TRAVEL, FAMOUS RETIREMENT ACTIVITIES & DOMESTIC MOBILITY
+  // =========================================================================
+  if (options.includeTravelAndMobility) {
+    const mobility = getCountryTravelMobility(country);
+    drawSectionHeader(
+      String(sectionCounter++),
+      'Travel, Leisure Pursuits & Domestic Mobility',
+      `What retirees do in ${country.name}, transit networks, and mobility profiles for couples and solo travelers`
+    );
+
+    // Activities Table
+    const activitiesBody = mobility.retireeActivities.map(act => [
+      sanitizePdfText(act.title),
+      sanitizePdfText(act.category),
+      sanitizePdfText(act.intensity),
+      sanitizePdfText(act.popularLocations),
+      sanitizePdfText(act.description),
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin, right: margin },
+      head: [['Leisure Activity', 'Category', 'Intensity', 'Top Locations', 'Overview & Why Retirees Love It']],
+      body: activitiesBody,
+      theme: 'striped',
+      headStyles: { fillColor: SAFFRON, textColor: [255, 255, 255], fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 38, fontStyle: 'bold' },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 26 },
+        3: { cellWidth: 32 },
+        4: { cellWidth: contentWidth - 124 },
+      },
+      bodyStyles: { fontSize: 7.5 },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 4;
+
+    // Mobility & Safety Profiles Table (Couples vs Solo vs Solo Female)
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin, right: margin },
+      head: [['Travel Profile', 'Safety Score & Verdict', 'Domestic Ease', 'Excitement', 'Key Advice & Practical Insights']],
+      body: [
+        [
+          'Couples Travel',
+          `${mobility.couples.safetyRating}/100 - ${mobility.couples.safetyVerdict}`,
+          mobility.couples.easeOfMovement,
+          mobility.couples.excitementLevel,
+          sanitizePdfText(mobility.couples.summary),
+        ],
+        [
+          'Solo Traveler',
+          `${mobility.solo.safetyRating}/100 - ${mobility.solo.safetyVerdict}`,
+          mobility.solo.easeOfMovement,
+          mobility.solo.excitementLevel,
+          sanitizePdfText(mobility.solo.summary),
+        ],
+        [
+          'Solo Female Traveler',
+          `${mobility.soloFemale.femaleSafetyScore}/100 (${mobility.soloFemale.streetHarassmentLevel})`,
+          mobility.soloFemale.easeOfMovement,
+          mobility.soloFemale.excitementLevel,
+          sanitizePdfText(mobility.soloFemale.summary),
+        ],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 34, fontStyle: 'bold' },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 26 },
+        4: { cellWidth: contentWidth - 130 },
+      },
+      bodyStyles: { fontSize: 7.5 },
     });
 
     currentY = (doc as any).lastAutoTable.finalY + 4;

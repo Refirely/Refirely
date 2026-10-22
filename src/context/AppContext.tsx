@@ -2,9 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Country, UserProfile, CommunityThread, ExpatMeetup, DirectMessageThread, 
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
-  UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio 
+  UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType 
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
+import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST } from '../data/community';
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
@@ -124,8 +125,8 @@ interface AppContextType {
   setVisaIncomeMax: (income: number) => void;
   discreetLifestyleEnabled: boolean;
   setDiscreetLifestyleEnabled: (enabled: boolean) => void;
-  sortBy: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc';
-  setSortBy: (sort: 'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc') => void;
+  sortBy: SortByType;
+  setSortBy: (sort: SortByType) => void;
   resetFilters: () => void;
   filteredCountries: Country[];
 
@@ -354,7 +355,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [visaDifficultyMax, setVisaDifficultyMax] = useState(5);
   const [visaIncomeMax, setVisaIncomeMax] = useState(3500);
   const [discreetLifestyleEnabled, setDiscreetLifestyleEnabled] = useState(false);
-  const [sortBy, setSortBy] = useState<'recommended' | 'budget-asc' | 'healthcare-desc' | 'sunny-desc' | 'safety-desc' | 'visa-difficulty-asc' | 'visa-income-asc' | 'female-ratio-desc' | 'dating-nightlife-desc'>('recommended');
+  const [sortBy, setSortBy] = useState<SortByType>('recommended');
 
   // Compared countries
   const [comparedCountryIds, setComparedCountryIds] = useState<string[]>(['portugal', 'spain']);
@@ -2254,6 +2255,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (sortBy === 'healthcare-desc') {
       return b.lifestyle.healthcareScore - a.lifestyle.healthcareScore;
+    }
+    if (sortBy === 'travel-leisure-desc') {
+      const scoreA = getCountryTravelLeisureScore(a);
+      const scoreB = getCountryTravelLeisureScore(b);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      // Tie-breaker: safety score + walkability
+      return (b.lifestyle.safetyScore + b.lifestyle.walkabilityScore) - (a.lifestyle.safetyScore + a.lifestyle.walkabilityScore);
     }
     if (sortBy === 'sunny-desc') {
       return b.climate.annualSunnyDays - a.climate.annualSunnyDays;

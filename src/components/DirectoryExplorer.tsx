@@ -194,6 +194,7 @@ export const DirectoryExplorer: React.FC = () => {
                   <option value="recommended">Curated Haven Match</option>
                   <option value="budget-asc">Lowest Cost of Living</option>
                   <option value="healthcare-desc">Highest Healthcare Index</option>
+                  <option value="travel-leisure-desc">Top Travel & Leisure (Mobility & Activities)</option>
                   <option value="sunny-desc">Most Sunny Days</option>
                   <option value="safety-desc">Highest Safety Score</option>
                   <option value="visa-difficulty-asc">Easiest Visa Process (Tier 1-2)</option>

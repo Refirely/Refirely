@@ -6,6 +6,7 @@ import { VisaRequirementsTable } from './VisaRequirementsTable';
 import { ShortTermVisaOptions } from './ShortTermVisaOptions';
 import { AnnualRetirementBudgetCalculator } from './AnnualRetirementBudgetCalculator';
 import { CountryFaqHurdles } from './CountryFaqHurdles';
+import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import {
@@ -38,7 +39,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   } = useApp();
 
   // Active section tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'cost' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'cost' | 'travel' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const saved = isCountrySaved(country.id);
@@ -212,19 +213,20 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
           {/* Section Navigation Tabs (Segmented controls) */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-8 pb-1 border-t border-orange-100/80 mt-8 text-xs font-medium">
             {[
-              { id: 'overview', label: 'Overview & Highlights' },
-              { id: 'visa', label: 'Visa & Residency Rules' },
-              { id: 'cost', label: 'Annual Retirement Budget Calculator' },
-              { id: 'faq', label: 'Relocation & Hurdles FAQ' },
-              { id: 'climate', label: 'Climate & Weather' },
-              { id: 'lifestyle', label: 'Demographics, Dating & Nightlife' },
-              { id: 'cities', label: 'Top Expat Towns' },
-              { id: 'community', label: `Community & Connect (${countryThreads.length + countryMeetups.length})` },
+              { id: 'overview', label: 'Overview' },
+              { id: 'visa', label: 'Visas & Rules' },
+              { id: 'cost', label: 'Budget Calc' },
+              { id: 'travel', label: 'Travel & Leisure' },
+              { id: 'faq', label: 'FAQ & Hurdles' },
+              { id: 'climate', label: 'Climate' },
+              { id: 'lifestyle', label: 'Lifestyle & Dating' },
+              { id: 'cities', label: 'Top Towns' },
+              { id: 'community', label: `Community (${countryThreads.length + countryMeetups.length})` },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`px-4 py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-semibold shadow-2xs ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-semibold shadow-2xs ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-bold shadow-xs'
                     : 'bg-white text-slate-700 hover:text-orange-950 hover:bg-orange-50 border border-slate-200/90'
@@ -479,7 +481,12 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
           </div>
         )}
 
-        {/* TAB 4: PRE-RETIREMENT FAQS & RELOCATION HURDLES */}
+        {/* TAB 4: TRAVEL, FAMOUS RETIREMENT ACTIVITIES & DOMESTIC MOBILITY */}
+        {activeTab === 'travel' && (
+          <CountryTravelAndMobility country={country} />
+        )}
+
+        {/* TAB 5: PRE-RETIREMENT FAQS & RELOCATION HURDLES */}
         {activeTab === 'faq' && (
           <div className="space-y-8">
             <CountryFaqHurdles country={country} />

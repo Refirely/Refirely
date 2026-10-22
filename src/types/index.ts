@@ -2,6 +2,18 @@ export type Region = 'Europe' | 'Southeast Asia' | 'Americas';
 
 export type ClimateCategory = 'Mediterranean' | 'Tropical' | 'Subtropical' | 'Temperate' | 'Highlands / Mild';
 
+export type SortByType =
+  | 'recommended'
+  | 'budget-asc'
+  | 'healthcare-desc'
+  | 'travel-leisure-desc'
+  | 'sunny-desc'
+  | 'safety-desc'
+  | 'visa-difficulty-asc'
+  | 'visa-income-asc'
+  | 'female-ratio-desc'
+  | 'dating-nightlife-desc';
+
 export interface TopCity {
   name: string;
   vibe: string;
@@ -346,4 +358,71 @@ export interface RelocationChecklistTask {
   title: string;
   description: string;
   completed: boolean;
+}
+
+// ==========================================
+// Travel, Activities & Domestic Mobility
+// ==========================================
+
+export interface RetireeActivity {
+  id: string;
+  title: string;
+  category: 'Outdoor & Nature' | 'Culture & Arts' | 'Social & Clubs' | 'Food, Wine & Culinary' | 'Wellness & Fitness' | 'Volunteering & Learning';
+  description: string;
+  popularLocations: string;
+  intensity: 'Gentle & Relaxed' | 'Moderate Activity' | 'Active Exploration';
+  whyRetireesLoveIt: string;
+}
+
+export interface TravelMobilityProfile {
+  safetyRating: number; // 0 - 100
+  safetyVerdict: 'Exceptionally Safe' | 'Very Safe' | 'Moderately Safe - Standard Awareness' | 'Caution Required';
+  easeOfMovement: 'Effortless / Excellent Transit' | 'Convenient & Accessible' | 'Moderate / Regional Nuances' | 'Adventurous / Requires Planning';
+  excitementLevel: 'World-Class Scenic Variety' | 'High Cultural Immersion' | 'Charming & Scenic' | 'Peaceful & Low-Key';
+  summary: string;
+  recommendedDestinations: string[];
+  transportOptions: string[];
+  safetyAdvice: string[];
+}
+
+export interface CoupleTravelProfile extends TravelMobilityProfile {
+  romanticEscapes: string[];
+  scenicRoadTrips: string[];
+  coupleFriendlyVibe: string;
+}
+
+export interface SoloTravelerProfile extends TravelMobilityProfile {
+  socialEaseRating: number; // 0 - 100
+  solitaryDiningAndCafeCulture: string;
+  meetingOtherRetirees: string;
+  solitaryNavigationTips: string[];
+}
+
+export interface SoloFemaleTravelerProfile extends TravelMobilityProfile {
+  femaleSafetyScore: number; // 0 - 100
+  streetHarassmentLevel: 'Virtually Non-Existent' | 'Very Rare / Respectful Culture' | 'Occasional Catcalling in Tourist Hubs' | 'Moderate / Heightened Vigilance Needed';
+  culturalDressAndEtiquette: string;
+  nighttimeTransitAdvice: string;
+  recommendedPrecautions: string[];
+  femaleExpatCommunities: string;
+}
+
+export interface DomesticTransitSystem {
+  publicTransitScore: number; // 0 - 100
+  trainNetwork: string;
+  intercityBuses: string;
+  carRentalAndRoads: string;
+  rideHailingAndTaxis: string[];
+  domesticAirAndFerries: string;
+}
+
+export interface CountryTravelMobility {
+  countryId: string;
+  countryName: string;
+  activitiesHeadline: string;
+  retireeActivities: RetireeActivity[];
+  domesticTransit: DomesticTransitSystem;
+  couples: CoupleTravelProfile;
+  solo: SoloTravelerProfile;
+  soloFemale: SoloFemaleTravelerProfile;
 }

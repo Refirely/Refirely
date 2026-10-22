@@ -61,6 +61,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
     includeVisaAndLegal: true,
     includeShortTermVisas: true,
     includeCostAndBudget: true,
+    includeTravelAndMobility: true,
     includeClimateAndTowns: true,
     includeDemographicsAndLifestyle: true,
     includeDiscreetNightlife: discreetLifestyleEnabled,
@@ -89,6 +90,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
       includeVisaAndLegal: true,
       includeShortTermVisas: true,
       includeCostAndBudget: true,
+      includeTravelAndMobility: true,
       includeClimateAndTowns: true,
       includeDemographicsAndLifestyle: true,
       includeDiscreetNightlife: true,
@@ -205,7 +207,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 onClick={selectAllOptions}
                 className="text-[11px] font-semibold text-orange-700 hover:text-orange-900 hover:underline"
               >
-                Select All 10 Sections
+                Select All 11 Sections
               </button>
             </div>
 
@@ -237,28 +239,33 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   desc: 'Single/couple itemized expenses & Lean/Standard/Luxury tiers.',
                 },
                 {
+                  key: 'includeTravelAndMobility' as const,
+                  label: '6. Travel, Activities & Domestic Mobility',
+                  desc: 'Retiree pursuits, transit ease, couples, solo & solo female safety.',
+                },
+                {
                   key: 'includeClimateAndTowns' as const,
-                  label: `6. Healthcare, Climate & Top Towns (${country.topCities.length})`,
+                  label: `7. Healthcare, Climate & Top Towns (${country.topCities.length})`,
                   desc: 'Medical access, seasonal weather, and top expat hubs.',
                 },
                 {
                   key: 'includeDemographicsAndLifestyle' as const,
-                  label: '7. Demographics & Social Culture',
+                  label: '8. Demographics & Social Culture',
                   desc: 'Median age, F:M gender ratio, and dating culture dynamics.',
                 },
                 {
                   key: 'includeDiscreetNightlife' as const,
-                  label: '8. Nightlife & Adult Entertainment',
+                  label: '9. Nightlife & Adult Entertainment',
                   desc: 'Optional discreet entertainment districts, scores & safety.',
                 },
                 {
                   key: 'includeRelocationFaqs' as const,
-                  label: `9. Relocation Hurdles & FAQs (${faqs.length})`,
+                  label: `10. Relocation Hurdles & FAQs (${faqs.length})`,
                   desc: 'Banking, NIF/tax IDs, 183-day rules, Medicare & leases.',
                 },
                 {
                   key: 'includeCommunityAndMeetups' as const,
-                  label: `10. Expat Contacts, Meetups & Forum`,
+                  label: `11. Expat Contacts, Meetups & Forum`,
                   desc: `${meetups.length} meetups, ${threads.length} discussions, and local mentors.`,
                 },
               ].map(item => {

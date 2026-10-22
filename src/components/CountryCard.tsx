@@ -4,7 +4,8 @@ import { useApp } from '../context/AppContext';
 import { CountryThumbnail } from './CountryThumbnail';
 import { CountryFlag } from './CountryFlag';
 import { generateCountryDossierPdf } from '../utils/exportCountryDossierPdf';
-import { Sun, Heart, ShieldCheck, ArrowRight, Check, Download } from 'lucide-react';
+import { getCountryTravelLeisureScore, getCountryTravelMobility } from '../data/countryTravelMobility';
+import { Sun, Heart, ShieldCheck, ArrowRight, Check, Download, Compass } from 'lucide-react';
 
 interface CountryCardProps {
   country: Country;
@@ -28,6 +29,8 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
 
   const saved = isCountrySaved(country.id);
   const compared = isCountryCompared(country.id);
+  const travelLeisureScore = getCountryTravelLeisureScore(country);
+  const mobility = getCountryTravelMobility(country);
 
   const handleQuickExportPdf = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,6 +47,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
         includeVisaAndLegal: true,
         includeShortTermVisas: true,
         includeCostAndBudget: true,
+        includeTravelAndMobility: true,
         includeClimateAndTowns: true,
         includeDemographicsAndLifestyle: true,
         includeDiscreetNightlife: discreetLifestyleEnabled,
@@ -191,7 +195,46 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
                 </span>
               </span>
             </div>
+
+            {/* Travel & Leisure Mobility Index */}
+            <div className="pt-1.5 flex items-center justify-between text-xs">
+              <span className={`font-medium ${sortBy === 'travel-leisure-desc' ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
+                Travel & Leisure
+              </span>
+              <span className="font-mono tabular-nums text-slate-800 font-semibold flex items-center gap-1">
+                <Compass className={`w-3.5 h-3.5 ${sortBy === 'travel-leisure-desc' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                <span>{travelLeisureScore}/100</span>
+                <span className={`text-[11px] font-medium ml-1.5 ${sortBy === 'travel-leisure-desc' ? 'text-emerald-700' : 'text-slate-400'}`}>
+                  (Transit {mobility.domesticTransit.publicTransitScore} · Solo ♀ {mobility.soloFemale.femaleSafetyScore})
+                </span>
+              </span>
+            </div>
           </div>
+
+          {/* Contextual Travel & Leisure Spotlight when sorted by Travel & Leisure */}
+          {sortBy === 'travel-leisure-desc' && (
+            <div className="mt-3 pt-2.5 border-t border-emerald-100 flex flex-col gap-1.5 text-xs bg-emerald-50/70 -mx-5 px-5 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Travel & Leisure Spotlight</span>
+                </span>
+                <span className="font-mono tabular-nums font-bold text-emerald-800 bg-white/80 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
+                  {mobility.couples.safetyVerdict}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-700 line-clamp-1 italic font-medium">
+                "{mobility.activitiesHeadline}"
+              </p>
+              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-emerald-200/50">
+                <span>Couples Safe: {mobility.couples.safetyRating}/100</span>
+                <span>•</span>
+                <span>Solo Safe: {mobility.solo.safetyRating}/100</span>
+                <span>•</span>
+                <span>Solo ♀: {mobility.soloFemale.femaleSafetyScore}/100</span>
+              </div>
+            </div>
+          )}
 
           {/* Optional Discreet Lifestyle & Nightlife summary */}
           {(discreetLifestyleEnabled || sortBy === 'dating-nightlife-desc') && (
