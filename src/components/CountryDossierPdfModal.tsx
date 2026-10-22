@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Country,
   CommunityThread,
@@ -11,6 +11,7 @@ import {
   generateCountryDossierPdf,
   getStructuredVisaRows,
   getShortTermVisasForCountry,
+  preloadDossierBrandAssets,
 } from '../utils/exportCountryDossierPdf';
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { CountryFlag } from './CountryFlag';
@@ -72,6 +73,12 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      preloadDossierBrandAssets();
+    }
+  }, [isOpen]);
+
   const faqs = useMemo(() => getFaqsForCountry(country), [country]);
   const shortVisas = useMemo(() => getShortTermVisasForCountry(country), [country]);
   const structuredVisaRows = useMemo(() => getStructuredVisaRows(country), [country]);
@@ -99,25 +106,23 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
     });
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     setIsGenerating(true);
     setExportSuccess(false);
-    setTimeout(() => {
-      try {
-        generateCountryDossierPdf({
-          country,
-          userProfile,
-          isAuthenticated,
-          journalEntry,
-          threads,
-          meetups,
-          options,
-        });
-        setExportSuccess(true);
-      } finally {
-        setIsGenerating(false);
-      }
-    }, 120);
+    try {
+      await generateCountryDossierPdf({
+        country,
+        userProfile,
+        isAuthenticated,
+        journalEntry,
+        threads,
+        meetups,
+        options,
+      });
+      setExportSuccess(true);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleBrowserPrint = () => {
@@ -326,66 +331,112 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
           <div className="lg:col-span-8 bg-slate-200/70 p-4 sm:p-8 overflow-y-auto">
             <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg border border-slate-300 overflow-hidden text-slate-900">
               
-              {/* Top Tricolor Ribbon */}
-              <div className="h-2 w-full bg-gradient-to-r from-orange-600 via-amber-500 to-purple-700" />
+              {/* Top Tricolor Brand Ribbon matching ReFIREly Logo (Navy, Flame Orange, Palm Green) */}
+              <div className="h-2 w-full flex">
+                <div className="w-[42%] bg-[#17253b]" />
+                <div className="w-[33%] bg-orange-600" />
+                <div className="w-[25%] bg-[#5d8c3e]" />
+              </div>
 
               <div className="p-6 sm:p-10 space-y-8">
                 
-                {/* Document Cover Header */}
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-50/90 via-white to-purple-50/60 border border-orange-200/90">
-                  <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-orange-800 mb-2">
-                    <span>ReFirely Global Retirement Atlas · Official Country Dossier</span>
-                    <span className="font-mono">{new Date().toLocaleDateString()}</span>
+                {/* Page 1: Dedicated Prestige Cover Page Preview */}
+                <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-300 shadow-xs text-center space-y-5">
+                  {/* Official ReFIREly Website Logo */}
+                  <div className="flex flex-col items-center">
+                    <img
+                      src="/assets/aistudio/refirely-logo.png"
+                      alt="ReFIREly"
+                      className="h-12 sm:h-16 w-auto object-contain"
+                    />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2">
+                      Global Relocation Intelligence · FIRE Analytics · Expat Atlas
+                    </p>
+                    <div className="w-28 h-0.5 flex mt-2 rounded-full overflow-hidden">
+                      <div className="w-1/3 bg-[#17253b]" />
+                      <div className="w-1/3 bg-orange-600" />
+                      <div className="w-1/3 bg-[#5d8c3e]" />
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3.5">
-                    <CountryFlag
-                      countryCode={country.code}
-                      countryName={country.name}
-                      fallbackEmoji={country.flag}
-                      size="2xl"
-                      className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-xs shrink-0"
-                    />
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {/* Edition Pill & Country Hero Title */}
+                  <div className="space-y-2 pt-1">
+                    <span className="inline-flex items-center px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-orange-50 text-orange-700 border border-orange-200">
+                      Official Country Retirement Dossier · Page 1 Cover
+                    </span>
+
+                    <div className="flex items-center justify-center gap-3 pt-1">
+                      <CountryFlag
+                        countryCode={country.code}
+                        countryName={country.name}
+                        fallbackEmoji={country.flag}
+                        size="2xl"
+                        className="w-11 h-7.5 sm:w-13 sm:h-9 rounded-xs shrink-0 shadow-2xs"
+                      />
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17253b] tracking-tight uppercase">
                         {country.name} ({country.code})
                       </h1>
-                      <p className="text-xs font-semibold text-blue-900 mt-0.5">
-                        Region: {country.region} · Capital: {country.capital} · Currency: {country.currency} ({country.currencySymbol}) · Language: {country.language} · English: {country.lifestyle.englishProficiency}
-                      </p>
+                    </div>
+
+                    <p className="text-xs font-bold text-blue-900">
+                      Region: {country.region} · Capital: {country.capital} · Currency: {country.currency} ({country.currencySymbol}) · Language: {country.language}
+                    </p>
+
+                    <p className="text-xs sm:text-sm text-slate-600 italic max-w-xl mx-auto leading-relaxed">
+                      "{country.tagline}"
+                    </p>
+                  </div>
+
+                  {/* 4-Pillar Key Benchmark Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 border-t-2 border-t-orange-600">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Monthly Budget</span>
+                      <span className="font-mono font-extrabold text-xs sm:text-sm text-[#17253b] mt-0.5 block">
+                        ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()} / ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">Single / Couple</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 border-t-2 border-t-[#17253b]">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Primary Visa</span>
+                      <span className="font-mono font-extrabold text-xs sm:text-sm text-[#17253b] mt-0.5 block">
+                        ${country.visa.minimumIncomeUSD.toLocaleString()}/mo
+                      </span>
+                      <span className="text-[10px] text-slate-500 truncate block">{country.visa.retirementVisaName}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 border-t-2 border-t-[#5d8c3e]">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Health & Safety</span>
+                      <span className="font-mono font-extrabold text-xs sm:text-sm text-[#17253b] mt-0.5 block">
+                        {country.lifestyle.healthcareScore} / {country.lifestyle.safetyScore}
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">Clinical & Peace Index</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 border-t-2 border-t-amber-600">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block">Annual Climate</span>
+                      <span className="font-mono font-extrabold text-xs sm:text-sm text-[#17253b] mt-0.5 block">
+                        {country.climate.annualSunnyDays} Days
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">Avg. {country.climate.averageTempC}°C Year-Round</span>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-600 italic mt-3 leading-relaxed">
-                    "{country.tagline}"
-                  </p>
-
-                  {/* 8-KPI Strip */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5 pt-4 border-t border-orange-200/60">
-                    <div className="p-2.5 rounded-xl bg-white border border-orange-200/80 text-center">
-                      <span className="text-[10px] text-slate-500 block">Single Budget</span>
-                      <span className="font-mono font-extrabold text-sm text-orange-950">
-                        ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
+                  {/* Provenance & Licensing Certificate Preview */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-left flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src="/assets/aistudio/refirely-icon.png"
+                        alt=""
+                        className="w-5 h-5 object-contain shrink-0"
+                      />
+                      <span className="font-bold text-[#17253b]">
+                        Provenance & Audit Certificate:
+                      </span>
+                      <span>
+                        Prepared for {userProfile?.name || 'Valued ReFIREly Member'} · {new Date().toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white border border-orange-200/80 text-center">
-                      <span className="text-[10px] text-slate-500 block">Couple Budget</span>
-                      <span className="font-mono font-extrabold text-sm text-orange-950">
-                        ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-white border border-purple-200/80 text-center">
-                      <span className="text-[10px] text-slate-500 block">Healthcare / Safety</span>
-                      <span className="font-mono font-extrabold text-sm text-purple-950">
-                        {country.lifestyle.healthcareScore} / {country.lifestyle.safetyScore}
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-white border border-amber-200/80 text-center">
-                      <span className="text-[10px] text-slate-500 block">Annual Sunshine</span>
-                      <span className="font-mono font-extrabold text-sm text-amber-900">
-                        {country.climate.annualSunnyDays}d ({country.climate.averageTempC}°C)
-                      </span>
-                    </div>
+                    <span className="font-mono text-[10px] font-bold text-orange-800 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                      Single Individual License
+                    </span>
                   </div>
                 </div>
 

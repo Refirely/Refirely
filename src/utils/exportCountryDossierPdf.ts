@@ -200,8 +200,66 @@ export function getShortTermVisasForCountry(country: Country): ShortTermVisaOpti
   );
 }
 
-export function generateCountryDossierPdf(ctx: DossierExportContext): void {
+let cachedLogoDataUrl: string | null = null;
+let cachedIconDataUrl: string | null = null;
+let brandAssetsPromise: Promise<{ logoDataUrl: string | null; iconDataUrl: string | null }> | null = null;
+
+function loadImageAsDataUrl(url: string): Promise<string | null> {
+  return new Promise(resolve => {
+    if (typeof window === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(null);
+          return;
+        }
+        context.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+export function preloadDossierBrandAssets(): Promise<{
+  logoDataUrl: string | null;
+  iconDataUrl: string | null;
+}> {
+  if (cachedLogoDataUrl && cachedIconDataUrl) {
+    return Promise.resolve({ logoDataUrl: cachedLogoDataUrl, iconDataUrl: cachedIconDataUrl });
+  }
+  if (!brandAssetsPromise) {
+    brandAssetsPromise = Promise.all([
+      loadImageAsDataUrl('/assets/aistudio/refirely-logo.png'),
+      loadImageAsDataUrl('/assets/aistudio/refirely-icon.png'),
+    ]).then(([logo, icon]) => {
+      cachedLogoDataUrl = logo;
+      cachedIconDataUrl = icon;
+      return { logoDataUrl: logo, iconDataUrl: icon };
+    });
+  }
+  return brandAssetsPromise;
+}
+
+if (typeof window !== 'undefined') {
+  preloadDossierBrandAssets();
+}
+
+export async function generateCountryDossierPdf(ctx: DossierExportContext): Promise<void> {
   const { country, userProfile, isAuthenticated, journalEntry, threads, meetups, options } = ctx;
+  const { logoDataUrl, iconDataUrl } = await preloadDossierBrandAssets();
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -215,8 +273,10 @@ export function generateCountryDossierPdf(ctx: DossierExportContext): void {
   const contentWidth = pageWidth - margin * 2;
   let currentY = 20;
 
-  // Brand Palette
-  const SAFFRON: [number, number, number] = [234, 88, 12]; // #ea580c
+  // Brand Palette aligned with /assets/aistudio/refirely-logo.png
+  const BRAND_NAVY: [number, number, number] = [23, 37, 59]; // #17253b (Re / ly / globe / plane)
+  const SAFFRON: [number, number, number] = [234, 88, 12]; // #ea580c (FIRE / flame)
+  const PALM_GREEN: [number, number, number] = [93, 140, 62]; // #5d8c3e (Palm frond)
   const AMBER: [number, number, number] = [217, 119, 6]; // #d97706
   const PURPLE: [number, number, number] = [126, 34, 206]; // #7e22ce
   const NAVY: [number, number, number] = [15, 23, 42]; // #0f172a
@@ -224,6 +284,7 @@ export function generateCountryDossierPdf(ctx: DossierExportContext): void {
   const SLATE_900: [number, number, number] = [15, 23, 42];
   const SLATE_700: [number, number, number] = [51, 65, 85];
   const SLATE_600: [number, number, number] = [71, 85, 105];
+  const SLATE_300: [number, number, number] = [203, 213, 225];
   const SLATE_200: [number, number, number] = [226, 232, 240];
   const SLATE_100: [number, number, number] = [241, 245, 249];
   const ORANGE_LIGHT: [number, number, number] = [255, 247, 237];
@@ -323,156 +384,309 @@ export function generateCountryDossierPdf(ctx: DossierExportContext): void {
   // =========================================================================
   // PAGE 1: DEDICATED PRESTIGE COVER PAGE
   // =========================================================================
-  // Top Full-Width Brand Ribbon (Saffron, Gold, Purple)
+  const centerX = pageWidth / 2;
+
+  // Top Full-Width Brand Ribbon matching the ReFIREly Logo (Navy, Flame Orange, Palm Green)
+  doc.setFillColor(...BRAND_NAVY);
+  doc.rect(0, 0, pageWidth * 0.42, 4.5, 'F');
   doc.setFillColor(...SAFFRON);
-  doc.rect(0, 0, pageWidth * 0.45, 6, 'F');
-  doc.setFillColor(...AMBER);
-  doc.rect(pageWidth * 0.45, 0, pageWidth * 0.25, 6, 'F');
-  doc.setFillColor(...PURPLE);
-  doc.rect(pageWidth * 0.70, 0, pageWidth * 0.30, 6, 'F');
+  doc.rect(pageWidth * 0.42, 0, pageWidth * 0.33, 4.5, 'F');
+  doc.setFillColor(...PALM_GREEN);
+  doc.rect(pageWidth * 0.75, 0, pageWidth * 0.25, 4.5, 'F');
 
-  // Outer framing line
-  doc.setDrawColor(...SLATE_200);
-  doc.setLineWidth(0.8);
-  doc.rect(margin, 14, contentWidth, pageHeight - 28, 'D');
+  // Single Refined Architectural Cover Frame (No double border, generous bottom margin)
+  doc.setDrawColor(...SLATE_300);
+  doc.setLineWidth(0.45);
+  doc.roundedRect(margin, 12, contentWidth, 269, 4, 4, 'D');
 
-  // Inner decorative accent frame
-  doc.setDrawColor(...SAFFRON);
-  doc.setLineWidth(0.3);
-  doc.rect(margin + 2.5, 16.5, contentWidth - 5, pageHeight - 33, 'D');
-
-  // --- BRAND HEADER BLOCK ---
-  // ReFIREly Vector Emblem Shield
-  const emblemCenterX = pageWidth / 2;
-  const emblemY = 32;
-
-  doc.setFillColor(...SLATE_900);
-  doc.circle(emblemCenterX, emblemY, 11, 'F');
-  doc.setFillColor(...SAFFRON);
-  doc.circle(emblemCenterX, emblemY, 9, 'F');
-  doc.setFillColor(255, 255, 255);
-  // Stylized flame / compass triangle
-  doc.triangle(
-    emblemCenterX, emblemY - 6,
-    emblemCenterX - 4.5, emblemY + 4,
-    emblemCenterX + 4.5, emblemY + 4,
-    'F'
-  );
-  doc.setFillColor(...AMBER);
-  doc.circle(emblemCenterX, emblemY + 1, 2, 'F');
-
-  // Brand Name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(...SLATE_900);
-  doc.text('ReFIREly', emblemCenterX, 51, { align: 'center' });
+  // --- SECTION A: OFFICIAL WEBSITE LOGO & BRAND IDENTITY (y = 20mm to 57mm) ---
+  if (logoDataUrl) {
+    // Official /assets/aistudio/refirely-logo.png (641x240 -> 2.6708 aspect ratio)
+    const logoW = 66;
+    const logoH = 24.7;
+    doc.addImage(logoDataUrl, 'PNG', centerX - logoW / 2, 20, logoW, logoH);
+  } else {
+    // Faithful styled wordmark fallback if image asset is unavailable
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(26);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text('Re', centerX - 18, 36, { align: 'right' });
+    doc.setTextColor(...SAFFRON);
+    doc.text('FIRE', centerX - 17, 36, { align: 'left' });
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text('ly', centerX + 14, 36, { align: 'left' });
+  }
 
   // Brand Mission Subtitle
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
   doc.setTextColor(...SLATE_600);
-  doc.text('GLOBAL RELOCATION INTELLIGENCE & FIRE ANALYTICS', emblemCenterX, 57, { align: 'center' });
-
-  // Horizontal divider
-  doc.setDrawColor(...SLATE_200);
-  doc.line(margin + 20, 63, pageWidth - margin - 20, 63);
-
-  // --- REPORT TITLE BLOCK ---
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...SAFFRON);
-  doc.text('OFFICIAL RELOCATION & RETIREMENT DOSSIER', emblemCenterX, 73, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(28);
-  doc.setTextColor(...SLATE_900);
-  doc.text(sanitizePdfText(country.name.toUpperCase()), emblemCenterX, 86, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...BLUE_800);
   doc.text(
-    sanitizePdfText(`ISO: ${country.code}   |   ${country.region}   |   Capital: ${country.capital}`),
-    emblemCenterX,
-    94,
+    'GLOBAL RELOCATION INTELLIGENCE   |   FIRE ANALYTICS   |   EXPAT ATLAS',
+    centerX,
+    51,
     { align: 'center' }
   );
 
+  // Centered Tricolor Brand Divider (Navy / Flame Orange / Palm Green)
+  doc.setFillColor(...BRAND_NAVY);
+  doc.rect(centerX - 33, 54.5, 22, 0.9, 'F');
+  doc.setFillColor(...SAFFRON);
+  doc.rect(centerX - 11, 54.5, 22, 0.9, 'F');
+  doc.setFillColor(...PALM_GREEN);
+  doc.rect(centerX + 11, 54.5, 22, 0.9, 'F');
+
+  // --- SECTION B: DOSSIER BADGE & COUNTRY HERO TITLE (y = 61mm to 118mm) ---
+  doc.setFillColor(...ORANGE_LIGHT);
+  doc.setDrawColor(253, 186, 116);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(centerX - 48, 60.5, 96, 7, 3.5, 3.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(...SAFFRON);
+  doc.text('OFFICIAL COUNTRY RETIREMENT DOSSIER', centerX, 65.2, { align: 'center' });
+
+  // Country Name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(27);
+  doc.setTextColor(...BRAND_NAVY);
+  doc.text(sanitizePdfText(country.name.toUpperCase()), centerX, 78.5, { align: 'center' });
+
+  // Geopolitical Metadata Strip
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.2);
+  doc.setTextColor(...BLUE_800);
+  doc.text(
+    sanitizePdfText(
+      `ISO CODE: ${country.code.toUpperCase()}   |   REGION: ${country.region.toUpperCase()}   |   CAPITAL: ${country.capital.toUpperCase()}   |   CURRENCY: ${country.currency}`
+    ),
+    centerX,
+    86.5,
+    { align: 'center' }
+  );
+
+  // Country Tagline
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(9.5);
   doc.setTextColor(...SLATE_600);
-  const coverTaglines = doc.splitTextToSize(sanitizePdfText(`"${country.tagline}"`), contentWidth - 30);
-  doc.text(coverTaglines, emblemCenterX, 102, { align: 'center' });
+  const coverTaglines = doc
+    .splitTextToSize(sanitizePdfText(`"${country.tagline}"`), contentWidth - 28)
+    .slice(0, 2);
+  doc.text(coverTaglines, centerX, 94, { align: 'center' });
 
-  // --- EXECUTIVE SPECIFICATION SUMMARY CARD ---
-  const specCardY = 118;
-  const specCardHeight = 62;
-  doc.setFillColor(255, 252, 248);
-  doc.setDrawColor(254, 215, 170);
-  doc.roundedRect(margin + 10, specCardY, contentWidth - 20, specCardHeight, 3, 3, 'FD');
+  // Concise Executive Overview Brief (3 lines max)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.4);
+  doc.setTextColor(...SLATE_700);
+  const coverOverviewLines = doc
+    .splitTextToSize(sanitizePdfText(country.overview), contentWidth - 24)
+    .slice(0, 3);
+  doc.text(coverOverviewLines, centerX, 104.5, { align: 'center' });
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...SAFFRON);
-  doc.text('CORE BENCHMARK SPECIFICATIONS', margin + 16, specCardY + 8);
+  // --- SECTION C: 4-PILLAR KEY BENCHMARK CARDS (y = 121mm to 147mm) ---
+  const kpiCardsY = 121;
+  const kpiCardH = 25;
+  const kpiGap = 4;
+  const kpiTotalW = contentWidth - 16; // 166mm
+  const kpiCardW = (kpiTotalW - kpiGap * 3) / 4; // 38.5mm
+  const kpiStartX = margin + 8;
 
-  const specCols = [
-    [
-      `Single Monthly Budget: $${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()} USD`,
-      `Couple Monthly Budget: $${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()} USD`,
-      `Retirement Visa: ${sanitizePdfText(country.visa.retirementVisaName)}`,
-      `Min. Passive Income: $${country.visa.minimumIncomeUSD.toLocaleString()} USD/mo`,
-    ],
-    [
-      `Healthcare Score: ${country.lifestyle.healthcareScore}/100 (WHO/Intl Standard)`,
-      `Safety & Peace Index: ${country.lifestyle.safetyScore}/100`,
-      `Annual Sunshine: ${country.climate.annualSunnyDays} Sunny Days/year`,
-      `Currency: ${country.currency} (${country.currencySymbol})`,
-    ],
+  const coverKpis: Array<{
+    label: string;
+    value: string;
+    sub: string;
+    accent: [number, number, number];
+  }> = [
+    {
+      label: 'MONTHLY BUDGET',
+      value: `$${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()} / $${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}`,
+      sub: 'Single / Couple (USD)',
+      accent: SAFFRON,
+    },
+    {
+      label: 'PRIMARY VISA',
+      value: `$${country.visa.minimumIncomeUSD.toLocaleString()} / mo`,
+      sub: sanitizePdfText(country.visa.retirementVisaName).slice(0, 22),
+      accent: BRAND_NAVY,
+    },
+    {
+      label: 'HEALTH & SAFETY',
+      value: `${country.lifestyle.healthcareScore} / ${country.lifestyle.safetyScore} (of 100)`,
+      sub: 'Clinical & Peace Index',
+      accent: PALM_GREEN,
+    },
+    {
+      label: 'ANNUAL CLIMATE',
+      value: `${country.climate.annualSunnyDays} Sunny Days`,
+      sub: `Avg. ${country.climate.averageTempC} C Year-Round`,
+      accent: AMBER,
+    },
   ];
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...SLATE_700);
+  coverKpis.forEach((kpi, idx) => {
+    const cardX = kpiStartX + idx * (kpiCardW + kpiGap);
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(...SLATE_200);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(cardX, kpiCardsY, kpiCardW, kpiCardH, 2.5, 2.5, 'FD');
 
-  specCols[0].forEach((item, idx) => {
-    doc.text(sanitizePdfText(`*  ${item}`), margin + 16, specCardY + 16 + idx * 10);
-  });
-  specCols[1].forEach((item, idx) => {
-    doc.text(sanitizePdfText(`*  ${item}`), margin + (contentWidth / 2) + 2, specCardY + 16 + idx * 10);
+    // Colored top bar inside card
+    doc.setFillColor(...kpi.accent);
+    doc.rect(cardX + 0.5, kpiCardsY + 0.5, kpiCardW - 1, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...SLATE_600);
+    doc.text(kpi.label, cardX + kpiCardW / 2, kpiCardsY + 7.5, { align: 'center' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text(kpi.value, cardX + kpiCardW / 2, kpiCardsY + 14.8, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...SLATE_600);
+    doc.text(kpi.sub, cardX + kpiCardW / 2, kpiCardsY + 21, { align: 'center' });
   });
 
-  // --- DOCUMENT METADATA & AUDIT CONTROL CARD ---
-  const metaCardY = 190;
-  const metaCardHeight = 52;
-  doc.setFillColor(...SLATE_100);
-  doc.setDrawColor(...SLATE_200);
-  doc.roundedRect(margin + 10, metaCardY, contentWidth - 20, metaCardHeight, 3, 3, 'FD');
+  // --- SECTION D: SOVEREIGN & RETIREMENT SPECIFICATION MATRIX CARD (y = 152mm to 198mm) ---
+  const specCardY = 152;
+  const specCardHeight = 46;
+  doc.setFillColor(255, 252, 248);
+  doc.setDrawColor(254, 215, 170);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(kpiStartX, specCardY, kpiTotalW, specCardHeight, 3, 3, 'FD');
+
+  // Header band inside specification card
+  doc.setFillColor(...ORANGE_LIGHT);
+  doc.rect(kpiStartX + 0.5, specCardY + 0.5, kpiTotalW - 1, 8.5, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...SLATE_900);
-  doc.text('DOCUMENT PROVENANCE & AUDIT TRAIL', margin + 16, metaCardY + 8);
-
-  doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(...SLATE_600);
+  doc.setTextColor(...SAFFRON);
+  doc.text('CORE COUNTRY & RETIREMENT SPECIFICATION SUMMARY', kpiStartX + 6, specCardY + 6.2);
+
+  const singleFireTarget = country.costOfLiving.monthlyBudgetSingleUSD * 12 * 25;
+  const coupleFireTarget = country.costOfLiving.monthlyBudgetCoupleUSD * 12 * 25;
+
+  const leftSpecs: Array<[string, string]> = [
+    ['Official Language:', `${country.language} (English: ${country.lifestyle.englishProficiency})`],
+    ['Single 4% FIRE Target:', `$${singleFireTarget.toLocaleString()} USD Nest Egg`],
+    ['1-Bed City Center Rent:', `$${country.costOfLiving.rent1BedCenterUSD.toLocaleString()} USD / month`],
+    ['Expat Community Scale:', `${country.lifestyle.expatCommunitySize} Resident Network`],
+  ];
+
+  const rightSpecs: Array<[string, string]> = [
+    ['Private Health Policy:', `~$${country.costOfLiving.healthcareMonthlyUSD} USD / month`],
+    ['Couple 4% FIRE Target:', `$${coupleFireTarget.toLocaleString()} USD Nest Egg`],
+    ['1-Bed Outside Center:', `$${country.costOfLiving.rent1BedOutsideUSD.toLocaleString()} USD / month`],
+    ['Premier Expat Towns:', country.topCities.slice(0, 3).map(t => t.name).join(', ')],
+  ];
+
+  leftSpecs.forEach(([label, val], idx) => {
+    const rowY = specCardY + 16 + idx * 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.8);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text(sanitizePdfText(label), kpiStartX + 6, rowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_700);
+    doc.text(sanitizePdfText(val).slice(0, 32), kpiStartX + 41, rowY);
+  });
+
+  rightSpecs.forEach(([label, val], idx) => {
+    const rowY = specCardY + 16 + idx * 8;
+    const col2X = kpiStartX + kpiTotalW / 2 + 2;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.8);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text(sanitizePdfText(label), col2X, rowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_700);
+    doc.text(sanitizePdfText(val).slice(0, 30), col2X + 34, rowY);
+  });
+
+  // --- SECTION E: DOCUMENT PROVENANCE, DOWNLOAD AUDIT & LICENSE CARD (y = 204mm to 250mm) ---
+  const metaCardY = 204;
+  const metaCardHeight = 46;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(...SLATE_300);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(kpiStartX, metaCardY, kpiTotalW, metaCardHeight, 3, 3, 'FD');
+
+  if (iconDataUrl) {
+    doc.addImage(iconDataUrl, 'PNG', kpiStartX + 6, metaCardY + 3.2, 5.5, 5.5);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND_NAVY);
+  doc.text(
+    'DOCUMENT PROVENANCE, DOWNLOAD AUDIT & LICENSING CERTIFICATE',
+    kpiStartX + (iconDataUrl ? 13.5 : 6),
+    metaCardY + 7.2
+  );
+
+  doc.setDrawColor(...SLATE_200);
+  doc.setLineWidth(0.3);
+  doc.line(kpiStartX + 6, metaCardY + 10.5, kpiStartX + kpiTotalW - 6, metaCardY + 10.5);
 
   const recipientName = userProfile?.name || 'Valued ReFIREly Member';
-  doc.text(sanitizePdfText(`Document Control ID: ${documentControlId}`), margin + 16, metaCardY + 17);
-  doc.text(sanitizePdfText(`Date of Generation: ${dateFormatted} at ${timeFormatted}`), margin + 16, metaCardY + 24);
-  doc.text(sanitizePdfText(`Prepared Exclusively For: ${recipientName} (${userProfile?.email || 'Individual License'})`), margin + 16, metaCardY + 31);
-  doc.text(sanitizePdfText(`Licensing Status: Single Individual Relocation Planning License (Not for Resale)`), margin + 16, metaCardY + 38);
-  doc.text(sanitizePdfText(`Data Verification: Verified against Consular Guidelines, Numbeo Indices & WHO Data`), margin + 16, metaCardY + 45);
+  const leftMeta: Array<[string, string]> = [
+    ['Document Control ID:', documentControlId],
+    ['Downloaded On:', `${dateFormatted} at ${timeFormatted}`],
+    ['Prepared For:', recipientName],
+    ['Account License:', userProfile?.email || 'Individual Planning Session'],
+  ];
 
-  // Bottom Seal / Security Text
+  const rightMeta: Array<[string, string]> = [
+    ['Publication Volume:', '22-Page Master Edition (14 Chapters)'],
+    ['Issuing Authority:', 'ReFIREly Global Intelligence Unit'],
+    ['Permitted Usage:', 'Personal Non-Commercial Planning'],
+    ['Data Verification:', 'Consular Schedules, WHO & Numbeo'],
+  ];
+
+  leftMeta.forEach(([label, val], idx) => {
+    const rowY = metaCardY + 17.5 + idx * 7.8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.6);
+    doc.setTextColor(...SLATE_700);
+    doc.text(sanitizePdfText(label), kpiStartX + 6, rowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_600);
+    doc.text(sanitizePdfText(val).slice(0, 34), kpiStartX + 38, rowY);
+  });
+
+  rightMeta.forEach(([label, val], idx) => {
+    const rowY = metaCardY + 17.5 + idx * 7.8;
+    const col2X = kpiStartX + kpiTotalW / 2 + 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.6);
+    doc.setTextColor(...SLATE_700);
+    doc.text(sanitizePdfText(label), col2X, rowY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_600);
+    doc.text(sanitizePdfText(val).slice(0, 32), col2X + 31, rowY);
+  });
+
+  // --- SECTION F: CLEAN BOTTOM COLOPHON INSIDE FRAME (y = 258mm to 270mm; frame bottom is 281mm) ---
+  doc.setDrawColor(...SLATE_200);
+  doc.setLineWidth(0.3);
+  doc.line(centerX - 25, 257.5, centerX + 25, 257.5);
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(...SAFFRON);
   doc.text(
-    'CONFIDENTIAL RELOCATION INTELLIGENCE  |  PREMIUM RESEARCH EDITION',
-    emblemCenterX,
-    pageHeight - 22,
+    'CONFIDENTIAL RELOCATION INTELLIGENCE   |   PREMIUM RESEARCH EDITION',
+    centerX,
+    263.5,
     { align: 'center' }
   );
 
@@ -480,11 +694,12 @@ export function generateCountryDossierPdf(ctx: DossierExportContext): void {
   doc.setFontSize(7);
   doc.setTextColor(...SLATE_600);
   doc.text(
-    '(c) 2026 ReFIREly Global Relocation Intelligence. All rights reserved. Commercial duplication prohibited.',
-    emblemCenterX,
-    pageHeight - 17,
+    '(c) 2026 ReFIREly Global Relocation Intelligence. All rights reserved. Commercial resale or redistribution prohibited.',
+    centerX,
+    269,
     { align: 'center' }
   );
+
 
   // =========================================================================
   // PAGE 2: TABLE OF CONTENTS & DOSSIER BLUEPRINT
@@ -1753,59 +1968,83 @@ This dossier is licensed exclusively to the individual member who downloaded it 
     bodyStyles: { fontSize: 7.8, cellPadding: 2.2 },
   });
 
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Official ReFIREly Brand Sign-Off on Final Governance Page
+  if (currentY + 28 < pageHeight - 16) {
+    if (logoDataUrl) {
+      const signLogoW = 42;
+      const signLogoH = 15.7;
+      doc.addImage(logoDataUrl, 'PNG', centerX - signLogoW / 2, currentY, signLogoW, signLogoH);
+      currentY += signLogoH + 5;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text(
+      'OFFICIAL PROPRIETARY PUBLICATION OF REFIRELY GLOBAL RELOCATION INTELLIGENCE',
+      centerX,
+      currentY,
+      { align: 'center' }
+    );
+  }
+
   // =========================================================================
-  // RUNNING HEADERS & FOOTERS ACROSS ALL PAGES
+  // RUNNING HEADERS & FOOTERS (SKIPPING DEDICATED COVER PAGE 1)
   // =========================================================================
   const totalPages = doc.getNumberOfPages();
 
-  for (let p = 1; p <= totalPages; p++) {
+  for (let p = 2; p <= totalPages; p++) {
     doc.setPage(p);
 
-    // Skip running header on Cover Page (1) and Final Page (totalPages)
-    if (p > 1 && p < totalPages) {
-      // Top Tricolor Banner
-      doc.setFillColor(...SAFFRON);
-      doc.rect(0, 0, pageWidth * 0.45, 2.5, 'F');
-      doc.setFillColor(...AMBER);
-      doc.rect(pageWidth * 0.45, 0, pageWidth * 0.25, 2.5, 'F');
-      doc.setFillColor(...PURPLE);
-      doc.rect(pageWidth * 0.70, 0, pageWidth * 0.30, 2.5, 'F');
+    // Top Tricolor Brand Ribbon matching ReFIREly Logo (Navy, Flame Orange, Palm Green)
+    doc.setFillColor(...BRAND_NAVY);
+    doc.rect(0, 0, pageWidth * 0.42, 2.5, 'F');
+    doc.setFillColor(...SAFFRON);
+    doc.rect(pageWidth * 0.42, 0, pageWidth * 0.33, 2.5, 'F');
+    doc.setFillColor(...PALM_GREEN);
+    doc.rect(pageWidth * 0.75, 0, pageWidth * 0.25, 2.5, 'F');
 
-      // Top running text
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(...SLATE_600);
-      doc.text(
-        sanitizePdfText(`ReFIREly Global Relocation Atlas  |  ${country.name} Complete Dossier`),
-        margin,
-        9
-      );
-
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        sanitizePdfText(`${country.region}  |  Visa: ${country.visa.retirementVisaName}`),
-        pageWidth - margin,
-        9,
-        { align: 'right' }
-      );
-
-      doc.setDrawColor(...SLATE_200);
-      doc.setLineWidth(0.4);
-      doc.line(margin, 11.5, pageWidth - margin, 11.5);
+    // Official ReFIREly Icon in Running Header
+    if (iconDataUrl) {
+      doc.addImage(iconDataUrl, 'PNG', margin, 5.2, 4.5, 4.5);
     }
 
-    // Running Footer on every page
+    // Top running text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...BRAND_NAVY);
+    doc.text(
+      sanitizePdfText(`ReFIREly Global Relocation Atlas  |  ${country.name} Complete Dossier`),
+      margin + (iconDataUrl ? 6 : 0),
+      8.8
+    );
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_600);
+    doc.text(
+      sanitizePdfText(`${country.region}  |  Visa: ${country.visa.retirementVisaName}`),
+      pageWidth - margin,
+      8.8,
+      { align: 'right' }
+    );
+
     doc.setDrawColor(...SLATE_200);
-    doc.setLineWidth(0.4);
-    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+    doc.setLineWidth(0.35);
+    doc.line(margin, 11.5, pageWidth - margin, 11.5);
+
+    // Running Footer on Pages 2..totalPages
+    doc.setDrawColor(...SLATE_200);
+    doc.setLineWidth(0.35);
+    doc.line(margin, pageHeight - 11.5, pageWidth - margin, pageHeight - 11.5);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.2);
     doc.setTextColor(...SLATE_600);
     doc.text(
-      sanitizePdfText(`ReFIREly Global Intelligence  |  ${country.name} Master Dossier  |  Generated ${dateFormatted}`),
+      sanitizePdfText(`(c) 2026 ReFIREly Global Intelligence  |  ${country.name} Master Dossier  |  Issued ${dateFormatted}`),
       margin,
-      pageHeight - 6.5
+      pageHeight - 6.8
     );
 
     doc.setFont('helvetica', 'bold');
@@ -1813,7 +2052,7 @@ This dossier is licensed exclusively to the individual member who downloaded it 
     doc.text(
       `Page ${p} of ${totalPages}`,
       pageWidth - margin,
-      pageHeight - 6.5,
+      pageHeight - 6.8,
       { align: 'right' }
     );
   }
@@ -1821,3 +2060,4 @@ This dossier is licensed exclusively to the individual member who downloaded it 
   const safeSlug = country.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   doc.save(`ReFIREly-${safeSlug}-Master-Retirement-Dossier.pdf`);
 }
+
