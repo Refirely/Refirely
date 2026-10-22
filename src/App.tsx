@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
@@ -13,10 +13,15 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
+import { updatePageSeo } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const { currentView, selectedCountry, setCurrentView, countries, userProfile, isOwnerAdmin, toggleRole, navigateToCountry } = useApp();
+
+  useEffect(() => {
+    updatePageSeo(currentView, selectedCountry);
+  }, [currentView, selectedCountry]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-orange-100 selection:text-orange-950">
