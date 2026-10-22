@@ -144,14 +144,14 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="pdf-export-modal-title" className="text-base sm:text-lg font-extrabold text-slate-900">
-                  {country.flag} {country.name} — Complete Dossier PDF Export Studio
+                  {country.flag} {country.name} — Official 22-Page Master Dossier Studio
                 </h2>
                 <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-900 border border-orange-200">
-                  {activeSectionsCount} Sections Included
+                  22-Page Premium Publication · {activeSectionsCount} Chapters
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                Formatted multi-page vector PDF containing visa rules, cost of living, 4% FIRE budgets, FAQs, towns, and community insights.
+                Institutional-grade master dossier: Cover page, chapter blueprint, 10-point consular matrix, 4% FIRE models, travel pursuits, 12-month roadmap, and legal/copyright disclaimer.
               </p>
             </div>
           </div>
@@ -174,10 +174,10 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
               <Download className="w-4 h-4" />
               <span>
                 {isGenerating
-                  ? 'Formatting Dossier PDF...'
+                  ? 'Compiling 22-Page Dossier...'
                   : exportSuccess
-                  ? 'Downloaded PDF ✓ (Click to Re-Download)'
-                  : `Download Complete ${country.name} PDF`}
+                  ? 'Downloaded 22-Page PDF ✓ (Re-Download)'
+                  : `Download 22-Page ${country.name} Dossier PDF`}
               </span>
             </button>
 
@@ -609,7 +609,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   <section className="space-y-3">
                     <div className="border-l-4 border-blue-700 bg-blue-50/70 px-3.5 py-2 rounded-r-lg">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Section 9 · Community Discussions ({threads.length}) & Expat Meetups ({meetups.length})
+                        Section 10 · Community Discussions ({threads.length}) & Expat Meetups ({meetups.length})
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600">
@@ -617,6 +617,37 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                     </p>
                   </section>
                 )}
+
+                {/* Preview Section 11: 12-Month Master Relocation Execution Roadmap */}
+                <section className="space-y-3">
+                  <div className="border-l-4 border-emerald-600 bg-emerald-50/70 px-3.5 py-2 rounded-r-lg">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                      Section 11 · 12-Month Master Relocation Execution Roadmap (Page 21)
+                    </h3>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                    <p className="text-slate-700">
+                      Phase-by-phase chronological execution timeline from T-12 Months (Document Apostille & Financial Auditing) down to T-0 (Arrival & Tax Inscription) and Month 3 (Long-Term Lease & Community Inscription).
+                    </p>
+                  </div>
+                </section>
+
+                {/* Preview Section 12: Dedicated Legal Disclaimer & Copyright Notice */}
+                <section className="space-y-3">
+                  <div className="border-l-4 border-slate-700 bg-slate-100 px-3.5 py-2 rounded-r-lg">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                      Section 12 · Regulatory Legal Disclaimer & Copyright Notice (Page 22)
+                    </h3>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-slate-900 text-slate-200 text-xs space-y-2">
+                    <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                      Official ReFIREly Global Intelligence Notice
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      This 22-page dossier is for private informational, educational, and scouting benchmarking purposes. It is not licensed legal, immigration, or tax advice. All content is the proprietary copyright of ReFIREly. Commercial resale, republication, and unauthorized re-distribution are strictly prohibited.
+                    </p>
+                  </div>
+                </section>
 
               </div>
             </div>
