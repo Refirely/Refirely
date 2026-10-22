@@ -21,6 +21,7 @@ import {
 import { doc, getDoc, getDocFromServer, setDoc, getDocs, deleteDoc, collection } from 'firebase/firestore';
 
 export type AppView = 
+  | 'landing'
   | 'explore' 
   | 'country-detail' 
   | 'compare' 
@@ -235,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  const [currentView, setCurrentView] = useState<AppView>('explore');
+  const [currentView, setCurrentView] = useState<AppView>('landing');
   const [activeCountryId, setActiveCountryId] = useState<string>('portugal');
 
   // Helper to sanitize custom User IDs to adhere to Firestore document ID rules ^[a-zA-Z0-9_\-]+$

@@ -60,7 +60,7 @@ export const Navbar: React.FC = () => {
         
         {/* Zone 1: Single clean brand wordmark */}
         <button
-          onClick={() => handleNav('explore')}
+          onClick={() => handleNav('landing')}
           className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group shrink-0 py-1"
           aria-label="ReFIREly Home"
         >
@@ -71,8 +71,18 @@ export const Navbar: React.FC = () => {
           />
         </button>
 
-        {/* Zone 2: 4–5 single-line clean text navigation links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+        {/* Zone 2: 5 single-line clean text navigation links */}
+        <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600">
+          <button
+            onClick={() => handleNav('landing')}
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+              currentView === 'landing'
+                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                : 'hover:text-orange-600 hover:bg-slate-50'
+            }`}
+          >
+            Home
+          </button>
           <button
             onClick={() => handleNav('explore')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
@@ -81,7 +91,7 @@ export const Navbar: React.FC = () => {
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
-            Explore Countries
+            Explore Havens
           </button>
           <button
             onClick={() => handleNav('compare')}
@@ -419,12 +429,20 @@ export const Navbar: React.FC = () => {
         <div className="md:hidden px-4 pt-2 pb-6 bg-white border-b border-slate-200 shadow-xl space-y-3">
           <div className="flex flex-col space-y-1">
             <button
+              onClick={() => handleNav('landing')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'landing' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Home
+            </button>
+            <button
               onClick={() => handleNav('explore')}
               className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
                 currentView === 'explore' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Explore Countries
+              Explore Havens
             </button>
             <button
               onClick={() => handleNav('compare')}

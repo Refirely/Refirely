@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
+import { LandingPage } from './components/LandingPage';
 import { DirectoryExplorer } from './components/DirectoryExplorer';
 import { CountryDossier } from './components/CountryDossier';
 import { CompareStudio } from './components/CompareStudio';
@@ -25,6 +26,7 @@ const MainContent: React.FC = () => {
 
       {/* Main Viewport Router */}
       <div className="flex-1">
+        {currentView === 'landing' && <LandingPage />}
         {currentView === 'explore' && <DirectoryExplorer />}
         {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
         {currentView === 'compare' && <CompareStudio />}
@@ -49,7 +51,7 @@ const MainContent: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={() => {
-                  setCurrentView('explore');
+                  setCurrentView('landing');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className="inline-flex items-center focus:outline-none group"
@@ -88,12 +90,13 @@ const MainContent: React.FC = () => {
                 <span>Platform Features</span>
               </span>
               <ul className="space-y-1.5">
-                <li><button onClick={() => setCurrentView('explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory & Filters</button></li>
+                <li><button onClick={() => setCurrentView('landing')} className="hover:text-orange-600 hover:underline transition-colors">Home / Overview</button></li>
+                <li><button onClick={() => setCurrentView('explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</button></li>
                 <li><button onClick={() => setCurrentView('compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</button></li>
                 <li><button onClick={() => setCurrentView('community')} className="hover:text-orange-600 hover:underline transition-colors">Expat Community Boards</button></li>
-                <li><button onClick={() => setCurrentView('meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups & Socials</button></li>
+                <li><button onClick={() => setCurrentView('meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups &amp; Socials</button></li>
                 <li><button onClick={() => setCurrentView('messages')} className="hover:text-orange-600 hover:underline transition-colors">Direct Member Messaging</button></li>
-                <li><button onClick={() => setCurrentView('dashboard')} className="hover:text-orange-600 hover:underline transition-colors">Relocation Readiness Checklist</button></li>
+                <li><button onClick={() => setCurrentView('dashboard')} className="hover:text-orange-600 hover:underline transition-colors">FIRE Calculator &amp; Checklist</button></li>
               </ul>
             </div>
 
