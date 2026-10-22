@@ -55,8 +55,8 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shadow-2xs">
-      {/* Universal Top Bar Contract: 3 zones separated by gap-8 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      {/* Universal Top Bar Contract: 3 zones separated by responsive gap */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-6 lg:gap-8">
         
         {/* Zone 1: Single clean brand wordmark */}
         <button
@@ -67,7 +67,7 @@ export const Navbar: React.FC = () => {
           <img
             src="/assets/aistudio/refirely-logo.png"
             alt="ReFIREly"
-            className="h-10 sm:h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+            className="h-8 sm:h-11 w-auto max-w-[125px] sm:max-w-none object-contain transition-transform duration-200 group-hover:scale-[1.03]"
           />
         </button>
 
@@ -381,17 +381,17 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <button
                 onClick={() => openAuthModal('login')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Log In</span>
               </button>
               <button
                 onClick={() => openAuthModal('signup')}
-                className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all flex items-center gap-1.5 shadow-xs"
+                className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Sign Up</span>
@@ -413,13 +413,13 @@ export const Navbar: React.FC = () => {
             </button>
           )}
 
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger - styled with border and background for clear mobile visibility */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100"
-            aria-label="Toggle menu"
+            className="md:hidden p-2 rounded-xl text-slate-800 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-200/90 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-2xs"
+            aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-900" />}
           </button>
         </div>
       </div>

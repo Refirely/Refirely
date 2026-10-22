@@ -14,7 +14,6 @@ export const AuthModal: React.FC = () => {
     setAuthModalTab,
     login,
     signup,
-    registeredAccounts,
     countries,
     loginWithGoogle,
     isFirebaseSyncing,
@@ -67,11 +66,6 @@ export const AuthModal: React.FC = () => {
     } else {
       setLoginError(result.error || 'Failed to log in. Please check your User ID and password.');
     }
-  };
-
-  const handleSelectSavedId = (userId: string) => {
-    setLoginIdentifier(userId);
-    setLoginError(null);
   };
 
   const handleGoogleSignIn = async () => {
@@ -145,32 +139,33 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-8 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-md sm:max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-auto relative max-h-[92vh] flex flex-col overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-purple-600" />
 
         {/* Header with Brand & Close Button */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <img
               src="/assets/aistudio/refirely-icon.png"
               alt="ReFIREly Emblem"
-              className="w-10 h-10 object-contain shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0"
             />
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-900">
-                {authModalTab === 'login' ? 'Welcome Back to ReFIREly' : 'Create Persistent ReFIREly User ID'}
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 truncate">
+                {authModalTab === 'login' ? 'Sign In to ReFIREly' : 'Create User ID'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">
                 {authModalTab === 'login'
-                  ? 'Sign in with your User ID & password, or continue with Google'
-                  : 'Create a permanent password-protected User ID'}
+                  ? 'Sign in with your User ID, email, or Google'
+                  : 'Create a password-protected User ID'}
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsAuthModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -178,7 +173,7 @@ export const AuthModal: React.FC = () => {
 
         {/* Cloud Database Connection Status Pill (Owner / Admin Only) */}
         {isOwnerAdmin && (
-          <div className="mt-4 p-2.5 rounded-xl bg-gradient-to-r from-orange-50/80 via-purple-50/50 to-slate-50 border border-orange-200/70 flex items-center justify-between gap-2 text-[11px]">
+          <div className="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-orange-50/80 via-purple-50/50 to-slate-50 border border-orange-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <Database className="w-3.5 h-3.5 text-orange-600 shrink-0" />
               <span className="text-slate-700 truncate">
@@ -199,22 +194,22 @@ export const AuthModal: React.FC = () => {
                 setIsAuthModalOpen(false);
                 openFirebaseModal();
               }}
-              className="px-2 py-1 rounded-md bg-white border border-purple-200 text-purple-800 hover:bg-purple-50 font-bold shrink-0 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-md bg-white border border-purple-200 text-purple-800 hover:bg-purple-50 font-bold shrink-0 transition-colors cursor-pointer text-center"
             >
-              Cloud & Hosting Setup
+              Cloud &amp; Hosting Setup
             </button>
           </div>
         )}
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl my-4 text-xs font-semibold">
+        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl my-3 text-xs font-semibold shrink-0">
           <button
             type="button"
             onClick={() => {
               setAuthModalTab('login');
               setLoginError(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authModalTab === 'login'
                 ? 'bg-white text-orange-950 font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
@@ -229,7 +224,7 @@ export const AuthModal: React.FC = () => {
               setAuthModalTab('signup');
               setSignupError(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authModalTab === 'signup'
                 ? 'bg-white text-purple-950 font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
@@ -239,6 +234,9 @@ export const AuthModal: React.FC = () => {
             <span>Create User ID</span>
           </button>
         </div>
+
+        {/* Scrollable Form Body Container for Mobile Responsiveness */}
+        <div className="overflow-y-auto overscroll-contain flex-1 pr-0.5">
 
         {/* TAB 1: LOG IN */}
         {authModalTab === 'login' && (
@@ -320,58 +318,21 @@ export const AuthModal: React.FC = () => {
               </button>
             </form>
 
-            {/* Saved User IDs Selector (Fills User ID; still requires password) */}
-            <div className="pt-4 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Registered User IDs ({registeredAccounts.length}):
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-400">Click to fill User ID</span>
-              </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {registeredAccounts.map(account => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    onClick={() => handleSelectSavedId(account.id)}
-                    className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between group cursor-pointer ${
-                      loginIdentifier === account.id
-                        ? 'border-orange-500 bg-orange-50/70 ring-1 ring-orange-400'
-                        : 'border-slate-200 hover:border-orange-400 hover:bg-orange-50/40'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={account.profile.avatarUrl || AVATAR_PRESETS[0].url}
-                        alt={account.profile.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs font-bold text-slate-900 truncate">
-                            {account.profile.name}
-                          </span>
-                          <code className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 text-purple-800 border border-purple-200 font-mono font-semibold shrink-0">
-                            {account.id}
-                          </code>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-50 text-orange-800 font-medium shrink-0">
-                            → {account.profile.targetCountry}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 truncate">
-                          Select ID &amp; enter password above
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-orange-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
-                      Select ID →
-                    </span>
-                  </button>
-                ))}
-              </div>
+            {/* Switch to Sign Up */}
+            <div className="pt-3 border-t border-slate-100 text-center">
+              <p className="text-xs text-slate-500">
+                Don&apos;t have a User ID yet?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthModalTab('signup');
+                    setSignupError(null);
+                  }}
+                  className="text-orange-600 font-bold hover:underline cursor-pointer"
+                >
+                  Create one now
+                </button>
+              </p>
             </div>
           </div>
         )}
@@ -658,6 +619,7 @@ export const AuthModal: React.FC = () => {
             </form>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

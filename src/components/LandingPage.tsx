@@ -113,11 +113,11 @@ export const LandingPage: React.FC = () => {
   const fireProgressPercent = Math.min(100, Math.round((currentNetWorth / fireNestEggAbroad) * 100));
 
   // -------------------------------------------------------------
-  // 3. Curated Country Grid Preview State (24-30 items, Live Sorting, Load More)
+  // 3. Curated Country Grid Preview State (16 items initially, Live Sorting, Load More +16)
   // -------------------------------------------------------------
   const [previewSort, setPreviewSort] = useState<SortByType>('travel-leisure-desc');
   const [previewRegion, setPreviewRegion] = useState<string>('All');
-  const [visibleCount, setVisibleCount] = useState<number>(24);
+  const [visibleCount, setVisibleCount] = useState<number>(16);
 
   // Filter and sort the 100 countries reactively
   const sortedPreviewCountries = useMemo(() => {
@@ -157,7 +157,7 @@ export const LandingPage: React.FC = () => {
   const hasMoreCountries = visibleCount < sortedPreviewCountries.length;
 
   const handleLoadMore = () => {
-    setVisibleCount(prev => Math.min(sortedPreviewCountries.length, prev + 24));
+    setVisibleCount(prev => Math.min(sortedPreviewCountries.length, prev + 16));
   };
 
   const scrollToSection = (id: string) => {
@@ -251,8 +251,8 @@ export const LandingPage: React.FC = () => {
                 <div className="text-slate-400">Avg Earlier FIRE</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-blue-400">14k+</div>
-                <div className="text-slate-400">Community Expats</div>
+                <div className="text-xl sm:text-2xl font-black text-sky-400">100%</div>
+                <div className="text-slate-400">Free &amp; Ad-Free</div>
               </div>
             </div>
 
@@ -782,7 +782,7 @@ export const LandingPage: React.FC = () => {
                   key={region}
                   onClick={() => {
                     setPreviewRegion(region);
-                    setVisibleCount(24);
+                    setVisibleCount(16);
                   }}
                   className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                     previewRegion === region
@@ -802,7 +802,7 @@ export const LandingPage: React.FC = () => {
                 value={previewSort}
                 onChange={e => {
                   setPreviewSort(e.target.value as SortByType);
-                  setVisibleCount(24);
+                  setVisibleCount(16);
                 }}
                 className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
               >
@@ -949,7 +949,7 @@ export const LandingPage: React.FC = () => {
                 onClick={handleLoadMore}
                 className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
               >
-                <span>Load More Havens (+24)</span>
+                <span>Load More Havens (+16)</span>
                 <ArrowDown className="w-4 h-4 text-orange-400" />
               </button>
             ) : (
