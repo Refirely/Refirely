@@ -152,12 +152,14 @@ export const AuthModal: React.FC = () => {
         {/* Header with Brand & Close Button */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-xs">
-              <Compass className="w-5 h-5" />
-            </div>
+            <img
+              src="/assets/aistudio/refirely-icon.png"
+              alt="ReFIREly Emblem"
+              className="w-10 h-10 object-contain shrink-0"
+            />
             <div>
               <h2 className="text-lg font-extrabold text-slate-900">
-                {authModalTab === 'login' ? 'Welcome Back to ReFirely' : 'Create Persistent ReFirely User ID'}
+                {authModalTab === 'login' ? 'Welcome Back to ReFIREly' : 'Create Persistent ReFIREly User ID'}
               </h2>
               <p className="text-xs text-slate-500">
                 {authModalTab === 'login'

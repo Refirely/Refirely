@@ -47,12 +47,20 @@ const MainContent: React.FC = () => {
             
             {/* Col 1: Wordmark & Purpose */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-slate-900 font-extrabold text-base">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 flex items-center justify-center text-white shadow-2xs">
-                  <Compass className="w-3.5 h-3.5" />
-                </div>
-                <span>Re<span className="text-orange-600">Firely</span></span>
-              </div>
+              <button
+                onClick={() => {
+                  setCurrentView('explore');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center focus:outline-none group"
+                aria-label="ReFIREly Home"
+              >
+                <img
+                  src="/assets/aistudio/refirely-logo.png"
+                  alt="ReFIREly"
+                  className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+                />
+              </button>
               <p className="text-slate-500 text-xs leading-relaxed">
                 Objective empirical guidance and expat community connections for prospective retirees evaluating relocation worldwide.
               </p>

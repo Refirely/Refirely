@@ -61,14 +61,14 @@ export const Navbar: React.FC = () => {
         {/* Zone 1: Single clean brand wordmark */}
         <button
           onClick={() => handleNav('explore')}
-          className="flex items-center gap-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group"
+          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group shrink-0 py-1"
+          aria-label="ReFIREly Home"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 shadow-xs flex items-center justify-center text-white transition-transform group-hover:scale-105">
-            <Compass className="w-5 h-5" />
-          </div>
-          <span className="text-xl font-extrabold tracking-tight text-slate-900 whitespace-nowrap shrink-0">
-            Re<span className="text-orange-600">Firely</span>
-          </span>
+          <img
+            src="/assets/aistudio/refirely-logo.png"
+            alt="ReFIREly"
+            className="h-10 sm:h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+          />
         </button>
 
         {/* Zone 2: 4–5 single-line clean text navigation links */}
