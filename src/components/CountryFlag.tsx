@@ -72,6 +72,16 @@ const COMMON_COUNTRY_ALIASES: Record<string, string> = {
   'french guiana': 'GF',
   'montserrat': 'MS',
   'greenland': 'GL',
+  'brunei darussalam': 'BN',
+  'brunei': 'BN',
+  'timor-leste (east timor)': 'TL',
+  'timor-leste': 'TL',
+  'east timor': 'TL',
+  'myanmar (burma)': 'MM',
+  'myanmar': 'MM',
+  'burma': 'MM',
+  'christmas island & cocos (keeling) islands': 'CX',
+  'christmas island': 'CX',
 };
 
 // Size presets for standard usage

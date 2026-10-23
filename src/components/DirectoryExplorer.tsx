@@ -51,7 +51,17 @@ export const DirectoryExplorer: React.FC = () => {
     return spotlightCountry ? getCountryTravelLeisureScore(spotlightCountry) : 90;
   }, [spotlightCountry]);
 
-  const regions = ['All', 'Europe', 'Southeast Asia', 'Americas'];
+  const regions = [
+    'All',
+    'Europe',
+    'Americas',
+    'North & Central America',
+    'South America',
+    'Southeast Asia',
+    'Asia & Middle East',
+    'Africa',
+    'Oceania',
+  ];
   const climates = ['All', 'Mediterranean', 'Tropical', 'Subtropical', 'Temperate', 'Highlands / Mild'];
   const quickSearchKeywords = [
     { label: 'Portugal', color: 'bg-orange-50 text-orange-900 border-orange-200 hover:bg-orange-100' },

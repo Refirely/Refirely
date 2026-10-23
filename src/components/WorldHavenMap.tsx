@@ -151,6 +151,10 @@ export const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   'st-barts': [-62.8498, 17.8962],
   montserrat: [-62.1874, 16.7425],
   greenland: [-51.7216, 64.1835],
+  brunei: [114.9481, 4.9031],
+  'timor-leste': [125.5736, -8.5569],
+  myanmar: [96.1951, 16.8661],
+  'christmas-island': [105.6904, -10.4475],
 };
 
 // Numeric ISO IDs in 110m world atlas
@@ -297,6 +301,10 @@ const COUNTRY_ISO_MAP: Record<string, string> = {
   '652': 'st-barts',
   '500': 'montserrat',
   '304': 'greenland',
+  '096': 'brunei',
+  '626': 'timor-leste',
+  '104': 'myanmar',
+  '162': 'christmas-island',
 };
 
 export const WorldHavenMap: React.FC = () => {

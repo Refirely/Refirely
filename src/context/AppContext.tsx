@@ -14,6 +14,7 @@ import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
 import { playNotificationChime } from '../utils/audioNotification';
 import { parseUrlToRoute, getViewUrl } from '../utils/seo';
+import { matchesContinentFilter } from '../utils/continents';
 import {
   loadUserDmThreads,
   saveUserDmThreads,
@@ -3198,7 +3199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!match) return false;
     }
 
-    if (selectedRegion !== 'All' && c.region !== selectedRegion) {
+    if (!matchesContinentFilter(c, selectedRegion)) {
       return false;
     }
 
