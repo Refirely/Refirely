@@ -139,6 +139,18 @@ export const COUNTRY_COORDINATES: Record<string, [number, number]> = {
   guernsey: [-2.5853, 49.4657],
   'isle-of-man': [-4.5481, 54.2361],
   'faroe-islands': [-6.7716, 62.0079],
+  'united-states': [-81.5158, 27.6648],
+  bolivia: [-66.1568, -17.3895],
+  guyana: [-58.1551, 6.8013],
+  suriname: [-55.2038, 5.8520],
+  venezuela: [-63.8697, 11.0170],
+  'french-guiana': [-52.3333, 4.9372],
+  'saint-vincent-and-the-grenadines': [-61.2248, 13.1579],
+  cuba: [-82.3666, 23.1136],
+  haiti: [-72.2016, 19.7592],
+  'st-barts': [-62.8498, 17.8962],
+  montserrat: [-62.1874, 16.7425],
+  greenland: [-51.7216, 64.1835],
 };
 
 // Numeric ISO IDs in 110m world atlas
@@ -273,6 +285,18 @@ const COUNTRY_ISO_MAP: Record<string, string> = {
   '831': 'guernsey',
   '833': 'isle-of-man',
   '234': 'faroe-islands',
+  '840': 'united-states',
+  '068': 'bolivia',
+  '328': 'guyana',
+  '740': 'suriname',
+  '862': 'venezuela',
+  '254': 'french-guiana',
+  '670': 'saint-vincent-and-the-grenadines',
+  '192': 'cuba',
+  '332': 'haiti',
+  '652': 'st-barts',
+  '500': 'montserrat',
+  '304': 'greenland',
 };
 
 export const WorldHavenMap: React.FC = () => {

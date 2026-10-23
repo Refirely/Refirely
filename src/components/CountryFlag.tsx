@@ -64,6 +64,14 @@ const COMMON_COUNTRY_ALIASES: Record<string, string> = {
   'faroe islands': 'FO',
   'kosovo': 'XK',
   'moldova': 'MD',
+  'venezuela (margarita island & mérida)': 'VE',
+  'venezuela': 'VE',
+  'saint barthélemy (st. barts)': 'BL',
+  'st. barts': 'BL',
+  'saint vincent and the grenadines': 'VC',
+  'french guiana': 'GF',
+  'montserrat': 'MS',
+  'greenland': 'GL',
 };
 
 // Size presets for standard usage

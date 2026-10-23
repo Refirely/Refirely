@@ -4,7 +4,7 @@ import { AppView } from '../context/AppContext';
 const DEFAULT_TITLE =
   'ReFirely - Where Your Freedom Goes Further | AI Haven Retirement Guide & FIRE Calculator';
 const DEFAULT_DESCRIPTION =
-  'AI Haven retirement guide and FIRE calculator to compare 130+ global retirement countries by visa rules, cost of living, healthcare, taxes, and expat community.';
+  'AI Haven retirement guide and FIRE calculator to compare 140+ global retirement countries by visa rules, cost of living, healthcare, taxes, and expat community.';
 const DEFAULT_KEYWORDS =
   'ReFirely, ReFIREly, AI Haven retirement guide, FIRE calculator, retire abroad, global retirement guide, financial independence retire early, retirement visa requirements, cost of living comparison, expat community, overseas retirement planning';
 
@@ -297,7 +297,7 @@ export function updatePageSeo(
     keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ReFirely AI Haven retirement guide, FIRE calculator ${selectedCountry.name}`;
     canonicalUrl = `${origin}/?country=${encodeURIComponent(selectedCountry.id)}`;
   } else if (currentView === 'explore') {
-    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '130+';
+    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '140+';
     title = `Explore ${countLabel} Global Retirement Havens | ReFirely AI Haven Guide & FIRE Calculator`;
     description =
       `Filter and compare ${countLabel} verified retirement havens worldwide with AI Haven match suggestions, visa financial thresholds, monthly cost of living, healthcare rankings, and climate profiles.`;
@@ -310,7 +310,7 @@ export function updatePageSeo(
   } else if (currentView === 'dashboard') {
     title = 'Global FIRE Calculator & Relocation Checklist | ReFirely Retirement Planner';
     description =
-      'Calculate your Financial Independence Retire Early (FIRE) target across 130+ countries, model geographic arbitrage savings, and track your overseas retirement checklist.';
+      'Calculate your Financial Independence Retire Early (FIRE) target across 140+ countries, model geographic arbitrage savings, and track your overseas retirement checklist.';
     canonicalUrl = `${origin}/?view=dashboard`;
   } else if (currentView === 'community') {
     title = 'Verified Expat Community Boards & Q&A | ReFirely Global Retirement Network';
