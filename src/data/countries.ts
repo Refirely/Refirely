@@ -1,5 +1,6 @@
 import { Country } from '../types';
 import { ADDITIONAL_COUNTRIES } from './additionalCountries';
+import { MORE_RETIREMENT_COUNTRIES } from './moreRetirementCountries';
 
 export const INITIAL_COUNTRIES: Country[] = [
   {
@@ -6367,6 +6368,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     ],
   },
   ...ADDITIONAL_COUNTRIES,
+  ...MORE_RETIREMENT_COUNTRIES,
 ];
 
 

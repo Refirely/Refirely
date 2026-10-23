@@ -191,7 +191,7 @@ export const LandingPage: React.FC = () => {
             {/* Trust badge kicker */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/20 border border-orange-400/30 text-orange-300 text-xs font-semibold backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-              <span>100 Verified Global Havens · Updated for 2026</span>
+              <span>{countries.length} Verified Global Havens · Updated for 2026</span>
             </div>
 
             {/* Impactful Headline */}
@@ -205,7 +205,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Subheading */}
             <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-2xl">
-              Factual, empirical data across 100 countries. Model your financial freedom with our interactive FIRE calculator, explore verified visa thresholds, and discover your personalized haven match.
+              Factual, empirical data across {countries.length} countries. Model your financial freedom with our interactive FIRE calculator, explore verified visa thresholds, and discover your personalized haven match.
             </p>
 
             {/* Primary Action Buttons */}
@@ -232,14 +232,14 @@ export const LandingPage: React.FC = () => {
                 className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 font-medium text-sm sm:text-base border border-white/10 backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Globe className="w-4 h-4 text-teal-300" />
-                <span>Browse 100 Havens</span>
+                <span>Browse {countries.length} Havens</span>
               </button>
             </div>
 
             {/* Social proof metric chips */}
             <div className="pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-slate-300 text-xs">
               <div>
-                <div className="text-xl sm:text-2xl font-black text-white">100</div>
+                <div className="text-xl sm:text-2xl font-black text-white">{countries.length}</div>
                 <div className="text-slate-400">Verified Havens</div>
               </div>
               <div>
@@ -355,7 +355,7 @@ export const LandingPage: React.FC = () => {
               Find Your Ideal Haven in 3 Clicks
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Simulate live rankings across all 100 destinations based on your target budget, climate, and top relocation priority.
+              Simulate live rankings across all {countries.length} destinations based on your target budget, climate, and top relocation priority.
             </p>
           </div>
 
@@ -763,7 +763,7 @@ export const LandingPage: React.FC = () => {
           <div>
             <div className="text-xs font-bold text-orange-600 uppercase tracking-widest flex items-center gap-1.5 mb-1">
               <Globe className="w-4 h-4 text-orange-500" />
-              <span>Explore 100 Global Retirement Havens</span>
+              <span>Explore {countries.length} Global Retirement Havens</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Verified Haven Directory

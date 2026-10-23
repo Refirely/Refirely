@@ -152,7 +152,7 @@ export const DirectoryExplorer: React.FC = () => {
               <div className="pt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-700">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>100 Global Havens Scored</span>
+                  <span>{countries.length} Global Havens Scored</span>
                 </span>
                 <span aria-hidden="true" className="text-slate-300">·</span>
                 <span>28 Empirical Living Factors</span>
