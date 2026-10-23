@@ -341,11 +341,12 @@ export interface DirectMessage {
 
 export interface DirectMessageThread {
   id: string;
+  peerUserId?: string;
   peerName: string;
   peerAvatar: string;
   peerCountry: string;
   peerCity: string;
-  peerStatus: 'Living there (5 yrs)' | 'Moved recently' | 'Planning move this year';
+  peerStatus: string;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;

@@ -13,6 +13,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
+import { PublicProfileModal } from './components/PublicProfileModal';
 import { updatePageSeo } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
@@ -46,6 +47,7 @@ const MainContent: React.FC = () => {
       <AuthModal />
       <EditProfileModal />
       <FirebaseConnectionModal />
+      <PublicProfileModal />
 
       {/* Elegant Light Footer */}
       <footer className="bg-white text-slate-600 border-t border-slate-200/90 text-xs py-12">

@@ -7,7 +7,7 @@ import {
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST } from '../data/community';
-import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE } from '../data/userAccounts';
+import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -95,6 +95,12 @@ interface AppContextType {
   setEditProfileInitialTab: (tab: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests') => void;
   openEditProfile: (tab?: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests') => void;
 
+  // Public Member Profiles (Strictly Non-Admin Registered Users)
+  publicMemberAccounts: UserAccount[];
+  selectedPublicProfileId: string | null;
+  openPublicProfile: (identifier: string) => boolean;
+  closePublicProfile: () => void;
+
   // Role & User
   userProfile: UserProfile;
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
@@ -166,7 +172,18 @@ interface AppContextType {
   activeDmThreadId: string | null;
   setActiveDmThreadId: (id: string | null) => void;
   sendMessage: (threadId: string, text: string) => void;
-  startDmWithPeer: (peerName: string, peerCountry: string, peerCity: string, initialNote?: string) => void;
+  startDmWithPeer: (
+    peerName: string,
+    peerCountry: string,
+    peerCity: string,
+    initialNote?: string,
+    peerOptions?: {
+      peerAvatar?: string;
+      peerStatus?: string;
+      peerUserId?: string;
+      stayOnCurrentView?: boolean;
+    }
+  ) => string;
 
   // Country Journal & Interest Level Tracking
   journalEntries: Record<string, CountryJournalEntry>;
@@ -318,6 +335,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEditProfileInitialTab(tab);
     setIsEditProfileOpen(true);
   };
+
+  // Public Member Profile modal state (excludes admin role / admin user)
+  const [selectedPublicProfileId, setSelectedPublicProfileId] = useState<string | null>(null);
+  const publicMemberAccounts = React.useMemo(
+    () => registeredAccounts.filter(acc => isPublicMemberAccount(acc)),
+    [registeredAccounts]
+  );
+
+  const openPublicProfile = (identifier: string): boolean => {
+    const clean = (identifier || '').trim().toLowerCase();
+    if (!clean) return false;
+    const matched = publicMemberAccounts.find(acc => {
+      const idMatch = acc.id.toLowerCase() === clean;
+      const usernameMatch = (acc.username || '').toLowerCase() === clean;
+      const nameLower = (acc.profile.name || acc.name || '').toLowerCase();
+      const nameMatch =
+        nameLower === clean ||
+        (clean.includes(nameLower.split(' ')[0]) && clean.includes(nameLower.split(' ').slice(-1)[0]));
+      return idMatch || usernameMatch || nameMatch;
+    });
+    if (matched) {
+      setSelectedPublicProfileId(matched.id);
+      return true;
+    }
+    return false;
+  };
+
+  const closePublicProfile = () => setSelectedPublicProfileId(null);
 
   // Role and profile
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -2395,42 +2440,141 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 1200);
   };
 
-  const startDmWithPeer = (peerName: string, peerCountry: string, peerCity: string, initialNote?: string) => {
-    // Check if thread exists
-    const existing = dmThreads.find(t => t.peerName.toLowerCase() === peerName.toLowerCase());
+  const startDmWithPeer = (
+    peerName: string,
+    peerCountry: string,
+    peerCity: string,
+    initialNote?: string,
+    peerOptions?: {
+      peerAvatar?: string;
+      peerStatus?: string;
+      peerUserId?: string;
+      stayOnCurrentView?: boolean;
+    }
+  ): string => {
+    const cleanPeerName = peerName.trim();
+    const matchedMember = publicMemberAccounts.find(
+      acc =>
+        acc.id === peerOptions?.peerUserId ||
+        acc.profile.name.toLowerCase() === cleanPeerName.toLowerCase() ||
+        acc.name.toLowerCase() === cleanPeerName.toLowerCase()
+    );
+
+    // Check if thread already exists by peerUserId or peerName
+    const existing = dmThreads.find(
+      t =>
+        (peerOptions?.peerUserId && t.peerUserId === peerOptions.peerUserId) ||
+        (matchedMember && t.peerUserId === matchedMember.id) ||
+        t.peerName.toLowerCase() === cleanPeerName.toLowerCase()
+    );
+
     if (existing) {
       setActiveDmThreadId(existing.id);
-      setCurrentView('messages');
-      if (initialNote) {
-        sendMessage(existing.id, initialNote);
+      if (initialNote && initialNote.trim()) {
+        sendMessage(existing.id, initialNote.trim());
       }
-      return;
+      if (!peerOptions?.stayOnCurrentView) {
+        setSelectedPublicProfileId(null);
+        setCurrentView('messages');
+      }
+      return existing.id;
     }
 
     const newId = `dm-${Date.now()}`;
+    const resolvedAvatar =
+      peerOptions?.peerAvatar ||
+      matchedMember?.profile.avatarUrl ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80';
+    const resolvedCountry =
+      peerCountry ||
+      matchedMember?.profile.residingCountry ||
+      matchedMember?.profile.targetCountry ||
+      matchedMember?.profile.originCountry ||
+      'Portugal';
+    const resolvedCity =
+      peerCity ||
+      matchedMember?.profile.originCity ||
+      matchedMember?.profile.residingCountry ||
+      resolvedCountry;
+    const resolvedStatus =
+      peerOptions?.peerStatus ||
+      matchedMember?.profile.relocationStatus ||
+      'Expat Community Member';
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newThread: DirectMessageThread = {
       id: newId,
-      peerName,
-      peerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-      peerCountry,
-      peerCity,
-      peerStatus: 'Living there (5 yrs)',
-      lastMessage: initialNote || 'Conversation started',
-      lastMessageTime: 'Just now',
+      peerUserId: peerOptions?.peerUserId || matchedMember?.id,
+      peerName: matchedMember?.profile.name || cleanPeerName,
+      peerAvatar: resolvedAvatar,
+      peerCountry: resolvedCountry,
+      peerCity: resolvedCity,
+      peerStatus: resolvedStatus,
+      lastMessage: initialNote?.trim() || 'Connected via Expat Member Profile',
+      lastMessageTime: initialNote?.trim() ? nowTime : 'Just now',
       unreadCount: 0,
-      messages: initialNote ? [
-        {
-          id: `m-${Date.now()}`,
-          sender: 'user',
-          text: initialNote,
-          timestamp: 'Just now',
-        }
-      ] : [],
+      messages: initialNote?.trim()
+        ? [
+            {
+              id: `m-${Date.now()}`,
+              sender: 'user',
+              text: initialNote.trim(),
+              timestamp: nowTime,
+            },
+          ]
+        : [],
     };
 
-    setDmThreads(prev => [newThread, ...prev]);
+    setDmThreads(prev => {
+      const next = [newThread, ...prev];
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
+      } catch {}
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: threadsRef.current,
+          meetups: meetupsRef.current,
+          dmThreads: next,
+        });
+      }
+      return next;
+    });
+
     setActiveDmThreadId(newId);
-    setCurrentView('messages');
+
+    // If an initial note was included on a brand new thread, simulate a welcoming reply from the peer
+    if (initialNote?.trim()) {
+      setTimeout(() => {
+        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const welcomeReply = `Hi ${userProfileRef.current.name.split(' ')[0] || 'there'}! Great to connect with you on ReFIREly. Happy to chat about ${resolvedCountry} or share tips from my travels!`;
+        setDmThreads(prev =>
+          prev.map(t =>
+            t.id === newId
+              ? {
+                  ...t,
+                  lastMessage: welcomeReply,
+                  lastMessageTime: replyTime,
+                  messages: [
+                    ...t.messages,
+                    {
+                      id: `m-${Date.now() + 1}`,
+                      sender: 'peer' as const,
+                      text: welcomeReply,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : t
+          )
+        );
+      }, 1100);
+    }
+
+    if (!peerOptions?.stayOnCurrentView) {
+      setSelectedPublicProfileId(null);
+      setCurrentView('messages');
+    }
+    return newId;
   };
 
   const resetFilters = () => {
@@ -2568,6 +2712,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         editProfileInitialTab,
         setEditProfileInitialTab,
         openEditProfile,
+        publicMemberAccounts,
+        selectedPublicProfileId,
+        openPublicProfile,
+        closePublicProfile,
         userProfile,
         setUserProfile,
         isOwnerAdmin,

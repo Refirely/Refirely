@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Calendar, MapPin, Users, Plus, Check, Search, X, Clock, Compass } from 'lucide-react';
+import { Calendar, MapPin, Users, Plus, Check, Search, X, Clock, MessageCircle, ExternalLink } from 'lucide-react';
 import { ExpatMeetup } from '../types';
 
 export const MeetupsView: React.FC = () => {
@@ -10,6 +10,9 @@ export const MeetupsView: React.FC = () => {
     addMeetup,
     countries,
     userProfile,
+    publicMemberAccounts,
+    openPublicProfile,
+    startDmWithPeer,
   } = useApp();
 
   const [countryFilter, setCountryFilter] = useState('All');
@@ -205,8 +208,32 @@ export const MeetupsView: React.FC = () => {
                     <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                     <span className="truncate">{meetup.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-400 text-[11px] pt-1">
-                    <span>Host: {meetup.hostName} ({meetup.hostRole})</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-slate-500 text-[11px] pt-1 border-t border-slate-200/70">
+                    <div className="flex items-center gap-1.5">
+                      <span>Host:</span>
+                      <button
+                        type="button"
+                        onClick={() => openPublicProfile(meetup.hostName)}
+                        className="font-bold text-slate-800 hover:text-teal-800 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{meetup.hostName}</span>
+                        {publicMemberAccounts.some(
+                          a => a.profile.name.toLowerCase() === meetup.hostName.toLowerCase()
+                        ) && <ExternalLink className="w-2.5 h-2.5 text-teal-700" />}
+                      </button>
+                      <span className="text-slate-400">({meetup.hostRole})</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        startDmWithPeer(meetup.hostName, meetup.countryName, meetup.city)
+                      }
+                      className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      <span>Message Host</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -221,7 +248,7 @@ export const MeetupsView: React.FC = () => {
 
                 <button
                   onClick={() => toggleRsvpMeetup(meetup.id)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     meetup.isRsvped
                       ? 'bg-emerald-700 text-white shadow-xs'
                       : 'bg-slate-900 text-white hover:bg-slate-800'
