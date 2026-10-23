@@ -136,47 +136,15 @@ export const Navbar: React.FC = () => {
           >
             My Dashboard
           </button>
-
-          {/* Prominent CMS Console tab right inside the main navigation bar for Admins */}
-          {canAccessAdmin && (
-            <button
-              onClick={() => handleNav('admin')}
-              className={`whitespace-nowrap shrink-0 transition-all py-1.5 px-2.5 lg:px-3 rounded-lg flex items-center gap-1.5 cursor-pointer border ${
-                currentView === 'admin'
-                  ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-xs'
-                  : 'bg-amber-50/90 text-amber-900 font-semibold border-amber-300 hover:bg-amber-100'
-              }`}
-              title="Open Country CMS & Registered Users Admin Console"
-            >
-              <Shield className={`w-3.5 h-3.5 ${currentView === 'admin' ? 'text-white' : 'text-amber-600'}`} />
-              <span>CMS Console</span>
-            </button>
-          )}
         </nav>
 
         {/* Zone 3: Compact Right Utility & Account Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* On small/tablet screens where <nav> is hidden, keep CMS Console visible right before profile */}
-          {canAccessAdmin && (
-            <button
-              onClick={() => handleNav('admin')}
-              className={`md:hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors border cursor-pointer ${
-                currentView === 'admin'
-                  ? 'bg-amber-500 text-white border-amber-600'
-                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-              }`}
-              title="Open CMS Console"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>CMS</span>
-            </button>
-          )}
-
           {/* Discreet lifestyle toggle button */}
           <button
             onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
             title={discreetLifestyleEnabled ? "Discreet lifestyle filters active (Nightlife & Adult indicators visible)" : "Show lifestyle & nightlife indicators"}
-            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer shrink-0 ${
               discreetLifestyleEnabled
                 ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-2xs'
                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
