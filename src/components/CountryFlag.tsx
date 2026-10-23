@@ -52,6 +52,18 @@ const COMMON_COUNTRY_ALIASES: Record<string, string> = {
   'turks and caicos islands': 'TC',
   'turks and caicos': 'TC',
   'st. kitts and nevis': 'KN',
+  'turkey (turkiye)': 'TR',
+  'honduras (roatán)': 'HN',
+  'vatican city (rome enclave)': 'VA',
+  'vatican city': 'VA',
+  'jersey (channel islands)': 'JE',
+  'jersey': 'JE',
+  'guernsey (channel islands)': 'GG',
+  'guernsey': 'GG',
+  'isle of man': 'IM',
+  'faroe islands': 'FO',
+  'kosovo': 'XK',
+  'moldova': 'MD',
 };
 
 // Size presets for standard usage
