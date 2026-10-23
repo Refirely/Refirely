@@ -36,6 +36,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     journalEntries,
     userProfile,
     isAuthenticated,
+    openAuthModal,
   } = useApp();
 
   // Active section tab
@@ -728,8 +729,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
                       <span className="text-slate-400">Regional Tier</span>
                       <button
-                        onClick={() => startDmWithPeer(`Resident of ${city.name}`, country.name, city.name, `Hi! I saw ${city.name} on ReFirely and would love to ask about living there.`)}
-                        className="text-orange-700 font-semibold hover:underline"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            openAuthModal('login');
+                            return;
+                          }
+                          startDmWithPeer(`Resident of ${city.name}`, country.name, city.name, `Hi! I saw ${city.name} on ReFirely and would love to ask about living there.`);
+                        }}
+                        className="text-orange-700 font-semibold hover:underline cursor-pointer"
                       >
                         Ask a Local
                       </button>
@@ -773,8 +780,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     </div>
 
                     <button
-                      onClick={() => startDmWithPeer(expat.name, country.name, expat.city, `Hello ${expat.name}! I am exploring retirement in ${country.name} and would love to ask your advice.`)}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-semibold text-xs hover:from-orange-700 hover:to-purple-700 transition-all shrink-0 flex items-center gap-1.5 shadow-2xs"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          openAuthModal('login');
+                          return;
+                        }
+                        startDmWithPeer(expat.name, country.name, expat.city, `Hello ${expat.name}! I am exploring retirement in ${country.name} and would love to ask your advice.`);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-semibold text-xs hover:from-orange-700 hover:to-purple-700 transition-all shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>Chat</span>

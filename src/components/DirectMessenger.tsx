@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
+import { DirectMessagesAuthGate } from './DirectMessagesAuthGate';
 import {
   MessageCircle,
   Send,
@@ -33,6 +34,7 @@ export const DirectMessenger: React.FC = () => {
     publicMemberAccounts,
     openPublicProfile,
     currentUserId,
+    isAuthenticated,
     totalUnreadDms,
     markThreadAsRead,
     markAllThreadsAsRead,
@@ -53,10 +55,15 @@ export const DirectMessenger: React.FC = () => {
 
   // Auto-mark current active conversation as read
   useEffect(() => {
-    if (activeThread && (activeThread.unreadCount || 0) > 0) {
+    if (isAuthenticated && currentUserId !== 'guest' && activeThread && (activeThread.unreadCount || 0) > 0) {
       markThreadAsRead(activeThread.id);
     }
-  }, [activeThread?.id, activeThread?.unreadCount, markThreadAsRead]);
+  }, [activeThread?.id, activeThread?.unreadCount, markThreadAsRead, isAuthenticated, currentUserId]);
+
+  // Strictly hide chats window if not authenticated
+  if (!isAuthenticated || currentUserId === 'guest') {
+    return <DirectMessagesAuthGate />;
+  }
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();

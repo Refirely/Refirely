@@ -13,6 +13,8 @@ export const MeetupsView: React.FC = () => {
     publicMemberAccounts,
     openPublicProfile,
     startDmWithPeer,
+    isAuthenticated,
+    openAuthModal,
   } = useApp();
 
   const [countryFilter, setCountryFilter] = useState('All');
@@ -226,9 +228,13 @@ export const MeetupsView: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={() =>
-                        startDmWithPeer(meetup.hostName, meetup.countryName, meetup.city)
-                      }
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          openAuthModal('login');
+                          return;
+                        }
+                        startDmWithPeer(meetup.hostName, meetup.countryName, meetup.city);
+                      }}
                       className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <MessageCircle className="w-3 h-3" />

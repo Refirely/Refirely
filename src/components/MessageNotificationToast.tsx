@@ -12,12 +12,14 @@ export const MessageNotificationToast: React.FC = () => {
     markThreadAsRead,
     notificationSoundEnabled,
     setNotificationSoundEnabled,
+    isAuthenticated,
+    currentUserId,
   } = useApp();
 
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
-    if (!incomingNotification) {
+    if (!isAuthenticated || currentUserId === 'guest' || !incomingNotification) {
       setProgress(100);
       return;
     }
@@ -39,9 +41,9 @@ export const MessageNotificationToast: React.FC = () => {
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [incomingNotification, dismissNotification]);
+  }, [incomingNotification, dismissNotification, isAuthenticated, currentUserId]);
 
-  if (!incomingNotification) return null;
+  if (!isAuthenticated || currentUserId === 'guest' || !incomingNotification) return null;
 
   const handleOpenChat = () => {
     const threadId = incomingNotification.threadId;

@@ -8,6 +8,7 @@ import { CompareStudio } from './components/CompareStudio';
 import { CommunityHub } from './components/CommunityHub';
 import { MeetupsView } from './components/MeetupsView';
 import { DirectMessenger } from './components/DirectMessenger';
+import { DirectMessagesAuthGate } from './components/DirectMessagesAuthGate';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AuthModal } from './components/AuthModal';
@@ -19,7 +20,18 @@ import { updatePageSeo } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
 const MainContent: React.FC = () => {
-  const { currentView, selectedCountry, setCurrentView, countries, userProfile, isOwnerAdmin, toggleRole, navigateToCountry } = useApp();
+  const {
+    currentView,
+    selectedCountry,
+    setCurrentView,
+    countries,
+    userProfile,
+    isOwnerAdmin,
+    toggleRole,
+    navigateToCountry,
+    isAuthenticated,
+    currentUserId,
+  } = useApp();
 
   useEffect(() => {
     updatePageSeo(currentView, selectedCountry);
@@ -39,7 +51,13 @@ const MainContent: React.FC = () => {
         {currentView === 'compare' && <CompareStudio />}
         {currentView === 'community' && <CommunityHub />}
         {currentView === 'meetups' && <MeetupsView />}
-        {currentView === 'messages' && <DirectMessenger />}
+        {currentView === 'messages' && (
+          isAuthenticated && currentUserId !== 'guest' ? (
+            <DirectMessenger />
+          ) : (
+            <DirectMessagesAuthGate />
+          )
+        )}
         {currentView === 'dashboard' && <UserDashboard />}
         {currentView === 'admin' && <AdminDashboard />}
       </div>

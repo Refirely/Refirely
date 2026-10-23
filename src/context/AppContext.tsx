@@ -513,8 +513,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const totalUnreadDms = React.useMemo(() => {
+    if (!isAuthenticated || currentUserId === 'guest') return 0;
     return dmThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
-  }, [dmThreads]);
+  }, [dmThreads, isAuthenticated, currentUserId]);
 
   // Country Journal state with local storage fallback
   const [journalEntries, setJournalEntries] = useState<Record<string, CountryJournalEntry>>(() => {
@@ -540,6 +541,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Live refs to prevent stale closures inside onAuthStateChanged, timers & async Firestore handlers
   const registeredAccountsRef = React.useRef<UserAccount[]>(registeredAccounts);
   const currentUserIdRef = React.useRef<string>(currentUserId);
+  const isAuthenticatedRef = React.useRef<boolean>(isAuthenticated);
   const userProfileRef = React.useRef<UserProfile>(userProfile);
   const checklistRef = React.useRef<RelocationChecklistTask[]>(checklist);
   const journalEntriesRef = React.useRef<Record<string, CountryJournalEntry>>(journalEntries);
@@ -554,6 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => { registeredAccountsRef.current = registeredAccounts; }, [registeredAccounts]);
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
+  useEffect(() => { isAuthenticatedRef.current = isAuthenticated; }, [isAuthenticated]);
   useEffect(() => { userProfileRef.current = userProfile; }, [userProfile]);
   useEffect(() => { checklistRef.current = checklist; }, [checklist]);
   useEffect(() => { journalEntriesRef.current = journalEntries; }, [journalEntries]);
@@ -1704,6 +1707,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFirebaseUser(null);
     setCurrentUserId('guest');
     setUserProfile(GUEST_PROFILE);
+    setActiveDmThreadId(null);
+    setIncomingNotification(null);
+    if (currentViewRef.current === 'messages') {
+      setCurrentView('landing');
+    }
     try {
       // IMPORTANT: Never delete _registered_accounts or per-user snapshots on logout!
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, 'guest');
@@ -2473,6 +2481,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const triggerSimulatedPeerReply = (threadId: string, customText?: string) => {
+    if (!isAuthenticatedRef.current || currentUserIdRef.current === 'guest') {
+      return;
+    }
     const thread = dmThreadsRef.current.find(t => t.id === threadId);
     if (!thread) return;
 
@@ -2549,6 +2560,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendMessage = (threadId: string, text: string) => {
+    if (!isAuthenticatedRef.current || currentUserIdRef.current === 'guest') {
+      console.warn('Blocked: Cannot send direct message when unauthenticated.');
+      openAuthModal('login');
+      return;
+    }
     if (!text.trim()) return;
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2605,6 +2621,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       stayOnCurrentView?: boolean;
     }
   ): string => {
+    if (!isAuthenticatedRef.current || currentUserIdRef.current === 'guest') {
+      openAuthModal('login');
+      return '';
+    }
     const cleanPeerName = peerName.trim();
     const matchedMember = publicMemberAccounts.find(
       acc =>

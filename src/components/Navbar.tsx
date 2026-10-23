@@ -156,19 +156,27 @@ export const Navbar: React.FC = () => {
 
           {/* Direct Messages link with dynamic notification badge */}
           <button
-            onClick={() => handleNav('messages')}
+            onClick={() => {
+              if (!isAuthenticated) {
+                openAuthModal('login');
+                return;
+              }
+              handleNav('messages');
+            }}
             className={`relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer ${
               currentView === 'messages' ? 'bg-orange-50 text-orange-800' : ''
             }`}
             title={
-              totalUnreadDms > 0
+              !isAuthenticated
+                ? 'Sign in to access Expat Direct Messages'
+                : totalUnreadDms > 0
                 ? `Expat Direct Messages (${totalUnreadDms} unread message${totalUnreadDms > 1 ? 's' : ''})`
                 : 'Expat Direct Messages'
             }
             aria-label="Direct Messages"
           >
             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-            {totalUnreadDms > 0 && (
+            {isAuthenticated && totalUnreadDms > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 min-w-[18px] items-center justify-center px-1 rounded-full bg-orange-600 text-[10px] font-extrabold text-white ring-2 ring-white shadow-xs">
                 <span className="absolute -inset-0.5 rounded-full bg-orange-500 opacity-75 animate-ping" />
                 <span className="relative z-10">{totalUnreadDms > 9 ? '9+' : totalUnreadDms}</span>
@@ -490,8 +498,15 @@ export const Navbar: React.FC = () => {
               Expat Meetups
             </button>
             <button
-              onClick={() => handleNav('messages')}
-              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between ${
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setMobileMenuOpen(false);
+                  openAuthModal('login');
+                  return;
+                }
+                handleNav('messages');
+              }}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between cursor-pointer ${
                 currentView === 'messages' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -499,11 +514,15 @@ export const Navbar: React.FC = () => {
                 <MessageCircle className="w-4 h-4 text-orange-600" />
                 <span>Direct Messages</span>
               </span>
-              {totalUnreadDms > 0 && (
+              {!isAuthenticated ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                  Members Only
+                </span>
+              ) : totalUnreadDms > 0 ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shadow-2xs">
                   {totalUnreadDms} new
                 </span>
-              )}
+              ) : null}
             </button>
             <button
               onClick={() => handleNav('dashboard')}

@@ -15,6 +15,8 @@ export const CommunityHub: React.FC = () => {
     publicMemberAccounts,
     openPublicProfile,
     startDmWithPeer,
+    isAuthenticated,
+    openAuthModal,
   } = useApp();
 
   const [activeCommunityTab, setActiveCommunityTab] = useState<'discussions' | 'members'>('discussions');
@@ -333,7 +335,11 @@ export const CommunityHub: React.FC = () => {
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            if (!isAuthenticated) {
+                              openAuthModal('login');
+                              return;
+                            }
                             startDmWithPeer(
                               matchedAuthorMember?.profile.name || thread.authorName,
                               matchedAuthorMember?.profile.residingCountry || thread.countryName,
@@ -344,8 +350,8 @@ export const CommunityHub: React.FC = () => {
                                 peerStatus: matchedAuthorMember?.profile.relocationStatus || thread.authorLocation,
                                 peerUserId: matchedAuthorMember?.id,
                               }
-                            )
-                          }
+                            );
+                          }}
                           className="font-semibold text-teal-800 hover:underline flex items-center gap-1 cursor-pointer"
                         >
                           <MessageCircle className="w-3.5 h-3.5 text-teal-700" />

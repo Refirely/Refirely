@@ -22,6 +22,8 @@ export const PublicMemberDirectory: React.FC = () => {
     openPublicProfile,
     startDmWithPeer,
     currentUserId,
+    isAuthenticated,
+    openAuthModal,
     dmThreads,
   } = useApp();
 
@@ -418,7 +420,11 @@ export const PublicMemberDirectory: React.FC = () => {
 
                   {!isSelf && (
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        if (!isAuthenticated || currentUserId === 'guest') {
+                          openAuthModal('login');
+                          return;
+                        }
                         startDmWithPeer(
                           p.name,
                           p.residingCountry || p.originCountry || 'Portugal',
@@ -429,8 +435,8 @@ export const PublicMemberDirectory: React.FC = () => {
                             peerStatus: p.relocationStatus || 'Expat Community Member',
                             peerUserId: acc.id,
                           }
-                        )
-                      }
+                        );
+                      }}
                       className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
