@@ -242,8 +242,8 @@ export const UserDashboard: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Banner & Profile Overview */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs">
-        <div className="flex items-start sm:items-center gap-5">
+      <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-xs">
+        <div className="flex items-start sm:items-center gap-5 flex-1 min-w-0">
           
           {/* Avatar with Click-to-update */}
           <div className="relative group shrink-0">
@@ -261,14 +261,14 @@ export const UserDashboard: React.FC = () => {
             <button
               onClick={() => openEditProfile('picture')}
               title="Change profile picture"
-              className="absolute inset-0 rounded-full bg-slate-900/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-semibold"
+              className="absolute inset-0 rounded-full bg-slate-900/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-semibold cursor-pointer"
             >
               <Camera className="w-4 h-4 mb-0.5" />
               <span>Change</span>
             </button>
           </div>
 
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-extrabold text-slate-900">{userProfile.name}</h1>
               <code className="text-xs font-mono font-bold bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded">
@@ -285,7 +285,7 @@ export const UserDashboard: React.FC = () => {
             </div>
 
             {/* Clean unboxed metadata with typographic separators */}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1.5">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-2">
               <span className="inline-flex items-center gap-1.5">
                 <span>Origin Country / Nationality:</span>
                 <strong className="text-slate-800 inline-flex items-center gap-1">
@@ -293,7 +293,7 @@ export const UserDashboard: React.FC = () => {
                   <span>{userProfile.originCountry}</span>
                 </strong>
               </span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
               <span className="inline-flex items-center gap-1.5">
                 <span>Residing Country:</span>
                 <strong className="text-slate-800 inline-flex items-center gap-1">
@@ -304,7 +304,7 @@ export const UserDashboard: React.FC = () => {
                   </span>
                 </strong>
               </span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
               <span className="inline-flex items-center gap-1.5">
                 <span>Target Haven:</span>
                 <strong className="text-slate-900 inline-flex items-center gap-1">
@@ -312,48 +312,37 @@ export const UserDashboard: React.FC = () => {
                   <span>{userProfile.targetCountry}</span>
                 </strong>
               </span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
               <span>Departure: <strong className="font-mono text-slate-900">{userProfile.retirementTimelineYear}</strong></span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
               <span>Current Salary: <strong className="font-mono text-slate-900">${userSalaryUSD.toLocaleString()} / yr</strong> (${userMonthlySalaryUSD.toLocaleString()}/mo)</span>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
               <span>Total Net Worth: <strong className="font-mono text-orange-950 font-bold">${userNetWorthUSD.toLocaleString()}</strong></span>
               {userProfile.occupationOrBackground && (
                 <>
-                  <span aria-hidden="true">·</span>
+                  <span aria-hidden="true" className="text-slate-300">·</span>
                   <span className="text-slate-600 italic">{userProfile.occupationOrBackground}</span>
                 </>
               )}
             </div>
 
-            <p className="text-xs text-slate-600 mt-2 max-w-2xl leading-relaxed">
-              {userProfile.bio}
-            </p>
+            {userProfile.bio && (
+              <p className="text-xs text-slate-600 mt-2 max-w-3xl leading-relaxed">
+                {userProfile.bio}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0 self-start md:self-auto">
-          {userProfile.role !== 'admin' && currentUserId !== 'usr-ganesh' ? (
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
+          {userProfile.role !== 'admin' && currentUserId !== 'usr-ganesh' && (
             <button
               onClick={() => openPublicProfile(currentUserId)}
               className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-teal-50 text-teal-900 border border-teal-200 hover:bg-teal-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <ExternalLink className="w-3.5 h-3.5 text-teal-700" />
               <span>My Public Profile</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                if (publicMemberAccounts[0]) {
-                  openPublicProfile(publicMemberAccounts[0].id);
-                }
-              }}
-              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-teal-50 text-teal-900 border border-teal-200 hover:bg-teal-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
-              title="Admin accounts are hidden from public profiles; click to inspect member public profiles"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-teal-700" />
-              <span>Member Public Profiles</span>
             </button>
           )}
           <button

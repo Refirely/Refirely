@@ -180,7 +180,7 @@ export const PublicProfileModal: React.FC = () => {
         {/* Top Banner & Member Identity Header */}
         <div className="relative bg-slate-900 text-white px-6 py-6 sm:px-8 sm:py-7 border-b border-slate-800">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5 flex-1 min-w-0">
               {/* Avatar */}
               <div className="relative shrink-0">
                 {profile.avatarUrl ? (
@@ -198,7 +198,7 @@ export const PublicProfileModal: React.FC = () => {
               </div>
 
               {/* Name, Headline & Unboxed Metadata */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-teal-300 font-medium">
                   <span>{profile.relocationStatus || 'Exploring Options'}</span>
                   <span aria-hidden="true">·</span>
