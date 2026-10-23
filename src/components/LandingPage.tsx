@@ -129,6 +129,10 @@ export const LandingPage: React.FC = () => {
 
     list.sort((a, b) => {
       switch (previewSort) {
+        case 'alpha-asc':
+          return a.name.localeCompare(b.name);
+        case 'alpha-desc':
+          return b.name.localeCompare(a.name);
         case 'budget-asc':
           return a.costOfLiving.monthlyBudgetCoupleUSD - b.costOfLiving.monthlyBudgetCoupleUSD;
         case 'travel-leisure-desc':
@@ -807,6 +811,8 @@ export const LandingPage: React.FC = () => {
                 className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
               >
                 <option value="travel-leisure-desc">Travel &amp; Leisure Score (High to Low)</option>
+                <option value="alpha-asc">Alphabetical (A – Z)</option>
+                <option value="alpha-desc">Alphabetical (Z – A)</option>
                 <option value="budget-asc">Monthly Budget (Lowest First)</option>
                 <option value="healthcare-desc">Healthcare Quality (Highest First)</option>
                 <option value="safety-desc">Safety &amp; Peace Index (Highest First)</option>

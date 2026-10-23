@@ -3220,6 +3220,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return true;
   }).sort((a, b) => {
+    if (sortBy === 'alpha-asc') {
+      return a.name.localeCompare(b.name);
+    }
+    if (sortBy === 'alpha-desc') {
+      return b.name.localeCompare(a.name);
+    }
     if (sortBy === 'budget-asc') {
       return a.costOfLiving.monthlyBudgetSingleUSD - b.costOfLiving.monthlyBudgetSingleUSD;
     }

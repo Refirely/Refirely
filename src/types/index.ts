@@ -4,6 +4,8 @@ export type ClimateCategory = 'Mediterranean' | 'Tropical' | 'Subtropical' | 'Te
 
 export type SortByType =
   | 'recommended'
+  | 'alpha-asc'
+  | 'alpha-desc'
   | 'budget-asc'
   | 'healthcare-desc'
   | 'travel-leisure-desc'

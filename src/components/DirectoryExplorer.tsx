@@ -346,6 +346,8 @@ export const DirectoryExplorer: React.FC = () => {
                   className="px-2.5 py-1 text-xs font-bold text-slate-900 border border-orange-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white hover:border-orange-400 transition-colors cursor-pointer shadow-2xs"
                 >
                   <option value="recommended">Curated Haven Match</option>
+                  <option value="alpha-asc">Alphabetical (A – Z)</option>
+                  <option value="alpha-desc">Alphabetical (Z – A)</option>
                   <option value="budget-asc">Lowest Cost of Living</option>
                   <option value="healthcare-desc">Highest Healthcare Index</option>
                   <option value="travel-leisure-desc">Top Travel & Leisure (Mobility & Activities)</option>
