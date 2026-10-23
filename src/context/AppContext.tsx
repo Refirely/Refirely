@@ -15,7 +15,8 @@ import {
   loadUserDmThreads,
   saveUserDmThreads,
   dispatchMessageToRecipient,
-  popPendingNotificationForUser
+  popPendingNotificationForUser,
+  sortDmThreadsByLatest
 } from '../utils/messagingMultiUser';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -201,6 +202,7 @@ interface AppContextType {
   setEnablePeerAutoReplies: (enabled: boolean) => void;
   notificationSoundEnabled: boolean;
   setNotificationSoundEnabled: (enabled: boolean) => void;
+  openChatThread: (threadId: string) => void;
   simulateIncomingPeerMessage: (threadId?: string, customText?: string) => void;
 
   // Country Journal & Interest Level Tracking
@@ -840,10 +842,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (!isGuestPlaceholder(firestoreRootData?.email) ? firestoreRootData!.email!.trim() : '')
     ).slice(0, 150);
 
+    // 3b. Resolve avatar prioritizing user's explicitly saved/updated avatar in localStorage & Firestore
+    let localSavedAvatar: string | null = null;
+    try {
+      localSavedAvatar =
+        (googleEmail ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${googleEmail}`) : null) ||
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${candidateId}`) ||
+        (user.uid ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${user.uid}`) : null);
+
+      if (!localSavedAvatar) {
+        const savedProfStr = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${candidateId}`);
+        if (savedProfStr) {
+          const parsed = JSON.parse(savedProfStr);
+          if (parsed?.avatarUrl) localSavedAvatar = parsed.avatarUrl;
+        }
+      }
+    } catch {}
+
     const resolvedAvatar =
-      user.photoURL ||
+      localSavedAvatar ||
       existingByEmail?.profile?.avatarUrl ||
       firestoreRootData?.avatarUrl ||
+      user.photoURL ||
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
 
     // Use a clean member base profile (never GUEST_PROFILE)
@@ -1381,10 +1401,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               nextMeetups = commData.meetups;
               setMeetups(nextMeetups);
             }
-            if (Array.isArray(commData.dmThreads) && commData.dmThreads.length > 0) {
-              nextDmThreads = commData.dmThreads;
-              setDmThreads(nextDmThreads);
-            }
+            // Load user-specific authentic DM threads, never overwrite with generic workspace community data
+            const userDmThreads = loadUserDmThreads(activeAccount.id, mergedAccountsList);
+            nextDmThreads = userDmThreads;
+            setDmThreads(userDmThreads);
+          } else {
+            const userDmThreads = loadUserDmThreads(activeAccount.id, mergedAccountsList);
+            nextDmThreads = userDmThreads;
+            setDmThreads(userDmThreads);
           }
           await syncWorkspaceToFirestore('community', {
             threads: nextThreads,
@@ -1415,6 +1439,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(registeredAccounts));
     } catch {}
   }, [registeredAccounts]);
+
+  // Live listener for real-time in-app direct message dispatching across active sessions
+  useEffect(() => {
+    const handleDmDispatched = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const detail = customEvent.detail;
+      if (!detail) return;
+      if (detail.recipientId === currentUserIdRef.current && isAuthenticatedRef.current) {
+        const reloaded = loadUserDmThreads(currentUserIdRef.current, registeredAccountsRef.current);
+        const sorted = sortDmThreadsByLatest(reloaded);
+        setDmThreads(sorted);
+
+        const isActivelyViewingThisThread =
+          currentViewRef.current === 'messages' && activeDmThreadIdRef.current === detail.threadId;
+
+        if (isActivelyViewingThisThread) {
+          markThreadAsRead(detail.threadId);
+        } else {
+          setIncomingNotification(detail.notification);
+          if (notificationSoundEnabledRef.current) {
+            playNotificationChime();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('refirely:dm_dispatched', handleDmDispatched);
+    return () => {
+      window.removeEventListener('refirely:dm_dispatched', handleDmDispatched);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -1721,19 +1776,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logout = async () => {
     // Save current account snapshot into registeredAccounts before logging out so zero work is ever lost
     if (currentUserId && currentUserId !== 'guest') {
-      saveUserDmThreads(currentUserId, dmThreadsRef.current);
-      setRegisteredAccounts(prev =>
-        prev.map(acc =>
-          acc.id === currentUserId
-            ? {
-                ...acc,
-                profile: userProfile,
-                checklist,
-                journalEntries,
-              }
-            : acc
-        )
+      const activeId = currentUserIdRef.current;
+      const latestProfile = userProfileRef.current;
+      saveUserDmThreads(activeId, dmThreadsRef.current);
+      const updatedAccounts = registeredAccountsRef.current.map(acc =>
+        acc.id === activeId
+          ? {
+              ...acc,
+              profile: latestProfile,
+              name: latestProfile.name,
+              email: latestProfile.email,
+              checklist: checklistRef.current,
+              journalEntries: journalEntriesRef.current,
+            }
+          : acc
       );
+      registeredAccountsRef.current = updatedAccounts;
+      setRegisteredAccounts(updatedAccounts);
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(updatedAccounts));
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${activeId}`, JSON.stringify(latestProfile));
+        if (latestProfile.avatarUrl) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${activeId}`, latestProfile.avatarUrl);
+          if (latestProfile.email) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${latestProfile.email.trim().toLowerCase()}`, latestProfile.avatarUrl);
+          }
+          if (auth.currentUser?.uid) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${auth.currentUser.uid}`, latestProfile.avatarUrl);
+          }
+        }
+      } catch {}
     }
     try {
       if (auth.currentUser) {
@@ -1766,8 +1838,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
+      // Pre-fetch user document from Firestore if it exists so custom avatar & profile are instantly resolved
+      let firestoreRootData: (UserProfile & { activeAccountId?: string; checklist?: RelocationChecklistTask[] }) | null = null;
+      try {
+        const docSnap = await getDoc(doc(db, 'users', user.uid));
+        if (docSnap.exists()) {
+          firestoreRootData = docSnap.data() as any;
+        }
+      } catch {}
+
       // Immediately create/resolve the Google user's dedicated User ID (e.g., usr-<gmail-handle>) and profile
-      const googleAcc = resolveGoogleAccountForUser(user, registeredAccountsRef.current, null);
+      const googleAcc = resolveGoogleAccountForUser(user, registeredAccountsRef.current, firestoreRootData);
       const nextAccounts = [
         googleAcc,
         ...registeredAccountsRef.current.filter(a => a.id !== googleAcc.id && a.id !== 'guest'),
@@ -1786,6 +1867,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccounts));
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, googleAcc.id);
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(googleAcc.profile));
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${googleAcc.id}`, JSON.stringify(googleAcc.profile));
+        if (googleAcc.profile.avatarUrl) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${googleAcc.id}`, googleAcc.profile.avatarUrl);
+          if (googleAcc.email) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${googleAcc.email.trim().toLowerCase()}`, googleAcc.profile.avatarUrl);
+          }
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${user.uid}`, googleAcc.profile.avatarUrl);
+        }
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'true');
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
       } catch {}
@@ -2149,40 +2238,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: activeAccId,
       };
 
+      userProfileRef.current = updated;
+
+      // Synchronously persist profile and dedicated avatar keys to localStorage
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(updated));
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${activeAccId}`, JSON.stringify(updated));
+        if (updated.avatarUrl) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${activeAccId}`, updated.avatarUrl);
+          if (updated.email) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${updated.email.trim().toLowerCase()}`, updated.avatarUrl);
+          }
+          if (auth.currentUser?.uid) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${auth.currentUser.uid}`, updated.avatarUrl);
+          }
+        }
+      } catch {}
+
       const isCloudReady = Boolean(auth.currentUser);
       const nowIso = new Date().toISOString();
 
       setRegisteredAccounts(prevAccounts => {
         const exists = prevAccounts.some(acc => acc.id === activeAccId);
-        if (exists) {
-          return prevAccounts.map(acc =>
-            acc.id === activeAccId
-              ? {
-                  ...acc,
-                  id: activeAccId,
-                  profile: updated,
-                  name: updated.name,
-                  email: updated.email,
-                  cloudSynced: isCloudReady ? true : acc.cloudSynced,
-                  lastSyncedAt: isCloudReady ? nowIso : acc.lastSyncedAt,
-                }
-              : acc
-          );
-        }
-        return [
-          {
-            id: activeAccId,
-            username: activeAccId,
-            email: updated.email,
-            name: updated.name,
-            createdAt: nowIso.split('T')[0],
-            profile: updated,
-            checklist: checklistRef.current,
-            cloudSynced: isCloudReady,
-            lastSyncedAt: isCloudReady ? nowIso : undefined,
-          },
-          ...prevAccounts,
-        ];
+        const next = exists
+          ? prevAccounts.map(acc =>
+              acc.id === activeAccId
+                ? {
+                    ...acc,
+                    id: activeAccId,
+                    profile: updated,
+                    name: updated.name,
+                    email: updated.email,
+                    cloudSynced: isCloudReady ? true : acc.cloudSynced,
+                    lastSyncedAt: isCloudReady ? nowIso : acc.lastSyncedAt,
+                  }
+                : acc
+            )
+          : [
+              {
+                id: activeAccId,
+                username: activeAccId,
+                email: updated.email,
+                name: updated.name,
+                createdAt: nowIso.split('T')[0],
+                profile: updated,
+                checklist: checklistRef.current,
+                cloudSynced: isCloudReady,
+                lastSyncedAt: isCloudReady ? nowIso : undefined,
+              },
+              ...prevAccounts,
+            ];
+
+        registeredAccountsRef.current = next;
+        try {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(next));
+        } catch {}
+        return next;
       });
 
       // If signed into Firebase, update both root user doc and /users/{uid}/savedAccounts/{activeAccId}
@@ -2584,21 +2695,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setDmThreads(prev => {
-      const next = prev.map(t => {
-        if (t.id === threadId) {
-          return {
-            ...t,
-            lastMessage: text,
-            lastMessageTime: replyTime,
-            unreadCount: isActivelyViewingThisThread ? 0 : (t.unreadCount || 0) + 1,
-            messages: [...t.messages, peerMsg],
-          };
-        }
-        return t;
-      });
-      try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
-      } catch {}
+      const activeIdx = prev.findIndex(t => t.id === threadId);
+      let targetThread = activeIdx >= 0 ? prev[activeIdx] : null;
+      if (!targetThread) return prev;
+
+      targetThread = {
+        ...targetThread,
+        lastMessage: text,
+        lastMessageTime: replyTime,
+        unreadCount: isActivelyViewingThisThread ? 0 : (targetThread.unreadCount || 0) + 1,
+        messages: [...targetThread.messages, peerMsg],
+      };
+
+      const otherThreads = prev.filter(t => t.id !== threadId);
+      const next = sortDmThreadsByLatest([targetThread, ...otherThreads]);
+      saveUserDmThreads(currentUserIdRef.current, next);
       if (auth.currentUser) {
         syncWorkspaceToFirestore('community', {
           threads: threadsRef.current,
@@ -2635,6 +2746,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     triggerSimulatedPeerReply(thread.id, customText);
   };
 
+  const openChatThread = (threadId: string) => {
+    if (!isAuthenticatedRef.current || currentUserIdRef.current === 'guest') {
+      openAuthModal('login');
+      return;
+    }
+    const reloaded = loadUserDmThreads(currentUserIdRef.current, registeredAccountsRef.current);
+    const sorted = sortDmThreadsByLatest(reloaded);
+    setDmThreads(sorted);
+    setActiveDmThreadId(threadId);
+    markThreadAsRead(threadId);
+    setCurrentView('messages');
+    setIncomingNotification(null);
+  };
+
   const sendMessage = (threadId: string, text: string) => {
     if (!isAuthenticatedRef.current || currentUserIdRef.current === 'guest') {
       console.warn('Blocked: Cannot send direct message when unauthenticated.');
@@ -2662,17 +2787,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setDmThreads(prev => {
-      const next = prev.map(t => {
-        if (t.id === threadId) {
-          return {
-            ...t,
-            lastMessage: userMsg.text,
-            lastMessageTime: timeStr,
-            messages: [...t.messages, userMsg],
-          };
-        }
-        return t;
-      });
+      const activeIdx = prev.findIndex(t => t.id === threadId);
+      let targetThread = activeIdx >= 0 ? prev[activeIdx] : null;
+      if (!targetThread) return prev;
+
+      targetThread = {
+        ...targetThread,
+        lastMessage: userMsg.text,
+        lastMessageTime: timeStr,
+        messages: [...targetThread.messages, userMsg],
+      };
+
+      const otherThreads = prev.filter(t => t.id !== threadId);
+      const next = sortDmThreadsByLatest([targetThread, ...otherThreads]);
       saveUserDmThreads(currentUserIdRef.current, next);
       if (auth.currentUser) {
         syncWorkspaceToFirestore('community', {
@@ -3060,6 +3187,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setEnablePeerAutoReplies,
         notificationSoundEnabled,
         setNotificationSoundEnabled,
+        openChatThread,
         simulateIncomingPeerMessage,
         journalEntries,
         getJournalEntry,

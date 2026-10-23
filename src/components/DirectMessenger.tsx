@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
+import { sortDmThreadsByLatest } from '../utils/messagingMultiUser';
 import { DirectMessagesAuthGate } from './DirectMessagesAuthGate';
 import {
   MessageCircle,
@@ -51,10 +52,14 @@ export const DirectMessenger: React.FC = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [testNotificationTimer, setTestNotificationTimer] = useState<number | null>(null);
 
+  const sortedThreads = React.useMemo(() => {
+    return sortDmThreadsByLatest(dmThreads);
+  }, [dmThreads]);
+
   const activeThread =
-    dmThreads.find(t => t.id === activeDmThreadId) ||
-    dmThreads.find(t => activeDmThreadId && t.peerUserId === activeDmThreadId) ||
-    dmThreads[0];
+    sortedThreads.find(t => t.id === activeDmThreadId) ||
+    sortedThreads.find(t => activeDmThreadId && t.peerUserId === activeDmThreadId) ||
+    sortedThreads[0];
 
   // Auto-mark current active conversation as read
   useEffect(() => {
@@ -97,7 +102,7 @@ export const DirectMessenger: React.FC = () => {
     }, 1000);
   };
 
-  const filteredThreads = dmThreads.filter(t => {
+  const filteredThreads = sortedThreads.filter(t => {
     if (!searchTerm.trim()) return true;
     const q = searchTerm.toLowerCase();
     return (

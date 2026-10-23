@@ -7,9 +7,7 @@ export const MessageNotificationToast: React.FC = () => {
   const {
     incomingNotification,
     dismissNotification,
-    setCurrentView,
-    setActiveDmThreadId,
-    markThreadAsRead,
+    openChatThread,
     notificationSoundEnabled,
     setNotificationSoundEnabled,
     isAuthenticated,
@@ -46,11 +44,8 @@ export const MessageNotificationToast: React.FC = () => {
   if (!isAuthenticated || currentUserId === 'guest' || !incomingNotification) return null;
 
   const handleOpenChat = () => {
-    const threadId = incomingNotification.threadId;
-    markThreadAsRead(threadId);
-    setActiveDmThreadId(threadId);
-    setCurrentView('messages');
-    dismissNotification();
+    if (!incomingNotification) return;
+    openChatThread(incomingNotification.threadId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

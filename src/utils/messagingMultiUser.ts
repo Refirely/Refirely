@@ -343,8 +343,43 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
 };
 
 /**
+ * Extracts numeric timestamp for sorting threads with the most recent message on top.
+ */
+export const getThreadLatestTimestamp = (thread: DirectMessageThread): number => {
+  if (thread.messages && thread.messages.length > 0) {
+    const lastMsg = thread.messages[thread.messages.length - 1];
+    if (lastMsg.createdAt) {
+      const t = new Date(lastMsg.createdAt).getTime();
+      if (!isNaN(t)) return t;
+    }
+  }
+  const timeStr = thread.lastMessageTime || '';
+  if (timeStr === 'Just now' || timeStr === 'Recently') return Date.now();
+  if (timeStr.includes(':')) {
+    // Today's time (e.g. "10:45 AM")
+    return Date.now() - 60 * 1000;
+  }
+  if (timeStr.toLowerCase().includes('yesterday')) {
+    return Date.now() - 86400 * 1000;
+  }
+  const daysMatch = timeStr.match(/(\d+)\s*days?\s*ago/i);
+  if (daysMatch) {
+    return Date.now() - parseInt(daysMatch[1], 10) * 86400 * 1000;
+  }
+  return 0;
+};
+
+/**
+ * Sorts direct message threads so the conversation with the newest activity is always at index [0].
+ */
+export const sortDmThreadsByLatest = (threads: DirectMessageThread[]): DirectMessageThread[] => {
+  return [...threads].sort((a, b) => getThreadLatestTimestamp(b) - getThreadLatestTimestamp(a));
+};
+
+/**
  * Loads, heals, and returns the direct message threads for a given user.
- * Ensures avatars and peer details match the real registered accounts.
+ * Ensures avatars and peer details match the real registered accounts,
+ * and sorts threads so the latest active conversation is always on top.
  */
 export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): DirectMessageThread[] => {
   if (!userId || userId === 'guest') {
@@ -419,11 +454,13 @@ export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): Dire
     };
   });
 
+  const sortedHealed = sortDmThreadsByLatest(healedThreads);
+
   try {
-    localStorage.setItem(getUserDmThreadsKey(userId), JSON.stringify(healedThreads));
+    localStorage.setItem(getUserDmThreadsKey(userId), JSON.stringify(sortedHealed));
   } catch {}
 
-  return healedThreads;
+  return sortedHealed;
 };
 
 /**
@@ -431,9 +468,10 @@ export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): Dire
  */
 export const saveUserDmThreads = (userId: string, threads: DirectMessageThread[]): void => {
   if (!userId || userId === 'guest') return;
+  const sorted = sortDmThreadsByLatest(threads);
   try {
-    localStorage.setItem(getUserDmThreadsKey(userId), JSON.stringify(threads));
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(threads));
+    localStorage.setItem(getUserDmThreadsKey(userId), JSON.stringify(sorted));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(sorted));
   } catch {}
 };
 
@@ -442,6 +480,8 @@ export const saveUserDmThreads = (userId: string, threads: DirectMessageThread[]
  * 1. Writes to sender's inbox (as sender: 'user', read: true)
  * 2. Writes to recipient's inbox (as sender: 'peer', read: false, unreadCount + 1)
  * 3. Enqueues an in-app pending notification for recipient with chime alert info.
+ * 4. Puts the thread with latest message at the top of recipient's inbox.
+ * 5. Dispatches a window event so running client sessions immediately update.
  */
 export const dispatchMessageToRecipient = (
   senderId: string,
@@ -492,9 +532,8 @@ export const dispatchMessageToRecipient = (
       unreadCount: (recipientThread.unreadCount || 0) + 1,
       messages: [...(recipientThread.messages || []), peerMsg],
     };
-    nextRecipientThreads = recipientThreads.map(t =>
-      t.id === recipientThread!.id ? recipientThread! : t
-    );
+    const otherThreads = recipientThreads.filter(t => t.id !== recipientThread!.id);
+    nextRecipientThreads = [recipientThread, ...otherThreads];
   } else {
     recipientThread = {
       id: `dm-${senderId}`,
@@ -512,31 +551,50 @@ export const dispatchMessageToRecipient = (
     nextRecipientThreads = [recipientThread, ...recipientThreads];
   }
 
+  // Ensure latest activity is at the very top
+  nextRecipientThreads = sortDmThreadsByLatest(nextRecipientThreads);
+
   // Save recipient inbox
   try {
     localStorage.setItem(getUserDmThreadsKey(recipientId), JSON.stringify(nextRecipientThreads));
   } catch {}
 
   // Enqueue pending notification for recipient
+  const newNotif: InAppMessageNotification = {
+    id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    threadId: recipientThread.id,
+    peerName: senderName,
+    peerAvatar: senderAvatar,
+    peerCountry: senderCountry,
+    peerCity: senderCity,
+    text: text.trim(),
+    timestamp: timeStr,
+  };
+
   try {
     const pendingKey = getPendingNotifsKey(recipientId);
     const existingRaw = localStorage.getItem(pendingKey);
     const pendingList: InAppMessageNotification[] = existingRaw ? JSON.parse(existingRaw) : [];
-
-    const newNotif: InAppMessageNotification = {
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      threadId: recipientThread.id,
-      peerName: senderName,
-      peerAvatar: senderAvatar,
-      peerCountry: senderCountry,
-      peerCity: senderCity,
-      text: text.trim(),
-      timestamp: timeStr,
-    };
-
     pendingList.push(newNotif);
     localStorage.setItem(pendingKey, JSON.stringify(pendingList));
   } catch {}
+
+  // Broadcast window event for live in-session synchronization
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('refirely:dm_dispatched', {
+          detail: {
+            recipientId,
+            senderId,
+            threadId: recipientThread.id,
+            message: peerMsg,
+            notification: newNotif,
+          },
+        })
+      );
+    } catch {}
+  }
 };
 
 /**
