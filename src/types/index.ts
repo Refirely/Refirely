@@ -358,6 +358,7 @@ export interface DirectMessageThread {
   unreadCount: number;
   messages: DirectMessage[];
   participants?: string[];
+  lastActivityAt?: string;
 }
 
 export interface InAppMessageNotification {

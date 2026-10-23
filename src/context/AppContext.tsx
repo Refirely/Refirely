@@ -2703,6 +2703,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...targetThread,
         lastMessage: text,
         lastMessageTime: replyTime,
+        lastActivityAt: new Date().toISOString(),
         unreadCount: isActivelyViewingThisThread ? 0 : (targetThread.unreadCount || 0) + 1,
         messages: [...targetThread.messages, peerMsg],
       };
@@ -2795,6 +2796,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...targetThread,
         lastMessage: userMsg.text,
         lastMessageTime: timeStr,
+        lastActivityAt: now.toISOString(),
         messages: [...targetThread.messages, userMsg],
       };
 

@@ -346,6 +346,10 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
  * Extracts numeric timestamp for sorting threads with the most recent message on top.
  */
 export const getThreadLatestTimestamp = (thread: DirectMessageThread): number => {
+  if (thread.lastActivityAt) {
+    const t = new Date(thread.lastActivityAt).getTime();
+    if (!isNaN(t)) return t;
+  }
   if (thread.messages && thread.messages.length > 0) {
     const lastMsg = thread.messages[thread.messages.length - 1];
     if (lastMsg.createdAt) {
@@ -353,12 +357,21 @@ export const getThreadLatestTimestamp = (thread: DirectMessageThread): number =>
       if (!isNaN(t)) return t;
     }
   }
-  const timeStr = thread.lastMessageTime || '';
+  const timeStr = (thread.lastMessageTime || '').trim();
   if (timeStr === 'Just now' || timeStr === 'Recently') return Date.now();
-  if (timeStr.includes(':')) {
-    // Today's time (e.g. "10:45 AM")
-    return Date.now() - 60 * 1000;
+
+  const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (timeMatch) {
+    let hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    const meridiem = (timeMatch[3] || '').toUpperCase();
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+    const d = new Date();
+    d.setHours(hours, minutes, 0, 0);
+    return d.getTime();
   }
+
   if (timeStr.toLowerCase().includes('yesterday')) {
     return Date.now() - 86400 * 1000;
   }
@@ -529,6 +542,7 @@ export const dispatchMessageToRecipient = (
       peerCity: senderCity,
       lastMessage: text.trim(),
       lastMessageTime: timeStr,
+      lastActivityAt: now.toISOString(),
       unreadCount: (recipientThread.unreadCount || 0) + 1,
       messages: [...(recipientThread.messages || []), peerMsg],
     };
@@ -545,6 +559,7 @@ export const dispatchMessageToRecipient = (
       peerStatus: 'Community Member',
       lastMessage: text.trim(),
       lastMessageTime: timeStr,
+      lastActivityAt: now.toISOString(),
       unreadCount: 1,
       messages: [peerMsg],
     };
