@@ -446,3 +446,56 @@ export interface CountryTravelMobility {
   solo: SoloTravelerProfile;
   soloFemale: SoloFemaleTravelerProfile;
 }
+
+// ==========================================
+// Feedback & Bug Reports
+// ==========================================
+
+export type FeedbackType = 'feedback' | 'bug';
+export type FeedbackStatus = 'new' | 'under_review' | 'in_progress' | 'resolved' | 'closed';
+export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical';
+export type FireNumbersRating =
+  | 'realistic'
+  | 'somewhat_realistic'
+  | 'too_optimistic'
+  | 'too_conservative'
+  | 'not_sure';
+
+export interface FeedbackReport {
+  id: string;
+  type: FeedbackType;
+  status: FeedbackStatus;
+  priority?: FeedbackPriority;
+
+  // Provider details
+  isRegisteredUser: boolean;
+  userId?: string;
+  userName: string;
+  userEmail: string;
+  userAvatar?: string;
+
+  // Feedback content
+  title?: string;
+  message: string;
+
+  // Specific questions:
+  countryName?: string;
+  fireNumbersRating?: FireNumbersRating;
+  fireNumbersComment?: string;
+  missingDataPoint?: string;
+
+  // Bug specific:
+  bugStepsToReproduce?: string;
+  bugSeverity?: 'Low' | 'Medium' | 'High' | 'Critical';
+
+  // Environmental context
+  currentUrlOrView?: string;
+  deviceInfo?: string;
+
+  // Admin resolution
+  adminNotes?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+

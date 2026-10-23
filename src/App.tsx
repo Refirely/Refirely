@@ -16,6 +16,7 @@ import { EditProfileModal } from './components/EditProfileModal';
 import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
+import { FeedbackWidget } from './components/FeedbackWidget';
 import { updatePageSeo } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
@@ -70,6 +71,7 @@ const MainContent: React.FC = () => {
       <EditProfileModal />
       <FirebaseConnectionModal />
       <PublicProfileModal />
+      <FeedbackWidget />
 
       {/* Elegant Light Footer */}
       <footer className="bg-white text-slate-600 border-t border-slate-200/90 text-xs py-12">

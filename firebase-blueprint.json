@@ -255,9 +255,132 @@
         }
       },
       "required": ["id", "userId"]
+    },
+    "FeedbackReport": {
+      "title": "FeedbackReport",
+      "description": "User feedback and bug report submissions with FIRE realism answers, missing data points, status tracking, and provider contact information",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique report identifier",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "description": "Submission category",
+          "enum": ["feedback", "bug"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Administrative resolution workflow status",
+          "enum": ["new", "under_review", "in_progress", "resolved", "closed"]
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority severity level",
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "isRegisteredUser": {
+          "type": "boolean",
+          "description": "Whether the provider is an authenticated registered expat member"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Member User ID if registered",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Display name of provider",
+          "maxLength": 100
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email address of provider for follow-up",
+          "maxLength": 150
+        },
+        "userAvatar": {
+          "type": "string",
+          "description": "Avatar URL of provider",
+          "maxLength": 500
+        },
+        "title": {
+          "type": "string",
+          "description": "Brief headline or summary",
+          "maxLength": 200
+        },
+        "message": {
+          "type": "string",
+          "description": "Detailed feedback or bug description",
+          "maxLength": 4000
+        },
+        "countryName": {
+          "type": "string",
+          "description": "Country context for this feedback",
+          "maxLength": 100
+        },
+        "fireNumbersRating": {
+          "type": "string",
+          "description": "Answer to FIRE numbers realistic question",
+          "enum": ["realistic", "somewhat_realistic", "too_optimistic", "too_conservative", "not_sure"]
+        },
+        "fireNumbersComment": {
+          "type": "string",
+          "description": "Specific comments on FIRE calculations and cost numbers",
+          "maxLength": 2000
+        },
+        "missingDataPoint": {
+          "type": "string",
+          "description": "Answer to what country or data point is missing",
+          "maxLength": 2000
+        },
+        "bugStepsToReproduce": {
+          "type": "string",
+          "description": "Steps to reproduce the reported bug",
+          "maxLength": 2000
+        },
+        "bugSeverity": {
+          "type": "string",
+          "description": "Severity level of bug",
+          "enum": ["Low", "Medium", "High", "Critical"]
+        },
+        "currentUrlOrView": {
+          "type": "string",
+          "description": "Page or route where the feedback was initiated",
+          "maxLength": 200
+        },
+        "deviceInfo": {
+          "type": "string",
+          "description": "Browser user agent and device summary",
+          "maxLength": 300
+        },
+        "adminNotes": {
+          "type": "string",
+          "description": "Internal administrative notes and response logs",
+          "maxLength": 3000
+        },
+        "resolvedAt": {
+          "type": "string",
+          "description": "ISO timestamp when the ticket was resolved"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of submission"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last status update"
+        }
+      },
+      "required": ["id", "type", "status", "message", "createdAt"]
     }
   },
   "firestore": {
+    "/feedbackReports/{reportId}": {
+      "schema": "FeedbackReport",
+      "description": "Global collection for user feedback and bug submissions"
+    },
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Root users collection storing all User IDs (usr-ganesh, usr-elena, usr-marcus, custom IDs) and primary auth session document"

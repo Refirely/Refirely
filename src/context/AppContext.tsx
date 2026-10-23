@@ -3,13 +3,15 @@ import {
   Country, UserProfile, CommunityThread, ExpatMeetup, DirectMessageThread, 
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
   UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType,
-  InAppMessageNotification 
+  InAppMessageNotification, FeedbackReport, FeedbackType, FeedbackStatus, FeedbackPriority,
+  FireNumbersRating
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST } from '../data/community';
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
+import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
 import { playNotificationChime } from '../utils/audioNotification';
 import {
   loadUserDmThreads,
@@ -27,7 +29,7 @@ import {
   signInWithEmailAndPassword,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, getDocFromServer, setDoc, getDocs, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, deleteDoc, collection } from 'firebase/firestore';
 
 export type AppView = 
   | 'landing'
@@ -221,6 +223,24 @@ interface AppContextType {
     isFavorited?: boolean;
   }) => Promise<{ success: boolean; error?: string }>;
   deleteJournalEntry: (countryId: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Feedback & Bug Reports
+  feedbackReports: FeedbackReport[];
+  submitFeedbackReport: (
+    data: Omit<FeedbackReport, 'id' | 'createdAt' | 'status'>
+  ) => Promise<{ success: boolean; id?: string; error?: string }>;
+  updateFeedbackStatus: (
+    id: string,
+    status: FeedbackStatus,
+    adminNotes?: string,
+    priority?: FeedbackPriority
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteFeedbackReport: (id: string) => Promise<{ success: boolean; error?: string }>;
+  isFeedbackModalOpen: boolean;
+  setIsFeedbackModalOpen: (open: boolean) => void;
+  feedbackInitialType: FeedbackType;
+  openFeedbackModal: (initialType?: FeedbackType) => void;
+  closeFeedbackModal: () => void;
 
   // Firebase Auth & Cloud Sync
   firebaseUser: FirebaseUser | null;
@@ -545,6 +565,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
     return INITIAL_JOURNAL_ENTRIES;
   });
+
+  // Feedback & Bug Reports state with local storage fallback
+  const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>(() => {
+    try {
+      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feedback_reports`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return INITIAL_FEEDBACK_REPORTS;
+    } catch {
+      return INITIAL_FEEDBACK_REPORTS;
+    }
+  });
+
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackInitialType, setFeedbackInitialType] = useState<FeedbackType>('feedback');
+
+  const openFeedbackModal = (type: FeedbackType = 'feedback') => {
+    setFeedbackInitialType(type);
+    setIsFeedbackModalOpen(true);
+  };
+
+  const closeFeedbackModal = () => {
+    setIsFeedbackModalOpen(false);
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(feedbackReports));
+    } catch {}
+  }, [feedbackReports]);
 
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -2002,6 +2056,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
+  const submitFeedbackReport = async (
+    data: Omit<FeedbackReport, 'id' | 'createdAt' | 'status'>
+  ): Promise<{ success: boolean; id?: string; error?: string }> => {
+    try {
+      const newId = `fb-${Date.now()}`;
+      const now = new Date().toISOString();
+      const newReport: FeedbackReport = {
+        ...data,
+        id: newId,
+        status: 'new',
+        createdAt: now,
+      };
+
+      setFeedbackReports(prev => [newReport, ...prev]);
+
+      try {
+        if (db) {
+          const docRef = doc(db, 'feedbackReports', newId);
+          await setDoc(docRef, newReport);
+        }
+      } catch (firestoreErr) {
+        console.warn('Firestore feedback submission write failed, kept in local state:', firestoreErr);
+      }
+
+      return { success: true, id: newId };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to submit report' };
+    }
+  };
+
+  const updateFeedbackStatus = async (
+    id: string,
+    status: FeedbackStatus,
+    adminNotes?: string,
+    priority?: FeedbackPriority
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const now = new Date().toISOString();
+      setFeedbackReports(prev =>
+        prev.map(r => {
+          if (r.id !== id) return r;
+          const updated: FeedbackReport = {
+            ...r,
+            status,
+            updatedAt: now,
+            ...(status === 'resolved' && !r.resolvedAt ? { resolvedAt: now } : {}),
+            ...(adminNotes !== undefined ? { adminNotes } : {}),
+            ...(priority !== undefined ? { priority } : {}),
+          };
+          return updated;
+        })
+      );
+
+      try {
+        if (db) {
+          const docRef = doc(db, 'feedbackReports', id);
+          const updatePayload: Record<string, any> = {
+            status,
+            updatedAt: now,
+          };
+          if (status === 'resolved') updatePayload.resolvedAt = now;
+          if (adminNotes !== undefined) updatePayload.adminNotes = adminNotes;
+          if (priority !== undefined) updatePayload.priority = priority;
+          await updateDoc(docRef, updatePayload);
+        }
+      } catch (firestoreErr) {
+        console.warn('Firestore updateFeedbackStatus failed:', firestoreErr);
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update feedback status' };
+    }
+  };
+
+  const deleteFeedbackReport = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setFeedbackReports(prev => prev.filter(r => r.id !== id));
+      try {
+        if (db) {
+          const docRef = doc(db, 'feedbackReports', id);
+          await deleteDoc(docRef);
+        }
+      } catch (firestoreErr) {
+        console.warn('Firestore deleteFeedbackReport failed:', firestoreErr);
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to delete feedback report' };
+    }
+  };
+
   const switchAccount = (userId: string) => {
     const acc = registeredAccounts.find(a => a.id === userId);
     if (acc) {
@@ -3195,6 +3341,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getJournalEntry,
         saveJournalEntry,
         deleteJournalEntry,
+        feedbackReports,
+        submitFeedbackReport,
+        updateFeedbackStatus,
+        deleteFeedbackReport,
+        isFeedbackModalOpen,
+        setIsFeedbackModalOpen,
+        feedbackInitialType,
+        openFeedbackModal,
+        closeFeedbackModal,
         firebaseUser,
         isFirebaseConnected,
         isFirebaseSyncing,

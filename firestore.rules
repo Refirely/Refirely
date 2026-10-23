@@ -85,6 +85,15 @@ service cloud.firestore {
         (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40));
     }
 
+    function isValidFeedbackReport(reportId, data) {
+      return data.id == reportId &&
+        data.type in ['feedback', 'bug'] &&
+        data.status in ['new', 'under_review', 'in_progress', 'resolved', 'closed'] &&
+        data.message is string &&
+        data.message.size() > 0 &&
+        data.message.size() <= 4000;
+    }
+
     // 1. Root /users/{userId} collection: stores primary auth session AND all User IDs (usr-ganesh, usr-elena, usr-marcus, etc.)
     match /users/{userId} {
       allow get: if isSignedIn() && isValidId(userId) && (userId == request.auth.uid || resource == null || resource.data.userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin());
@@ -212,6 +221,14 @@ service cloud.firestore {
       allow delete: if isSignedIn() &&
         isValidId(accountId) &&
         (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    // 7. Top-level /feedbackReports/{reportId} collection
+    match /feedbackReports/{reportId} {
+      allow get: if isBootstrappedAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isBootstrappedAdmin();
+      allow create: if isValidId(reportId) && isValidFeedbackReport(reportId, incoming());
+      allow update, delete: if isBootstrappedAdmin();
     }
   }
 }

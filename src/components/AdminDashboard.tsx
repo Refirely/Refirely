@@ -8,10 +8,11 @@ import {
   Calendar, CheckCircle, X, Search, LayoutDashboard,
   Database, Download, RefreshCw, Eye, UserCheck, Mail,
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
-  ArrowUpRight, Clock, BookOpen, Plane, UserPlus
+  ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus
 } from 'lucide-react';
+import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 
-type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'cloud';
+type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'cloud';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -39,6 +40,7 @@ export const AdminDashboard: React.FC = () => {
     isFirebaseSyncing,
     lastCloudSyncTime,
     openFirebaseModal,
+    feedbackReports,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -449,6 +451,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'users' && `Registered Users Directory (${registeredAccounts.length})`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
                 {activeTab === 'community' && 'Community & Meetups Moderation'}
+                {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
             </div>
@@ -593,6 +596,34 @@ export const AdminDashboard: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setActiveTab('feedback')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                activeTab === 'feedback'
+                  ? 'bg-slate-900 text-white'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <MessageSquarePlus className="w-4 h-4 text-orange-400" />
+                <span>Feedback &amp; Bugs</span>
+              </span>
+              <div className="flex items-center gap-1.5">
+                {feedbackReports.filter(r => r.status === 'new').length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-orange-600 text-white">
+                    {feedbackReports.filter(r => r.status === 'new').length} new
+                  </span>
+                )}
+                <span
+                  className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                    activeTab === 'feedback' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {feedbackReports.length}
+                </span>
+              </div>
+            </button>
+
+            <button
               onClick={() => setActiveTab('cloud')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === 'cloud'
@@ -652,8 +683,8 @@ export const AdminDashboard: React.FC = () => {
             ========================================================= */}
             {activeTab === 'overview' && (
               <>
-                {/* 4-Column KPI Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {/* 5-Column KPI Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                   <div
                     onClick={() => setActiveTab('users')}
                     className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
@@ -715,16 +746,36 @@ export const AdminDashboard: React.FC = () => {
                     className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Community & Meetups</span>
+                      <span className="text-xs font-medium">Community &amp; Meetups</span>
                       <MessageSquare className="w-4 h-4 text-purple-600" />
                     </div>
                     <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
                       {threads.length} / {meetups.length}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-                      <span>{threads.length} Forum Threads</span>
+                      <span>{threads.length} Forum</span>
                       <span aria-hidden="true">·</span>
                       <span>{meetups.length} Meetups</span>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setActiveTab('feedback')}
+                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between text-slate-500">
+                      <span className="text-xs font-medium">Feedback &amp; Bugs</span>
+                      <MessageSquarePlus className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                      {feedbackReports.length}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                      <span className="text-orange-700 font-semibold">{feedbackReports.filter(r => r.status === 'new').length} New</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{feedbackReports.filter(r => r.type === 'bug').length} Bugs</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-emerald-700 font-medium">{feedbackReports.filter(r => r.status === 'resolved' || r.status === 'closed').length} Done</span>
                     </div>
                   </div>
                 </div>
@@ -1599,7 +1650,14 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {/* =========================================================
-                TAB 5: CLOUD DATABASE & GOVERNANCE
+                TAB 5: USER FEEDBACK & BUG REPORTS (Interactive Triage)
+            ========================================================= */}
+            {activeTab === 'feedback' && (
+              <AdminFeedbackManagement />
+            )}
+
+            {/* =========================================================
+                TAB 6: CLOUD DATABASE & GOVERNANCE
             ========================================================= */}
             {activeTab === 'cloud' && (
               <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
