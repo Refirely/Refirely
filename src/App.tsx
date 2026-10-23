@@ -17,7 +17,7 @@ import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { FeedbackWidget } from './components/FeedbackWidget';
-import { updatePageSeo } from './utils/seo';
+import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
 const MainContent: React.FC = () => {
@@ -35,8 +35,23 @@ const MainContent: React.FC = () => {
   } = useApp();
 
   useEffect(() => {
-    updatePageSeo(currentView, selectedCountry);
-  }, [currentView, selectedCountry]);
+    updatePageSeo(currentView, selectedCountry, countries);
+  }, [currentView, selectedCountry, countries]);
+
+  const handleSpaViewClick = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      e.preventDefault();
+      setCurrentView(view);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleSpaCountryClick = (e: React.MouseEvent<HTMLAnchorElement>, countryId: string) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      e.preventDefault();
+      navigateToCountry(countryId);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-orange-100 selection:text-orange-950">
@@ -80,11 +95,9 @@ const MainContent: React.FC = () => {
             
             {/* Col 1: Wordmark & Purpose */}
             <div className="space-y-3">
-              <button
-                onClick={() => {
-                  setCurrentView('landing');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
+              <a
+                href={getViewUrl('landing')}
+                onClick={(e) => handleSpaViewClick(e, 'landing')}
                 className="inline-flex items-center focus:outline-none group"
                 aria-label="ReFIREly Home"
               >
@@ -93,7 +106,7 @@ const MainContent: React.FC = () => {
                   alt="ReFIREly"
                   className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
                 />
-              </button>
+              </a>
               <p className="text-slate-500 text-xs leading-relaxed">
                 Objective empirical guidance and expat community connections for prospective retirees evaluating relocation worldwide.
               </p>
@@ -106,11 +119,11 @@ const MainContent: React.FC = () => {
                 <span>Top Havens</span>
               </span>
               <ul className="space-y-1.5">
-                <li><button onClick={() => navigateToCountry('portugal')} className="hover:text-orange-600 hover:underline transition-colors">Portugal (D7 / Algarve)</button></li>
-                <li><button onClick={() => navigateToCountry('spain')} className="hover:text-orange-600 hover:underline transition-colors">Spain (Costa del Sol)</button></li>
-                <li><button onClick={() => navigateToCountry('thailand')} className="hover:text-orange-600 hover:underline transition-colors">Thailand (Chiang Mai)</button></li>
-                <li><button onClick={() => navigateToCountry('costa-rica')} className="hover:text-orange-600 hover:underline transition-colors">Costa Rica (Central Valley)</button></li>
-                <li><button onClick={() => navigateToCountry('panama')} className="hover:text-orange-600 hover:underline transition-colors">Panama (Boquete)</button></li>
+                <li><a href={getCountryUrl('portugal')} onClick={(e) => handleSpaCountryClick(e, 'portugal')} className="hover:text-orange-600 hover:underline transition-colors">Portugal (D7 / Algarve)</a></li>
+                <li><a href={getCountryUrl('spain')} onClick={(e) => handleSpaCountryClick(e, 'spain')} className="hover:text-orange-600 hover:underline transition-colors">Spain (Costa del Sol)</a></li>
+                <li><a href={getCountryUrl('thailand')} onClick={(e) => handleSpaCountryClick(e, 'thailand')} className="hover:text-orange-600 hover:underline transition-colors">Thailand (Chiang Mai)</a></li>
+                <li><a href={getCountryUrl('costa-rica')} onClick={(e) => handleSpaCountryClick(e, 'costa-rica')} className="hover:text-orange-600 hover:underline transition-colors">Costa Rica (Central Valley)</a></li>
+                <li><a href={getCountryUrl('panama')} onClick={(e) => handleSpaCountryClick(e, 'panama')} className="hover:text-orange-600 hover:underline transition-colors">Panama (Boquete)</a></li>
               </ul>
             </div>
 
@@ -121,13 +134,13 @@ const MainContent: React.FC = () => {
                 <span>Platform Features</span>
               </span>
               <ul className="space-y-1.5">
-                <li><button onClick={() => setCurrentView('landing')} className="hover:text-orange-600 hover:underline transition-colors">Home / Overview</button></li>
-                <li><button onClick={() => setCurrentView('explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</button></li>
-                <li><button onClick={() => setCurrentView('compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</button></li>
-                <li><button onClick={() => setCurrentView('community')} className="hover:text-orange-600 hover:underline transition-colors">Expat Community Boards</button></li>
-                <li><button onClick={() => setCurrentView('meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups &amp; Socials</button></li>
-                <li><button onClick={() => setCurrentView('messages')} className="hover:text-orange-600 hover:underline transition-colors">Direct Member Messaging</button></li>
-                <li><button onClick={() => setCurrentView('dashboard')} className="hover:text-orange-600 hover:underline transition-colors">FIRE Calculator &amp; Checklist</button></li>
+                <li><a href={getViewUrl('landing')} onClick={(e) => handleSpaViewClick(e, 'landing')} className="hover:text-orange-600 hover:underline transition-colors">Home / Overview</a></li>
+                <li><a href={getViewUrl('explore')} onClick={(e) => handleSpaViewClick(e, 'explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</a></li>
+                <li><a href={getViewUrl('compare')} onClick={(e) => handleSpaViewClick(e, 'compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</a></li>
+                <li><a href={getViewUrl('community')} onClick={(e) => handleSpaViewClick(e, 'community')} className="hover:text-orange-600 hover:underline transition-colors">Expat Community Boards</a></li>
+                <li><a href={getViewUrl('meetups')} onClick={(e) => handleSpaViewClick(e, 'meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups &amp; Socials</a></li>
+                <li><a href={getViewUrl('messages')} onClick={(e) => handleSpaViewClick(e, 'messages')} className="hover:text-orange-600 hover:underline transition-colors">Direct Member Messaging</a></li>
+                <li><a href={getViewUrl('dashboard')} onClick={(e) => handleSpaViewClick(e, 'dashboard')} className="hover:text-orange-600 hover:underline transition-colors">FIRE Calculator &amp; Checklist</a></li>
               </ul>
             </div>
 
@@ -159,6 +172,31 @@ const MainContent: React.FC = () => {
             </div>
 
           </div>
+
+          {/* Crawlable Global Retirement Dossiers Index (SEO Sitemap Links) */}
+          <nav aria-label="Global Retirement Havens Directory" className="py-6 border-b border-slate-100">
+            <span className="font-bold text-slate-800 block mb-3 uppercase tracking-wider text-[10px]">
+              Global Retirement &amp; FIRE Dossiers (Direct Country Links)
+            </span>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-slate-500">
+              {[...countries]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((c) => (
+                  <a
+                    key={c.id}
+                    href={getCountryUrl(c.id)}
+                    onClick={(e) => handleSpaCountryClick(e, c.id)}
+                    className={`hover:text-orange-600 hover:underline transition-colors ${
+                      currentView === 'country-detail' && selectedCountry?.id === c.id
+                        ? 'text-orange-600 font-bold'
+                        : ''
+                    }`}
+                  >
+                    {c.name}
+                  </a>
+                ))}
+            </div>
+          </nav>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-3">
             <span>© 2026 ReFirely Global Relocation Intelligence. All rights reserved.</span>

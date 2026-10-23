@@ -13,6 +13,7 @@ import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicM
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
 import { playNotificationChime } from '../utils/audioNotification';
+import { parseUrlToRoute, getViewUrl } from '../utils/seo';
 import {
   loadUserDmThreads,
   saveUserDmThreads,
@@ -298,8 +299,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  const [currentView, setCurrentView] = useState<AppView>('landing');
-  const [activeCountryId, setActiveCountryId] = useState<string>('portugal');
+  const initialRoute = React.useMemo(() => parseUrlToRoute(countries), []);
+  const [currentView, setCurrentView] = useState<AppView>(initialRoute.view);
+  const [activeCountryId, setActiveCountryId] = useState<string>(initialRoute.countryId || 'portugal');
+  const isPopStateNavigationRef = React.useRef<boolean>(false);
+
+  // Listen to browser Back / Forward buttons (popstate)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      isPopStateNavigationRef.current = true;
+      const parsed = parseUrlToRoute(countries);
+      if (parsed.countryId) {
+        setActiveCountryId(parsed.countryId);
+      }
+      setCurrentView(parsed.view);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [countries]);
+
+  // Synchronize URL address bar when currentView or activeCountryId changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isPopStateNavigationRef.current) {
+      isPopStateNavigationRef.current = false;
+      return;
+    }
+    const targetUrl = getViewUrl(currentView, currentView === 'country-detail' ? activeCountryId : undefined);
+    const currentFull = window.location.pathname + window.location.search;
+    if (currentFull !== targetUrl) {
+      try {
+        window.history.pushState({ view: currentView, countryId: activeCountryId }, '', targetUrl);
+      } catch {
+        // Ignore if history push is restricted in iframe
+      }
+    }
+  }, [currentView, activeCountryId]);
 
   // Helper to sanitize custom User IDs to adhere to Firestore document ID rules ^[a-zA-Z0-9_\-]+$
   const sanitizeAccountId = (rawId: string): string => {

@@ -5,6 +5,7 @@ import { CountryThumbnail } from './CountryThumbnail';
 import { CountryFlag } from './CountryFlag';
 import { generateCountryDossierPdf } from '../utils/exportCountryDossierPdf';
 import { getCountryTravelLeisureScore, getCountryTravelMobility } from '../data/countryTravelMobility';
+import { getCountryUrl } from '../utils/seo';
 import { Sun, Heart, ShieldCheck, ArrowRight, Check, Download, Compass } from 'lucide-react';
 
 interface CountryCardProps {
@@ -31,6 +32,16 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
   const compared = isCountryCompared(country.id);
   const travelLeisureScore = getCountryTravelLeisureScore(country);
   const mobility = getCountryTravelMobility(country);
+  const countryUrl = getCountryUrl(country.id);
+
+  const handleSpaCountryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    navigateToCountry(country.id);
+  };
 
   const handleQuickExportPdf = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,7 +109,13 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
                 />
                 <div className="min-w-0">
                   <h3 className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors tracking-wide truncate">
-                    {country.name}
+                    <a
+                      href={countryUrl}
+                      onClick={handleSpaCountryClick}
+                      className="focus:outline-none"
+                    >
+                      {country.name}
+                    </a>
                   </h3>
                   {/* Clean unboxed metadata with typographic separators */}
                   <div className="flex items-center gap-1.5 text-xs text-slate-200/90 mt-0.5 truncate">
@@ -283,14 +300,15 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country }) => {
             <span>PDF</span>
           </button>
 
-          {/* Deep Dive Page CTA */}
-          <button
-            onClick={() => navigateToCountry(country.id)}
+          {/* Deep Dive Page CTA (Crawlable SEO Link + Instant SPA Navigation) */}
+          <a
+            href={countryUrl}
+            onClick={handleSpaCountryClick}
             className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700 hover:text-orange-950 transition-colors py-1 px-2 rounded-md hover:bg-orange-50 whitespace-nowrap"
           >
             <span>Explore Dossier</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </a>
         </div>
       </div>
 

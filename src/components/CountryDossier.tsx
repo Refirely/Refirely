@@ -9,6 +9,7 @@ import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
+import { getFullCountryUrl } from '../utils/seo';
 import {
   ArrowLeft, Heart, Scale, Sun, DollarSign, Shield,
   FileCheck, Users, MapPin, CheckCircle2, AlertCircle,
@@ -42,9 +43,19 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   // Active section tab
   const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'cost' | 'travel' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const saved = isCountrySaved(country.id);
   const compared = isCountryCompared(country.id);
+
+  const handleCopyCountryLink = () => {
+    const shareUrl = getFullCountryUrl(country.id);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
 
   // Country specific threads and meetups
   const countryThreads = threads.filter(t => t.countryId === country.id);
@@ -74,17 +85,34 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
       {/* Breadcrumb Navigation & Top Action Bar */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
-          <button
-            onClick={() => setCurrentView('explore')}
+          <a
+            href="/?view=explore"
+            onClick={e => {
+              if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+                e.preventDefault();
+                setCurrentView('explore');
+              }
+            }}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to All Destinations</span>
-          </button>
+          </a>
 
           {/* Clean unboxed breadcrumbs */}
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
-            <span>Explore</span>
+            <a
+              href="/?view=explore"
+              onClick={e => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+                  e.preventDefault();
+                  setCurrentView('explore');
+                }
+              }}
+              className="hover:text-slate-800 transition-colors"
+            >
+              Explore
+            </a>
             <span aria-hidden="true">/</span>
             <span>{country.region}</span>
             <span aria-hidden="true">/</span>
@@ -92,6 +120,29 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Share / Copy Dedicated Country URL Button */}
+            <button
+              onClick={handleCopyCountryLink}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+                copiedLink
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+              title={`Copy direct link to ${country.name} dossier (${getFullCountryUrl(country.id)})`}
+            >
+              {copiedLink ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Link Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Share Link</span>
+                </>
+              )}
+            </button>
+
             {/* Export Full Dossier PDF Button */}
             <button
               onClick={() => setIsPdfModalOpen(true)}

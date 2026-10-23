@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { getViewUrl } from '../utils/seo';
 import {
   User, Shield, Bookmark, MessageCircle, Menu, X, SlidersHorizontal,
   LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
@@ -56,14 +57,22 @@ export const Navbar: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAnchorNav = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      e.preventDefault();
+      handleNav(view);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shadow-2xs">
       {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
         {/* Zone 1: Brand wordmark */}
-        <button
-          onClick={() => handleNav('landing')}
+        <a
+          href={getViewUrl('landing')}
+          onClick={(e) => handleAnchorNav(e, 'landing')}
           className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group shrink-0 py-1"
           aria-label="ReFIREly Home"
         >
@@ -72,12 +81,13 @@ export const Navbar: React.FC = () => {
             alt="ReFIREly"
             className="h-8 sm:h-10 w-auto max-w-[120px] sm:max-w-[145px] object-contain transition-transform duration-200 group-hover:scale-[1.03]"
           />
-        </button>
+        </a>
 
         {/* Zone 2: Primary navigation links (including prominent CMS Console tab for Admins) */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2.5 text-xs lg:text-[13px] font-medium text-slate-600 min-w-0">
-          <button
-            onClick={() => handleNav('landing')}
+          <a
+            href={getViewUrl('landing')}
+            onClick={(e) => handleAnchorNav(e, 'landing')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'landing'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -85,9 +95,10 @@ export const Navbar: React.FC = () => {
             }`}
           >
             Home
-          </button>
-          <button
-            onClick={() => handleNav('explore')}
+          </a>
+          <a
+            href={getViewUrl('explore')}
+            onClick={(e) => handleAnchorNav(e, 'explore')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'explore' || currentView === 'country-detail'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -95,9 +106,10 @@ export const Navbar: React.FC = () => {
             }`}
           >
             Explore Havens
-          </button>
-          <button
-            onClick={() => handleNav('compare')}
+          </a>
+          <a
+            href={getViewUrl('compare')}
+            onClick={(e) => handleAnchorNav(e, 'compare')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'compare'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -105,9 +117,10 @@ export const Navbar: React.FC = () => {
             }`}
           >
             Compare
-          </button>
-          <button
-            onClick={() => handleNav('community')}
+          </a>
+          <a
+            href={getViewUrl('community')}
+            onClick={(e) => handleAnchorNav(e, 'community')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'community'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -115,9 +128,10 @@ export const Navbar: React.FC = () => {
             }`}
           >
             Community
-          </button>
-          <button
-            onClick={() => handleNav('meetups')}
+          </a>
+          <a
+            href={getViewUrl('meetups')}
+            onClick={(e) => handleAnchorNav(e, 'meetups')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'meetups'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -125,9 +139,10 @@ export const Navbar: React.FC = () => {
             }`}
           >
             Meetups
-          </button>
-          <button
-            onClick={() => handleNav('dashboard')}
+          </a>
+          <a
+            href={getViewUrl('dashboard')}
+            onClick={(e) => handleAnchorNav(e, 'dashboard')}
             className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'dashboard'
                 ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
@@ -135,7 +150,7 @@ export const Navbar: React.FC = () => {
             }`}
           >
             My Dashboard
-          </button>
+          </a>
         </nav>
 
         {/* Zone 3: Compact Right Utility & Account Controls */}
