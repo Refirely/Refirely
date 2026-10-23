@@ -353,6 +353,17 @@ export interface DirectMessageThread {
   messages: DirectMessage[];
 }
 
+export interface InAppMessageNotification {
+  id: string;
+  threadId: string;
+  peerName: string;
+  peerAvatar: string;
+  peerCountry: string;
+  peerCity: string;
+  text: string;
+  timestamp: string;
+}
+
 export interface RelocationChecklistTask {
   id: string;
   category: 'Financial' | 'Legal & Visas' | 'Healthcare' | 'Logistics & Housing';

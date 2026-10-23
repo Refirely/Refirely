@@ -2,13 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Country, UserProfile, CommunityThread, ExpatMeetup, DirectMessageThread, 
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
-  UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType 
+  UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType,
+  InAppMessageNotification 
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST } from '../data/community';
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
+import { playNotificationChime } from '../utils/audioNotification';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
   onAuthStateChanged,
@@ -167,7 +169,7 @@ interface AppContextType {
   addMeetup: (meetup: Omit<ExpatMeetup, 'id' | 'attendeesCount' | 'isRsvped'>) => void;
   deleteMeetup: (meetupId: string) => void;
 
-  // Direct Messages
+  // Direct Messages & Notification Mechanism
   dmThreads: DirectMessageThread[];
   activeDmThreadId: string | null;
   setActiveDmThreadId: (id: string | null) => void;
@@ -184,6 +186,16 @@ interface AppContextType {
       stayOnCurrentView?: boolean;
     }
   ) => string;
+  totalUnreadDms: number;
+  markThreadAsRead: (threadId: string) => void;
+  markAllThreadsAsRead: () => void;
+  incomingNotification: InAppMessageNotification | null;
+  dismissNotification: () => void;
+  enablePeerAutoReplies: boolean;
+  setEnablePeerAutoReplies: (enabled: boolean) => void;
+  notificationSoundEnabled: boolean;
+  setNotificationSoundEnabled: (enabled: boolean) => void;
+  simulateIncomingPeerMessage: (threadId?: string, customText?: string) => void;
 
   // Country Journal & Interest Level Tracking
   journalEntries: Record<string, CountryJournalEntry>;
@@ -464,6 +476,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [activeDmThreadId, setActiveDmThreadId] = useState<string | null>('dm-1');
 
+  // Notifications & Auto-Reply configuration state
+  const [incomingNotification, setIncomingNotification] = useState<InAppMessageNotification | null>(null);
+  const [enablePeerAutoReplies, setEnablePeerAutoRepliesState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`${LOCAL_STORAGE_KEY}_enable_peer_auto_replies`) === 'true';
+    } catch {
+      return false; // Disabled by default for authentic user-to-user messaging!
+    }
+  });
+
+  const [notificationSoundEnabled, setNotificationSoundEnabledState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(`${LOCAL_STORAGE_KEY}_notif_sound`) !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  const setEnablePeerAutoReplies = (enabled: boolean) => {
+    setEnablePeerAutoRepliesState(enabled);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_enable_peer_auto_replies`, String(enabled));
+    } catch {}
+  };
+
+  const setNotificationSoundEnabled = (enabled: boolean) => {
+    setNotificationSoundEnabledState(enabled);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_notif_sound`, String(enabled));
+    } catch {}
+  };
+
+  const dismissNotification = () => {
+    setIncomingNotification(null);
+  };
+
+  const totalUnreadDms = React.useMemo(() => {
+    return dmThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
+  }, [dmThreads]);
+
   // Country Journal state with local storage fallback
   const [journalEntries, setJournalEntries] = useState<Record<string, CountryJournalEntry>>(() => {
     try {
@@ -485,7 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const persistedFirestoreRoleRef = React.useRef<'member' | 'admin'>('member');
 
-  // Live refs to prevent stale closures inside onAuthStateChanged & async Firestore handlers
+  // Live refs to prevent stale closures inside onAuthStateChanged, timers & async Firestore handlers
   const registeredAccountsRef = React.useRef<UserAccount[]>(registeredAccounts);
   const currentUserIdRef = React.useRef<string>(currentUserId);
   const userProfileRef = React.useRef<UserProfile>(userProfile);
@@ -495,6 +547,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const meetupsRef = React.useRef<ExpatMeetup[]>(meetups);
   const dmThreadsRef = React.useRef<DirectMessageThread[]>(dmThreads);
   const countriesRef = React.useRef<Country[]>(countries);
+  const currentViewRef = React.useRef<AppView>(currentView);
+  const activeDmThreadIdRef = React.useRef<string | null>(activeDmThreadId);
+  const enablePeerAutoRepliesRef = React.useRef<boolean>(enablePeerAutoReplies);
+  const notificationSoundEnabledRef = React.useRef<boolean>(notificationSoundEnabled);
 
   useEffect(() => { registeredAccountsRef.current = registeredAccounts; }, [registeredAccounts]);
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
@@ -505,6 +561,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { meetupsRef.current = meetups; }, [meetups]);
   useEffect(() => { dmThreadsRef.current = dmThreads; }, [dmThreads]);
   useEffect(() => { countriesRef.current = countries; }, [countries]);
+  useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
+  useEffect(() => { activeDmThreadIdRef.current = activeDmThreadId; }, [activeDmThreadId]);
+  useEffect(() => { enablePeerAutoRepliesRef.current = enablePeerAutoReplies; }, [enablePeerAutoReplies]);
+  useEffect(() => { notificationSoundEnabledRef.current = notificationSoundEnabled; }, [notificationSoundEnabled]);
 
   const recordSyncTimestamp = () => {
     const nowIso = new Date().toISOString();
@@ -2374,6 +2434,120 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const markThreadAsRead = (threadId: string) => {
+    setDmThreads(prev => {
+      const hasUnread = prev.some(t => t.id === threadId && (t.unreadCount || 0) > 0);
+      if (!hasUnread) return prev;
+      const next = prev.map(t => (t.id === threadId ? { ...t, unreadCount: 0 } : t));
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
+      } catch {}
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: threadsRef.current,
+          meetups: meetupsRef.current,
+          dmThreads: next,
+        });
+      }
+      return next;
+    });
+    setIncomingNotification(prev => (prev?.threadId === threadId ? null : prev));
+  };
+
+  const markAllThreadsAsRead = () => {
+    setDmThreads(prev => {
+      const next = prev.map(t => ({ ...t, unreadCount: 0 }));
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
+      } catch {}
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: threadsRef.current,
+          meetups: meetupsRef.current,
+          dmThreads: next,
+        });
+      }
+      return next;
+    });
+    setIncomingNotification(null);
+  };
+
+  const triggerSimulatedPeerReply = (threadId: string, customText?: string) => {
+    const thread = dmThreadsRef.current.find(t => t.id === threadId);
+    if (!thread) return;
+
+    const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const defaultReplies = [
+      `Thanks for reaching out! Living in ${thread.peerCountry} has been wonderful for our retirement lifestyle. Happy to share what daily living expenses and healthcare look like!`,
+      `That's a great question. You will definitely want to double-check local municipality requirements as they can vary slightly by region in ${thread.peerCountry}.`,
+      `Yes, absolutely! The healthcare here in ${thread.peerCity} has been prompt and very affordable. I can share some tips on finding English-speaking clinics.`,
+      `Feel free to ask anytime! If you're attending any of the upcoming expat meetups, we can also chat in person over coffee.`,
+      `If you plan a scouting trip to ${thread.peerCity}, I'd be glad to recommend some safe, walkable neighborhoods with great transit access.`
+    ];
+    const text = customText || defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
+
+    const isActivelyViewingThisThread =
+      currentViewRef.current === 'messages' && activeDmThreadIdRef.current === threadId;
+
+    const peerMsg = {
+      id: `m-${Date.now() + Math.floor(Math.random() * 100)}`,
+      sender: 'peer' as const,
+      text,
+      timestamp: replyTime,
+    };
+
+    setDmThreads(prev => {
+      const next = prev.map(t => {
+        if (t.id === threadId) {
+          return {
+            ...t,
+            lastMessage: text,
+            lastMessageTime: replyTime,
+            unreadCount: isActivelyViewingThisThread ? 0 : (t.unreadCount || 0) + 1,
+            messages: [...t.messages, peerMsg],
+          };
+        }
+        return t;
+      });
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
+      } catch {}
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: threadsRef.current,
+          meetups: meetupsRef.current,
+          dmThreads: next,
+        });
+      }
+      return next;
+    });
+
+    // Notify user with chime & floating toast banner if not actively looking at this thread on the messages view
+    if (!isActivelyViewingThisThread) {
+      if (notificationSoundEnabledRef.current) {
+        playNotificationChime();
+      }
+      setIncomingNotification({
+        id: `notif-${Date.now()}`,
+        threadId,
+        peerName: thread.peerName,
+        peerAvatar: thread.peerAvatar,
+        peerCountry: thread.peerCountry,
+        peerCity: thread.peerCity,
+        text,
+        timestamp: replyTime,
+      });
+    }
+  };
+
+  const simulateIncomingPeerMessage = (targetThreadId?: string, customText?: string) => {
+    const thread = targetThreadId
+      ? dmThreadsRef.current.find(t => t.id === targetThreadId)
+      : (activeDmThreadIdRef.current ? dmThreadsRef.current.find(t => t.id === activeDmThreadIdRef.current) : dmThreadsRef.current[0]);
+    if (!thread) return;
+    triggerSimulatedPeerReply(thread.id, customText);
+  };
+
   const sendMessage = (threadId: string, text: string) => {
     if (!text.trim()) return;
     const now = new Date();
@@ -2397,6 +2571,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return t;
       });
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
+      } catch {}
       if (auth.currentUser) {
         syncWorkspaceToFirestore('community', {
           threads: threadsRef.current,
@@ -2407,37 +2584,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return next;
     });
 
-    // Realistic simulated auto-reply from peer after brief delay
-    setTimeout(() => {
-      const peerReplies = [
-        "Thanks for reaching out! Happy to share my honest experience. Moving here was the best decision my family made.",
-        "That is a great question. You will definitely want to double-check local municipality requirements as they can vary slightly by region.",
-        "Yes, absolutely. The healthcare here has been prompt and very affordable. I can send you a checklist of English-speaking clinics.",
-        "Feel free to ask anytime! If you're attending the upcoming meetup, we can also chat in person over coffee.",
-      ];
-      const randomReply = peerReplies[Math.floor(Math.random() * peerReplies.length)];
-      const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      setDmThreads(prev => prev.map(t => {
-        if (t.id === threadId) {
-          return {
-            ...t,
-            lastMessage: randomReply,
-            lastMessageTime: replyTime,
-            messages: [
-              ...t.messages,
-              {
-                id: `m-${Date.now() + 1}`,
-                sender: 'peer' as const,
-                text: randomReply,
-                timestamp: replyTime,
-              }
-            ],
-          };
-        }
-        return t;
-      }));
-    }, 1200);
+    // NOTE: Simulated peer auto-replies are OFF by default to keep real messaging authentic!
+    // They only fire if the user has explicitly enabled "Simulated Peer Auto-Replies" in the messenger testing controls:
+    if (enablePeerAutoRepliesRef.current) {
+      setTimeout(() => {
+        triggerSimulatedPeerReply(threadId);
+      }, 1200);
+    }
   };
 
   const startDmWithPeer = (
@@ -2542,31 +2695,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActiveDmThreadId(newId);
 
-    // If an initial note was included on a brand new thread, simulate a welcoming reply from the peer
-    if (initialNote?.trim()) {
+    // If an initial note was included on a brand new thread AND simulated auto-replies are enabled in settings:
+    if (initialNote?.trim() && enablePeerAutoRepliesRef.current) {
       setTimeout(() => {
-        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const welcomeReply = `Hi ${userProfileRef.current.name.split(' ')[0] || 'there'}! Great to connect with you on ReFIREly. Happy to chat about ${resolvedCountry} or share tips from my travels!`;
-        setDmThreads(prev =>
-          prev.map(t =>
-            t.id === newId
-              ? {
-                  ...t,
-                  lastMessage: welcomeReply,
-                  lastMessageTime: replyTime,
-                  messages: [
-                    ...t.messages,
-                    {
-                      id: `m-${Date.now() + 1}`,
-                      sender: 'peer' as const,
-                      text: welcomeReply,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : t
-          )
-        );
+        triggerSimulatedPeerReply(newId, welcomeReply);
       }, 1100);
     }
 
@@ -2771,6 +2904,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveDmThreadId,
         sendMessage,
         startDmWithPeer,
+        totalUnreadDms,
+        markThreadAsRead,
+        markAllThreadsAsRead,
+        incomingNotification,
+        dismissNotification,
+        enablePeerAutoReplies,
+        setEnablePeerAutoReplies,
+        notificationSoundEnabled,
+        setNotificationSoundEnabled,
+        simulateIncomingPeerMessage,
         journalEntries,
         getJournalEntry,
         saveJournalEntry,

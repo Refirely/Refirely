@@ -154,17 +154,25 @@ export const Navbar: React.FC = () => {
             <span className="whitespace-nowrap">Lifestyle {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
           </button>
 
-          {/* Direct Messages link with badge */}
+          {/* Direct Messages link with dynamic notification badge */}
           <button
             onClick={() => handleNav('messages')}
             className={`relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer ${
               currentView === 'messages' ? 'bg-orange-50 text-orange-800' : ''
             }`}
-            title="Expat Direct Messages"
+            title={
+              totalUnreadDms > 0
+                ? `Expat Direct Messages (${totalUnreadDms} unread message${totalUnreadDms > 1 ? 's' : ''})`
+                : 'Expat Direct Messages'
+            }
+            aria-label="Direct Messages"
           >
             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             {totalUnreadDms > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-600 ring-2 ring-white" />
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[18px] items-center justify-center px-1 rounded-full bg-orange-600 text-[10px] font-extrabold text-white ring-2 ring-white shadow-xs">
+                <span className="absolute -inset-0.5 rounded-full bg-orange-500 opacity-75 animate-ping" />
+                <span className="relative z-10">{totalUnreadDms > 9 ? '9+' : totalUnreadDms}</span>
+              </span>
             )}
           </button>
 
@@ -483,11 +491,19 @@ export const Navbar: React.FC = () => {
             </button>
             <button
               onClick={() => handleNav('messages')}
-              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between ${
                 currentView === 'messages' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Direct Messages
+              <span className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-orange-600" />
+                <span>Direct Messages</span>
+              </span>
+              {totalUnreadDms > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shadow-2xs">
+                  {totalUnreadDms} new
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleNav('dashboard')}

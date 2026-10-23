@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
 import {
@@ -11,6 +11,14 @@ import {
   ExternalLink,
   Globe,
   Languages,
+  Bell,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  HelpCircle,
+  Check,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react';
 
 export const DirectMessenger: React.FC = () => {
@@ -25,13 +33,30 @@ export const DirectMessenger: React.FC = () => {
     publicMemberAccounts,
     openPublicProfile,
     currentUserId,
+    totalUnreadDms,
+    markThreadAsRead,
+    markAllThreadsAsRead,
+    enablePeerAutoReplies,
+    setEnablePeerAutoReplies,
+    notificationSoundEnabled,
+    setNotificationSoundEnabled,
+    simulateIncomingPeerMessage,
   } = useApp();
 
   const [messageInput, setMessageInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showMemberDirectoryStrip, setShowMemberDirectoryStrip] = useState(true);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [testNotificationTimer, setTestNotificationTimer] = useState<number | null>(null);
 
   const activeThread = dmThreads.find(t => t.id === activeDmThreadId) || dmThreads[0];
+
+  // Auto-mark current active conversation as read
+  useEffect(() => {
+    if (activeThread && (activeThread.unreadCount || 0) > 0) {
+      markThreadAsRead(activeThread.id);
+    }
+  }, [activeThread?.id, activeThread?.unreadCount, markThreadAsRead]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +64,27 @@ export const DirectMessenger: React.FC = () => {
 
     sendMessage(activeThread.id, messageInput);
     setMessageInput('');
+  };
+
+  const handleTriggerDelayedNotification = () => {
+    if (!activeThread) return;
+    if (testNotificationTimer !== null) return;
+
+    setTestNotificationTimer(3);
+    let count = 3;
+    const interval = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setTestNotificationTimer(count);
+      } else {
+        clearInterval(interval);
+        setTestNotificationTimer(null);
+        simulateIncomingPeerMessage(
+          activeThread.id,
+          `Hi! I received your inquiry about ${activeThread.peerCity}. Here is a test live notification message from ${activeThread.peerName}!`
+        );
+      }
+    }, 1000);
   };
 
   const filteredThreads = dmThreads.filter(t => {
@@ -75,22 +121,149 @@ export const DirectMessenger: React.FC = () => {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Inspect public member profiles (countries visited, languages, interests) and send personal messages to connect.
+            Connect authentically with registered expats worldwide. Real-time notification badges update whenever new messages arrive.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowMemberDirectoryStrip(prev => !prev)}
-          className="px-3.5 py-2 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-900 text-xs font-bold transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer whitespace-nowrap"
-        >
-          <Users className="w-4 h-4 text-teal-700" />
-          <span>
-            {showMemberDirectoryStrip
-              ? 'Hide Member Directory Strip'
-              : `Browse Registered Members (${connectableMembers.length})`}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowExplanation(prev => !prev)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-teal-700" />
+            <span>Auto-Replies &amp; Notifications Info</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowMemberDirectoryStrip(prev => !prev)}
+            className="px-3.5 py-2 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100 text-teal-900 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+          >
+            <Users className="w-4 h-4 text-teal-700" />
+            <span>
+              {showMemberDirectoryStrip
+                ? 'Hide Member Directory'
+                : `Browse Members (${connectableMembers.length})`}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Info Panel: Explanation of auto-replies & notification mechanism */}
+      {showExplanation && (
+        <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-cyan-50 border border-teal-200 rounded-2xl p-4 sm:p-5 text-xs text-slate-700 space-y-2.5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-teal-900 font-bold text-sm">
+              <ShieldCheck className="w-4 h-4 text-teal-700" />
+              <span>Direct Messaging &amp; Notification Diagnostic</span>
+            </div>
+            <button
+              onClick={() => setShowExplanation(false)}
+              className="text-slate-400 hover:text-slate-700 cursor-pointer font-bold px-1"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="leading-relaxed">
+            <strong>Why were you receiving automated replies from any sender?</strong> In previous prototype versions, an automated simulation timer was hardcoded to synthesize canned expat replies after 1.2 seconds on every sent message. That artificial bot behavior is now <strong>disabled by default</strong> so you have genuine, authentic peer conversations without unsolicited phantom messages.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[11px]">
+            <div className="p-2.5 rounded-xl bg-white/80 border border-teal-100 space-y-1">
+              <span className="font-bold text-teal-900 flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span>Authentic Peer Mode (Active)</span>
+              </span>
+              <p className="text-slate-600">
+                Messages to registered community members remain quiet until the real recipient replies. No automatic bot responses interfere.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/80 border border-teal-100 space-y-1">
+              <span className="font-bold text-teal-900 flex items-center gap-1">
+                <Bell className="w-3 h-3 text-orange-600" />
+                <span>Real-Time Notifications &amp; Badges</span>
+              </span>
+              <p className="text-slate-600">
+                Whenever a message arrives while you are elsewhere in the app (exploring havens, viewing compare charts, or on dashboard), an in-app toast notification pops up and the chat bubble in the top navbar pulses with the unread count!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Control Strip: Testing Mode, Simulate Reply & Notification Trigger */}
+      <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 sm:p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className="font-bold text-slate-800 flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${enablePeerAutoReplies ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+            <span>Messaging Mode:</span>
+            <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+              enablePeerAutoReplies
+                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+            }`}>
+              {enablePeerAutoReplies ? 'Simulated Bot Replies (ON)' : 'Authentic Peer Chat (Auto-Replies OFF)'}
+            </span>
           </span>
-        </button>
+
+          <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 hover:text-slate-900 select-none">
+            <input
+              type="checkbox"
+              checked={enablePeerAutoReplies}
+              onChange={e => setEnablePeerAutoReplies(e.target.checked)}
+              className="rounded text-teal-700 focus:ring-teal-500 h-3.5 w-3.5 cursor-pointer"
+            />
+            <span className="text-[11px] font-medium">Enable simulated replies for test</span>
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Sound Toggle */}
+          <button
+            type="button"
+            onClick={() => setNotificationSoundEnabled(!notificationSoundEnabled)}
+            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              notificationSoundEnabled
+                ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs'
+                : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'
+            }`}
+            title={notificationSoundEnabled ? 'Notification chime sound is ON' : 'Notification chime is MUTED'}
+          >
+            {notificationSoundEnabled ? <Volume2 className="w-3.5 h-3.5 text-teal-700" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span className="text-[11px]">{notificationSoundEnabled ? 'Chime ON' : 'Muted'}</span>
+          </button>
+
+          {/* Simulate Immediate Reply */}
+          {activeThread && (
+            <button
+              type="button"
+              onClick={() => simulateIncomingPeerMessage(activeThread.id)}
+              className="px-2.5 py-1.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-900 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              title={`Simulate an incoming message reply from ${activeThread.peerName}`}
+            >
+              <Sparkles className="w-3 h-3 text-teal-700" />
+              <span>Simulate Reply from {activeThread.peerName.split(' ')[0]}</span>
+            </button>
+          )}
+
+          {/* Delayed Notification Test */}
+          {activeThread && (
+            <button
+              type="button"
+              onClick={handleTriggerDelayedNotification}
+              disabled={testNotificationTimer !== null}
+              className="px-2.5 py-1.5 rounded-lg border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-950 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Triggers an incoming message in 3 seconds so you can switch views and observe the notification toast and navbar badge"
+            >
+              <Bell className="w-3 h-3 text-orange-600" />
+              <span>
+                {testNotificationTimer !== null
+                  ? `Triggering in ${testNotificationTimer}s (switch pages now!)`
+                  : 'Test In-App Alert (3s delay)'}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Registered Members Quick-Connect Strip (Excludes Admins) */}
@@ -148,50 +321,39 @@ export const DirectMessenger: React.FC = () => {
                       </button>
                       <div className="text-[11px] text-teal-800 font-medium truncate">
                         {getWorldCountryFlag(p.residingCountry || p.originCountry)}{' '}
-                        {p.originCity ? `${p.originCity}, ` : ''}
                         {p.residingCountry || p.originCountry}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Globe className="w-3 h-3 text-slate-400" />
-                          <span>{visitedCount} visited</span>
-                        </span>
-                        {langSummary && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span className="truncate">{langSummary}</span>
-                          </>
-                        )}
+                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {visitedCount} countries visited · {langSummary || 'English'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60">
                     <button
                       type="button"
                       onClick={() => openPublicProfile(acc.id)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                      className="flex-1 py-1 px-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
                     >
-                      <ExternalLink className="w-3 h-3 text-slate-400" />
-                      <span>Public Profile</span>
+                      <User className="w-3 h-3 text-teal-700" />
+                      <span>View Profile</span>
                     </button>
-
                     <button
                       type="button"
                       onClick={() =>
                         startDmWithPeer(
                           p.name,
-                          p.residingCountry || p.originCountry || 'Portugal',
-                          p.originCity || p.residingCountry || 'Coastal Hub',
+                          p.residingCountry || p.targetCountry || 'Portugal',
+                          p.originCity || 'Expat Hub',
                           undefined,
                           {
                             peerAvatar: p.avatarUrl,
-                            peerStatus: p.relocationStatus || 'Expat Community Member',
+                            peerStatus: p.relocationStatus || 'Registered Member',
                             peerUserId: acc.id,
                           }
                         )
                       }
-                      className="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-teal-900 text-white text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                      className="flex-1 py-1 px-2 rounded-lg bg-teal-800 hover:bg-teal-900 text-white text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
                     >
                       <MessageCircle className="w-3 h-3" />
                       <span>{isCurrentChat ? 'Active Chat' : 'Message'}</span>
@@ -208,6 +370,31 @@ export const DirectMessenger: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs grid grid-cols-1 md:grid-cols-12 min-h-[580px]">
         {/* Left Sidebar: Threads List (col-span-4) */}
         <div className="md:col-span-4 border-r border-slate-200 flex flex-col bg-slate-50/50">
+          {/* Header with Title, Unread Count & Mark All Read */}
+          <div className="p-3 bg-white border-b border-slate-200 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-900">Conversations</span>
+              <span className="text-[10px] font-semibold text-slate-400 font-mono">
+                ({dmThreads.length})
+              </span>
+              {totalUnreadDms > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-orange-600 text-white shadow-2xs">
+                  {totalUnreadDms} unread
+                </span>
+              )}
+            </div>
+
+            {totalUnreadDms > 0 && (
+              <button
+                type="button"
+                onClick={markAllThreadsAsRead}
+                className="text-[10px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+
           {/* Search bar */}
           <div className="p-3 border-b border-slate-200 bg-white">
             <div className="relative">
@@ -222,41 +409,71 @@ export const DirectMessenger: React.FC = () => {
             </div>
           </div>
 
-          {/* Threads */}
+          {/* Threads List */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {filteredThreads.map(thread => {
               const isActive = thread.id === activeThread?.id;
+              const hasUnread = (thread.unreadCount || 0) > 0;
+
               return (
                 <button
                   key={thread.id}
-                  onClick={() => setActiveDmThreadId(thread.id)}
+                  onClick={() => {
+                    setActiveDmThreadId(thread.id);
+                    if (hasUnread) {
+                      markThreadAsRead(thread.id);
+                    }
+                  }}
                   className={`w-full p-3.5 text-left transition-colors flex items-start gap-3 cursor-pointer ${
                     isActive
                       ? 'bg-teal-50/90 ring-1 ring-inset ring-teal-200'
+                      : hasUnread
+                      ? 'bg-teal-50/40 hover:bg-teal-50/70'
                       : 'hover:bg-slate-100/70'
                   }`}
                 >
-                  <img
-                    src={thread.peerAvatar}
-                    alt={thread.peerName}
-                    referrerPolicy="no-referrer"
-                    className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200"
-                  />
+                  <div className="relative shrink-0">
+                    <img
+                      src={thread.peerAvatar}
+                      alt={thread.peerName}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                    />
+                    {hasUnread && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange-600 ring-2 ring-white" />
+                    )}
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-slate-900 truncate">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4
+                        className={`text-xs truncate ${
+                          hasUnread ? 'font-extrabold text-teal-950' : 'font-bold text-slate-900'
+                        }`}
+                      >
                         {thread.peerName}
                       </h4>
-                      <span className="text-[10px] text-slate-400 font-mono tabular-nums">
-                        {thread.lastMessageTime}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-mono tabular-nums">
+                          {thread.lastMessageTime}
+                        </span>
+                        {hasUnread && (
+                          <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-600 text-[9px] font-extrabold text-white px-1 shadow-2xs">
+                            {thread.unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-[11px] text-teal-800 font-medium truncate mt-0.5">
-                      {thread.peerCity}, {thread.peerCountry}
+                      {getWorldCountryFlag(thread.peerCountry)} {thread.peerCity}, {thread.peerCountry}
                     </div>
 
-                    <p className="text-xs text-slate-500 truncate mt-1">
+                    <p
+                      className={`text-xs truncate mt-1 ${
+                        hasUnread ? 'font-semibold text-slate-900' : 'text-slate-500'
+                      }`}
+                    >
                       {thread.lastMessage}
                     </p>
                   </div>
@@ -287,6 +504,7 @@ export const DirectMessenger: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 group-hover:text-teal-800 transition-colors flex items-center gap-1.5">
                       <span>{activeThread.peerName}</span>
+                      <span className="text-sm">{getWorldCountryFlag(activeThread.peerCountry)}</span>
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span className="text-teal-700 font-medium">
@@ -309,13 +527,23 @@ export const DirectMessenger: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => simulateIncomingPeerMessage(activeThread.id)}
+                    className="text-xs text-teal-800 bg-teal-50 hover:bg-teal-100 font-semibold px-2.5 py-1.5 rounded-lg border border-teal-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+                    title={`Trigger a simulated peer response from ${activeThread.peerName}`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-teal-700" />
+                    <span>Simulate Reply</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() =>
                       openPublicProfile(activePeerMember?.id || activeThread.peerUserId || activeThread.peerName)
                     }
                     className="text-xs text-slate-700 hover:text-slate-900 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                   >
                     <User className="w-3.5 h-3.5 text-teal-700" />
-                    <span>View Public Profile</span>
+                    <span>View Profile</span>
                   </button>
 
                   <button
@@ -328,7 +556,7 @@ export const DirectMessenger: React.FC = () => {
                     }}
                     className="text-xs text-teal-700 hover:text-teal-900 font-semibold px-2.5 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-50 cursor-pointer whitespace-nowrap"
                   >
-                    View Country Guide
+                    Country Guide
                   </button>
                 </div>
               </div>
@@ -371,7 +599,7 @@ export const DirectMessenger: React.FC = () => {
               {/* Message History */}
               <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/40">
                 <div className="text-center my-2">
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-400 bg-white/70 px-3 py-1 rounded-full border border-slate-200/70">
                     Direct conversation · Verified expat community member
                   </span>
                 </div>
@@ -402,26 +630,37 @@ export const DirectMessenger: React.FC = () => {
               </div>
 
               {/* Message Input Bar */}
-              <form
-                onSubmit={handleSend}
-                className="p-3.5 border-t border-slate-200 bg-white flex items-center gap-2"
-              >
-                <input
-                  type="text"
-                  placeholder={`Send a personal message to ${activeThread.peerName} about countries visited, languages, or daily life...`}
-                  value={messageInput}
-                  onChange={e => setMessageInput(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-                />
-                <button
-                  type="submit"
-                  disabled={!messageInput.trim()}
-                  className="px-4 py-2 bg-teal-800 text-white font-semibold text-xs sm:text-sm rounded-lg hover:bg-teal-900 transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer"
+              <div className="border-t border-slate-200 bg-white">
+                <form
+                  onSubmit={handleSend}
+                  className="p-3.5 flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Send</span>
-                </button>
-              </form>
+                  <input
+                    type="text"
+                    placeholder={`Send a personal message to ${activeThread.peerName} about life in ${activeThread.peerCity}...`}
+                    value={messageInput}
+                    onChange={e => setMessageInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!messageInput.trim()}
+                    className="px-4 py-2 bg-teal-800 text-white font-semibold text-xs sm:text-sm rounded-lg hover:bg-teal-900 transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Send</span>
+                  </button>
+                </form>
+
+                <div className="px-4 pb-2 text-[10px] text-slate-400 flex items-center justify-between">
+                  <span>
+                    {enablePeerAutoReplies
+                      ? 'Simulated peer auto-replies are ON (testing mode active)'
+                      : 'Authentic messaging mode: peer auto-replies are OFF'}
+                  </span>
+                  <span>Enter ↵ to send</span>
+                </div>
+              </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-xs">
@@ -433,4 +672,3 @@ export const DirectMessenger: React.FC = () => {
     </div>
   );
 };
-

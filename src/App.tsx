@@ -14,6 +14,7 @@ import { AuthModal } from './components/AuthModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
 import { PublicProfileModal } from './components/PublicProfileModal';
+import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { updatePageSeo } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
@@ -42,6 +43,9 @@ const MainContent: React.FC = () => {
         {currentView === 'dashboard' && <UserDashboard />}
         {currentView === 'admin' && <AdminDashboard />}
       </div>
+
+      {/* Global In-App Notifications Toast */}
+      <MessageNotificationToast />
 
       {/* Global Auth and Profile Modals */}
       <AuthModal />
