@@ -335,8 +335,14 @@ export interface ExpatMeetup {
 export interface DirectMessage {
   id: string;
   sender: 'user' | 'peer';
+  senderUserId?: string;
+  senderName?: string;
+  recipientUserId?: string;
+  recipientName?: string;
   text: string;
   timestamp: string;
+  createdAt?: string;
+  read?: boolean;
 }
 
 export interface DirectMessageThread {
@@ -351,6 +357,7 @@ export interface DirectMessageThread {
   lastMessageTime: string;
   unreadCount: number;
   messages: DirectMessage[];
+  participants?: string[];
 }
 
 export interface InAppMessageNotification {

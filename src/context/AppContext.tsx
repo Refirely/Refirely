@@ -11,6 +11,12 @@ import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { playNotificationChime } from '../utils/audioNotification';
+import {
+  loadUserDmThreads,
+  saveUserDmThreads,
+  dispatchMessageToRecipient,
+  popPendingNotificationForUser
+} from '../utils/messagingMultiUser';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
   onAuthStateChanged,
@@ -468,13 +474,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Direct Messages
   const [dmThreads, setDmThreads] = useState<DirectMessageThread[]>(() => {
     try {
-      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dmThreads`) || localStorage.getItem('havenroute_app_state_v1_dmThreads');
-      return saved ? JSON.parse(saved) : INITIAL_DM_THREADS;
-    } catch {
-      return INITIAL_DM_THREADS;
-    }
+      const explicitAuth = localStorage.getItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`);
+      const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`) || 'guest';
+      if (explicitAuth === 'true' && savedUserId !== 'guest') {
+        return loadUserDmThreads(savedUserId, DEFAULT_ACCOUNTS);
+      }
+    } catch {}
+    return loadUserDmThreads('usr-ganesh', DEFAULT_ACCOUNTS);
   });
-  const [activeDmThreadId, setActiveDmThreadId] = useState<string | null>('dm-1');
+  const [activeDmThreadId, setActiveDmThreadId] = useState<string | null>(() => {
+    try {
+      const explicitAuth = localStorage.getItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`);
+      const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`) || 'guest';
+      if (explicitAuth === 'true' && savedUserId !== 'guest') {
+        const loaded = loadUserDmThreads(savedUserId, DEFAULT_ACCOUNTS);
+        return loaded[0]?.id || null;
+      }
+    } catch {}
+    return 'dm-arthur';
+  });
 
   // Notifications & Auto-Reply configuration state
   const [incomingNotification, setIncomingNotification] = useState<InAppMessageNotification | null>(null);
@@ -1544,6 +1562,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
     } catch {}
 
+    // Load account-specific DM threads and check for pending notification alerts
+    try {
+      if (currentUserIdRef.current && currentUserIdRef.current !== 'guest' && currentUserIdRef.current !== account.id) {
+        saveUserDmThreads(currentUserIdRef.current, dmThreadsRef.current);
+      }
+      const userThreads = loadUserDmThreads(account.id, registeredAccountsRef.current);
+      setDmThreads(userThreads);
+      setActiveDmThreadId(userThreads[0]?.id || null);
+
+      const pendingNotif = popPendingNotificationForUser(account.id);
+      if (pendingNotif) {
+        setIncomingNotification(pendingNotif);
+        if (notificationSoundEnabledRef.current) {
+          playNotificationChime();
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading user inbox on signin:', e);
+    }
+
     // If connected to Firebase, persist activeAccountId to Firestore so page refresh keeps this User ID active
     if (auth.currentUser) {
       syncProfileToFirestore(restoredProfile, account.checklist || checklist, account.id);
@@ -1683,6 +1721,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logout = async () => {
     // Save current account snapshot into registeredAccounts before logging out so zero work is ever lost
     if (currentUserId && currentUserId !== 'guest') {
+      saveUserDmThreads(currentUserId, dmThreadsRef.current);
       setRegisteredAccounts(prev =>
         prev.map(acc =>
           acc.id === currentUserId
@@ -1707,6 +1746,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFirebaseUser(null);
     setCurrentUserId('guest');
     setUserProfile(GUEST_PROFILE);
+    setDmThreads([]);
     setActiveDmThreadId(null);
     setIncomingNotification(null);
     if (currentViewRef.current === 'messages') {
@@ -1748,6 +1788,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(googleAcc.profile));
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'true');
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
+      } catch {}
+
+      // Load Google user's DM inbox and pop pending notifications
+      try {
+        const userThreads = loadUserDmThreads(googleAcc.id, nextAccounts);
+        setDmThreads(userThreads);
+        setActiveDmThreadId(userThreads[0]?.id || null);
+
+        const pendingNotif = popPendingNotificationForUser(googleAcc.id);
+        if (pendingNotif) {
+          setIncomingNotification(pendingNotif);
+          if (notificationSoundEnabledRef.current) {
+            playNotificationChime();
+          }
+        }
       } catch {}
 
       return { success: true };
@@ -1888,7 +1943,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, acc.id);
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(restoredProfile));
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'true');
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
       } catch {}
+
+      // Load user-scoped direct message inbox & pop any pending cross-account notifications
+      try {
+        if (currentUserIdRef.current && currentUserIdRef.current !== 'guest' && currentUserIdRef.current !== acc.id) {
+          saveUserDmThreads(currentUserIdRef.current, dmThreadsRef.current);
+        }
+        const userThreads = loadUserDmThreads(acc.id, registeredAccountsRef.current);
+        setDmThreads(userThreads);
+        setActiveDmThreadId(userThreads[0]?.id || null);
+
+        const pendingNotif = popPendingNotificationForUser(acc.id);
+        if (pendingNotif) {
+          setIncomingNotification(pendingNotif);
+          if (notificationSoundEnabledRef.current) {
+            playNotificationChime();
+          }
+        }
+      } catch (e) {
+        console.warn('Notice switching user inbox:', e);
+      }
 
       if (auth.currentUser) {
         syncProfileToFirestore(restoredProfile, acc.checklist || checklist, acc.id);
@@ -2568,11 +2644,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!text.trim()) return;
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const activeThread = dmThreadsRef.current.find(t => t.id === threadId);
+    const recipientUserId = activeThread?.peerUserId;
+    const recipientName = activeThread?.peerName || 'Expat Member';
+
     const userMsg = {
-      id: `m-${Date.now()}`,
+      id: `m-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       sender: 'user' as const,
+      senderUserId: currentUserIdRef.current,
+      senderName: userProfileRef.current.name,
+      recipientUserId: recipientUserId,
+      recipientName: recipientName,
       text: text.trim(),
       timestamp: timeStr,
+      createdAt: now.toISOString(),
+      read: true,
     };
 
     setDmThreads(prev => {
@@ -2587,9 +2673,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return t;
       });
-      try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
-      } catch {}
+      saveUserDmThreads(currentUserIdRef.current, next);
       if (auth.currentUser) {
         syncWorkspaceToFirestore('community', {
           threads: threadsRef.current,
@@ -2599,6 +2683,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return next;
     });
+
+    // Cross-user dispatch to recipient's inbox and pending alert queue:
+    if (recipientUserId && recipientUserId !== currentUserIdRef.current && recipientUserId !== 'guest') {
+      dispatchMessageToRecipient(
+        currentUserIdRef.current,
+        userProfileRef.current.name,
+        userProfileRef.current.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+        userProfileRef.current.residingCountry || userProfileRef.current.targetCountry || userProfileRef.current.originCountry || 'Portugal',
+        userProfileRef.current.originCity || 'Expat Hub',
+        recipientUserId,
+        text.trim(),
+        registeredAccountsRef.current
+      );
+    }
 
     // NOTE: Simulated peer auto-replies are OFF by default to keep real messaging authentic!
     // They only fire if the user has explicitly enabled "Simulated Peer Auto-Replies" in the messenger testing controls:
@@ -2626,38 +2724,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return '';
     }
     const cleanPeerName = peerName.trim();
-    const matchedMember = publicMemberAccounts.find(
+    const matchedMember = registeredAccountsRef.current.find(
       acc =>
-        acc.id === peerOptions?.peerUserId ||
+        (peerOptions?.peerUserId && acc.id === peerOptions.peerUserId) ||
         acc.profile.name.toLowerCase() === cleanPeerName.toLowerCase() ||
         acc.name.toLowerCase() === cleanPeerName.toLowerCase()
     );
 
-    // Check if thread already exists by peerUserId or peerName
-    const existing = dmThreads.find(
-      t =>
-        (peerOptions?.peerUserId && t.peerUserId === peerOptions.peerUserId) ||
-        (matchedMember && t.peerUserId === matchedMember.id) ||
-        t.peerName.toLowerCase() === cleanPeerName.toLowerCase()
-    );
-
-    if (existing) {
-      setActiveDmThreadId(existing.id);
-      if (initialNote && initialNote.trim()) {
-        sendMessage(existing.id, initialNote.trim());
-      }
-      if (!peerOptions?.stayOnCurrentView) {
-        setSelectedPublicProfileId(null);
-        setCurrentView('messages');
-      }
-      return existing.id;
-    }
-
-    const newId = `dm-${Date.now()}`;
+    const targetPeerId = peerOptions?.peerUserId || matchedMember?.id;
+    const resolvedPeerName = matchedMember?.profile.name || matchedMember?.name || cleanPeerName;
     const resolvedAvatar =
       peerOptions?.peerAvatar ||
       matchedMember?.profile.avatarUrl ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80';
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
     const resolvedCountry =
       peerCountry ||
       matchedMember?.profile.residingCountry ||
@@ -2674,11 +2753,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       matchedMember?.profile.relocationStatus ||
       'Expat Community Member';
 
+    // Check if thread already exists by peerUserId or exact peerName
+    const existingIndex = dmThreadsRef.current.findIndex(
+      t =>
+        (targetPeerId && t.peerUserId === targetPeerId) ||
+        t.peerName.toLowerCase() === cleanPeerName.toLowerCase()
+    );
+
+    if (existingIndex >= 0) {
+      const existing = dmThreadsRef.current[existingIndex];
+      // Update existing thread with latest authentic peer details
+      const updatedExisting: DirectMessageThread = {
+        ...existing,
+        peerUserId: targetPeerId || existing.peerUserId,
+        peerName: resolvedPeerName,
+        peerAvatar: resolvedAvatar,
+        peerCountry: resolvedCountry,
+        peerCity: resolvedCity,
+        peerStatus: resolvedStatus,
+      };
+
+      const nextThreads = [
+        updatedExisting,
+        ...dmThreadsRef.current.filter((_, idx) => idx !== existingIndex),
+      ];
+
+      setDmThreads(nextThreads);
+      saveUserDmThreads(currentUserIdRef.current, nextThreads);
+      setActiveDmThreadId(updatedExisting.id);
+
+      if (initialNote && initialNote.trim()) {
+        sendMessage(updatedExisting.id, initialNote.trim());
+      }
+      if (!peerOptions?.stayOnCurrentView) {
+        setSelectedPublicProfileId(null);
+        setCurrentView('messages');
+      }
+      return updatedExisting.id;
+    }
+
+    const newId = targetPeerId ? `dm-${targetPeerId}` : `dm-${Date.now()}`;
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const newThread: DirectMessageThread = {
       id: newId,
-      peerUserId: peerOptions?.peerUserId || matchedMember?.id,
-      peerName: matchedMember?.profile.name || cleanPeerName,
+      peerUserId: targetPeerId,
+      peerName: resolvedPeerName,
       peerAvatar: resolvedAvatar,
       peerCountry: resolvedCountry,
       peerCity: resolvedCity,
@@ -2691,31 +2811,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             {
               id: `m-${Date.now()}`,
               sender: 'user',
+              senderUserId: currentUserIdRef.current,
+              senderName: userProfileRef.current.name,
+              recipientUserId: targetPeerId,
+              recipientName: resolvedPeerName,
               text: initialNote.trim(),
               timestamp: nowTime,
+              createdAt: new Date().toISOString(),
+              read: true,
             },
           ]
         : [],
     };
 
-    setDmThreads(prev => {
-      const next = [newThread, ...prev];
-      try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_dmThreads`, JSON.stringify(next));
-      } catch {}
-      if (auth.currentUser) {
-        syncWorkspaceToFirestore('community', {
-          threads: threadsRef.current,
-          meetups: meetupsRef.current,
-          dmThreads: next,
-        });
-      }
-      return next;
-    });
-
+    const nextThreads = [newThread, ...dmThreadsRef.current];
+    setDmThreads(nextThreads);
+    saveUserDmThreads(currentUserIdRef.current, nextThreads);
     setActiveDmThreadId(newId);
 
-    // If an initial note was included on a brand new thread AND simulated auto-replies are enabled in settings:
+    // If initial note, dispatch to recipient
+    if (initialNote?.trim() && targetPeerId && targetPeerId !== currentUserIdRef.current) {
+      dispatchMessageToRecipient(
+        currentUserIdRef.current,
+        userProfileRef.current.name,
+        userProfileRef.current.avatarUrl || resolvedAvatar,
+        userProfileRef.current.residingCountry || 'Portugal',
+        userProfileRef.current.originCity || 'Expat Hub',
+        targetPeerId,
+        initialNote.trim(),
+        registeredAccountsRef.current
+      );
+    }
+
     if (initialNote?.trim() && enablePeerAutoRepliesRef.current) {
       setTimeout(() => {
         const welcomeReply = `Hi ${userProfileRef.current.name.split(' ')[0] || 'there'}! Great to connect with you on ReFIREly. Happy to chat about ${resolvedCountry} or share tips from my travels!`;

@@ -51,7 +51,10 @@ export const DirectMessenger: React.FC = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [testNotificationTimer, setTestNotificationTimer] = useState<number | null>(null);
 
-  const activeThread = dmThreads.find(t => t.id === activeDmThreadId) || dmThreads[0];
+  const activeThread =
+    dmThreads.find(t => t.id === activeDmThreadId) ||
+    dmThreads.find(t => activeDmThreadId && t.peerUserId === activeDmThreadId) ||
+    dmThreads[0];
 
   // Auto-mark current active conversation as read
   useEffect(() => {
@@ -108,9 +111,9 @@ export const DirectMessenger: React.FC = () => {
   const activePeerMember = activeThread
     ? publicMemberAccounts.find(
         acc =>
-          acc.id === activeThread.peerUserId ||
+          (activeThread.peerUserId && acc.id === activeThread.peerUserId) ||
           acc.profile.name.toLowerCase() === activeThread.peerName.toLowerCase() ||
-          acc.profile.name.toLowerCase().includes(activeThread.peerName.toLowerCase())
+          acc.name.toLowerCase() === activeThread.peerName.toLowerCase()
       )
     : undefined;
 
@@ -421,6 +424,13 @@ export const DirectMessenger: React.FC = () => {
             {filteredThreads.map(thread => {
               const isActive = thread.id === activeThread?.id;
               const hasUnread = (thread.unreadCount || 0) > 0;
+              const peerAccount = publicMemberAccounts.find(
+                acc =>
+                  (thread.peerUserId && acc.id === thread.peerUserId) ||
+                  acc.profile.name.toLowerCase() === thread.peerName.toLowerCase() ||
+                  acc.name.toLowerCase() === thread.peerName.toLowerCase()
+              );
+              const displayAvatar = peerAccount?.profile.avatarUrl || thread.peerAvatar;
 
               return (
                 <button
@@ -441,7 +451,7 @@ export const DirectMessenger: React.FC = () => {
                 >
                   <div className="relative shrink-0">
                     <img
-                      src={thread.peerAvatar}
+                      src={displayAvatar}
                       alt={thread.peerName}
                       referrerPolicy="no-referrer"
                       className="w-10 h-10 rounded-full object-cover border border-slate-200"
@@ -503,7 +513,7 @@ export const DirectMessenger: React.FC = () => {
                   className="flex items-center gap-3 cursor-pointer group"
                 >
                   <img
-                    src={activeThread.peerAvatar}
+                    src={activePeerMember?.profile.avatarUrl || activeThread.peerAvatar}
                     alt={activeThread.peerName}
                     referrerPolicy="no-referrer"
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:ring-2 group-hover:ring-teal-600 transition-all"
@@ -612,7 +622,7 @@ export const DirectMessenger: React.FC = () => {
                 </div>
 
                 {activeThread.messages.map(msg => {
-                  const isMe = msg.sender === 'user';
+                  const isMe = msg.senderUserId ? msg.senderUserId === currentUserId : msg.sender === 'user';
                   return (
                     <div
                       key={msg.id}

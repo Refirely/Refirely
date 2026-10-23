@@ -68,9 +68,8 @@ export const PublicProfileModal: React.FC = () => {
   // Existing DM thread with this member
   const existingDmThread = dmThreads.find(
     t =>
-      t.peerUserId === memberAccount.id ||
-      t.peerName.toLowerCase() === profile.name.toLowerCase() ||
-      profile.name.toLowerCase().includes(t.peerName.toLowerCase())
+      (t.peerUserId && t.peerUserId === memberAccount.id) ||
+      t.peerName.toLowerCase() === profile.name.toLowerCase()
   );
 
   // Community threads & meetups by this member
