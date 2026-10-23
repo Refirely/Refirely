@@ -29,12 +29,14 @@ export function getCountryUrl(countryId: string): string {
   return `/?country=${encodeURIComponent(countryId)}`;
 }
 
+export const PUBLIC_SITE_ORIGIN = 'https://refirely.com';
+
 /**
- * Returns the full absolute shareable URL for a specific country dossier.
+ * Returns the full absolute shareable URL for a specific country dossier
+ * anchored to the production domain https://refirely.com.
  */
 export function getFullCountryUrl(countryId: string): string {
-  if (typeof window === 'undefined') return `/?country=${encodeURIComponent(countryId)}`;
-  return `${window.location.origin}/?country=${encodeURIComponent(countryId)}`;
+  return `${PUBLIC_SITE_ORIGIN}/?country=${encodeURIComponent(countryId)}`;
 }
 
 /**
@@ -277,7 +279,7 @@ export function updatePageSeo(
 ) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-  const origin = window.location.origin;
+  const origin = PUBLIC_SITE_ORIGIN;
   const logoUrl = `${origin}/assets/aistudio/refirely-logo.png`;
   const iconUrl = `${origin}/assets/aistudio/refirely-icon.png`;
 
