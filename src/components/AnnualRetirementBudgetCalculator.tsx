@@ -41,9 +41,13 @@ export const COUNTRY_EXCHANGE_RATES: Record<string, { rate: number; symbol: stri
 
 interface AnnualRetirementBudgetCalculatorProps {
   country: Country;
+  onNavigateToHealthcare?: () => void;
 }
 
-export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCalculatorProps> = ({ country }) => {
+export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCalculatorProps> = ({
+  country,
+  onNavigateToHealthcare,
+}) => {
   // Exchange rate configuration
   const currencyInfo = COUNTRY_EXCHANGE_RATES[country.id] || {
     rate: 1.0,
@@ -481,7 +485,17 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
                 <span>Private Healthcare Plan</span>
               </td>
               <td className="py-3 px-4 text-slate-500">
-                {healthcareTier === 'premium' ? 'Zero copay full hospitalization & outpatient' : 'Standard resident policy'}
+                <span>
+                  {healthcareTier === 'premium' ? 'Zero copay full hospitalization & outpatient' : 'Standard resident policy'}
+                </span>
+                {onNavigateToHealthcare && (
+                  <button
+                    onClick={onNavigateToHealthcare}
+                    className="ml-2 text-[11px] font-semibold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+                  >
+                    (View Insurance & ER Guide →)
+                  </button>
+                )}
               </td>
               <td className="py-3 px-4 font-mono tabular-nums text-right font-semibold text-slate-900">{formatUSD(monthlyHealthUSD)}</td>
               <td className="py-3 px-4 font-mono tabular-nums text-right text-slate-600">{formatLocal(monthlyHealthUSD)}</td>

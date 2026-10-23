@@ -7,6 +7,7 @@ import { ShortTermVisaOptions } from './ShortTermVisaOptions';
 import { AnnualRetirementBudgetCalculator } from './AnnualRetirementBudgetCalculator';
 import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryTravelAndMobility } from './CountryTravelAndMobility';
+import { CountryHealthcareTab } from './CountryHealthcareTab';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import { getFullCountryUrl } from '../utils/seo';
@@ -41,7 +42,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   } = useApp();
 
   // Active section tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'cost' | 'travel' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'healthcare' | 'cost' | 'travel' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -245,12 +246,16 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 </span>
               </div>
               <div className="w-px h-9 bg-slate-200" />
-              <div>
-                <span className="text-[11px] text-purple-800 font-semibold block">Healthcare Score</span>
+              <button
+                onClick={() => setActiveTab('healthcare')}
+                className="text-left group cursor-pointer"
+                title="Click to open full Healthcare, Emergency & Insurance guide"
+              >
+                <span className="text-[11px] text-purple-800 font-semibold block group-hover:underline">Healthcare Score →</span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-purple-950">
                   {country.lifestyle.healthcareScore}/100
                 </span>
-              </div>
+              </button>
               <div className="w-px h-9 bg-slate-200" />
               <div>
                 <span className="text-[11px] text-amber-800 font-semibold block">Sunny Days</span>
@@ -267,6 +272,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             {[
               { id: 'overview', label: 'Overview' },
               { id: 'visa', label: 'Visas & Rules' },
+              { id: 'healthcare', label: 'Healthcare & Insurance' },
               { id: 'cost', label: 'Budget Calc' },
               { id: 'travel', label: 'Travel & Leisure' },
               { id: 'faq', label: 'FAQ & Hurdles' },
@@ -387,24 +393,53 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               </div>
             </div>
 
+            {/* Healthcare, Emergency & Insurance Snapshot Callout */}
+            <div className="bg-white border border-teal-200 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center shrink-0">
+                  <Stethoscope className="w-5 h-5 text-teal-700" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Healthcare Access, Emergency Services & Expat Insurance
+                    </h4>
+                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-200">
+                      Score: {country.lifestyle.healthcareScore}/100 · ~${country.costOfLiving.healthcareMonthlyUSD}/mo
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                    {country.lifestyle.healthcareSummary} {country.lifestyle.publicHealthcareAccess}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('healthcare')}
+                className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Healthcare & Insurance Guide</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             {/* Pre-Retirement FAQ & Relocation Hurdles Callout */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center shrink-0">
-                  <FileCheck className="w-5 h-5 text-teal-700" />
+                <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-800 flex items-center justify-center shrink-0">
+                  <FileCheck className="w-5 h-5 text-orange-700" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">
-                    Pre-Retirement Hurdles & Knowledge Base: Banking, Taxes & Language
+                    Pre-Retirement Hurdles & Knowledge Base: Banking, Taxes & Leases
                   </h4>
                   <p className="text-xs text-slate-600 mt-0.5 max-w-2xl leading-relaxed">
-                    Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), Medicare limitations, and practical tips for handling administrative bureaucracy in {country.name}.
+                    Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), language bureaucracy, and rental lease protocols in {country.name}.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveTab('faq')}
-                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <span>Explore Relocation FAQ</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -505,31 +540,50 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             {/* Short-Stay, Trial & Alternative Visa Pathways */}
             <ShortTermVisaOptions country={country} />
 
-            {/* Cross-link to Relocation & Hurdles FAQ */}
+            {/* Cross-link to Healthcare Insurance & Relocation Hurdles FAQ */}
             <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h4 className="text-sm font-bold text-amber-950 flex items-center gap-2">
-                  <span>Questions about Opening Bank Accounts, FATCA, or 183-Day Tax Rules?</span>
+                  <span>Need Compliant Visa Health Insurance or Banking / 183-Day Tax Guidance?</span>
                 </h4>
                 <p className="text-xs text-amber-900/80 mt-1">
-                  Read detailed answers on avoiding double taxation, healthcare coverage transitions, and legal fixers in our relocation FAQ.
+                  Review mandatory consular health insurance policies in the Healthcare tab, or explore banking, FATCA, and tax treaties in our Relocation FAQ.
                 </p>
               </div>
-              <button
-                onClick={() => setActiveTab('faq')}
-                className="px-3.5 py-2 rounded-lg bg-amber-900 text-white font-semibold text-xs hover:bg-amber-950 transition-colors whitespace-nowrap shrink-0"
-              >
-                View Relocation & Hurdles FAQ →
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveTab('healthcare')}
+                  className="px-3.5 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  Visa Health Insurance Guide →
+                </button>
+                <button
+                  onClick={() => setActiveTab('faq')}
+                  className="px-3.5 py-2 rounded-lg bg-amber-900 text-white font-semibold text-xs hover:bg-amber-950 transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  Relocation & Hurdles FAQ →
+                </button>
+              </div>
             </div>
 
           </div>
         )}
 
+        {/* TAB 2.5: HEALTHCARE ACCESS, EMERGENCY SERVICES & INSURANCE */}
+        {activeTab === 'healthcare' && (
+          <CountryHealthcareTab
+            country={country}
+            onNavigateTab={tab => setActiveTab(tab)}
+          />
+        )}
+
         {/* TAB 3: ANNUAL RETIREMENT BUDGET CALCULATOR */}
         {activeTab === 'cost' && (
           <div className="space-y-8">
-            <AnnualRetirementBudgetCalculator country={country} />
+            <AnnualRetirementBudgetCalculator
+              country={country}
+              onNavigateToHealthcare={() => setActiveTab('healthcare')}
+            />
           </div>
         )}
 
@@ -541,7 +595,10 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
         {/* TAB 5: PRE-RETIREMENT FAQS & RELOCATION HURDLES */}
         {activeTab === 'faq' && (
           <div className="space-y-8">
-            <CountryFaqHurdles country={country} />
+            <CountryFaqHurdles
+              country={country}
+              onNavigateToHealthcare={() => setActiveTab('healthcare')}
+            />
           </div>
         )}
 

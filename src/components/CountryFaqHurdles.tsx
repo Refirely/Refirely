@@ -11,9 +11,13 @@ import {
 
 interface CountryFaqHurdlesProps {
   country: Country;
+  onNavigateToHealthcare?: () => void;
 }
 
-export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({ country }) => {
+export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
+  country,
+  onNavigateToHealthcare,
+}) => {
   const { setCurrentView } = useApp();
   const faqs = useMemo(() => getFaqsForCountry(country), [country]);
 
@@ -287,6 +291,24 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({ country })
               </button>
             ))}
           </div>
+
+          {onNavigateToHealthcare && (
+            <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-teal-950">
+                <Stethoscope className="w-4 h-4 text-teal-700 shrink-0" />
+                <span>
+                  <strong>Looking for routine doctor access, emergency numbers, & insurance cost tables?</strong> Visit the dedicated Healthcare & Insurance tab.
+                </span>
+              </div>
+              <button
+                onClick={onNavigateToHealthcare}
+                className="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs whitespace-nowrap shrink-0 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+              >
+                <span>Open Healthcare & Insurance Tab</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
