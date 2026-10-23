@@ -633,7 +633,7 @@ export const DEFAULT_ACCOUNTS: UserAccount[] = [
         },
       ],
       finances: DEFAULT_FINANCIAL_PORTFOLIO,
-      role: 'member',
+      role: 'admin',
       languagesKnown: [
         { id: 'lang-1', language: 'English', proficiency: 'Native' },
         { id: 'lang-2', language: 'Telugu', proficiency: 'Fluent' },

@@ -75,6 +75,8 @@ interface AppContextType {
   logout: () => void;
   switchAccount: (userId: string) => void;
   deleteUserAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  adminUpdateUserAccount: (updatedAccount: UserAccount) => Promise<void>;
+  refreshRegisteredUsersFromCloud: () => Promise<{ success: boolean; count: number; error?: string }>;
 
   // Modals for Auth, Profile & Firebase Cloud Connection
   isAuthModalOpen: boolean;
@@ -150,11 +152,14 @@ interface AppContextType {
   addThread: (thread: Omit<CommunityThread, 'id' | 'createdAt' | 'upvotes' | 'comments'>) => void;
   addComment: (threadId: string, text: string) => void;
   toggleUpvoteThread: (threadId: string) => void;
+  deleteThread: (threadId: string) => void;
+  togglePinThread: (threadId: string) => void;
 
   // Meetups
   meetups: ExpatMeetup[];
   toggleRsvpMeetup: (meetupId: string) => void;
   addMeetup: (meetup: Omit<ExpatMeetup, 'id' | 'attendeesCount' | 'isRsvped'>) => void;
+  deleteMeetup: (meetupId: string) => void;
 
   // Direct Messages
   dmThreads: DirectMessageThread[];
@@ -257,9 +262,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed: UserAccount[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map(a => a.id));
+          const repaired = parsed.map(acc => {
+            if (acc.id === 'usr-ganesh' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
+              return {
+                ...acc,
+                profile: {
+                  ...acc.profile,
+                  role: 'admin' as const,
+                },
+              };
+            }
+            return acc;
+          });
+          const existingIds = new Set(repaired.map(a => a.id));
           const missingDefaults = DEFAULT_ACCOUNTS.filter(d => !existingIds.has(d.id));
-          return [...parsed, ...missingDefaults];
+          return [...repaired, ...missingDefaults];
         }
       }
     } catch {}
@@ -1047,6 +1064,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           });
 
+          // If admin user, also fetch top-level /savedAccounts and /users to include all cloud-registered users
+          if (isAdminUser) {
+            try {
+              const topSavedSnap = await getDocs(collection(db, 'savedAccounts'));
+              topSavedSnap.forEach(d => {
+                const data = d.data() as any;
+                if (data && data.id && data.id !== 'guest' && data.profile && !remoteAccountsMap.has(data.id)) {
+                  const cleanName = !isGuestPlaceholder(data.name)
+                    ? data.name
+                    : !isGuestPlaceholder(data.profile?.name)
+                      ? data.profile.name
+                      : formatNameFromEmail(data.email);
+                  const cleanEmail = !isGuestPlaceholder(data.email)
+                    ? data.email
+                    : !isGuestPlaceholder(data.profile?.email)
+                      ? data.profile.email
+                      : 'member@refirely.org';
+                  remoteAccountsMap.set(data.id, {
+                    id: data.id,
+                    username: data.username || data.id,
+                    email: cleanEmail,
+                    password: data.password || 'password123',
+                    name: cleanName,
+                    createdAt: data.createdAt || '2026-01-01',
+                    profile: {
+                      ...data.profile,
+                      id: data.id,
+                      name: cleanName,
+                      email: cleanEmail,
+                      finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                    },
+                    checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+                    cloudSynced: true,
+                    lastSyncedAt: data.updatedAt || new Date().toISOString(),
+                  });
+                }
+              });
+            } catch (e) {
+              console.warn('Admin top-level savedAccounts fetch notice:', e);
+            }
+          }
+
           // 2. Read root /users/{uid} document if it exists
           let firestoreRootData: (UserProfile & { activeAccountId?: string; checklist?: RelocationChecklistTask[] }) | null = null;
           if (userDocSnap.exists()) {
@@ -1341,9 +1400,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
+    const isAccountOwnerAdmin =
+      account.id === 'usr-ganesh' ||
+      account.email.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+      account.profile.role === 'admin';
+
     const restoredProfile: UserProfile = {
       ...account.profile,
       id: account.id,
+      role: isAccountOwnerAdmin ? 'admin' : account.profile.role || 'member',
       finances: account.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
     };
 
@@ -1749,6 +1814,133 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
+  const adminUpdateUserAccount = async (updatedAccount: UserAccount): Promise<void> => {
+    const safeId = sanitizeAccountId(updatedAccount.id);
+    const nowIso = new Date().toISOString();
+    const isCloudReady = Boolean(auth.currentUser);
+    const normalizedAcc: UserAccount = {
+      ...updatedAccount,
+      id: safeId,
+      name: updatedAccount.name || updatedAccount.profile.name,
+      email: updatedAccount.email || updatedAccount.profile.email,
+      profile: {
+        ...updatedAccount.profile,
+        id: safeId,
+        name: updatedAccount.name || updatedAccount.profile.name,
+        email: updatedAccount.email || updatedAccount.profile.email,
+        finances: updatedAccount.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+      },
+      cloudSynced: isCloudReady ? true : updatedAccount.cloudSynced,
+      lastSyncedAt: isCloudReady ? nowIso : updatedAccount.lastSyncedAt,
+    };
+
+    setRegisteredAccounts(prev => {
+      const exists = prev.some(a => a.id === safeId);
+      const next = exists
+        ? prev.map(a => (a.id === safeId ? normalizedAcc : a))
+        : [normalizedAcc, ...prev];
+      registeredAccountsRef.current = next;
+      return next;
+    });
+
+    if (currentUserIdRef.current === safeId) {
+      setUserProfile(normalizedAcc.profile);
+      userProfileRef.current = normalizedAcc.profile;
+    }
+
+    if (auth.currentUser) {
+      await syncSingleAccountToFirestore(normalizedAcc);
+    }
+  };
+
+  const refreshRegisteredUsersFromCloud = async (): Promise<{ success: boolean; count: number; error?: string }> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return {
+        success: false,
+        count: registeredAccountsRef.current.length,
+        error: 'Sign in with Google Auth in Cloud DB Center to pull cloud-registered accounts from Firestore.',
+      };
+    }
+    setIsFirebaseSyncing(true);
+    try {
+      const mergedMap = new Map<string, UserAccount>();
+      for (const acc of registeredAccountsRef.current) {
+        if (acc.id !== 'guest') {
+          mergedMap.set(sanitizeAccountId(acc.id), acc);
+        }
+      }
+
+      // 1. User's subcollection /users/{uid}/savedAccounts
+      const subSnap = await getDocs(collection(db, 'users', currentUser.uid, 'savedAccounts'));
+      subSnap.forEach(d => {
+        const data = d.data() as any;
+        if (data && data.id && data.id !== 'guest' && data.profile) {
+          const safeId = sanitizeAccountId(data.id);
+          mergedMap.set(safeId, {
+            id: safeId,
+            username: data.username || safeId,
+            email: data.email || data.profile.email || 'member@refirely.org',
+            password: data.password || 'password123',
+            name: data.name || data.profile.name || 'Retiree Member',
+            createdAt: data.createdAt || '2026-01-01',
+            profile: {
+              ...data.profile,
+              id: safeId,
+              finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+            },
+            checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+            cloudSynced: true,
+            lastSyncedAt: data.updatedAt || new Date().toISOString(),
+          });
+        }
+      });
+
+      // 2. Top-level /savedAccounts (if admin has list permissions)
+      try {
+        const topSnap = await getDocs(collection(db, 'savedAccounts'));
+        topSnap.forEach(d => {
+          const data = d.data() as any;
+          if (data && data.id && data.id !== 'guest' && data.profile) {
+            const safeId = sanitizeAccountId(data.id);
+            if (!mergedMap.has(safeId)) {
+              mergedMap.set(safeId, {
+                id: safeId,
+                username: data.username || safeId,
+                email: data.email || data.profile.email || 'member@refirely.org',
+                password: data.password || 'password123',
+                name: data.name || data.profile.name || 'Retiree Member',
+                createdAt: data.createdAt || '2026-01-01',
+                profile: {
+                  ...data.profile,
+                  id: safeId,
+                  finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                },
+                checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+                cloudSynced: true,
+                lastSyncedAt: data.updatedAt || new Date().toISOString(),
+              });
+            }
+          }
+        });
+      } catch {}
+
+      const nextList = Array.from(mergedMap.values());
+      setRegisteredAccounts(nextList);
+      registeredAccountsRef.current = nextList;
+      recordSyncTimestamp();
+      return { success: true, count: nextList.length };
+    } catch (err: any) {
+      return {
+        success: false,
+        count: registeredAccountsRef.current.length,
+        error: err?.message || 'Unable to fetch cloud accounts.',
+      };
+    } finally {
+      setIsFirebaseSyncing(false);
+    }
+  };
+
   const toggleRole = () => {
     updateUserProfile({
       role: userProfile.role === 'admin' ? 'member' : 'admin',
@@ -2095,6 +2287,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const deleteThread = (threadId: string) => {
+    setThreads(prev => {
+      const next = prev.filter(t => t.id !== threadId);
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: next,
+          meetups: meetupsRef.current,
+          dmThreads: dmThreadsRef.current,
+        });
+      }
+      return next;
+    });
+  };
+
+  const togglePinThread = (threadId: string) => {
+    setThreads(prev => {
+      const next = prev.map(t => (t.id === threadId ? { ...t, isPinned: !t.isPinned } : t));
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: next,
+          meetups: meetupsRef.current,
+          dmThreads: dmThreadsRef.current,
+        });
+      }
+      return next;
+    });
+  };
+
+  const deleteMeetup = (meetupId: string) => {
+    setMeetups(prev => {
+      const next = prev.filter(m => m.id !== meetupId);
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('community', {
+          threads: threadsRef.current,
+          meetups: next,
+          dmThreads: dmThreadsRef.current,
+        });
+      }
+      return next;
+    });
+  };
+
   const sendMessage = (threadId: string, text: string) => {
     if (!text.trim()) return;
     const now = new Date();
@@ -2319,6 +2553,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         switchAccount,
         deleteUserAccount,
+        adminUpdateUserAccount,
+        refreshRegisteredUsersFromCloud,
         isAuthModalOpen,
         setIsAuthModalOpen,
         authModalTab,
@@ -2376,9 +2612,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addThread,
         addComment,
         toggleUpvoteThread,
+        deleteThread,
+        togglePinThread,
         meetups,
         toggleRsvpMeetup,
         addMeetup,
+        deleteMeetup,
         dmThreads,
         activeDmThreadId,
         setActiveDmThreadId,

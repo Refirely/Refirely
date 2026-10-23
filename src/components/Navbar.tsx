@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Compass, Scale, MessageSquare, Calendar, User, Shield, Bookmark,
-  MessageCircle, Menu, X, SlidersHorizontal, LogIn, UserPlus, LogOut,
-  ChevronDown, Settings, Globe, Camera, Check, Sparkles, BookOpen, Database
+  User, Shield, Bookmark, MessageCircle, Menu, X, SlidersHorizontal,
+  LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
+  BookOpen, Database, LayoutDashboard
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -13,20 +13,19 @@ export const Navbar: React.FC = () => {
     userProfile,
     isOwnerAdmin,
     toggleRole,
+    updateUserProfile,
     savedCountryIds,
     dmThreads,
     discreetLifestyleEnabled,
     setDiscreetLifestyleEnabled,
     isAuthenticated,
-    currentUserId,
     openAuthModal,
     openFirebaseModal,
     openEditProfile,
     logout,
-    registeredAccounts,
-    switchAccount,
     journalEntries,
     firebaseUser,
+    comparedCountryIds,
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,8 +44,12 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const totalUnreadDms = dmThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
+  const canAccessAdmin = isOwnerAdmin || userProfile.role === 'admin';
 
   const handleNav = (view: typeof currentView) => {
+    if (view === 'admin' && userProfile.role !== 'admin' && isOwnerAdmin) {
+      updateUserProfile({ role: 'admin' });
+    }
     setCurrentView(view);
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
@@ -54,11 +57,11 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shadow-2xs">
-      {/* Universal Top Bar Contract: 3 zones separated by responsive gap */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-6 lg:gap-8">
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shadow-2xs">
+      {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
-        {/* Zone 1: Single clean brand wordmark */}
+        {/* Zone 1: Brand wordmark */}
         <button
           onClick={() => handleNav('landing')}
           className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group shrink-0 py-1"
@@ -67,17 +70,17 @@ export const Navbar: React.FC = () => {
           <img
             src="/assets/aistudio/refirely-logo.png"
             alt="ReFIREly"
-            className="h-8 sm:h-11 w-auto max-w-[125px] sm:max-w-none object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+            className="h-8 sm:h-10 w-auto max-w-[120px] sm:max-w-[145px] object-contain transition-transform duration-200 group-hover:scale-[1.03]"
           />
         </button>
 
-        {/* Zone 2: 5 single-line clean text navigation links */}
-        <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600">
+        {/* Zone 2: Primary navigation links (including prominent CMS Console tab for Admins) */}
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2.5 text-xs lg:text-[13px] font-medium text-slate-600 min-w-0">
           <button
             onClick={() => handleNav('landing')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'landing'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
@@ -85,9 +88,9 @@ export const Navbar: React.FC = () => {
           </button>
           <button
             onClick={() => handleNav('explore')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'explore' || currentView === 'country-detail'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
@@ -95,83 +98,115 @@ export const Navbar: React.FC = () => {
           </button>
           <button
             onClick={() => handleNav('compare')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'compare'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
-            Compare Matrix
+            Compare
           </button>
           <button
             onClick={() => handleNav('community')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'community'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
-            Community Hub
+            Community
           </button>
           <button
             onClick={() => handleNav('meetups')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'meetups'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
-            Expat Meetups
+            Meetups
           </button>
           <button
             onClick={() => handleNav('dashboard')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 rounded-lg ${
+            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
               currentView === 'dashboard'
-                ? 'text-orange-950 font-bold bg-orange-50/80 border-b-2 border-orange-500'
+                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
                 : 'hover:text-orange-600 hover:bg-slate-50'
             }`}
           >
             My Dashboard
           </button>
+
+          {/* Prominent CMS Console tab right inside the main navigation bar for Admins */}
+          {canAccessAdmin && (
+            <button
+              onClick={() => handleNav('admin')}
+              className={`whitespace-nowrap shrink-0 transition-all py-1.5 px-2.5 lg:px-3 rounded-lg flex items-center gap-1.5 cursor-pointer border ${
+                currentView === 'admin'
+                  ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-xs'
+                  : 'bg-amber-50/90 text-amber-900 font-semibold border-amber-300 hover:bg-amber-100'
+              }`}
+              title="Open Country CMS & Registered Users Admin Console"
+            >
+              <Shield className={`w-3.5 h-3.5 ${currentView === 'admin' ? 'text-white' : 'text-amber-600'}`} />
+              <span>CMS Console</span>
+            </button>
+          )}
         </nav>
 
-        {/* Zone 3: Primary actions & Role Switcher */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Zone 3: Compact Right Utility & Account Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* On small/tablet screens where <nav> is hidden, keep CMS Console visible right before profile */}
+          {canAccessAdmin && (
+            <button
+              onClick={() => handleNav('admin')}
+              className={`md:hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-colors border cursor-pointer ${
+                currentView === 'admin'
+                  ? 'bg-amber-500 text-white border-amber-600'
+                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+              }`}
+              title="Open CMS Console"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>CMS</span>
+            </button>
+          )}
+
           {/* Discreet lifestyle toggle button */}
           <button
             onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
             title={discreetLifestyleEnabled ? "Discreet lifestyle filters active (Nightlife & Adult indicators visible)" : "Show lifestyle & nightlife indicators"}
-            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
               discreetLifestyleEnabled
                 ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-2xs'
                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
-            <span className="whitespace-nowrap">Lifestyle Metrics {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
+            <span className="whitespace-nowrap">Lifestyle {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Direct Messages link with badge */}
           <button
             onClick={() => handleNav('messages')}
-            className={`relative p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors ${
+            className={`relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer ${
               currentView === 'messages' ? 'bg-orange-50 text-orange-800' : ''
             }`}
             title="Expat Direct Messages"
           >
-            <MessageCircle className="w-5 h-5" />
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             {totalUnreadDms > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-orange-600 ring-2 ring-white" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-600 ring-2 ring-white" />
             )}
           </button>
 
           {/* Saved Shortlist button */}
           <button
             onClick={() => handleNav('dashboard')}
-            className="relative p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors"
+            className="relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer"
             title="Saved Country Shortlist"
           >
-            <Bookmark className="w-5 h-5" />
+            <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
             {savedCountryIds.length > 0 && (
               <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-orange-600 text-white text-[10px] font-bold rounded-full font-mono shadow-2xs">
                 {savedCountryIds.length}
@@ -179,11 +214,11 @@ export const Navbar: React.FC = () => {
             )}
           </button>
 
-          {/* Firebase Cloud DB & Hosting Connection button (Owner / Admin Only) */}
+          {/* Firebase Cloud DB Connection button (Owner / Admin Only) */}
           {isOwnerAdmin && (
             <button
               onClick={openFirebaseModal}
-              className={`hidden sm:flex px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all items-center gap-1.5 cursor-pointer ${
+              className={`hidden lg:flex px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all items-center gap-1.5 cursor-pointer ${
                 firebaseUser
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100 shadow-2xs'
                   : 'bg-orange-50/80 text-orange-900 border-orange-200 hover:bg-orange-100 shadow-2xs'
@@ -191,32 +226,7 @@ export const Navbar: React.FC = () => {
               title="Owner Admin: Firebase Database & Hosting Connection Center"
             >
               <Database className={`w-3.5 h-3.5 ${firebaseUser ? 'text-emerald-600' : 'text-orange-600'}`} />
-              <span className="whitespace-nowrap">{firebaseUser ? 'Cloud Synced' : 'Cloud DB'}</span>
-            </button>
-          )}
-
-          {/* Role switcher toggle: Member vs Admin (Owner / Admin Only) */}
-          {isOwnerAdmin && (
-            <button
-              onClick={toggleRole}
-              className={`hidden lg:flex px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all items-center gap-1.5 ${
-                userProfile.role === 'admin'
-                  ? 'bg-amber-50 text-amber-900 border-amber-300 font-bold shadow-2xs hover:bg-amber-100'
-                  : 'bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100 shadow-2xs'
-              }`}
-              title="Switch user perspective"
-            >
-              {userProfile.role === 'admin' ? (
-                <>
-                  <Shield className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="whitespace-nowrap">Admin Mode</span>
-                </>
-              ) : (
-                <>
-                  <User className="w-3.5 h-3.5 text-purple-600" />
-                  <span className="whitespace-nowrap">Member View</span>
-                </>
-              )}
+              <span className="whitespace-nowrap">{firebaseUser ? 'Synced' : 'Cloud DB'}</span>
             </button>
           )}
 
@@ -225,7 +235,7 @@ export const Navbar: React.FC = () => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs"
+                className="flex items-center gap-1.5 p-1 pl-1.5 pr-2.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs cursor-pointer"
               >
                 <div className="relative">
                   {userProfile.avatarUrl ? (
@@ -233,35 +243,40 @@ export const Navbar: React.FC = () => {
                       src={userProfile.avatarUrl}
                       alt={userProfile.name}
                       className="w-7 h-7 rounded-full object-cover ring-2 ring-orange-500/30"
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-orange-500/30">
                       {userProfile.name.charAt(0)}
                     </div>
                   )}
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                 </div>
-                <span className="hidden sm:inline text-xs font-semibold text-slate-800 max-w-[90px] truncate">
+                <span className="hidden sm:inline text-xs font-semibold text-slate-800 max-w-[85px] truncate">
                   {userProfile.name.split(' ')[0]}
                 </span>
+                {canAccessAdmin && (
+                  <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">
+                    {userProfile.role === 'admin' ? 'Admin' : 'Owner'}
+                  </span>
+                )}
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
               {/* Dropdown Menu */}
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-150">
                   {/* User info banner */}
                   <div className="px-3.5 py-2.5 border-b border-slate-100 bg-gradient-to-r from-orange-50/90 via-purple-50/40 to-slate-50">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <p className="font-bold text-slate-900 text-xs truncate">{userProfile.name}</p>
                       {firebaseUser && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-semibold uppercase tracking-wider">
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-semibold uppercase tracking-wider shrink-0">
                           Google Auth
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500 truncate">{userProfile.email}</p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-100 text-orange-900 font-semibold">
                         → {userProfile.targetCountry}
                       </span>
@@ -273,18 +288,65 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Admin & CMS Console Quick Access Section (Top of Dropdown for Admins) */}
+                  {canAccessAdmin && (
+                    <div className="p-2 border-b border-amber-100 bg-amber-50/50 space-y-1">
+                      <div className="px-2 py-0.5 flex items-center justify-between">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                          <Shield className="w-3 h-3 text-amber-600" />
+                          <span>Admin Governance</span>
+                        </span>
+                        <span className="text-[10px] font-semibold text-amber-800">
+                          {userProfile.role === 'admin' ? 'Admin Mode' : 'Member View'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleNav('admin')}
+                        className="w-full text-left px-2.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LayoutDashboard className="w-3.5 h-3.5" />
+                          <span>Open Admin CMS Console</span>
+                        </div>
+                        <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">Manage</span>
+                      </button>
+                      <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        <button
+                          onClick={() => {
+                            toggleRole();
+                            setUserMenuOpen(false);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-amber-100/70 text-slate-700 border border-amber-200 font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer text-[11px]"
+                        >
+                          <Shield className="w-3 h-3 text-amber-600" />
+                          <span>{userProfile.role === 'admin' ? 'Member View' : 'Admin Mode'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            openFirebaseModal();
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-emerald-50 text-slate-700 border border-emerald-200 font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer text-[11px]"
+                        >
+                          <Database className="w-3 h-3 text-emerald-600" />
+                          <span>{firebaseUser ? 'Cloud Online' : 'Cloud DB'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions list */}
                   <div className="py-1">
                     <button
                       onClick={() => handleNav('dashboard')}
-                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <User className="w-3.5 h-3.5 text-orange-600" />
                       <span>My Dashboard & Relocation Hub</span>
                     </button>
                     <button
                       onClick={() => handleNav('dashboard')}
-                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
                         <BookOpen className="w-3.5 h-3.5 text-purple-600" />
@@ -299,7 +361,7 @@ export const Navbar: React.FC = () => {
                         setUserMenuOpen(false);
                         openEditProfile('about');
                       }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <Settings className="w-3.5 h-3.5 text-orange-600" />
                       <span>Edit Profile & About</span>
@@ -309,7 +371,7 @@ export const Navbar: React.FC = () => {
                         setUserMenuOpen(false);
                         openEditProfile('picture');
                       }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <Camera className="w-3.5 h-3.5 text-purple-600" />
                       <span>Change Profile Picture</span>
@@ -319,35 +381,16 @@ export const Navbar: React.FC = () => {
                         setUserMenuOpen(false);
                         openEditProfile('travel');
                       }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <Globe className="w-3.5 h-3.5 text-blue-600" />
                       <span>Travel History ({userProfile.travelHistory?.length || 0})</span>
                     </button>
-                    {isOwnerAdmin && (
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          openFirebaseModal();
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Database className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Firebase DB & Hosting Setup</span>
-                        </div>
-                        <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
-                          firebaseUser ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {firebaseUser ? 'Online' : 'Link'}
-                        </span>
-                      </button>
-                    )}
                   </div>
 
                   {/* Switch Expat Account (Requires Password via Login Modal) */}
                   <div className="pt-1.5 border-t border-slate-100 px-3.5 py-1.5">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Account Actions
                       </span>
@@ -365,13 +408,13 @@ export const Navbar: React.FC = () => {
                   </div>
 
                   {/* Logout */}
-                  <div className="pt-1.5 border-t border-slate-100">
+                  <div className="pt-1 border-t border-slate-100">
                     <button
                       onClick={() => {
                         logout();
                         setUserMenuOpen(false);
                       }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-rose-50 text-rose-600 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3.5 py-2 hover:bg-rose-50 text-rose-600 flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Log Out</span>
@@ -399,20 +442,6 @@ export const Navbar: React.FC = () => {
             </div>
           )}
 
-          {/* Quick link to admin dashboard if role is admin */}
-          {userProfile.role === 'admin' && (
-            <button
-              onClick={() => handleNav('admin')}
-              className={`hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${
-                currentView === 'admin'
-                  ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              CMS Console
-            </button>
-          )}
-
           {/* Mobile hamburger - styled with border and background for clear mobile visibility */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -428,6 +457,22 @@ export const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="md:hidden px-4 pt-2 pb-6 bg-white border-b border-slate-200 shadow-xl space-y-3">
           <div className="flex flex-col space-y-1">
+            {canAccessAdmin && (
+              <button
+                onClick={() => handleNav('admin')}
+                className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold flex items-center justify-between ${
+                  currentView === 'admin'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-50 text-amber-900 border border-amber-200'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  <span>Admin CMS Console</span>
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded bg-white/20">Open</span>
+              </button>
+            )}
             <button
               onClick={() => handleNav('landing')}
               className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
@@ -450,7 +495,7 @@ export const Navbar: React.FC = () => {
                 currentView === 'compare' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Compare Matrix ({useApp().comparedCountryIds.length})
+              Compare Matrix ({comparedCountryIds.length})
             </button>
             <button
               onClick={() => handleNav('community')}
@@ -484,16 +529,6 @@ export const Navbar: React.FC = () => {
             >
               My Dashboard
             </button>
-            {userProfile.role === 'admin' && (
-              <button
-                onClick={() => handleNav('admin')}
-                className={`text-left px-3 py-2 rounded-lg text-sm font-semibold ${
-                  currentView === 'admin' ? 'bg-amber-100 text-amber-900' : 'text-amber-800 hover:bg-amber-50'
-                }`}
-              >
-                Admin CMS Console
-              </button>
-            )}
           </div>
 
           {/* Mobile User Profile Section */}
@@ -506,6 +541,7 @@ export const Navbar: React.FC = () => {
                       src={userProfile.avatarUrl}
                       alt={userProfile.name}
                       className="w-9 h-9 rounded-full object-cover ring-2 ring-orange-500/30"
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-sm">
