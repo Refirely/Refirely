@@ -221,6 +221,8 @@ export const LandingPage: React.FC = () => {
   const yearsToFireDomestic = calculateYearsToFire(fireNestEggDomestic, currentNetWorth, annualSavings, expectedGrowthRate);
   const yearsSaved = Math.max(0, yearsToFireDomestic - yearsToFireAbroad);
   const fireProgressPercent = Math.min(100, Math.round((currentNetWorth / Math.max(1, fireNestEggAbroad)) * 100));
+  const fireProgressDomesticPercent = Math.min(100, Math.round((currentNetWorth / Math.max(1, fireNestEggDomestic)) * 100));
+  const swrMultiplier = +(100 / safeWithdrawalRate).toFixed(1);
 
   // Top 4 matching countries dynamically synced with the user's FIRE Calculator inputs
   const fireMatchedCountries = useMemo(() => {
@@ -1063,8 +1065,10 @@ export const LandingPage: React.FC = () => {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center text-xs">
-                    <label className="font-bold text-slate-800">Safe Withdrawal</label>
-                    <span className="font-extrabold text-slate-900">{safeWithdrawalRate.toFixed(1)}%</span>
+                    <label className="font-bold text-slate-800">Safe Withdrawal Rate (SWR)</label>
+                    <span className="font-extrabold text-slate-900">
+                      {safeWithdrawalRate.toFixed(1)}% <span className="text-[11px] font-semibold text-slate-500">({swrMultiplier}x yr cost)</span>
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -1076,11 +1080,15 @@ export const LandingPage: React.FC = () => {
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
                   />
                   <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>3.0%</span>
-                    <span>4.0%</span>
-                    <span>5.0%</span>
+                    <span>3.0% (Safer · 33.3x)</span>
+                    <span>4.0% (Standard · 25x)</span>
+                    <span>5.0% (Higher · 20x)</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white border border-slate-200/80 text-[11px] text-slate-600 leading-relaxed">
+                <span className="font-bold text-slate-800">How SWR works:</span> Nest Egg = Annual Spending ÷ SWR. A <span className="font-semibold text-slate-800">lower SWR</span> (e.g., 3.0%) means withdrawing a smaller slice of your portfolio each year for safety, which requires a <span className="font-semibold text-slate-800">larger nest egg ({swrMultiplier}x annual expenses)</span> and more years to save.
               </div>
 
             </div>
@@ -1098,7 +1106,7 @@ export const LandingPage: React.FC = () => {
                     ${fireNestEggAbroad.toLocaleString()}
                   </div>
                   <div className="text-xs text-orange-700 font-medium">
-                    At {safeWithdrawalRate}% SWR (${targetMonthlyExpenseAbroad.toLocaleString()}/mo)
+                    ${annualExpenseAbroad.toLocaleString()}/yr × {swrMultiplier} ({safeWithdrawalRate.toFixed(1)}% SWR)
                   </div>
                 </div>
 
@@ -1110,7 +1118,7 @@ export const LandingPage: React.FC = () => {
                     ${fireNestEggDomestic.toLocaleString()}
                   </div>
                   <div className="text-xs text-slate-500 font-medium">
-                    At {safeWithdrawalRate}% SWR (${domesticMonthlyExpense.toLocaleString()}/mo)
+                    ${annualExpenseDomestic.toLocaleString()}/yr × {swrMultiplier} ({safeWithdrawalRate.toFixed(1)}% SWR)
                   </div>
                 </div>
               </div>
@@ -1119,35 +1127,58 @@ export const LandingPage: React.FC = () => {
               <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">
-                    Capital Required Slashed
+                    {capitalSaved >= 0 ? 'Capital Required Slashed' : 'Target Lifestyle Comparison'}
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-800/80 text-emerald-200 text-xs font-extrabold">
-                    {capitalSavedPercent}% Less Capital
+                    {capitalSaved >= 0
+                      ? `${capitalSavedPercent}% Less Capital`
+                      : `${Math.abs(capitalSavedPercent)}% Higher Target`}
                   </span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black">
-                  Save ${capitalSaved.toLocaleString()} in Required Net Worth
+                  {capitalSaved >= 0
+                    ? `Save $${capitalSaved.toLocaleString()} in Required Net Worth`
+                    : `+$${Math.abs(capitalSaved).toLocaleString()} Additional Nest Egg vs. Home`}
                 </div>
                 <p className="text-xs text-emerald-100 leading-relaxed">
-                  By moving to a verified haven, your existing net worth of ${currentNetWorth.toLocaleString()} already covers {fireProgressPercent}% of your full retirement requirement.
+                  With ${currentNetWorth.toLocaleString()} invested today, you have already funded{' '}
+                  <span className="font-extrabold text-white">{fireProgressPercent}%</span> of your abroad retirement goal (vs.{' '}
+                  <span className="font-extrabold text-white">{fireProgressDomesticPercent}%</span> of your domestic goal).
                 </p>
               </div>
 
               {/* Years to Retirement Comparison */}
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                     Years to Financial Freedom
                   </span>
-                  <span className="text-xs font-extrabold text-orange-600">
-                    {yearsSaved > 0 ? `Retire ${yearsSaved} Years Sooner Abroad!` : 'Ready Today!'}
+                  <span className="px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-xs font-extrabold text-orange-700">
+                    {yearsToFireAbroad === 0 && yearsToFireDomestic === 0
+                      ? 'Ready Today (Abroad & At Home)!'
+                      : yearsToFireAbroad === 0
+                      ? `Ready Abroad Today! (${yearsSaved} ${yearsSaved === 1 ? 'Yr' : 'Yrs'} Sooner Than Home)`
+                      : yearsSaved > 0
+                      ? `Retire ${yearsSaved} ${yearsSaved === 1 ? 'Year' : 'Years'} Sooner Abroad!`
+                      : yearsToFireAbroad === yearsToFireDomestic
+                      ? `Same Timeline (${yearsToFireAbroad} ${yearsToFireAbroad === 1 ? 'Year' : 'Years'} to Goal)`
+                      : `Home Goal Reached ${yearsToFireAbroad - yearsToFireDomestic} ${
+                          yearsToFireAbroad - yearsToFireDomestic === 1 ? 'Yr' : 'Yrs'
+                        } Sooner`}
                   </span>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-600">Retirement Abroad:</span>
-                    <span className="font-bold text-slate-900">{yearsToFireAbroad === 0 ? 'Achieved Now' : `${yearsToFireAbroad} Years`}</span>
+                {/* Row 1: Retirement Abroad Timeline & Funding Bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-slate-700">
+                      Retire Abroad <span className="text-slate-400 font-normal">(${targetMonthlyExpenseAbroad.toLocaleString()}/mo · ${fireNestEggAbroad.toLocaleString()} goal)</span>
+                    </span>
+                    <span className="font-extrabold text-orange-600">
+                      {yearsToFireAbroad === 0
+                        ? '0 Years (100% Funded Today!)'
+                        : `${yearsToFireAbroad} ${yearsToFireAbroad === 1 ? 'Year' : 'Years'} (${fireProgressPercent}% Funded)`}
+                    </span>
                   </div>
                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
@@ -1157,7 +1188,27 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between">
+                {/* Row 2: Retirement At Home Timeline & Funding Bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-slate-600">
+                      Retire at Home <span className="text-slate-400 font-normal">(${domesticMonthlyExpense.toLocaleString()}/mo · ${fireNestEggDomestic.toLocaleString()} goal)</span>
+                    </span>
+                    <span className="font-bold text-slate-700">
+                      {yearsToFireDomestic === 0
+                        ? '0 Years (100% Funded Today!)'
+                        : `${yearsToFireDomestic} ${yearsToFireDomestic === 1 ? 'Year' : 'Years'} (${fireProgressDomesticPercent}% Funded)`}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-slate-400 rounded-full transition-all duration-500"
+                      style={{ width: `${fireProgressDomesticPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <button
                     onClick={() => setCurrentView('dashboard')}
                     className="text-xs font-bold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1.5 cursor-pointer"
@@ -1165,7 +1216,9 @@ export const LandingPage: React.FC = () => {
                     <span>Open Detailed Financial Dashboard</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                  <span className="text-[11px] text-slate-400">Includes real inflation &amp; loan tracking</span>
+                  <span className="text-[11px] text-slate-400">
+                    Assumes {expectedGrowthRate}% annual return + ${(annualSavings / 1000).toFixed(0)}k/yr savings
+                  </span>
                 </div>
               </div>
 
