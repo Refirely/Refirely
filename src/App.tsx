@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
@@ -54,28 +55,38 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-orange-100 selection:text-orange-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-indigo-50/15 to-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-950">
       
       {/* Top Bar (Follows 3-zone contract) */}
       <Navbar />
 
-      {/* Main Viewport Router */}
+      {/* Main Viewport Router with Smooth Page Transitions */}
       <div className="flex-1">
-        {currentView === 'landing' && <LandingPage />}
-        {currentView === 'explore' && <DirectoryExplorer />}
-        {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
-        {currentView === 'compare' && <CompareStudio />}
-        {currentView === 'community' && <CommunityHub />}
-        {currentView === 'meetups' && <MeetupsView />}
-        {currentView === 'messages' && (
-          isAuthenticated && currentUserId !== 'guest' ? (
-            <DirectMessenger />
-          ) : (
-            <DirectMessagesAuthGate />
-          )
-        )}
-        {currentView === 'dashboard' && <UserDashboard />}
-        {currentView === 'admin' && <AdminDashboard />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView === 'country-detail' ? `country-${selectedCountry?.id}` : currentView}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {currentView === 'landing' && <LandingPage />}
+            {currentView === 'explore' && <DirectoryExplorer />}
+            {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
+            {currentView === 'compare' && <CompareStudio />}
+            {currentView === 'community' && <CommunityHub />}
+            {currentView === 'meetups' && <MeetupsView />}
+            {currentView === 'messages' && (
+              isAuthenticated && currentUserId !== 'guest' ? (
+                <DirectMessenger />
+              ) : (
+                <DirectMessagesAuthGate />
+              )
+            )}
+            {currentView === 'dashboard' && <UserDashboard />}
+            {currentView === 'admin' && <AdminDashboard />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Global In-App Notifications Toast */}
@@ -88,8 +99,9 @@ const MainContent: React.FC = () => {
       <PublicProfileModal />
       <FeedbackWidget />
 
-      {/* Elegant Light Footer */}
-      <footer className="bg-white text-slate-600 border-t border-slate-200/90 text-xs py-12">
+      {/* Multi-Colored Elegant Footer */}
+      <footer className="relative bg-white text-slate-600 border-t border-indigo-100 text-xs py-12 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-100">
             

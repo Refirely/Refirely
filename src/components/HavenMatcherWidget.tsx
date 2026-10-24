@@ -565,19 +565,25 @@ export const HavenMatcherWidget: React.FC = () => {
     safeWithdrawalRate !== (finances.safeWithdrawalRatePercent || 4.0);
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+    <section className="relative overflow-hidden bg-gradient-to-br from-teal-50/80 via-white to-indigo-50/80 rounded-3xl border border-teal-200/80 p-6 sm:p-8 shadow-md space-y-6">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+      <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal-400/12 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-indigo-400/12 blur-3xl" />
       
       {/* Top Header & Unified AI Profile Context Strip */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-teal-100/80">
         <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 flex items-center justify-center text-white shadow-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                  Haven Matcher AI Recommendation & Financial Potential Engine
+                  Haven Matcher{' '}
+                  <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                    AI Recommendation &amp; Financial Potential Engine
+                  </span>
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-900 border border-orange-200 uppercase tracking-wider">
                   Unified 4-Pillar Ranking · {countries.length} Havens

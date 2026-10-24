@@ -18,6 +18,7 @@ import {
   SlidersHorizontal, Stethoscope, Compass, ExternalLink, BookOpen,
   Download, FileText
 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface CountryDossierProps {
   country: Country;
@@ -201,33 +202,40 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
         </div>
       </div>
 
-      {/* Hero Dossier Header - Saffron Dawn & Lavender Luminous Palette */}
-      <div className="bg-gradient-to-b from-orange-50/90 via-purple-50/35 to-white text-slate-900 py-10 border-b border-orange-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Hero Dossier Header - Multi-Colored Luminous Palette & Ambient Glow */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50/90 via-white to-amber-50/85 text-slate-900 py-10 border-b border-indigo-200/80 shadow-xs">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-indigo-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-teal-400/15 blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <CountryFlag
                   countryCode={country.code}
                   countryName={country.name}
                   fallbackEmoji={country.flag}
                   size="2xl"
-                  className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-xs shrink-0"
+                  className="w-12 h-8 sm:w-14 sm:h-9.5 rounded-xs shrink-0 shadow-xs"
                 />
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                    {country.name} Retirement Guide
+                    {country.name}{' '}
+                    <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
+                      Retirement Guide
+                    </span>
                   </h1>
                   {/* Clean unboxed metadata with typographic separators */}
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1">
-                    <span className="font-semibold text-orange-900">Capital: {country.capital}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">
+                    <span className="font-bold text-indigo-900">Capital: {country.capital}</span>
                     <span aria-hidden="true">·</span>
                     <span>Currency: {country.currency}</span>
                     <span aria-hidden="true">·</span>
                     <span>Language: {country.language}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="text-purple-700 font-medium">English: {country.lifestyle.englishProficiency}</span>
+                    <span className="text-teal-800 font-bold">English: {country.lifestyle.englishProficiency}</span>
                   </div>
                 </div>
               </div>
@@ -236,29 +244,29 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               </p>
             </div>
 
-            {/* Quick KPI Strip - Saffron & Purple Luminous Cards */}
-            <div className="flex items-center gap-4 sm:gap-6 bg-white border border-orange-200/80 rounded-2xl px-5 py-4 shrink-0 shadow-xs">
+            {/* Quick KPI Strip - Multi-Colored Luminous Cards */}
+            <div className="flex items-center gap-4 sm:gap-6 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl px-5 py-4 shrink-0 shadow-sm">
               <div>
-                <span className="text-[11px] text-orange-800 font-semibold block">Single Living</span>
-                <span className="font-mono tabular-nums text-xl font-extrabold text-orange-950">
+                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block">Single Living</span>
+                <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
                   ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
                   <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
                 </span>
               </div>
-              <div className="w-px h-9 bg-slate-200" />
+              <div className="w-px h-9 bg-indigo-100" />
               <button
                 onClick={() => setActiveTab('healthcare')}
                 className="text-left group cursor-pointer"
                 title="Click to open full Healthcare, Emergency & Insurance guide"
               >
-                <span className="text-[11px] text-purple-800 font-semibold block group-hover:underline">Healthcare Score →</span>
-                <span className="font-mono tabular-nums text-xl font-extrabold text-purple-950">
+                <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">Healthcare Score →</span>
+                <span className="font-mono tabular-nums text-xl font-extrabold text-indigo-950">
                   {country.lifestyle.healthcareScore}/100
                 </span>
               </button>
-              <div className="w-px h-9 bg-slate-200" />
+              <div className="w-px h-9 bg-indigo-100" />
               <div>
-                <span className="text-[11px] text-amber-800 font-semibold block">Sunny Days</span>
+                <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider block">Sunny Days</span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-amber-900">
                   {country.climate.annualSunnyDays} d/yr
                 </span>
@@ -267,8 +275,8 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
 
           </div>
 
-          {/* Section Navigation Tabs (Segmented controls) */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-8 pb-1 border-t border-orange-100/80 mt-8 text-xs font-medium">
+          {/* Section Navigation Tabs (Animated Segmented Controls) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-8 pb-1 border-t border-indigo-100/80 mt-8 text-xs font-medium">
             {[
               { id: 'overview', label: 'Overview' },
               { id: 'visa', label: 'Visas & Rules' },
@@ -281,17 +289,19 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               { id: 'cities', label: 'Top Towns' },
               { id: 'community', label: `Community (${countryThreads.length + countryMeetups.length})` },
             ].map(tab => (
-              <button
+              <motion.button
                 key={tab.id}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-semibold shadow-2xs ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-bold shadow-2xs cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-bold shadow-xs'
-                    : 'bg-white text-slate-700 hover:text-orange-950 hover:bg-orange-50 border border-slate-200/90'
+                    ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                    : 'bg-white text-slate-700 hover:text-indigo-950 hover:bg-indigo-50/80 border border-indigo-200/70'
                 }`}
               >
                 {tab.label}
-              </button>
+              </motion.button>
             ))}
           </div>
 

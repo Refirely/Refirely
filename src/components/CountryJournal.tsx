@@ -266,23 +266,29 @@ export const CountryJournal: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+    <div className="relative overflow-hidden bg-gradient-to-br from-teal-50/75 via-white to-violet-50/75 rounded-3xl border border-teal-200/80 p-6 sm:p-8 shadow-md space-y-6">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-violet-500" />
       
       {/* Section Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-teal-100/80">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-800 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-xs">
               <BookOpen className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-slate-900">Country Journal & Interest Tracker</h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 uppercase tracking-wider">
+                <h2 className="text-xl font-extrabold text-slate-900">
+                  Country Journal &amp;{' '}
+                  <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                    Interest Tracker
+                  </span>
+                </h2>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-teal-100 to-indigo-100 text-indigo-950 border border-indigo-200 uppercase tracking-wider">
                   Private Vault
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Record private research notes, scouting impressions, and track candidacy tiers for favorited or visited countries.
               </p>
             </div>

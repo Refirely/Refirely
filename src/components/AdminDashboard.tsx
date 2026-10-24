@@ -10,6 +10,7 @@ import {
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
   ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 
 type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'cloud';
@@ -435,18 +436,19 @@ export const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
-      {/* Top Contextual Bar */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-indigo-50/40 via-slate-50 to-teal-50/30">
+      {/* Top Contextual Bar - Multi-Colored Governance Header */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-50/90 via-white to-amber-50/85 border-b border-indigo-200/80 shadow-xs">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="font-semibold text-amber-800 flex items-center gap-1">
-                <Shield className="w-3.5 h-3.5 text-amber-600" />
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span className="font-bold text-indigo-900 bg-indigo-100/80 border border-indigo-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                <Shield className="w-3.5 h-3.5 text-indigo-600" />
                 <span>ReFIREly Governance</span>
               </span>
               <span aria-hidden="true">/</span>
-              <span className="text-slate-900 font-semibold capitalize">
+              <span className="text-slate-900 font-bold capitalize">
                 {activeTab === 'overview' && 'Executive Overview'}
                 {activeTab === 'users' && `Registered Users Directory (${registeredAccounts.length})`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
@@ -455,30 +457,37 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5 tracking-tight">
-              Admin CMS & Registered Users Console
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
+              Admin CMS &amp;{' '}
+              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
+                Registered Users Console
+              </span>
             </h1>
           </div>
 
           {/* Right Quick Actions */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setIsCreateUserModalOpen(true)}
-              className="px-3 py-2 bg-slate-900 text-white hover:bg-slate-800 font-semibold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+              <UserPlus className="w-3.5 h-3.5 text-amber-300" />
               <span>Add User</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Country</span>
-            </button>
+            </motion.button>
             <button
               onClick={toggleRole}
-              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:text-slate-950 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-3.5 py-2 bg-white border border-indigo-200 text-indigo-950 hover:bg-indigo-50 font-bold text-xs rounded-xl transition-colors shadow-2xs cursor-pointer"
               title="Toggle between Admin Mode and Member View"
             >
               Role: {userProfile.role === 'admin' ? 'Admin' : 'Member'} (Switch)
@@ -511,19 +520,20 @@ export const AdminDashboard: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Left Navigation Sidebar */}
-          <aside className="w-full lg:w-60 shrink-0 bg-white border border-slate-200 rounded-xl p-2 space-y-1">
+          <aside className="w-full lg:w-60 shrink-0 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl p-2.5 space-y-1.5 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
             <div className="px-3 py-2 border-b border-slate-100 mb-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-900/70">
                 Console Modules
               </p>
             </div>
 
             <button
               onClick={() => setActiveTab('overview')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
@@ -534,10 +544,10 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'users'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
@@ -545,8 +555,8 @@ export const AdminDashboard: React.FC = () => {
                 <span>Registered Users</span>
               </span>
               <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
-                  activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-800'
                 }`}
               >
                 {registeredAccounts.length}
@@ -555,10 +565,10 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('countries')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'countries'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
@@ -566,8 +576,8 @@ export const AdminDashboard: React.FC = () => {
                 <span>Country CMS Catalog</span>
               </span>
               <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
-                  activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-800'
                 }`}
               >
                 {countries.length}
@@ -576,19 +586,19 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('community')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'community'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
-                <span>Forum & Meetups</span>
+                <span>Forum &amp; Meetups</span>
               </span>
               <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
-                  activeTab === 'community' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === 'community' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-800'
                 }`}
               >
                 {threads.length + meetups.length}
@@ -597,14 +607,14 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('feedback')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'feedback'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <MessageSquarePlus className="w-4 h-4 text-orange-400" />
+                <MessageSquarePlus className={`w-4 h-4 ${activeTab === 'feedback' ? 'text-amber-300' : 'text-orange-500'}`} />
                 <span>Feedback &amp; Bugs</span>
               </span>
               <div className="flex items-center gap-1.5">
@@ -614,7 +624,7 @@ export const AdminDashboard: React.FC = () => {
                   </span>
                 )}
                 <span
-                  className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                  className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
                     activeTab === 'feedback' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
                   }`}
                 >
@@ -625,15 +635,15 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('cloud')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'cloud'
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
                 <Database className="w-4 h-4" />
-                <span>Cloud DB & Sync</span>
+                <span>Cloud DB &amp; Sync</span>
               </span>
               <span
                 className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
@@ -683,125 +693,146 @@ export const AdminDashboard: React.FC = () => {
             ========================================================= */}
             {activeTab === 'overview' && (
               <>
-                {/* 5-Column KPI Strip */}
+                {/* 5-Column Multi-Color KPI Strip */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                  <div
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('users')}
-                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/80 border border-indigo-200/80 hover:border-indigo-400 transition-all shadow-xs cursor-pointer"
                   >
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Registered Users</span>
-                      <Users className="w-4 h-4 text-orange-600" />
+                    <div className="flex items-center justify-between text-indigo-900">
+                      <span className="text-xs font-bold">Registered Users</span>
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-2xs">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-indigo-950 mt-2">
                       {userStats.total}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
                       <span>{userStats.adminsCount} Admin</span>
                       <span aria-hidden="true">·</span>
                       <span>{userStats.membersCount} Members</span>
                       <span aria-hidden="true">·</span>
-                      <span className="text-emerald-700 font-medium">{userStats.syncedCount} Synced</span>
+                      <span className="text-emerald-700 font-bold">{userStats.syncedCount} Synced</span>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('countries')}
-                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-orange-50/80 border border-amber-200/80 hover:border-amber-400 transition-all shadow-xs cursor-pointer"
                   >
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Published Havens</span>
-                      <Globe className="w-4 h-4 text-amber-600" />
+                    <div className="flex items-center justify-between text-amber-900">
+                      <span className="text-xs font-bold">Published Havens</span>
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
+                        <Globe className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-amber-950 mt-2">
                       {countries.length}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
                       <span>Europe</span>
                       <span aria-hidden="true">·</span>
                       <span>SE Asia</span>
                       <span aria-hidden="true">·</span>
                       <span>Americas</span>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('users')}
-                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/80 border border-emerald-200/80 hover:border-emerald-400 transition-all shadow-xs cursor-pointer"
                   >
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Avg. User Target Budget</span>
-                      <DollarSign className="w-4 h-4 text-emerald-600" />
+                    <div className="flex items-center justify-between text-emerald-900">
+                      <span className="text-xs font-bold">Avg. User Target Budget</span>
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-emerald-950 mt-2">
                       ${userStats.avgBudget.toLocaleString()}/mo
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
                       <span>Avg. Net Worth: ${(userStats.avgNetWorth / 1000).toFixed(0)}k</span>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('community')}
-                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-gradient-to-br from-violet-50/90 via-white to-fuchsia-50/80 border border-violet-200/80 hover:border-violet-400 transition-all shadow-xs cursor-pointer"
                   >
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Community &amp; Meetups</span>
-                      <MessageSquare className="w-4 h-4 text-purple-600" />
+                    <div className="flex items-center justify-between text-violet-900">
+                      <span className="text-xs font-bold">Community &amp; Meetups</span>
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-2xs">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-violet-950 mt-2">
                       {threads.length} / {meetups.length}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
                       <span>{threads.length} Forum</span>
                       <span aria-hidden="true">·</span>
                       <span>{meetups.length} Meetups</span>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div
+                  <motion.div
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('feedback')}
-                    className="p-5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    className="p-5 rounded-2xl bg-gradient-to-br from-rose-50/90 via-white to-orange-50/80 border border-rose-200/80 hover:border-rose-400 transition-all shadow-xs cursor-pointer"
                   >
-                    <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-medium">Feedback &amp; Bugs</span>
-                      <MessageSquarePlus className="w-4 h-4 text-orange-600" />
+                    <div className="flex items-center justify-between text-rose-900">
+                      <span className="text-xs font-bold">Feedback &amp; Bugs</span>
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
+                        <MessageSquarePlus className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-2">
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-rose-950 mt-2">
                       {feedbackReports.length}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-                      <span className="text-orange-700 font-semibold">{feedbackReports.filter(r => r.status === 'new').length} New</span>
+                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
+                      <span className="text-rose-700 font-bold">{feedbackReports.filter(r => r.status === 'new').length} New</span>
                       <span aria-hidden="true">·</span>
                       <span>{feedbackReports.filter(r => r.type === 'bug').length} Bugs</span>
                       <span aria-hidden="true">·</span>
-                      <span className="text-emerald-700 font-medium">{feedbackReports.filter(r => r.status === 'resolved' || r.status === 'closed').length} Done</span>
+                      <span className="text-emerald-700 font-bold">{feedbackReports.filter(r => r.status === 'resolved' || r.status === 'closed').length} Done</span>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Registered Users & Basic Information Section (Directly visible on Overview) */}
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                  <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="relative bg-white rounded-2xl border border-indigo-200/80 overflow-hidden shadow-xs">
+                  <div className="h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
+                  <div className="p-5 border-b border-indigo-100 bg-gradient-to-r from-indigo-50/50 via-white to-teal-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-base font-bold text-slate-900">
-                        Registered Users & Basic Member Information ({registeredAccounts.length})
+                      <h2 className="text-base font-extrabold text-slate-900">
+                        Registered Users &amp; Basic Member Information ({registeredAccounts.length})
                       </h2>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Complete roster of registered User IDs, contact emails, origin & residing countries, target retirement havens, budgets, and relocation status.
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Complete roster of registered User IDs, contact emails, origin &amp; residing countries, target retirement havens, budgets, and relocation status.
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={handleExportUsersCsv}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Export CSV</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('users')}
-                        className="px-3 py-1.5 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-xs"
                       >
                         <span>Full User Directory</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />

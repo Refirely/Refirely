@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { MessageSquare, ThumbsUp, Send, Plus, Search, X, Users, MessageCircle, ExternalLink } from 'lucide-react';
+import { motion } from 'motion/react';
 import { CommunityThread } from '../types';
 import { PublicMemberDirectory } from './PublicMemberDirectory';
 
@@ -110,68 +111,88 @@ export const CommunityHub: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-orange-600" />
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              Retiree &amp; Expat Community Hub
-            </h1>
+      {/* Top Header - Multi-Colored Luminous Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-amber-50/85 border border-indigo-200/80 p-6 sm:p-8 shadow-md"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-amber-400/15 blur-3xl" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-amber-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/20">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Retiree &amp; Expat{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
+                  Community Hub
+                </span>
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5">
+              Exchange firsthand guidance on visas, housing, healthcare, and connect directly with verified expat members.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Exchange firsthand guidance on visas, housing, healthcare, and connect directly with verified expat members.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={() =>
-              setActiveCommunityTab(activeCommunityTab === 'members' ? 'discussions' : 'members')
-            }
-            className="px-3.5 py-2 text-xs font-bold rounded-xl border border-teal-200 bg-teal-50/70 text-teal-900 hover:bg-teal-100 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-          >
-            <Users className="w-4 h-4 text-teal-700" />
-            <span>
-              {activeCommunityTab === 'members'
-                ? 'Back to Discussions'
-                : `Member Profiles (${publicMemberAccounts.length})`}
-            </span>
-          </button>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() =>
+                setActiveCommunityTab(activeCommunityTab === 'members' ? 'discussions' : 'members')
+              }
+              className="px-3.5 py-2 text-xs font-bold rounded-xl border border-teal-200 bg-teal-50/90 text-teal-950 hover:bg-teal-100 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+            >
+              <Users className="w-4 h-4 text-teal-700" />
+              <span>
+                {activeCommunityTab === 'members'
+                  ? 'Back to Discussions'
+                  : `Member Profiles (${publicMemberAccounts.length})`}
+              </span>
+            </motion.button>
 
-          <button
-            onClick={() => setIsNewModalOpen(true)}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Ask a Question / Post</span>
-          </button>
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setIsNewModalOpen(true)}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white hover:from-indigo-700 hover:to-teal-700 transition-all flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Ask a Question / Post</span>
+            </motion.button>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Segmented View Switcher: Discussions vs. Public Member Directory */}
-      <div className="mt-5 mb-6 flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-xl w-fit">
+      <div className="mt-5 mb-6 flex items-center gap-1.5 p-1 bg-indigo-100/70 border border-indigo-200/70 rounded-2xl w-fit shadow-2xs">
         <button
           onClick={() => setActiveCommunityTab('discussions')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
             activeCommunityTab === 'discussions'
-              ? 'bg-white text-slate-900 shadow-2xs'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
+              : 'text-slate-700 hover:text-indigo-950'
           }`}
         >
-          <MessageSquare className="w-3.5 h-3.5 text-orange-600" />
+          <MessageSquare className={`w-3.5 h-3.5 ${activeCommunityTab === 'discussions' ? 'text-amber-300' : 'text-indigo-600'}`} />
           <span>Discussion Forum ({threads.length})</span>
         </button>
 
         <button
           onClick={() => setActiveCommunityTab('members')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
             activeCommunityTab === 'members'
-              ? 'bg-white text-slate-900 shadow-2xs'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
+              : 'text-slate-700 hover:text-indigo-950'
           }`}
         >
-          <Users className="w-3.5 h-3.5 text-teal-700" />
+          <Users className={`w-3.5 h-3.5 ${activeCommunityTab === 'members' ? 'text-amber-300' : 'text-teal-700'}`} />
           <span>Public Member Profiles ({publicMemberAccounts.length})</span>
         </button>
       </div>
@@ -181,17 +202,17 @@ export const CommunityHub: React.FC = () => {
       ) : (
         <>
           {/* Filter and Search Bar */}
-          <div className="my-6 space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="my-6 space-y-3 bg-gradient-to-r from-white via-indigo-50/35 to-teal-50/35 p-4 sm:p-5 rounded-2xl border border-indigo-200/80 shadow-xs">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Search input */}
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-indigo-500 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Search discussions by keywords, questions, or towns..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  className="w-full pl-9 pr-3 py-2 text-xs border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-2xs"
                 />
               </div>
 
@@ -200,7 +221,7 @@ export const CommunityHub: React.FC = () => {
                 <select
                   value={selectedCountryFilter}
                   onChange={e => setSelectedCountryFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  className="w-full px-3 py-2 text-xs border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-semibold text-slate-800 shadow-2xs"
                 >
                   <option value="All">All Countries (Global)</option>
                   {countries.map(c => (
@@ -218,10 +239,10 @@ export const CommunityHub: React.FC = () => {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategoryFilter(cat)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategoryFilter === cat
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                      ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200/80 hover:text-indigo-950 hover:border-indigo-300'
                   }`}
                 >
                   {cat}
@@ -233,7 +254,7 @@ export const CommunityHub: React.FC = () => {
           {/* Thread List */}
           <div className="space-y-4">
             {filteredThreads.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
+              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
                 <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <h3 className="text-sm font-bold text-slate-800">No discussions match your filter</h3>
                 <p className="text-xs text-slate-500 mt-1 mb-4">
@@ -241,7 +262,7 @@ export const CommunityHub: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setIsNewModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-purple-600 text-white text-xs font-medium hover:from-orange-700 hover:to-purple-700 shadow-2xs"
+                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 text-white text-xs font-bold hover:from-indigo-700 hover:to-teal-700 shadow-2xs"
                 >
                   Post First Discussion
                 </button>
@@ -252,10 +273,14 @@ export const CommunityHub: React.FC = () => {
                 const matchedAuthorMember = findMemberForAuthor(thread.authorName);
 
                 return (
-                  <article
+                  <motion.article
                     key={thread.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 transition-shadow hover:shadow-xs"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -2 }}
+                    className="relative overflow-hidden bg-gradient-to-br from-white via-white to-indigo-50/30 rounded-2xl border border-indigo-200/70 p-5 sm:p-6 transition-all shadow-xs hover:shadow-md hover:border-indigo-300"
                   >
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500 opacity-80" />
                     {/* Thread Header */}
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div className="flex items-center gap-3">
@@ -428,7 +453,7 @@ export const CommunityHub: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </article>
+                  </motion.article>
                 );
               })
             )}

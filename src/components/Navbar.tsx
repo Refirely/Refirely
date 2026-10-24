@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getViewUrl } from '../utils/seo';
 import {
@@ -64,8 +65,20 @@ export const Navbar: React.FC = () => {
     }
   };
 
+  const navItems: { view: typeof currentView; label: string; isActive: boolean }[] = [
+    { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
+    { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
+    { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
+    { view: 'community', label: 'Community', isActive: currentView === 'community' },
+    { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
+    { view: 'dashboard', label: 'My Dashboard', isActive: currentView === 'dashboard' },
+  ];
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shadow-2xs">
+    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl border-b border-indigo-100/90 text-slate-800 shadow-xs">
+      {/* Multi-Colored Top Accent Line */}
+      <div className="h-1 w-full bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+
       {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
@@ -73,7 +86,7 @@ export const Navbar: React.FC = () => {
         <a
           href={getViewUrl('landing')}
           onClick={(e) => handleAnchorNav(e, 'landing')}
-          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-md group shrink-0 py-1"
+          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md group shrink-0 py-1"
           aria-label="ReFIREly Home"
         >
           <img
@@ -83,74 +96,29 @@ export const Navbar: React.FC = () => {
           />
         </a>
 
-        {/* Zone 2: Primary navigation links (including prominent CMS Console tab for Admins) */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2.5 text-xs lg:text-[13px] font-medium text-slate-600 min-w-0">
-          <a
-            href={getViewUrl('landing')}
-            onClick={(e) => handleAnchorNav(e, 'landing')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'landing'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            Home
-          </a>
-          <a
-            href={getViewUrl('explore')}
-            onClick={(e) => handleAnchorNav(e, 'explore')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'explore' || currentView === 'country-detail'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            Explore Havens
-          </a>
-          <a
-            href={getViewUrl('compare')}
-            onClick={(e) => handleAnchorNav(e, 'compare')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'compare'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            Compare
-          </a>
-          <a
-            href={getViewUrl('community')}
-            onClick={(e) => handleAnchorNav(e, 'community')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'community'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            Community
-          </a>
-          <a
-            href={getViewUrl('meetups')}
-            onClick={(e) => handleAnchorNav(e, 'meetups')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'meetups'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            Meetups
-          </a>
-          <a
-            href={getViewUrl('dashboard')}
-            onClick={(e) => handleAnchorNav(e, 'dashboard')}
-            className={`whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-lg cursor-pointer ${
-              currentView === 'dashboard'
-                ? 'text-orange-950 font-bold bg-orange-50/90 border-b-2 border-orange-500'
-                : 'hover:text-orange-600 hover:bg-slate-50'
-            }`}
-          >
-            My Dashboard
-          </a>
+        {/* Zone 2: Primary navigation links with animated active pill */}
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-[13px] font-semibold text-slate-600 min-w-0 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/70">
+          {navItems.map((item) => (
+            <a
+              key={item.view}
+              href={getViewUrl(item.view)}
+              onClick={(e) => handleAnchorNav(e, item.view)}
+              className={`relative whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 lg:px-3 rounded-xl cursor-pointer ${
+                item.isActive
+                  ? 'text-white font-bold'
+                  : 'text-slate-600 hover:text-indigo-950 hover:bg-white/60'
+              }`}
+            >
+              {item.isActive && (
+                <motion.span
+                  layoutId="navbarActivePill"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 shadow-xs"
+                />
+              )}
+              <span className="relative z-10">{item.label}</span>
+            </a>
+          ))}
         </nav>
 
         {/* Zone 3: Compact Right Utility & Account Controls */}

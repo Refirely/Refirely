@@ -346,25 +346,31 @@ export const UserFinancialsDashboard: React.FC = () => {
   }, [countries, countryFilterTab, selectedRegionFilter, searchFilter, userProfile.savedCountryIds, userProfile.targetCountry, monthlySalary, totalNetWorth, safeWithdrawalRate]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-8">
+    <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/75 via-white to-indigo-50/75 rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-md space-y-8">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 via-50% to-indigo-600" />
+      <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-indigo-400/10 blur-3xl" />
       
         {/* Top Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-amber-200/60">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-800">
-              <DollarSign className="w-5 h-5 text-orange-600" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-indigo-600 text-white shadow-sm shadow-amber-500/20">
+              <DollarSign className="w-5 h-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                  Current Salary & Investment Schemes Net Worth
+                  Current Salary &amp;{' '}
+                  <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-indigo-600 bg-clip-text text-transparent">
+                    Investment Schemes Net Worth
+                  </span>
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-950 border border-orange-200 uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-100 to-orange-100 text-amber-950 border border-amber-300 uppercase tracking-wider shadow-2xs">
                   {getWorldCountryFlag(selectedResidingCountry)} {selectedResidingCountry} ({countryMacro.currencyCode}) + $ USD
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Multi-asset wealth allocation and financial readiness potential across global retirement havens. Enter or view balances in <strong>{countryMacro.currencyCode} ({countryMacro.symbol.trim()})</strong> or <strong>$ USD</strong>.
               </p>
             </div>

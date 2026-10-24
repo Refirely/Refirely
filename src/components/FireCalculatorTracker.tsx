@@ -908,26 +908,32 @@ export const FireCalculatorTracker: React.FC = () => {
     fireAnalysis.startingCorpusTodayUSD - fireAnalysis.comprehensiveFireNumberTodayUSD;
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-7">
+    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50/80 via-white to-emerald-50/75 rounded-3xl border border-indigo-200/80 p-6 sm:p-8 shadow-md space-y-7">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 via-50% to-emerald-500" />
+      <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-400/12 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-emerald-400/12 blur-3xl" />
       
       {/* Top Header & Residing Country / Dual-Currency Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-indigo-100/80">
         <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 flex items-center justify-center text-white shadow-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-teal-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
               <Flame className="w-5 h-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                  FIRE Calculator, Visual Trajectory &amp; Independence Planner
+                  FIRE Calculator,{' '}
+                  <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
+                    Visual Trajectory &amp; Independence Planner
+                  </span>
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-950 border border-orange-200 uppercase tracking-wider inline-flex items-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-indigo-100 to-teal-100 text-indigo-950 border border-indigo-200 uppercase tracking-wider inline-flex items-center gap-1.5 shadow-2xs">
                   <CountryFlag countryName={selectedBasisCountry} size="xs" className="rounded-xs" />
                   <span>{selectedBasisCountry} ({countryMacro.currencyCode}) + $ USD Dual Ledger</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Unified FIRE calculator, cash-flow simulator, retirement corpus benchmark comparison, and multi-horizon compounding trajectory for <strong>{selectedBasisCountry}</strong> ({inflationPct}% inflation, {expectedReturnPct}% return) &amp; <strong>{targetHavenCountryName}</strong>.
               </p>
             </div>

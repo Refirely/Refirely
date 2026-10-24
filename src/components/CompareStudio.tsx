@@ -5,6 +5,7 @@ import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
 import { CountryFlag } from './CountryFlag';
 import { CountryRadarChart, SLOT_THEMES } from './CountryRadarChart';
 import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale, Search, Award } from 'lucide-react';
+import { motion } from 'motion/react';
 
 const TOP_RETIREMENT_HAVEN_IDS = [
   'portugal',
@@ -77,65 +78,83 @@ export const CompareStudio: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
-      {/* Header and Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2">
-            <Scale className="w-6 h-6 text-teal-700" />
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              Country Comparison Studio
-            </h1>
+      {/* Header and Controls - Multi-Colored Luminous Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 border border-indigo-200/80 p-6 sm:p-8 shadow-md mb-6"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-teal-400/15 blur-3xl" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-teal-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/20">
+                <Scale className="w-5 h-5" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Country{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
+                  Comparison Studio
+                </span>
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1.5">
+              Evaluate up to 4 retirement destinations side-by-side across 55+ empirical parameters &amp; synchronized D3 radar telemetry.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Evaluate up to 4 retirement destinations side-by-side across 55+ empirical parameters.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors flex items-center gap-1.5 ${
-              discreetLifestyleEnabled
-                ? 'bg-amber-500 text-slate-950 border-amber-400'
-                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Lifestyle Metrics: {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {comparedCountries.length > 0 && (
-            <button
-              onClick={clearComparedCountries}
-              className="text-xs text-slate-500 hover:text-slate-800 underline"
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
+              className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+                discreetLifestyleEnabled
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-sm'
+                  : 'bg-white border-indigo-200 text-indigo-950 hover:bg-indigo-50'
+              }`}
             >
-              Clear All
-            </button>
-          )}
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Lifestyle Metrics: {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
+            </motion.button>
+
+            {comparedCountries.length > 0 && (
+              <button
+                onClick={clearComparedCountries}
+                className="text-xs font-semibold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Add country selector grid with all countries if under 4 */}
       {comparedCountries.length < 4 && (
-        <div className="my-6 p-4 sm:p-5 rounded-xl bg-orange-50/70 border border-orange-200 space-y-3.5">
+        <div className="my-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-indigo-50/70 border border-amber-200/80 space-y-3.5 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-xs sm:text-sm font-bold text-orange-950 block">
+              <span className="text-xs sm:text-sm font-extrabold text-slate-900 block">
                 Select another country to add to the matrix ({comparedCountries.length}/4 selected):
               </span>
-              <span className="text-[11px] text-orange-800/80">
+              <span className="text-[11px] text-slate-600">
                 Showing {availableCountriesToAdd.length} available retirement destinations — click any country to add it to your side-by-side matrix.
               </span>
             </div>
 
             <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-orange-700/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-indigo-600/70 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={selectorSearch}
                 onChange={e => setSelectorSearch(e.target.value)}
                 placeholder="Filter countries or regions..."
-                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-orange-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-indigo-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
               />
               {selectorSearch && (
                 <button
@@ -152,21 +171,23 @@ export const CompareStudio: React.FC = () => {
           {availableCountriesToAdd.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-72 overflow-y-auto pr-1 pt-0.5">
               {availableCountriesToAdd.map(c => (
-                <button
+                <motion.button
                   key={c.id}
+                  whileHover={{ y: -2, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => toggleCompareCountry(c.id)}
-                  className="inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-white text-slate-700 hover:text-orange-950 border border-orange-200/90 rounded-lg hover:bg-orange-100/60 hover:border-orange-300 transition-colors shadow-2xs text-left group"
+                  className="inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-white text-slate-700 hover:text-indigo-950 border border-indigo-200/70 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50/70 hover:to-teal-50/70 hover:border-indigo-300 transition-all shadow-2xs text-left group cursor-pointer"
                 >
                   <span className="inline-flex items-center gap-1.5 min-w-0">
                     <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="sm" />
                     <span className="truncate">{c.name}</span>
                   </span>
-                  <Plus className="w-3.5 h-3.5 text-orange-600 shrink-0 group-hover:scale-110 transition-transform" />
-                </button>
+                  <Plus className="w-3.5 h-3.5 text-indigo-600 shrink-0 group-hover:scale-110 transition-transform" />
+                </motion.button>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-orange-900/70 py-2">
+            <p className="text-xs text-slate-600 py-2">
               No countries match "{selectorSearch}". Try clearing the search filter above.
             </p>
           )}
