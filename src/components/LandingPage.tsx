@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
-import { ClimateCategory, SortByType } from '../types';
 import { CountryThumbnail } from './CountryThumbnail';
 import { CountryFlag } from './CountryFlag';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
@@ -11,10 +11,10 @@ import {
   matchesContinentFilter,
 } from '../utils/continents';
 import {
-  Compass, Sparkles, Flame, ArrowRight, ArrowDown, Heart,
+  Compass, Sparkles, Flame, ArrowRight, Heart,
   ShieldCheck, Sun, Globe, Users, CheckCircle2,
   SlidersHorizontal, ChevronRight,
-  LogIn, UserPlus, RotateCcw
+  LogIn, UserPlus, RotateCcw, Wallet, HeartPulse, Plane, Layers
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
@@ -31,7 +31,6 @@ export const LandingPage: React.FC = () => {
     setSelectedRegion,
     setSelectedClimate,
     setSearchQuery,
-    setSortBy,
   } = useApp();
 
   // -------------------------------------------------------------
@@ -39,11 +38,8 @@ export const LandingPage: React.FC = () => {
   // -------------------------------------------------------------
   const [matchBudget, setMatchBudget] = useState<number>(2800);
   const [strictBudgetFilter, setStrictBudgetFilter] = useState<boolean>(false);
-  const [matchClimate, setMatchClimate] = useState<ClimateCategory | 'Any'>('Any');
   const [matchPriority, setMatchPriority] = useState<'value' | 'healthcare' | 'safety' | 'leisure'>('leisure');
   const [previewContinent, setPreviewContinent] = useState<ContinentFilter>('All');
-  const [previewSort, setPreviewSort] = useState<'match-desc' | SortByType>('match-desc');
-  const [visibleCount, setVisibleCount] = useState<number>(12);
 
   // Continent counts across all countries
   const continentCounts = useMemo(() => {
@@ -54,52 +50,44 @@ export const LandingPage: React.FC = () => {
     return counts;
   }, [countries]);
 
-  // Compute match score, filter by continent/climate/search/budget, and sort
+  // Compute match score, filter by continent and strict budget, and sort by live match fit
   const sortedMatchedCountries = useMemo(() => {
     const scored = countries.map(country => {
-      let score = 70; // baseline
+      let score = 68; // baseline
 
-      // Budget match (25 pts)
+      // Budget match (up to 16 pts)
       const diff = matchBudget - country.costOfLiving.monthlyBudgetCoupleUSD;
-      if (diff >= 300) {
-        score += 25; // comfortably under budget
+      if (diff >= 400) {
+        score += 16; // comfortably under budget
       } else if (diff >= 0) {
-        score += 22; // within budget
-      } else if (diff >= -500) {
-        score += 14; // slightly over
+        score += 13; // within budget
+      } else if (diff >= -450) {
+        score += 6; // slightly over
       } else {
         score -= 8;
       }
 
-      // Climate match (25 pts)
-      if (matchClimate === 'Any' || country.climate.category === matchClimate) {
-        score += 25;
-      }
-
-      // Priority factor (25 pts)
+      // Priority factor (up to 15 pts)
       const travelScore = getCountryTravelLeisureScore(country);
       if (matchPriority === 'value') {
-        if (country.costOfLiving.monthlyBudgetCoupleUSD <= 2200) score += 25;
-        else if (country.costOfLiving.monthlyBudgetCoupleUSD <= 3000) score += 16;
-        else score += 8;
+        if (country.costOfLiving.monthlyBudgetCoupleUSD <= 2000) score += 15;
+        else if (country.costOfLiving.monthlyBudgetCoupleUSD <= 2800) score += 11;
+        else score += 5;
       } else if (matchPriority === 'healthcare') {
-        score += (country.lifestyle.healthcareScore / 100) * 25;
+        score += (country.lifestyle.healthcareScore / 100) * 15;
       } else if (matchPriority === 'safety') {
-        score += (country.lifestyle.safetyScore / 100) * 25;
+        score += (country.lifestyle.safetyScore / 100) * 15;
       } else if (matchPriority === 'leisure') {
-        score += (travelScore / 100) * 25;
+        score += (travelScore / 100) * 15;
       }
 
       const normalizedScore = Math.min(99, Math.max(68, Math.round(score)));
       return { country, matchScore: normalizedScore, travelScore };
     });
 
-    // Apply Continent, Climate, and Strict Budget filters
+    // Apply Continent and Strict Budget filters
     const filtered = scored.filter(({ country }) => {
       if (!matchesContinentFilter(country, previewContinent)) {
-        return false;
-      }
-      if (matchClimate !== 'Any' && country.climate.category !== matchClimate) {
         return false;
       }
       if (strictBudgetFilter && country.costOfLiving.monthlyBudgetCoupleUSD > matchBudget) {
@@ -108,39 +96,19 @@ export const LandingPage: React.FC = () => {
       return true;
     });
 
-    // Sort according to active sort option
+    // Always rank by live Match Score (with Priority metric tie-breaker)
     filtered.sort((a, b) => {
-      switch (previewSort) {
-        case 'match-desc':
-          if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-          return b.travelScore - a.travelScore;
-        case 'alpha-asc':
-          return a.country.name.localeCompare(b.country.name);
-        case 'alpha-desc':
-          return b.country.name.localeCompare(a.country.name);
-        case 'budget-asc':
-          return a.country.costOfLiving.monthlyBudgetCoupleUSD - b.country.costOfLiving.monthlyBudgetCoupleUSD;
-        case 'travel-leisure-desc':
-          return b.travelScore - a.travelScore;
-        case 'healthcare-desc':
-          return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
-        case 'safety-desc':
-          return b.country.lifestyle.safetyScore - a.country.lifestyle.safetyScore;
-        case 'sunny-desc':
-          return b.country.climate.annualSunnyDays - a.country.climate.annualSunnyDays;
-        case 'visa-income-asc':
-          return a.country.visa.minimumIncomeUSD - b.country.visa.minimumIncomeUSD;
-        case 'recommended':
-        default: {
-          const scoreA =
-            (a.country.lifestyle.healthcareScore + a.country.lifestyle.safetyScore) / 2 -
-            a.country.costOfLiving.monthlyBudgetCoupleUSD / 100;
-          const scoreB =
-            (b.country.lifestyle.healthcareScore + b.country.lifestyle.safetyScore) / 2 -
-            b.country.costOfLiving.monthlyBudgetCoupleUSD / 100;
-          return scoreB - scoreA;
-        }
+      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+      if (matchPriority === 'value') {
+        return a.country.costOfLiving.monthlyBudgetCoupleUSD - b.country.costOfLiving.monthlyBudgetCoupleUSD;
       }
+      if (matchPriority === 'healthcare') {
+        return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
+      }
+      if (matchPriority === 'safety') {
+        return b.country.lifestyle.safetyScore - a.country.lifestyle.safetyScore;
+      }
+      return b.travelScore - a.travelScore;
     });
 
     return filtered;
@@ -148,37 +116,24 @@ export const LandingPage: React.FC = () => {
     countries,
     matchBudget,
     strictBudgetFilter,
-    matchClimate,
     matchPriority,
     previewContinent,
-    previewSort,
   ]);
 
-  const displayedCountries = sortedMatchedCountries.slice(0, visibleCount);
-  const hasMoreCountries = visibleCount < sortedMatchedCountries.length;
-  const remainingCountriesCount = Math.max(0, sortedMatchedCountries.length - visibleCount);
-
-  const handleLoadMore = (increment: number = 12) => {
-    setVisibleCount(prev => Math.min(sortedMatchedCountries.length, prev + increment));
-  };
+  const displayedCountries = sortedMatchedCountries.slice(0, 12);
+  const remainingCountriesCount = Math.max(0, sortedMatchedCountries.length - displayedCountries.length);
 
   const handleResetMatchEngine = () => {
     setMatchBudget(2800);
     setStrictBudgetFilter(false);
-    setMatchClimate('Any');
     setMatchPriority('leisure');
     setPreviewContinent('All');
-    setPreviewSort('match-desc');
-    setVisibleCount(12);
   };
 
   const handleOpenAdvancedExplorer = () => {
     setSelectedRegion(previewContinent);
-    setSelectedClimate(matchClimate === 'Any' ? 'All' : matchClimate);
+    setSelectedClimate('All');
     setSearchQuery('');
-    if (previewSort !== 'match-desc') {
-      setSortBy(previewSort);
-    }
     setCurrentView('explore');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -466,486 +421,638 @@ export const LandingPage: React.FC = () => {
       {/* 3. UNIFIED INTERACTIVE MATCH ENGINE & VERIFIED HAVEN DIRECTORY */}
       {/* ============================================================ */}
       <section id="haven-matcher" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
-        <div id="countries-grid" className="p-6 sm:p-10 rounded-3xl bg-slate-100/90 text-slate-900 shadow-sm border border-slate-200/90">
-          
-          {/* Header & Badges */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
+        <div
+          id="countries-grid"
+          className="relative overflow-hidden p-6 sm:p-10 rounded-[2rem] bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 text-slate-900 shadow-xl shadow-indigo-950/5 border border-indigo-200/80"
+        >
+          {/* Decorative Multi-Color Top Accent Ribbon & Ambient Glow Orbs */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+          <div className="pointer-events-none absolute -top-28 -left-24 w-96 h-96 rounded-full bg-indigo-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute top-1/3 -right-28 w-96 h-96 rounded-full bg-teal-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 left-1/3 w-96 h-96 rounded-full bg-amber-300/15 blur-3xl" />
+
+          {/* Header & Multi-Colored Badges */}
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-8">
             <div className="max-w-3xl space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-semibold">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-xs font-bold shadow-sm shadow-indigo-500/20">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
                   <span>Interactive Match Engine</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-slate-700 text-xs font-semibold border border-slate-200/90 shadow-2xs">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-slate-700 text-xs font-semibold border border-indigo-200/80 shadow-2xs">
                   <Globe className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Explore {countries.length} Global Retirement Havens · Verified Haven Directory</span>
+                  <span>Top 12 Curated Matches · {countries.length} Global Retirement Havens</span>
                 </div>
               </div>
               <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Find Your Ideal Haven &amp; Explore {countries.length} Verified Destinations
+                Find Your{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                  Ideal Retirement Haven
+                </span>
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Simulate live match rankings across all {countries.length} destinations based on your target budget, preferred climate, continent, and top relocation priority—or sort by any empirical directory metric.
+                Tune your target monthly couple budget, primary lifestyle priority, and preferred continent to preview your top 12 live-ranked destinations—then launch the full <strong className="text-slate-900 font-semibold">Explore Havens</strong> studio for climate filters, custom sorting, and 55+ deep metrics.
               </p>
             </div>
 
-            <button
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleOpenAdvancedExplorer}
-              className="self-start lg:self-end px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              className="self-start lg:self-end px-5 py-3 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-indigo-700 hover:via-violet-700 hover:to-teal-700 text-white shadow-lg shadow-indigo-950/15 text-xs sm:text-sm font-bold transition-all flex items-center gap-2.5 shrink-0 cursor-pointer border border-white/10"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span>Advanced Explorer (55+ Parameters)</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              <Compass className="w-4 h-4 text-amber-400" />
+              <span>Explore All {countries.length} Havens</span>
+              <ArrowRight className="w-4 h-4 text-teal-300" />
+            </motion.button>
           </div>
 
-          {/* Interactive Parameters & Directory Filters Console (Match Engine Style) */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs mb-8 space-y-6">
+          {/* Interactive Match Console (Elevated Multi-Color Control Deck) */}
+          <div className="relative z-10 p-5 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-xl border border-indigo-100/90 shadow-lg shadow-indigo-950/5 mb-8 space-y-6">
             
-            {/* Row 1: Core Match Parameters (Budget, Climate, Priority) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Row 1: Two-Column Core Match Parameters (Budget + Priority) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               
-              {/* Control 1: Budget */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-bold text-slate-700">Monthly Couple Budget</label>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono tabular-nums text-slate-900 font-extrabold text-sm">${matchBudget.toLocaleString()}/mo</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStrictBudgetFilter(prev => !prev);
-                        setVisibleCount(12);
-                      }}
-                      title="Toggle between scoring all countries by budget fit vs strictly hiding countries above this budget"
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
-                        strictBudgetFilter
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                      }`}
-                    >
-                      {strictBudgetFilter ? 'Strict ≤ Budget' : 'Score All'}
-                    </button>
-                  </div>
-                </div>
-                <input
-                  type="range"
-                  min={1000}
-                  max={5000}
-                  step={50}
-                  value={matchBudget}
-                  onChange={e => {
-                    setMatchBudget(Number(e.target.value));
-                    if (strictBudgetFilter) setVisibleCount(12);
-                  }}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-900"
-                />
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                  <span>$1,000 (Frugal)</span>
-                  <span>$2,800 (Moderate)</span>
-                  <span>$5,000+ (Luxury)</span>
-                </div>
-              </div>
-
-              {/* Control 2: Climate */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 block">Preferred Climate</label>
-                <select
-                  value={matchClimate}
-                  onChange={e => {
-                    setMatchClimate(e.target.value as ClimateCategory | 'Any');
-                    setVisibleCount(12);
-                  }}
-                  className="w-full px-3 py-2.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white cursor-pointer transition-colors"
-                >
-                  <option value="Any">Any Climate (All {countries.length} Havens)</option>
-                  <option value="Mediterranean">Mediterranean (Mild &amp; Sunny)</option>
-                  <option value="Tropical">Tropical (Warm &amp; Lush)</option>
-                  <option value="Subtropical">Subtropical (Warm &amp; Breezy)</option>
-                  <option value="Temperate">Temperate (Four Seasons)</option>
-                  <option value="Highlands / Mild">Highlands / Mild (Eternal Spring)</option>
-                </select>
-                <div className="text-[11px] text-slate-400">
-                  Filters &amp; weights havens by your ideal year-round weather
-                </div>
-              </div>
-
-              {/* Control 3: Priority */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 block">Primary Priority</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMatchPriority('value')}
-                    className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
-                      matchPriority === 'value'
-                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                    }`}
-                  >
-                    Low Cost
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMatchPriority('healthcare')}
-                    className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
-                      matchPriority === 'healthcare'
-                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                    }`}
-                  >
-                    Healthcare
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMatchPriority('safety')}
-                    className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
-                      matchPriority === 'safety'
-                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                    }`}
-                  >
-                    Top Safety
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMatchPriority('leisure')}
-                    className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
-                      matchPriority === 'leisure'
-                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                    }`}
-                  >
-                    Travel &amp; Leisure
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Row 2: Continent Filters & Directory Sort / Search Controls (in Match Engine Style) */}
-            <div className="pt-5 border-t border-slate-100 space-y-4">
-              
-              {/* Continent Filter Buttons */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Continent &amp; Region Filter</span>
-                  </label>
-                  <span className="text-[11px] font-medium text-slate-400">
-                    {sortedMatchedCountries.length} matching destinations
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {CONTINENT_FILTER_OPTIONS.map(option => {
-                    const active = previewContinent === option.value;
-                    const count = continentCounts[option.value] ?? 0;
-                    return (
+              {/* Control 1: Monthly Couple Budget (5 cols) */}
+              <div className="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white border border-emerald-200/80 flex flex-col justify-between space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-emerald-950 flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-xs">
+                        <Wallet className="w-3.5 h-3.5" />
+                      </span>
+                      <span>Monthly Couple Budget</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <motion.span
+                        key={matchBudget}
+                        initial={{ scale: 0.92, opacity: 0.7 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+                        className="font-mono tabular-nums px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 font-black text-sm shadow-xs"
+                      >
+                        ${matchBudget.toLocaleString()}/mo
+                      </motion.span>
                       <button
-                        key={option.value}
                         type="button"
-                        onClick={() => {
-                          setPreviewContinent(option.value);
-                          setVisibleCount(12);
-                        }}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                          active
-                            ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                        onClick={() => setStrictBudgetFilter(prev => !prev)}
+                        title="Toggle between scoring all countries by budget fit vs strictly hiding countries above this budget"
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
+                          strictBudgetFilter
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
+                            : 'bg-white text-slate-600 border-emerald-200 hover:bg-emerald-100/60 hover:text-emerald-950'
                         }`}
                       >
-                        <span>{option.label}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
-                            active ? 'bg-slate-700 text-slate-100' : 'bg-white text-slate-500'
+                        {strictBudgetFilter ? 'Strict ≤ Budget' : 'Score All'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Progress + Range Input */}
+                  <div className="space-y-2 pt-1">
+                    <input
+                      type="range"
+                      min={1000}
+                      max={5000}
+                      step={50}
+                      value={matchBudget}
+                      onChange={e => setMatchBudget(Number(e.target.value))}
+                      className="w-full h-2.5 bg-emerald-200/80 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                    />
+                    <div className="flex justify-between text-[11px] text-emerald-800/80 font-mono font-semibold">
+                      <span>$1,000 (Frugal)</span>
+                      <span>$2,800 (Balanced)</span>
+                      <span>$5,000+ (Luxury)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Budget Presets */}
+                <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-bold text-emerald-900/70">Quick Tiers:</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: '$1.5k Lean', val: 1500 },
+                      { label: '$2.4k Sweet Spot', val: 2400 },
+                      { label: '$3.2k Comfort', val: 3200 },
+                      { label: '$4.5k Plush', val: 4500 },
+                    ].map(preset => {
+                      const isPresetActive = matchBudget === preset.val;
+                      return (
+                        <button
+                          key={preset.val}
+                          type="button"
+                          onClick={() => setMatchBudget(preset.val)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            isPresetActive
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-white/90 text-emerald-900 hover:bg-emerald-100 border border-emerald-200/80'
                           }`}
                         >
-                          {count}
-                        </span>
-                      </button>
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Control 2: Primary Priority Multi-Color Interactive Cards (7 cols) */}
+              <div className="lg:col-span-7 p-5 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-violet-50/40 to-amber-50/40 border border-indigo-200/80 flex flex-col justify-between space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-xs">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </span>
+                    <span>Primary Relocation Priority</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-100/80 px-2.5 py-0.5 rounded-full">
+                    Dynamically weights your live match rankings
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    {
+                      id: 'value' as const,
+                      label: 'Low Cost',
+                      sub: 'Max Geo-Arbitrage',
+                      icon: Wallet,
+                      activeGrad: 'from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20',
+                      idleStyle: 'bg-white/90 hover:bg-emerald-50/90 text-slate-800 border-emerald-200/80',
+                      iconColor: 'text-emerald-600',
+                    },
+                    {
+                      id: 'healthcare' as const,
+                      label: 'Healthcare',
+                      sub: 'Hospitals & Care',
+                      icon: HeartPulse,
+                      activeGrad: 'from-rose-600 to-pink-600 text-white border-rose-500 shadow-md shadow-rose-600/20',
+                      idleStyle: 'bg-white/90 hover:bg-rose-50/90 text-slate-800 border-rose-200/80',
+                      iconColor: 'text-rose-600',
+                    },
+                    {
+                      id: 'safety' as const,
+                      label: 'Top Safety',
+                      sub: 'Peace & Stability',
+                      icon: ShieldCheck,
+                      activeGrad: 'from-indigo-600 to-blue-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20',
+                      idleStyle: 'bg-white/90 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80',
+                      iconColor: 'text-indigo-600',
+                    },
+                    {
+                      id: 'leisure' as const,
+                      label: 'Travel & Leisure',
+                      sub: 'Culture & Mobility',
+                      icon: Plane,
+                      activeGrad: 'from-amber-500 to-orange-600 text-white border-amber-500 shadow-md shadow-orange-600/20',
+                      idleStyle: 'bg-white/90 hover:bg-amber-50/90 text-slate-800 border-amber-200/80',
+                      iconColor: 'text-amber-600',
+                    },
+                  ].map(item => {
+                    const Icon = item.icon;
+                    const isSelected = matchPriority === item.id;
+                    return (
+                      <motion.button
+                        key={item.id}
+                        type="button"
+                        whileHover={{ y: -2, scale: 1.01 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setMatchPriority(item.id)}
+                        className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          isSelected ? `bg-gradient-to-br ${item.activeGrad}` : item.idleStyle
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`p-2 rounded-lg ${
+                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 ' + item.iconColor
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </span>
+                          {isSelected && (
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-xs font-extrabold leading-tight">{item.label}</div>
+                          <div
+                            className={`text-[10px] font-medium mt-0.5 ${
+                              isSelected ? 'text-white/85' : 'text-slate-500'
+                            }`}
+                          >
+                            {item.sub}
+                          </div>
+                        </div>
+                      </motion.button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Sort Dropdown and Reset Row */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-1">
-                
-                {/* Sort Dropdown */}
-                <div className="md:col-span-9 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Sort Directory Rankings By</span>
+            </div>
+
+            {/* Row 2: Continent & Region Filter Ribbon + Reset Controls */}
+            <div className="pt-5 border-t border-indigo-100/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="space-y-2.5 flex-1">
+                <div className="flex items-center justify-between sm:justify-start gap-3">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Continent &amp; Region Filter</span>
                   </label>
-                  <select
-                    value={previewSort}
-                    onChange={e => {
-                      setPreviewSort(e.target.value as 'match-desc' | SortByType);
-                      setVisibleCount(12);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white cursor-pointer transition-colors"
-                  >
-                    <option value="match-desc">AI Match Score (Best Fit for Your Parameters)</option>
-                    <option value="travel-leisure-desc">Travel &amp; Leisure Score (High to Low)</option>
-                    <option value="alpha-asc">Alphabetical (A – Z)</option>
-                    <option value="alpha-desc">Alphabetical (Z – A)</option>
-                    <option value="budget-asc">Monthly Budget (Lowest First)</option>
-                    <option value="healthcare-desc">Healthcare Quality (Highest First)</option>
-                    <option value="safety-desc">Safety &amp; Peace Index (Highest First)</option>
-                    <option value="sunny-desc">Sunny Days per Year (Most Sunshine)</option>
-                    <option value="visa-income-asc">Visa Income (Lowest Requirement)</option>
-                    <option value="recommended">ReFIREly Composite Haven Rank</option>
-                  </select>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80">
+                    {sortedMatchedCountries.length} matching destinations
+                  </span>
                 </div>
 
-                {/* Reset Controls */}
-                <div className="md:col-span-3 flex flex-col justify-end">
-                  <button
-                    type="button"
-                    onClick={handleResetMatchEngine}
-                    className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Reset All</span>
-                  </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {CONTINENT_FILTER_OPTIONS.map(option => {
+                    const active = previewContinent === option.value;
+                    const count = continentCounts[option.value] ?? 0;
+                    return (
+                      <motion.button
+                        key={option.value}
+                        type="button"
+                        whileHover={{ y: -1.5 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setPreviewContinent(option.value)}
+                        className={`relative px-3.5 py-2 text-xs rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          active
+                            ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-md shadow-indigo-600/20'
+                            : 'bg-slate-100/90 text-slate-700 hover:bg-indigo-50 hover:text-indigo-950 border border-slate-200/70'
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-extrabold ${
+                            active
+                              ? 'bg-white/20 text-white'
+                              : 'bg-white text-slate-600 border border-slate-200/60'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
-
               </div>
 
+              {/* Reset & Quick Explore Actions */}
+              <div className="flex items-center gap-2.5 self-start lg:self-end shrink-0">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleResetMatchEngine}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200/80 hover:border-rose-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Filters</span>
+                </motion.button>
+              </div>
             </div>
 
           </div>
 
           {/* Results Header Strip */}
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold uppercase tracking-wider text-slate-700">
-                  Showing {displayedCountries.length} of {sortedMatchedCountries.length} Verified Havens
+                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 bg-indigo-100/80 border border-indigo-200/80 px-3 py-1 rounded-full">
+                  Top {displayedCountries.length} Live Matches (of {sortedMatchedCountries.length})
                 </span>
                 {previewContinent !== 'All' && (
-                  <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white font-semibold">
-                    {previewContinent}
+                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-indigo-600 to-teal-600 text-white text-xs font-bold shadow-2xs">
+                    Region: {previewContinent}
                   </span>
                 )}
-                {matchClimate !== 'Any' && (
-                  <span className="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
-                    {matchClimate}
+                {strictBudgetFilter && (
+                  <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
+                    Strict ≤ ${matchBudget.toLocaleString()}/mo
                   </span>
                 )}
               </div>
 
               <button
+                type="button"
                 onClick={handleOpenAdvancedExplorer}
-                className="text-slate-800 hover:text-orange-600 font-bold inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto transition-colors"
+                className="text-indigo-700 hover:text-teal-700 text-xs sm:text-sm font-extrabold inline-flex items-center gap-1.5 cursor-pointer self-start sm:self-auto transition-colors group"
               >
-                <span>Explore All {countries.length} with Advanced Filters</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>Need Climate Filters or Custom Sorting? Open Explore Havens</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
 
             {/* Empty State if filters are too restrictive */}
             {displayedCountries.length === 0 ? (
-              <div className="p-12 rounded-2xl bg-white border border-slate-200/90 text-center space-y-3 shadow-2xs">
-                <Compass className="w-10 h-10 text-slate-400 mx-auto" />
-                <h3 className="text-base font-bold text-slate-900">No destinations match this exact filter combination</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  Try switching Preferred Climate to &ldquo;Any Climate&rdquo;, selecting &ldquo;All Continents&rdquo;, or resetting your search parameters.
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-12 rounded-3xl bg-white/95 border border-indigo-100 text-center space-y-4 shadow-md"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  No destinations match this strict budget &amp; region combination
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                  Try increasing your Monthly Couple Budget slider, switching from &ldquo;Strict ≤ Budget&rdquo; to &ldquo;Score All&rdquo;, or selecting &ldquo;All Continents&rdquo;.
                 </p>
                 <button
                   type="button"
                   onClick={handleResetMatchEngine}
-                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
                 >
                   Reset Match Engine Filters
                 </button>
-              </div>
+              </motion.div>
             ) : (
-              /* 12-Card Incremental Grid in Interactive Match Engine Style */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {displayedCountries.map(({ country, matchScore, travelScore }) => {
-                  const saved = isCountrySaved(country.id);
-                  const compared = isCountryCompared(country.id);
-                  const continentLabel = getCountryContinentLabel(country);
+              /* Buttery-Smooth Animated 12-Card Top Match Grid */
+              <motion.div
+                layout
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+              >
+                <AnimatePresence mode="popLayout">
+                  {displayedCountries.map(({ country, matchScore, travelScore }, idx) => {
+                    const saved = isCountrySaved(country.id);
+                    const compared = isCountryCompared(country.id);
+                    const continentLabel = getCountryContinentLabel(country);
+                    const isUnderBudget = country.costOfLiving.monthlyBudgetCoupleUSD <= matchBudget;
 
-                  return (
-                    <div
-                      key={country.id}
-                      onClick={() => navigateToCountry(country.id)}
-                      className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden hover:border-slate-300 transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-lg hover:-translate-y-0.5"
-                    >
-                      <div>
-                        {/* Photo Header */}
-                        <div className="h-44 relative overflow-hidden">
-                          <CountryThumbnail country={country} hideLandmarkLabel className="h-full w-full" />
+                    // Multi-colored top accent bar per card rank/continent
+                    const cardAccentGradients = [
+                      'from-emerald-500 via-teal-500 to-cyan-500',
+                      'from-indigo-500 via-violet-500 to-purple-500',
+                      'from-amber-500 via-orange-500 to-rose-500',
+                      'from-teal-500 via-indigo-500 to-amber-500',
+                    ];
+                    const accentGrad = cardAccentGradients[idx % cardAccentGradients.length];
 
-                          {/* Top-left Continent pill */}
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                            <span className="px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
-                              {continentLabel}
-                            </span>
-                          </div>
+                    return (
+                      <motion.div
+                        layout
+                        key={country.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 300,
+                          damping: 26,
+                          delay: idx * 0.025,
+                        }}
+                        whileHover={{ y: -6 }}
+                        onClick={() => navigateToCountry(country.id)}
+                        className="group relative bg-white rounded-2xl border border-indigo-100/90 overflow-hidden hover:border-indigo-300 transition-shadow cursor-pointer flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-950/10"
+                      >
+                        {/* Top Multi-Colored Accent Bar */}
+                        <div className={`h-1.5 w-full bg-gradient-to-r ${accentGrad}`} />
 
-                          {/* Top-right Match Score & Save Heart */}
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                            <div className="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-amber-300 text-xs font-black flex items-center gap-1 shadow-md">
-                              <Sparkles className="w-3 h-3 text-amber-400" />
-                              <span>{matchScore}% Match</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                toggleSaveCountry(country.id);
-                              }}
-                              title={saved ? 'Remove from Saved' : 'Save to Favorites'}
-                              className={`p-1.5 rounded-full backdrop-blur-md transition-colors cursor-pointer ${
-                                saved
-                                  ? 'bg-rose-500 text-white'
-                                  : 'bg-slate-950/70 text-slate-200 hover:text-white'
-                              }`}
-                            >
-                              <Heart className="w-3.5 h-3.5 fill-current" />
-                            </button>
-                          </div>
+                        <div>
+                          {/* Photo Header */}
+                          <div className="h-44 relative overflow-hidden">
+                            <CountryThumbnail
+                              country={country}
+                              hideLandmarkLabel
+                              className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
+                            />
 
-                          {/* Bottom Country Flag & Name */}
-                          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <CountryFlag
-                                countryName={country.name}
-                                countryCode={country.code}
-                                fallbackEmoji={country.flag}
-                                className="w-6 h-6 shadow-md rounded shrink-0"
-                              />
-                              <span className="font-extrabold text-white text-base drop-shadow-md truncate">
-                                {country.name}
+                            {/* Top-left Rank & Continent pill */}
+                            <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-600/90 backdrop-blur-md text-white text-[10px] font-black shadow-xs">
+                                #{idx + 1}
                               </span>
+                              <span className="px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
+                                {continentLabel}
+                              </span>
+                            </div>
+
+                            {/* Top-right Match Score & Save Heart */}
+                            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                              <div
+                                className={`px-2.5 py-1 rounded-full backdrop-blur-md text-xs font-black flex items-center gap-1 shadow-md border ${
+                                  matchScore >= 90
+                                    ? 'bg-emerald-950/85 text-emerald-300 border-emerald-400/30'
+                                    : matchScore >= 82
+                                    ? 'bg-indigo-950/85 text-amber-300 border-indigo-400/30'
+                                    : 'bg-slate-950/80 text-amber-200 border-white/15'
+                                }`}
+                              >
+                                <Sparkles className="w-3 h-3 text-amber-400" />
+                                <span>{matchScore}% Match</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  toggleSaveCountry(country.id);
+                                }}
+                                title={saved ? 'Remove from Saved' : 'Save to Favorites'}
+                                className={`p-1.5 rounded-full backdrop-blur-md transition-all cursor-pointer ${
+                                  saved
+                                    ? 'bg-rose-500 text-white scale-110 shadow-sm'
+                                    : 'bg-slate-950/70 text-slate-200 hover:text-white hover:bg-rose-500/80'
+                                }`}
+                              >
+                                <Heart className="w-3.5 h-3.5 fill-current" />
+                              </button>
+                            </div>
+
+                            {/* Bottom Country Flag & Name */}
+                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <CountryFlag
+                                  countryName={country.name}
+                                  countryCode={country.code}
+                                  fallbackEmoji={country.flag}
+                                  className="w-6 h-6 shadow-md rounded shrink-0"
+                                />
+                                <span className="font-extrabold text-white text-base drop-shadow-md truncate">
+                                  {country.name}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Content details */}
+                          <div className="p-4 space-y-3">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div
+                                className={`p-2.5 rounded-xl border ${
+                                  isUnderBudget
+                                    ? 'bg-emerald-50/70 border-emerald-200/80'
+                                    : 'bg-amber-50/70 border-amber-200/80'
+                                }`}
+                              >
+                                <span
+                                  className={`font-semibold block text-[10px] uppercase tracking-wider ${
+                                    isUnderBudget ? 'text-emerald-700' : 'text-amber-700'
+                                  }`}
+                                >
+                                  Couple Budget
+                                </span>
+                                <span
+                                  className={`font-mono tabular-nums font-extrabold text-sm ${
+                                    isUnderBudget ? 'text-emerald-950' : 'text-amber-950'
+                                  }`}
+                                >
+                                  ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
+                                </span>
+                              </div>
+                              <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/70">
+                                <span className="text-indigo-700 font-semibold block text-[10px] uppercase tracking-wider">
+                                  Travel &amp; Leisure
+                                </span>
+                                <span className="font-mono tabular-nums font-extrabold text-indigo-950 text-sm">
+                                  {travelScore}/100
+                                </span>
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-slate-600 line-clamp-1 leading-relaxed font-medium">
+                              {country.tagline}
+                            </p>
+
+                            <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2.5">
+                              <div className="flex items-center justify-between gap-1.5 text-slate-700">
+                                <span className="inline-flex items-center gap-1">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <span>Safety</span>
+                                  <strong className="font-mono font-bold text-slate-900">
+                                    {country.lifestyle.safetyScore}
+                                  </strong>
+                                </span>
+                                <span className="text-slate-300">·</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <HeartPulse className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                  <span>Health</span>
+                                  <strong className="font-mono font-bold text-slate-900">
+                                    {country.lifestyle.healthcareScore}
+                                  </strong>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-slate-700">
+                                <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                <span className="truncate">
+                                  <strong className="font-mono font-bold text-slate-900">
+                                    {country.climate.annualSunnyDays}
+                                  </strong>{' '}
+                                  sunny days ·{' '}
+                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/70 font-semibold text-[10px]">
+                                    {country.climate.category}
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                                <span className="font-semibold text-teal-800 truncate">
+                                  Visa:{' '}
+                                  {country.visa.minimumIncomeUSD > 0
+                                    ? `$${country.visa.minimumIncomeUSD.toLocaleString()}/mo min`
+                                    : 'Accessible'}
+                                </span>
+                                <span className="text-slate-400 font-medium shrink-0">{country.capital}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Content details */}
-                        <div className="p-4 space-y-3">
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
-                              <span className="text-slate-400 font-medium block text-[11px]">Couple Budget</span>
-                              <span className="font-mono tabular-nums font-bold text-slate-900 text-sm">
-                                ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
-                              </span>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
-                              <span className="text-slate-400 font-medium block text-[11px]">Travel &amp; Leisure</span>
-                              <span className="font-mono tabular-nums font-bold text-teal-700 text-sm">
-                                {travelScore}/100
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-slate-500 line-clamp-1 leading-relaxed">
-                            {country.tagline}
-                          </p>
-
-                          <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2.5">
-                            <div className="flex items-center gap-1.5 text-slate-700">
-                              <ShieldCheck className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                              <span>
-                                Safety <strong className="font-mono font-bold text-slate-900">{country.lifestyle.safetyScore}/100</strong> · Health <strong className="font-mono font-bold text-slate-900">{country.lifestyle.healthcareScore}/100</strong>
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-slate-700">
-                              <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                              <span>
-                                <strong className="font-mono font-bold text-slate-900">{country.climate.annualSunnyDays}</strong> sunny days · {country.climate.category}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                              <span className="font-medium text-slate-600 truncate">
-                                Visa: {country.visa.minimumIncomeUSD > 0 ? `$${country.visa.minimumIncomeUSD.toLocaleString()}/mo min` : 'Accessible'}
-                              </span>
-                              <span className="text-slate-400 shrink-0">{country.capital}</span>
-                            </div>
+                        {/* Card Footer with Compare & Dossier CTA */}
+                        <div className="p-4 pt-0 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleCompareCountry(country.id);
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer shrink-0 ${
+                              compared
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/70 hover:text-indigo-950'
+                            }`}
+                          >
+                            {compared ? 'In Matrix' : '+ Compare'}
+                          </button>
+                          <div className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950 group-hover:from-indigo-600 group-hover:to-teal-600 text-white text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5 shadow-2xs">
+                            <span>View Dossier</span>
+                            <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                           </div>
                         </div>
-                      </div>
-
-                      {/* Card Footer with Compare & Dossier CTA */}
-                      <div className="p-4 pt-0 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleCompareCountry(country.id);
-                          }}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer shrink-0 ${
-                            compared
-                              ? 'bg-slate-900 text-white border-slate-900'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-                          }`}
-                        >
-                          {compared ? 'In Matrix' : 'Compare'}
-                        </button>
-                        <div className="flex-1 py-2 px-3 rounded-xl bg-slate-900 group-hover:bg-orange-600 text-white text-xs font-bold text-center transition-colors flex items-center justify-center gap-1.5">
-                          <span>View Dossier</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
             )}
 
-            {/* Pagination / Load More (12) & Advanced Explore Havens CTA */}
+            {/* Multi-Colored Explore Havens Destination Portal Banner (Replaces Load 12 More) */}
             {sortedMatchedCountries.length > 0 && (
-              <div className="pt-6 mt-4 border-t border-slate-200/90 text-center space-y-4">
-                <div className="max-w-xs mx-auto space-y-1.5">
-                  <div className="flex justify-between text-xs text-slate-500 font-semibold">
-                    <span>
-                      Showing {displayedCountries.length} of {sortedMatchedCountries.length} Havens
-                    </span>
-                    <span className="font-mono font-bold text-slate-800">
-                      {Math.round((displayedCountries.length / sortedMatchedCountries.length) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-200">
-                    <div
-                      className="h-full bg-slate-900 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(displayedCountries.length / sortedMatchedCountries.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45 }}
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-white p-6 sm:p-8 shadow-xl border border-indigo-500/30 mt-6"
+              >
+                {/* Decorative Glows */}
+                <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-teal-400/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 left-1/4 w-72 h-72 rounded-full bg-indigo-500/25 blur-3xl" />
 
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-                  {hasMoreCountries ? (
-                    <button
-                      type="button"
-                      onClick={() => handleLoadMore(12)}
-                      className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
-                    >
-                      <span>Load 12 More Havens (+{Math.min(12, remainingCountriesCount)})</span>
-                      <ArrowDown className="w-4 h-4 text-slate-300" />
-                    </button>
-                  ) : (
-                    <div className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-2xs">
-                      All {sortedMatchedCountries.length} matching havens are displayed
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div className="space-y-3 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-amber-300 text-xs font-bold">
+                      <Layers className="w-3.5 h-3.5 text-amber-400" />
+                      <span>
+                        {remainingCountriesCount > 0
+                          ? `+${remainingCountriesCount} More Matching Havens Waiting in Full Directory`
+                          : `Unlock Full 55+ Parameter Intelligence Across All ${countries.length} Havens`}
+                      </span>
                     </div>
-                  )}
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                      Ready for Climate Filtering, Multi-Metric Sorting &amp; Deep Search?
+                    </h3>
+                    <p className="text-xs sm:text-sm text-indigo-100/85 leading-relaxed">
+                      You are viewing your top {displayedCountries.length} live matches on the home preview. Head to the dedicated{' '}
+                      <strong className="text-white font-bold">Explore Havens</strong> workspace to filter by Mediterranean, Tropical, or Eternal Spring climates, sort by 10+ empirical indices, and inspect all {countries.length} countries side by side.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-[11px] font-semibold">
+                        ✓ Climate &amp; Sunshine Filters
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[11px] font-semibold">
+                        ✓ 10+ Custom Ranking Sorts
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 text-[11px] font-semibold">
+                        ✓ Instant Keyword &amp; Tag Search
+                      </span>
+                    </div>
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={handleOpenAdvancedExplorer}
-                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-950 text-xs sm:text-sm font-bold border border-slate-300 shadow-2xs transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <Compass className="w-4 h-4 text-teal-600" />
-                    <span>Explore Havens · Advanced Filtering (55+ Parameters)</span>
-                    <ArrowRight className="w-4 h-4 text-slate-500" />
-                  </button>
+                  <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleOpenAdvancedExplorer}
+                      className="px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all cursor-pointer flex items-center justify-center gap-2.5"
+                    >
+                      <Compass className="w-4 h-4 text-slate-950" />
+                      <span>
+                        Launch Explore Havens ({countries.length} Countries)
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-slate-950" />
+                    </motion.button>
+                    <span className="text-[11px] text-indigo-200/80 text-center lg:text-right font-medium">
+                      Transfers your active region filter ({previewContinent}) automatically
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
 
