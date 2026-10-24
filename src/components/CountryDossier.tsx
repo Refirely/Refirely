@@ -13,6 +13,7 @@ import { CountryLifestyleAndDatingSection } from './CountryLifestyleAndDatingSec
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import { getFullCountryUrl } from '../utils/seo';
+import { trackAnalyticsEvent } from '../utils/analytics';
 import {
   ArrowLeft,
   Heart,
@@ -390,7 +391,15 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   title={tab.title}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.96 }}
-                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  onClick={() => {
+                    setActiveTab(tab.id as typeof activeTab);
+                    trackAnalyticsEvent('dossier_tab_select', {
+                      country_id: country.id,
+                      country_name: country.name,
+                      tab_id: tab.id,
+                      tab_label: tab.label,
+                    });
+                  }}
                   className={`relative px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl whitespace-nowrap transition-all font-bold cursor-pointer ${
                     isActive
                       ? 'text-white shadow-sm shadow-indigo-500/20'

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Country } from '../types';
 import { getCountryHealthcareProfile } from '../data/countryHealthcare';
+import { trackAnalyticsEvent } from '../utils/analytics';
 import {
   Stethoscope,
   PhoneCall,
@@ -633,6 +634,13 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                     href="https://safetywing.com/nomad-insurance?referenceID=26623834&utm_source=26623834&utm_medium=Ambassador"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      trackAnalyticsEvent('affiliate_click_safetywing', {
+                        country_id: country.id,
+                        country_name: country.name,
+                        placement: 'headline_link',
+                      })
+                    }
                     className="bg-gradient-to-r from-teal-700 via-indigo-700 to-violet-700 bg-clip-text text-transparent hover:underline"
                   >
                     SafetyWing Nomad Insurance
@@ -653,6 +661,13 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                   href="https://safetywing.com/nomad-insurance?referenceID=26623834&utm_source=26623834&utm_medium=Ambassador"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackAnalyticsEvent('affiliate_click_safetywing', {
+                      country_id: country.id,
+                      country_name: country.name,
+                      placement: 'cta_button',
+                    })
+                  }
                   className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:via-indigo-500 hover:to-violet-500 shadow-sm transition-all cursor-pointer whitespace-nowrap"
                 >
                   <span>Check SafetyWing Coverage</span>

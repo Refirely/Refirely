@@ -22,6 +22,7 @@ import { BrandLogo } from './components/BrandLogo';
 import { BrandKitModal } from './components/BrandKitModal';
 import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
+import { initGoogleAnalytics, trackPageView } from './utils/analytics';
 import { Compass, Shield, Download, Sparkles } from 'lucide-react';
 
 const MainContent: React.FC = () => {
@@ -41,7 +42,12 @@ const MainContent: React.FC = () => {
   const [brandKitOpen, setBrandKitOpen] = useState(false);
 
   useEffect(() => {
+    initGoogleAnalytics();
+  }, []);
+
+  useEffect(() => {
     updatePageSeo(currentView, selectedCountry, countries);
+    trackPageView(currentView, selectedCountry);
   }, [currentView, selectedCountry, countries]);
 
   const handleSpaViewClick = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
