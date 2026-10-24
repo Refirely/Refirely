@@ -34,7 +34,7 @@ export const DirectoryExplorer: React.FC = () => {
     setCurrentView,
   } = useApp();
 
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
 
   const regions = [
     'All',
@@ -530,36 +530,40 @@ export const DirectoryExplorer: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Quiet visual teaser card when spatial map is hidden by default */}
+        {/* Quiet visual teaser card when spatial map is hidden */}
         {!showMap && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-4 rounded-2xl bg-gradient-to-r from-teal-50/80 via-indigo-50/50 to-amber-50/70 border border-teal-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -2 }}
+            className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/85 border border-teal-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white border border-teal-200 text-teal-700 flex items-center justify-center font-bold shadow-2xs shrink-0">
-                <Map className="w-4 h-4 text-teal-600" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-600 to-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                <Globe2 className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-slate-900 flex items-center gap-2">
-                  <span>Interactive Global Haven Atlas Available</span>
-                  <span className="text-[10px] font-mono font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md">
+                <p className="font-extrabold text-slate-900 flex flex-wrap items-center gap-2 text-sm">
+                  <span>Interactive 3D Google Earth World Atlas</span>
+                  <span className="text-[10px] font-mono font-bold text-teal-900 bg-teal-100/90 border border-teal-200 px-2 py-0.5 rounded-md">
                     {countries.length} destinations
                   </span>
                 </p>
-                <p className="text-slate-600 text-[11px] mt-0.5">
-                  Visualize retirement havens on a cartographic world map with cost previews, climate zones, and visa corridors.
+                <p className="text-slate-600 text-xs mt-0.5">
+                  Rotate the 3D globe, zoom up to 9x, and select any country marker or territory for instant cost, healthcare, and visa previews.
                 </p>
               </div>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowMap(true)}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-950 text-white font-semibold text-xs transition-colors shrink-0 self-start sm:self-auto shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 hover:from-teal-700 hover:via-indigo-700 hover:to-amber-700 text-white font-bold text-xs transition-all shrink-0 self-start sm:self-auto shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Open World Atlas</span>
+              <span>Open 3D World Atlas</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </motion.button>
           </motion.div>
         )}
 

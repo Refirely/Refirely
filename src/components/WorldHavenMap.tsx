@@ -1,10 +1,33 @@
-import React, { useState } from 'react';
-import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere, ZoomableGroup } from 'react-simple-maps';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from 'react-simple-maps';
 import worldGeo from 'world-atlas/countries-110m.json';
+import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { Country } from '../types';
 import { CountryFlag } from './CountryFlag';
-import { ArrowRight, X, MapPin, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import {
+  ArrowRight,
+  X,
+  MapPin,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Globe2,
+  Map as MapIcon,
+  Compass,
+  Play,
+  Pause,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Search,
+  Tag,
+  Maximize2,
+  Minimize2,
+  Navigation,
+} from 'lucide-react';
 
 // Country geographic coordinates [longitude, latitude]
 export const COUNTRY_COORDINATES: Record<string, [number, number]> = {
@@ -307,6 +330,35 @@ const COUNTRY_ISO_MAP: Record<string, string> = {
   '162': 'christmas-island',
 };
 
+// Starfield coordinates generated deterministically for the Google Earth cosmos backdrop
+const STARFIELD_POINTS = Array.from({ length: 75 }, (_, i) => ({
+  id: i,
+  left: `${((i * 37 + 13) % 98) + 1}%`,
+  top: `${((i * 53 + 7) % 96) + 2}%`,
+  size: i % 5 === 0 ? 2.4 : i % 2 === 0 ? 1.6 : 1.1,
+  opacity: i % 4 === 0 ? 0.85 : 0.45,
+  delay: `${(i % 7) * 0.6}s`,
+}));
+
+// Check if a [lon, lat] point is on the visible front hemisphere of the 3D Orthographic Globe
+function isPointVisibleOnGlobe(
+  coords: [number, number],
+  centerLon: number,
+  centerLat: number
+): boolean {
+  const toRad = Math.PI / 180;
+  const lam = coords[0] * toRad;
+  const phi = coords[1] * toRad;
+  const lam0 = centerLon * toRad;
+  const phi0 = centerLat * toRad;
+
+  const cosC =
+    Math.sin(phi0) * Math.sin(phi) +
+    Math.cos(phi0) * Math.cos(phi) * Math.cos(lam - lam0);
+
+  return cosC > 0.02;
+}
+
 export const WorldHavenMap: React.FC = () => {
   const {
     countries,
@@ -318,382 +370,1058 @@ export const WorldHavenMap: React.FC = () => {
 
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [selectedPinCountry, setSelectedPinCountry] = useState<Country | null>(null);
-  const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: [10, 20],
-    zoom: 1,
+
+  // Google Earth View Mode: 'globe' (3D Orthographic Earth) or 'satellite-flat' (2D Wide Satellite Atlas)
+  const [viewMode, setViewMode] = useState<'globe' | 'satellite-flat'>('globe');
+  const [isExpandedHeight, setIsExpandedHeight] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [showAllLabels, setShowAllLabels] = useState(false);
+  const [countryPickerQuery, setCountryPickerQuery] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Camera state: centerLon & centerLat are the geographic coordinates facing the viewer
+  // In d3-geo projectionConfig.rotate, rotate is [-centerLon, -centerLat, 0]
+  const [camera, setCamera] = useState<{
+    centerLon: number;
+    centerLat: number;
+    zoom: number;
+  }>({
+    centerLon: 8,
+    centerLat: 24,
+    zoom: 1.15,
   });
 
-  const filteredIds = new Set(filteredCountries.map(c => c.id));
+  // Drag rotation state
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    startLon: number;
+    startLat: number;
+    moved: boolean;
+  } | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const mapViewportRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredIds = useMemo(
+    () => new Set(filteredCountries.map(c => c.id)),
+    [filteredCountries]
+  );
+
+  // Smoothly animate camera to target [lon, lat, zoom]
+  const flyToLocation = useCallback(
+    (targetLon: number, targetLat: number, targetZoom?: number) => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+      setAutoRotate(false);
+
+      const startLon = camera.centerLon;
+      const startLat = camera.centerLat;
+      const startZoom = camera.zoom;
+      const endZoom = targetZoom ?? camera.zoom;
+
+      // Shortest longitude delta across anti-meridian
+      let deltaLon = ((targetLon - startLon + 540) % 360) - 180;
+      const deltaLat = Math.max(-75, Math.min(75, targetLat)) - startLat;
+      const deltaZoom = endZoom - startZoom;
+
+      const duration = 680;
+      const startTime = performance.now();
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        // Cubic ease-out for buttery Google Earth camera flight
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        let nextLon = startLon + deltaLon * ease;
+        if (nextLon > 180) nextLon -= 360;
+        if (nextLon < -180) nextLon += 360;
+
+        setCamera({
+          centerLon: nextLon,
+          centerLat: Math.max(-75, Math.min(75, startLat + deltaLat * ease)),
+          zoom: Math.max(0.75, Math.min(9, startZoom + deltaZoom * ease)),
+        });
+
+        if (t < 1) {
+          animFrameRef.current = requestAnimationFrame(step);
+        } else {
+          animFrameRef.current = null;
+        }
+      };
+
+      animFrameRef.current = requestAnimationFrame(step);
+    },
+    [camera.centerLon, camera.centerLat, camera.zoom]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
+
+  // Optional gentle Google Earth orbital auto-rotation
+  useEffect(() => {
+    if (!autoRotate || isDragging || hoveredCountry) return;
+    let rafId: number;
+    let lastTime = performance.now();
+
+    const spin = (now: number) => {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      setCamera(prev => {
+        let nextLon = prev.centerLon + dt * 9;
+        if (nextLon > 180) nextLon -= 360;
+        return { ...prev, centerLon: nextLon };
+      });
+      rafId = requestAnimationFrame(spin);
+    };
+
+    rafId = requestAnimationFrame(spin);
+    return () => cancelAnimationFrame(rafId);
+  }, [autoRotate, isDragging, hoveredCountry]);
+
+  // Native wheel zoom on the Google Earth viewport when holding Ctrl/Meta or scrolling directly
+  useEffect(() => {
+    const el = mapViewportRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      const zoomFactor = e.deltaY < 0 ? 1.14 : 1 / 1.14;
+      setCamera(prev => ({
+        ...prev,
+        zoom: Math.max(0.75, Math.min(9, Number((prev.zoom * zoomFactor).toFixed(3)))),
+      }));
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Pointer drag handlers for 3D globe rotation / 2D satellite panning
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Ignore clicks on floating UI overlays or buttons
+    if ((e.target as HTMLElement).closest('[data-map-ui="true"]')) return;
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    setAutoRotate(false);
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startLon: camera.centerLon,
+      startLat: camera.centerLat,
+      moved: false,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !dragStartRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      dragStartRef.current.moved = true;
+    }
+
+    // Sensitivity scales inversely with zoom level for ultra-precise high-zoom navigation
+    const sensitivity = 0.28 / Math.pow(camera.zoom, 0.78);
+    let nextLon = dragStartRef.current.startLon - dx * sensitivity;
+    if (nextLon > 180) nextLon -= 360;
+    if (nextLon < -180) nextLon += 360;
+
+    const nextLat = Math.max(
+      -75,
+      Math.min(75, dragStartRef.current.startLat + dy * sensitivity)
+    );
+
+    setCamera(prev => ({
+      ...prev,
+      centerLon: nextLon,
+      centerLat: nextLat,
+    }));
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
 
   // Region centers and zoom levels
   const handleRegionFocus = (region: string) => {
     setSelectedRegion(region);
     if (region === 'Europe') {
-      setPosition({ coordinates: [15, 45], zoom: 2.8 });
+      flyToLocation(14, 46, 2.75);
     } else if (region === 'Southeast Asia') {
-      setPosition({ coordinates: [110, 15], zoom: 2.6 });
-    } else if (region === 'Americas') {
-      setPosition({ coordinates: [-85, 12], zoom: 2.2 });
+      flyToLocation(108, 12, 2.55);
+    } else if (region === 'Americas' || region === 'North & Central America') {
+      flyToLocation(-76, 16, 2.15);
+    } else if (region === 'South America') {
+      flyToLocation(-62, -20, 2.1);
+    } else if (region === 'Asia & Middle East') {
+      flyToLocation(78, 25, 2.0);
+    } else if (region === 'Africa') {
+      flyToLocation(22, -6, 2.0);
+    } else if (region === 'Oceania') {
+      flyToLocation(155, -24, 2.2);
     } else {
-      setPosition({ coordinates: [10, 20], zoom: 1 });
+      flyToLocation(8, 24, 1.15);
+    }
+  };
+
+  // Select a country and smoothly rotate/zoom the Google Earth globe to it
+  const handleSelectCountry = (c: Country, zoomToCountry: boolean = true) => {
+    if (dragStartRef.current?.moved) return;
+    setSelectedPinCountry(c);
+    setIsPickerOpen(false);
+    const coords = COUNTRY_COORDINATES[c.id];
+    if (coords && zoomToCountry) {
+      const targetZoom = Math.max(camera.zoom, 2.8);
+      flyToLocation(coords[0], coords[1], targetZoom);
     }
   };
 
   const handleZoomIn = () => {
-    if (position.zoom >= 4) return;
-    setPosition(pos => ({ ...pos, zoom: pos.zoom * 1.35 }));
+    setCamera(prev => ({
+      ...prev,
+      zoom: Math.min(9, Number((prev.zoom * 1.35).toFixed(2))),
+    }));
   };
 
   const handleZoomOut = () => {
-    if (position.zoom <= 0.8) return;
-    setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.35 }));
+    setCamera(prev => ({
+      ...prev,
+      zoom: Math.max(0.75, Number((prev.zoom / 1.35).toFixed(2))),
+    }));
   };
 
-  const handleResetZoom = () => {
-    setPosition({ coordinates: [10, 20], zoom: 1 });
+  const handleResetView = () => {
+    setSelectedPinCountry(null);
+    flyToLocation(8, 24, 1.15);
+  };
+
+  const handleNudgeRotation = (dLon: number, dLat: number) => {
+    const stepScale = 1 / Math.pow(camera.zoom, 0.65);
+    let nextLon = camera.centerLon + dLon * stepScale;
+    if (nextLon > 180) nextLon -= 360;
+    if (nextLon < -180) nextLon += 360;
+    const nextLat = Math.max(-75, Math.min(75, camera.centerLat + dLat * stepScale));
+    flyToLocation(nextLon, nextLat, camera.zoom);
   };
 
   const activeModalCountry = selectedPinCountry || hoveredCountry;
 
-  // Helper for regional vibrant colors with Saffron, Light Purple, and Navy
-  const getCountryColor = (c: Country | undefined, isSelected: boolean, isFilteredMatch: boolean, isHovered: boolean = false) => {
-    if (isSelected) return '#9333ea'; // Regal Purple for selected
-    if (isHovered) return '#f97316'; // Luminous Saffron Orange hover
-    if (!isFilteredMatch) return '#cbd5e1'; // Soft muted slate if filtered out
-    
+  // Multi-colored luminous palette matching the website's signature design system
+  const getCountryColor = (
+    c: Country | undefined,
+    isSelected: boolean,
+    isFilteredMatch: boolean,
+    isHovered: boolean = false
+  ) => {
+    if (isSelected) return '#ec4899'; // Luminous Rose/Magenta for active selection
+    if (isHovered) return '#22d3ee'; // Electric Cyan highlight on hover
+    if (!isFilteredMatch) return '#334155'; // Muted satellite slate if filtered out
+
     switch (c?.region) {
       case 'Europe':
-        return '#2563eb'; // Royal Navy Blue (Ashoka Chakra Inspired)
+        return '#3b82f6'; // Brilliant Indigo / Sapphire Blue
       case 'Americas':
-        return '#ea580c'; // Radiant Saffron Orange
+      case 'North & Central America':
+      case 'South America':
+        return '#f59e0b'; // Radiant Amber / Gold
       case 'Southeast Asia':
-        return '#d97706'; // Warm Radiant Amber
+      case 'Asia & Middle East':
+        return '#10b981'; // Luminous Emerald / Teal
+      case 'Africa':
+        return '#f97316'; // Warm Coral / Tangerine
+      case 'Oceania':
+        return '#8b5cf6'; // Electric Violet
       default:
-        return '#8b5cf6'; // Light Purple / Violet
+        return '#14b8a6'; // Luminous Teal
     }
   };
 
+  // Quick-picker filtered countries list for effortless selection
+  const quickPickerCountries = useMemo(() => {
+    const q = countryPickerQuery.trim().toLowerCase();
+    const base = filteredCountries.length > 0 ? filteredCountries : countries;
+    if (!q) return base;
+    return base.filter(
+      c =>
+        c.name.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q) ||
+        c.climate.category.toLowerCase().includes(q)
+    );
+  }, [countries, filteredCountries, countryPickerQuery]);
+
+  // Base projection scale
+  const baseScale = viewMode === 'globe' ? 215 : 155;
+  const activeScale = baseScale * camera.zoom;
+
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-orange-200/80 overflow-hidden shadow-lg relative my-8">
-      
-      {/* Top Map Toolbar - Saffron & Lavender Luminous Gradient */}
-      <div className="p-4 sm:p-5 border-b border-orange-100 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-orange-50/90 via-purple-50/60 to-blue-50/70 z-10 relative">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-purple-600 flex items-center justify-center text-white shadow-2xs">
-            <MapPin className="w-4 h-4" />
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      className="relative bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xl shadow-indigo-950/10 my-6"
+    >
+      {/* Top Signature Multi-Colored Luminous Gradient Ribbon */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+
+      {/* Top Atlas Command Header — Multi-Colored Theme */}
+      <div className="p-4 sm:p-6 border-b border-slate-200/80 bg-gradient-to-r from-teal-50/80 via-indigo-50/55 to-amber-50/75 z-20 relative space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Title & Telemetry Badge */}
+          <div className="flex items-start sm:items-center gap-3.5">
+            <motion.div
+              whileHover={{ rotate: 15, scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 via-indigo-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0"
+            >
+              <Globe2 className="w-5 h-5" />
+            </motion.div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
+                  Interactive 3D Earth &amp; Global Haven Atlas
+                </h3>
+                <span className="text-[11px] font-mono font-extrabold text-teal-900 bg-teal-100/90 border border-teal-300/80 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                  {filteredCountries.length} Havens Active
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-100/80 border border-indigo-200 px-2 py-0.5 rounded-lg">
+                  <Sparkles className="w-3 h-3 text-indigo-600" />
+                  Google Earth Style
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1">
+                Drag to rotate the 3D Earth, scroll or use controls to zoom up to 9x, or click any country marker, territory, or quick-jump selector to inspect full metrics.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Interactive Global Retirement Atlas</span>
-              <span className="text-[11px] font-mono font-bold text-orange-900 bg-orange-100/90 border border-orange-200 px-2 py-0.5 rounded-md">
-                {filteredCountries.length} havens active
-              </span>
-            </h3>
-            <p className="text-xs text-slate-600 hidden sm:block mt-0.5">
-              Click any pin or regional destination to inspect monthly costs, climate, healthcare scores, and immigration pathways.
-            </p>
+
+          {/* Right Toolbar: 3D Globe vs 2D Map Toggle + Quick Country Jumper + Auto-Spin */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 3D Globe / 2D Satellite Projection Switcher */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-white/90 border border-slate-200/90 shadow-2xs">
+              <button
+                onClick={() => setViewMode('globe')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'globe'
+                    ? 'bg-gradient-to-r from-teal-600 to-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Globe2 className="w-3.5 h-3.5" />
+                <span>3D Earth Globe</span>
+              </button>
+              <button
+                onClick={() => setViewMode('satellite-flat')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === 'satellite-flat'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <MapIcon className="w-3.5 h-3.5" />
+                <span>2D Satellite Map</span>
+              </button>
+            </div>
+
+            {/* Auto-Spin Orbit Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setAutoRotate(prev => !prev)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                autoRotate
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-xs'
+                  : 'bg-white text-slate-700 border-slate-200/90 hover:border-amber-300 hover:bg-amber-50/60'
+              }`}
+              title="Toggle automatic 3D Earth rotation"
+            >
+              {autoRotate ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{autoRotate ? 'Orbiting' : 'Auto-Rotate'}</span>
+            </motion.button>
+
+            {/* Show All Labels Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowAllLabels(prev => !prev)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                showAllLabels
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-transparent shadow-xs'
+                  : 'bg-white text-slate-700 border-slate-200/90 hover:border-indigo-300 hover:bg-indigo-50/60'
+              }`}
+              title="Show or hide country name labels across all zoom levels"
+            >
+              <Tag className="w-3.5 h-3.5" />
+              <span>{showAllLabels ? 'All Labels On' : 'Country Labels'}</span>
+            </motion.button>
+
+            {/* Quick Country Selector Dropdown Button */}
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsPickerOpen(prev => !prev)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                  isPickerOpen
+                    ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 text-white border-transparent'
+                    : 'bg-white text-slate-800 border-teal-300/90 hover:bg-teal-50/60'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5 text-teal-600" />
+                <span>Jump to Country ({filteredCountries.length})</span>
+              </motion.button>
+
+              <AnimatePresence>
+                {isPickerOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute right-0 mt-2 w-72 sm:w-80 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-2xl p-3 z-40"
+                  >
+                    <div className="relative mb-2.5">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={countryPickerQuery}
+                        onChange={e => setCountryPickerQuery(e.target.value)}
+                        placeholder="Type country name to fly to..."
+                        className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-400 text-slate-900"
+                      />
+                      {countryPickerQuery && (
+                        <button
+                          onClick={() => setCountryPickerQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                      {quickPickerCountries.map(c => {
+                        const isSelected = selectedPinCountry?.id === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => handleSelectCountry(c, true)}
+                            className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-teal-500/15 via-indigo-500/15 to-amber-500/15 border border-indigo-300 font-bold text-slate-900'
+                                : 'hover:bg-slate-100/90 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CountryFlag
+                                countryCode={c.code}
+                                countryName={c.name}
+                                fallbackEmoji={c.flag}
+                                size="sm"
+                                className="w-5 h-3.5 rounded-2xs shrink-0"
+                              />
+                              <span className="truncate font-semibold">{c.name}</span>
+                            </div>
+                            <span className="font-mono text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200/70 px-1.5 py-0.5 rounded-md shrink-0">
+                              ${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        {/* Region Quick Filters - Saffron & Purple Segmented Buttons */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { label: 'All', color: 'orange' },
-            { label: 'Europe', color: 'blue' },
-            { label: 'Southeast Asia', color: 'amber' },
-            { label: 'Americas', color: 'orange' },
-          ].map(r => (
-            <button
-              key={r.label}
-              onClick={() => handleRegionFocus(r.label)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap shadow-2xs ${
-                selectedRegion === r.label
-                  ? 'bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-bold shadow-xs scale-[1.02]'
-                  : 'bg-white text-slate-700 hover:text-orange-950 hover:bg-orange-50/80 border border-orange-200/70'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        {/* Region Camera Presets — Multi-Colored Segmented Buttons */}
+        <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200/60">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 flex items-center gap-1">
+              <Compass className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Fly To Region:</span>
+            </span>
+            {[
+              { label: 'All', activeGrad: 'from-teal-600 via-indigo-600 to-amber-600', pillHover: 'hover:border-teal-300 hover:bg-teal-50/70' },
+              { label: 'Europe', activeGrad: 'from-blue-600 to-indigo-600', pillHover: 'hover:border-blue-300 hover:bg-blue-50/70' },
+              { label: 'Americas', activeGrad: 'from-amber-500 to-orange-600', pillHover: 'hover:border-amber-300 hover:bg-amber-50/70' },
+              { label: 'Southeast Asia', activeGrad: 'from-emerald-600 to-teal-600', pillHover: 'hover:border-emerald-300 hover:bg-emerald-50/70' },
+              { label: 'Asia & Middle East', activeGrad: 'from-teal-600 to-cyan-600', pillHover: 'hover:border-cyan-300 hover:bg-cyan-50/70' },
+              { label: 'Africa', activeGrad: 'from-orange-500 to-rose-600', pillHover: 'hover:border-orange-300 hover:bg-orange-50/70' },
+              { label: 'Oceania', activeGrad: 'from-violet-600 to-purple-600', pillHover: 'hover:border-violet-300 hover:bg-violet-50/70' },
+            ].map(r => (
+              <motion.button
+                key={r.label}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handleRegionFocus(r.label)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer shadow-2xs ${
+                  selectedRegion === r.label
+                    ? `bg-gradient-to-r ${r.activeGrad} text-white shadow-xs`
+                    : `bg-white/90 text-slate-700 border border-slate-200/90 ${r.pillHover}`
+                }`}
+              >
+                {r.label}
+              </motion.button>
+            ))}
+          </div>
+
+          {/* Live Telemetry Coordinates & Zoom Readout */}
+          <div className="hidden xl:flex items-center gap-2 text-[11px] font-mono text-slate-600 bg-white/85 px-3 py-1.5 rounded-xl border border-slate-200/80">
+            <span className="text-teal-700 font-bold">
+              LAT {camera.centerLat >= 0 ? `${camera.centerLat.toFixed(1)}°N` : `${Math.abs(camera.centerLat).toFixed(1)}°S`}
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-indigo-700 font-bold">
+              LON {camera.centerLon >= 0 ? `${camera.centerLon.toFixed(1)}°E` : `${Math.abs(camera.centerLon).toFixed(1)}°W`}
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-amber-700 font-extrabold">
+              ZOOM {camera.zoom.toFixed(1)}x
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Map Canvas — Serene Sky Ocean & Pastel Landmasses with Vibrant Haven Highlights */}
-      <div className="relative w-full h-[370px] sm:h-[480px] bg-gradient-to-b from-sky-100/50 via-sky-50/60 to-teal-50/40 cursor-grab active:cursor-grabbing overflow-hidden">
+      {/* Google Earth Style Space & Satellite Viewport */}
+      <div
+        ref={mapViewportRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className={`relative w-full ${
+          isExpandedHeight ? 'h-[580px] sm:h-[720px]' : 'h-[450px] sm:h-[560px]'
+        } bg-[#04091a] cursor-grab active:cursor-grabbing overflow-hidden select-none transition-all duration-300`}
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 50% 50%, #0c2448 0%, #061229 52%, #020612 100%)',
+        }}
+      >
+        {/* Deep-Space Starfield Layer */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {STARFIELD_POINTS.map(star => (
+            <span
+              key={star.id}
+              className="absolute rounded-full bg-white animate-pulse"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                opacity: star.opacity,
+                animationDelay: star.delay,
+                animationDuration: '4s',
+              }}
+            />
+          ))}
+          {/* Ambient Atmospheric Nebula Glow behind the Earth */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[540px] h-[420px] sm:h-[540px] rounded-full bg-sky-500/15 blur-3xl pointer-events-none" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[440px] h-[320px] sm:h-[440px] rounded-full bg-teal-400/10 blur-2xl pointer-events-none" />
+        </div>
+
+        {/* Interactive D3 Geo Globe / Satellite Map */}
         <ComposableMap
+          projection={viewMode === 'globe' ? 'geoOrthographic' : 'geoEqualEarth'}
           projectionConfig={{
-            rotate: [-10, 0, 0],
-            scale: 145,
+            rotate: [-camera.centerLon, -camera.centerLat, 0],
+            scale: activeScale,
           }}
-          className="w-full h-full select-none"
+          width={800}
+          height={500}
+          className="w-full h-full relative z-10"
         >
-          <ZoomableGroup
-            zoom={position.zoom}
-            center={position.coordinates}
-            onMoveEnd={(pos: any) => {
-              if (pos && pos.coordinates) {
-                setPosition({ coordinates: pos.coordinates, zoom: pos.zoom });
-              }
-            }}
-            maxZoom={4}
-            minZoom={0.8}
-          >
-            {/* Globe Ocean & Cartographic Lat/Long Grid */}
-            <Sphere id="world-sphere" fill="#e0f2fe" stroke="#7dd3fc" strokeWidth={0.8} />
-            <Graticule stroke="#bae6fd" strokeWidth={0.5} />
+          <defs>
+            {/* Google Earth Realistic Sunlit Ocean Bathymetry Gradient */}
+            <radialGradient id="googleEarthOcean" cx="38%" cy="32%" r="68%">
+              <stop offset="0%" stopColor="#0ea5e9" />
+              <stop offset="28%" stopColor="#0284c7" />
+              <stop offset="62%" stopColor="#075985" />
+              <stop offset="88%" stopColor="#0c4a6e" />
+              <stop offset="100%" stopColor="#041e3a" />
+            </radialGradient>
 
-            {/* World Land Mass */}
-            <Geographies geography={worldGeo as any}>
-              {({ geographies }) =>
-                geographies.map((geo: any) => {
-                  const countryId = geo && geo.id != null ? COUNTRY_ISO_MAP[String(geo.id)] : undefined;
-                  const isHaven = Boolean(countryId);
-                  const isFilteredMatch = isHaven && countryId ? filteredIds.has(countryId) : false;
-                  const isSelected = selectedPinCountry?.id === countryId;
-                  const matched = isHaven && countryId ? countries.find(c => c.id === countryId) : undefined;
-                  const fillColor = isHaven
-                    ? getCountryColor(matched, isSelected, isFilteredMatch)
-                    : '#f8fafc';
+            {/* Atmospheric Outer Rim Glow */}
+            <radialGradient id="atmosphereRim" cx="50%" cy="50%" r="50%">
+              <stop offset="82%" stopColor="#38bdf8" stopOpacity="0" />
+              <stop offset="96%" stopColor="#38bdf8" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.75" />
+            </radialGradient>
 
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      onMouseEnter={() => {
-                        if (matched) setHoveredCountry(matched);
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredCountry(null);
-                      }}
-                      onClick={() => {
-                        if (matched) setSelectedPinCountry(matched);
-                      }}
-                      style={{
-                        default: {
-                          fill: fillColor,
-                          stroke: isHaven ? '#ffffff' : '#cbd5e1',
-                          strokeWidth: isHaven ? 0.9 : 0.5,
-                          outline: 'none',
-                          cursor: isHaven ? 'pointer' : 'default',
-                          transition: 'all 200ms ease',
-                        },
-                        hover: {
-                          fill: isHaven ? '#06b6d4' : '#e2e8f0',
-                          stroke: '#ffffff',
-                          strokeWidth: 1.2,
-                          outline: 'none',
-                          cursor: isHaven ? 'pointer' : 'default',
-                        },
-                        pressed: {
-                          fill: isHaven ? '#0891b2' : '#cbd5e1',
-                          outline: 'none',
-                        },
-                      } as any}
-                    />
-                  );
-                })
-              }
-            </Geographies>
+            {/* Satellite Natural Landmass Gradient for non-haven countries */}
+            <linearGradient id="satelliteTerrain" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1e3f35" />
+              <stop offset="50%" stopColor="#24493c" />
+              <stop offset="100%" stopColor="#1b332b" />
+            </linearGradient>
+          </defs>
 
-            {/* Country Markers & Glowing Indicators */}
-            {countries.map(c => {
-              const coords = COUNTRY_COORDINATES[c.id];
-              if (!coords) return null;
+          {/* Earth Ocean Sphere & Atmospheric Limb Halo */}
+          <Sphere
+            id="google-earth-sphere"
+            fill="url(#googleEarthOcean)"
+            stroke="#38bdf8"
+            strokeWidth={1.6}
+          />
+          <Graticule stroke="rgba(125, 211, 252, 0.16)" strokeWidth={0.5} />
 
-              const isMatch = filteredIds.has(c.id);
-              const isSelected = selectedPinCountry?.id === c.id;
-              const pinColor = getCountryColor(c, isSelected, isMatch);
+          {/* World Land Mass Polygons */}
+          <Geographies geography={worldGeo as any}>
+            {({ geographies }) =>
+              geographies.map((geo: any) => {
+                const countryId =
+                  geo && geo.id != null ? COUNTRY_ISO_MAP[String(geo.id)] : undefined;
+                const isHaven = Boolean(countryId);
+                const isFilteredMatch =
+                  isHaven && countryId ? filteredIds.has(countryId) : false;
+                const isSelected = selectedPinCountry?.id === countryId;
+                const isHovered = hoveredCountry?.id === countryId;
+                const matched =
+                  isHaven && countryId
+                    ? countries.find(c => c.id === countryId)
+                    : undefined;
 
-              return (
-                <Marker
-                  key={c.id}
-                  coordinates={coords}
-                  onClick={() => setSelectedPinCountry(c)}
-                  onMouseEnter={() => setHoveredCountry(c)}
-                  onMouseLeave={() => setHoveredCountry(null)}
-                >
-                  <g className="cursor-pointer group transform transition-transform duration-150 hover:scale-125">
-                    {/* Pulsing ring for filtered matching countries */}
-                    {isMatch && (
-                      <circle
-                        r={isSelected ? 11 : 7.5}
-                        fill={pinColor}
-                        opacity={0.35}
-                        className="animate-ping"
-                      />
-                    )}
+                const fillColor = isHaven
+                  ? getCountryColor(matched, isSelected, isFilteredMatch, isHovered)
+                  : 'url(#satelliteTerrain)';
 
-                    {/* Outer Pin Body */}
+                return (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onMouseEnter={() => {
+                      if (matched) setHoveredCountry(matched);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredCountry(null);
+                    }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (matched) {
+                        handleSelectCountry(matched, true);
+                      }
+                    }}
+                    style={{
+                      default: {
+                        fill: fillColor,
+                        stroke: isSelected
+                          ? '#ffffff'
+                          : isHaven
+                          ? 'rgba(255, 255, 255, 0.72)'
+                          : 'rgba(148, 163, 184, 0.35)',
+                        strokeWidth: isSelected ? 1.5 : isHaven ? 0.75 : 0.4,
+                        outline: 'none',
+                        cursor: isHaven ? 'pointer' : 'grab',
+                        transition: 'fill 180ms ease, stroke-width 180ms ease',
+                      },
+                      hover: {
+                        fill: isHaven ? '#22d3ee' : '#2a5446',
+                        stroke: '#ffffff',
+                        strokeWidth: isHaven ? 1.4 : 0.6,
+                        outline: 'none',
+                        cursor: isHaven ? 'pointer' : 'grab',
+                      },
+                      pressed: {
+                        fill: isHaven ? '#ec4899' : '#1e3f35',
+                        outline: 'none',
+                      },
+                    } as any}
+                  />
+                );
+              })
+            }
+          </Geographies>
+
+          {/* Country Markers & Glowing Indicators (Preserved Design + Hemisphere Culling on 3D Globe) */}
+          {countries.map(c => {
+            const coords = COUNTRY_COORDINATES[c.id];
+            if (!coords) return null;
+
+            // Hide markers on the back hemisphere when in 3D Orthographic Globe mode
+            if (
+              viewMode === 'globe' &&
+              !isPointVisibleOnGlobe(coords, camera.centerLon, camera.centerLat)
+            ) {
+              return null;
+            }
+
+            const isMatch = filteredIds.has(c.id);
+            const isSelected = selectedPinCountry?.id === c.id;
+            const isHovered = hoveredCountry?.id === c.id;
+            const pinColor = getCountryColor(c, isSelected, isMatch, isHovered);
+
+            // Show label when zoomed in, selected, hovered, or when "Show All Labels" is toggled on
+            const shouldShowLabel =
+              showAllLabels ||
+              camera.zoom >= 1.75 ||
+              isSelected ||
+              isHovered;
+
+            return (
+              <Marker
+                key={c.id}
+                coordinates={coords}
+                onClick={e => {
+                  e.stopPropagation();
+                  handleSelectCountry(c, true);
+                }}
+                onMouseEnter={() => setHoveredCountry(c)}
+                onMouseLeave={() => setHoveredCountry(null)}
+              >
+                <g className="cursor-pointer group transform transition-transform duration-150 hover:scale-125">
+                  {/* Pulsing ring for filtered matching countries */}
+                  {isMatch && (
                     <circle
-                      r={isSelected ? 6.5 : 4.8}
+                      r={isSelected ? 12 : 7.5}
                       fill={pinColor}
-                      stroke="#ffffff"
-                      strokeWidth={1.8}
+                      opacity={0.4}
+                      className="animate-ping"
                     />
+                  )}
 
-                    {/* Inner core */}
-                    <circle
-                      r={isSelected ? 2.8 : 2}
-                      fill="#ffffff"
-                    />
+                  {/* Outer Pin Body */}
+                  <circle
+                    r={isSelected ? 6.8 : isHovered ? 5.8 : 4.8}
+                    fill={pinColor}
+                    stroke="#ffffff"
+                    strokeWidth={1.8}
+                  />
 
-                    {/* Clean country label text for high-zoom or selected */}
-                    {(position.zoom >= 1.6 || isSelected) && (
-                      <text
-                        textAnchor="middle"
-                        y={-10}
-                        style={{
-                          fontFamily: 'system-ui, -apple-system, sans-serif',
-                          fontSize: '8.5px',
-                          fontWeight: 800,
-                          fill: isSelected ? '#ea580c' : '#0f172a',
-                          stroke: '#ffffff',
-                          strokeWidth: 2.5,
-                          paintOrder: 'stroke fill',
-                        }}
-                      >
-                        {c.name}
-                      </text>
-                    )}
-                  </g>
-                </Marker>
-              );
-            })}
-          </ZoomableGroup>
+                  {/* Inner core */}
+                  <circle
+                    r={isSelected ? 2.8 : 2}
+                    fill="#ffffff"
+                  />
+
+                  {/* Crisp satellite country label text */}
+                  {shouldShowLabel && (
+                    <text
+                      textAnchor="middle"
+                      y={-10}
+                      style={{
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        fontSize: isSelected || isHovered ? '10px' : '8.5px',
+                        fontWeight: 800,
+                        fill: isSelected ? '#fbcfe8' : isHovered ? '#a5f3fc' : '#ffffff',
+                        stroke: '#020617',
+                        strokeWidth: 3,
+                        paintOrder: 'stroke fill',
+                      }}
+                    >
+                      {c.name}
+                    </text>
+                  )}
+                </g>
+              </Marker>
+            );
+          })}
         </ComposableMap>
 
-        {/* Floating Zoom & Map Controls - Frosted Glass Light */}
-        <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 bg-white/95 border border-orange-200/80 rounded-xl p-1 shadow-md z-10 backdrop-blur-md">
-          <button
-            onClick={handleZoomIn}
-            className="p-1.5 text-slate-700 hover:text-orange-950 hover:bg-orange-50 rounded-lg transition-colors"
-            title="Zoom In"
-            aria-label="Zoom in on map"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-1.5 text-slate-700 hover:text-orange-950 hover:bg-orange-50 rounded-lg transition-colors"
-            title="Zoom Out"
-            aria-label="Zoom out on map"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleResetZoom}
-            className="p-1.5 text-slate-700 hover:text-orange-950 hover:bg-orange-50 rounded-lg transition-colors"
-            title="Reset Map View"
-            aria-label="Reset zoom and center"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Floating Destination Inspector Overlay Card - Luminous High-Contrast Light Theme */}
-        {activeModalCountry && (
-          <div className="absolute top-4 left-4 max-w-xs sm:max-w-sm w-full bg-white/95 border border-orange-200/90 rounded-2xl p-4 sm:p-5 shadow-2xl z-20 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 text-slate-900">
-            <div className="flex items-start justify-between gap-2 mb-2.5">
-              <div className="flex items-center gap-2.5">
-                <CountryFlag
-                  countryCode={activeModalCountry.code}
-                  countryName={activeModalCountry.name}
-                  fallbackEmoji={activeModalCountry.flag}
-                  size="xl"
-                  className="w-9 h-6 rounded-xs shrink-0"
-                />
-                <div>
-                  <h4 className="text-base font-extrabold text-slate-900 leading-tight">
-                    {activeModalCountry.name}
-                  </h4>
-                  {/* Clean unboxed metadata with regional badge */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
-                    <span className="font-semibold text-orange-800">{activeModalCountry.region}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{activeModalCountry.climate.category}</span>
-                  </div>
-                </div>
-              </div>
-
-              {selectedPinCountry && (
-                <button
-                  onClick={() => setSelectedPinCountry(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
-                  aria-label="Close country preview"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+        {/* Top-Right Google Earth 3D Navigation Gimbal, Zoom Slider & Viewport Controls */}
+        <div
+          data-map-ui="true"
+          className="absolute top-4 right-4 flex flex-col items-end gap-2.5 z-20"
+        >
+          {/* 3D Compass / Rotation Gimbal */}
+          <div className="bg-slate-900/85 backdrop-blur-md border border-sky-400/30 rounded-2xl p-2 shadow-xl text-white flex flex-col items-center gap-1">
+            <span className="text-[9px] font-mono uppercase tracking-widest text-sky-300 font-bold">
+              Rotate Earth
+            </span>
+            <div className="grid grid-cols-3 gap-1 items-center">
+              <div />
+              <button
+                onClick={() => handleNudgeRotation(0, 18)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-sky-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                title="Rotate North"
+                aria-label="Rotate North"
+              >
+                <ChevronUp className="w-4 h-4 text-sky-200" />
+              </button>
+              <div />
+              <button
+                onClick={() => handleNudgeRotation(-24, 0)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-sky-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                title="Rotate West"
+                aria-label="Rotate West"
+              >
+                <ChevronLeft className="w-4 h-4 text-sky-200" />
+              </button>
+              <button
+                onClick={handleResetView}
+                className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                title="Reset Globe Orientation"
+                aria-label="Reset Globe Orientation"
+              >
+                <Compass className="w-3.5 h-3.5 text-white" />
+              </button>
+              <button
+                onClick={() => handleNudgeRotation(24, 0)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-sky-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                title="Rotate East"
+                aria-label="Rotate East"
+              >
+                <ChevronRight className="w-4 h-4 text-sky-200" />
+              </button>
+              <div />
+              <button
+                onClick={() => handleNudgeRotation(0, -18)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-sky-500/30 flex items-center justify-center transition-colors cursor-pointer"
+                title="Rotate South"
+                aria-label="Rotate South"
+              >
+                <ChevronDown className="w-4 h-4 text-sky-200" />
+              </button>
+              <div />
             </div>
+          </div>
 
-            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-3.5">
-              {activeModalCountry.tagline}
-            </p>
-
-            {/* Quick Metrics Bar - Three Vibrant Pastel Cards */}
-            <div className="grid grid-cols-3 gap-2 mb-3.5">
-              <div className="p-2 rounded-xl bg-orange-50/90 border border-orange-200/70 text-center">
-                <span className="text-[10px] text-orange-800 font-semibold block">Single Living</span>
-                <span className="font-mono tabular-nums font-extrabold text-orange-950 text-xs">
-                  ${activeModalCountry.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
-                </span>
-              </div>
-              <div className="p-2 rounded-xl bg-purple-50/90 border border-purple-200/70 text-center">
-                <span className="text-[10px] text-purple-800 font-semibold block">Healthcare</span>
-                <span className="font-mono tabular-nums font-extrabold text-purple-950 text-xs">
-                  {activeModalCountry.lifestyle.healthcareScore}/100
-                </span>
-              </div>
-              <div className="p-2 rounded-xl bg-amber-50/90 border border-amber-200/70 text-center">
-                <span className="text-[10px] text-amber-800 font-semibold block">Sun Days</span>
-                <span className="font-mono tabular-nums font-extrabold text-amber-900 text-xs">
-                  {activeModalCountry.climate.annualSunnyDays}d
-                </span>
-              </div>
-            </div>
-
-            <div className="text-[11px] bg-slate-50 border border-slate-200/80 rounded-lg px-3 py-2 text-slate-700 mb-3.5 flex items-center justify-between">
-              <span className="truncate max-w-[170px] text-slate-600 font-medium">
-                {activeModalCountry.visa.retirementVisaName}
-              </span>
-              <span className="font-mono tabular-nums text-orange-800 font-bold shrink-0">
-                Min. ${activeModalCountry.visa.minimumIncomeUSD}/mo
-              </span>
-            </div>
-
-            {/* CTA: Open Full Dossier */}
+          {/* Precision Zoom Controls (+ / Slider / - / Expand) */}
+          <div className="bg-slate-900/85 backdrop-blur-md border border-sky-400/30 rounded-2xl p-2 shadow-xl text-white flex flex-col items-center gap-2">
             <button
-              onClick={() => navigateToCountry(activeModalCountry.id)}
-              className="w-full py-2.5 px-3.5 bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 hover:from-orange-700 hover:to-purple-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              onClick={handleZoomIn}
+              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-teal-500/30 text-sky-100 flex items-center justify-center transition-colors cursor-pointer"
+              title="Zoom In"
+              aria-label="Zoom in on map"
             >
-              <span>Explore Complete {activeModalCountry.name} Dossier</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ZoomIn className="w-4 h-4" />
+            </button>
+
+            {/* Vertical Zoom Range Slider */}
+            <div className="py-1 flex flex-col items-center">
+              <input
+                type="range"
+                min={0.8}
+                max={8.0}
+                step={0.1}
+                value={camera.zoom}
+                onChange={e =>
+                  setCamera(prev => ({ ...prev, zoom: Number(e.target.value) }))
+                }
+                aria-label="Zoom level"
+                className="w-20 accent-teal-400 cursor-pointer"
+              />
+              <span className="text-[10px] font-mono font-bold text-teal-300 mt-1">
+                {camera.zoom.toFixed(1)}x
+              </span>
+            </div>
+
+            <button
+              onClick={handleZoomOut}
+              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-teal-500/30 text-sky-100 flex items-center justify-center transition-colors cursor-pointer"
+              title="Zoom Out"
+              aria-label="Zoom out on map"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+
+            <div className="w-full h-px bg-white/15" />
+
+            <button
+              onClick={handleResetView}
+              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-amber-500/30 text-amber-200 flex items-center justify-center transition-colors cursor-pointer"
+              title="Reset Map View"
+              aria-label="Reset zoom and center"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => setIsExpandedHeight(prev => !prev)}
+              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-indigo-500/30 text-indigo-200 flex items-center justify-center transition-colors cursor-pointer"
+              title={isExpandedHeight ? 'Standard Atlas Height' : 'Expand Atlas Height'}
+              aria-label="Toggle Atlas Height"
+            >
+              {isExpandedHeight ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
             </button>
           </div>
-        )}
-
-        {/* Legend in Bottom Left - Colourful Regional Swatches */}
-        <div className="absolute bottom-4 left-4 bg-white/95 border border-orange-200/70 rounded-xl px-3.5 py-2.5 text-[11px] text-slate-700 hidden sm:flex items-center gap-4 shadow-md backdrop-blur-md z-10 font-medium">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-2xs" />
-            <span className="font-medium">Europe (Navy)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-600 shadow-2xs" />
-            <span className="font-medium">Americas (Saffron)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-2xs" />
-            <span className="font-medium">Southeast Asia</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-2xs" />
-            <span className="font-medium">Selected</span>
-          </div>
         </div>
 
+        {/* Floating Destination Inspector Overlay Card — Preserved Info Display with Current Multi-Colored Luminous Theme */}
+        <AnimatePresence>
+          {activeModalCountry && (
+            <motion.div
+              data-map-ui="true"
+              key={activeModalCountry.id}
+              initial={{ opacity: 0, x: -16, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -16, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+              className="absolute top-4 left-4 max-w-xs sm:max-w-sm w-full bg-white/95 border border-teal-200/90 rounded-2xl overflow-hidden shadow-2xl z-20 backdrop-blur-xl text-slate-900"
+            >
+              {/* Top Multi-Colored Gradient Accent Ribbon */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+
+              <div className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <CountryFlag
+                      countryCode={activeModalCountry.code}
+                      countryName={activeModalCountry.name}
+                      fallbackEmoji={activeModalCountry.flag}
+                      size="xl"
+                      className="w-9 h-6 rounded-xs shrink-0 shadow-2xs"
+                    />
+                    <div>
+                      <h4 className="text-base font-extrabold text-slate-900 leading-tight">
+                        {activeModalCountry.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
+                        <span className="font-bold text-teal-700">
+                          {activeModalCountry.region}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span className="text-indigo-700 font-medium">
+                          {activeModalCountry.climate.category}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedPinCountry && (
+                    <button
+                      onClick={() => setSelectedPinCountry(null)}
+                      className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                      aria-label="Close country preview"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-3.5">
+                  {activeModalCountry.tagline}
+                </p>
+
+                {/* Quick Metrics Bar — Three Signature Multi-Colored Pastel Cards */}
+                <div className="grid grid-cols-3 gap-2 mb-3.5">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50/70 border border-teal-200/80 text-center">
+                    <span className="text-[10px] text-teal-800 font-bold block">
+                      Single Living
+                    </span>
+                    <span className="font-mono tabular-nums font-extrabold text-teal-950 text-xs">
+                      ${activeModalCountry.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50/70 border border-indigo-200/80 text-center">
+                    <span className="text-[10px] text-indigo-800 font-bold block">
+                      Healthcare
+                    </span>
+                    <span className="font-mono tabular-nums font-extrabold text-indigo-950 text-xs">
+                      {activeModalCountry.lifestyle.healthcareScore}/100
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50/70 border border-amber-200/80 text-center">
+                    <span className="text-[10px] text-amber-800 font-bold block">
+                      Sun Days
+                    </span>
+                    <span className="font-mono tabular-nums font-extrabold text-amber-950 text-xs">
+                      {activeModalCountry.climate.annualSunnyDays}d
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-[11px] bg-gradient-to-r from-slate-50 via-indigo-50/40 to-teal-50/40 border border-slate-200/90 rounded-xl px-3 py-2 text-slate-700 mb-3.5 flex items-center justify-between">
+                  <span className="truncate max-w-[170px] text-slate-700 font-semibold">
+                    {activeModalCountry.visa.retirementVisaName}
+                  </span>
+                  <span className="font-mono tabular-nums text-indigo-800 font-extrabold shrink-0">
+                    Min. ${activeModalCountry.visa.minimumIncomeUSD}/mo
+                  </span>
+                </div>
+
+                {/* CTA: Open Full Dossier */}
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => navigateToCountry(activeModalCountry.id)}
+                  className="w-full py-2.5 px-3.5 bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 hover:from-teal-700 hover:via-indigo-700 hover:to-amber-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20 cursor-pointer"
+                >
+                  <span>Explore Complete {activeModalCountry.name} Dossier</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Bottom-Left Regional Legend & Interactive Hint */}
+        <div
+          data-map-ui="true"
+          className="absolute bottom-4 left-4 bg-slate-900/85 border border-sky-400/30 rounded-2xl px-4 py-2.5 text-[11px] text-slate-200 hidden sm:flex flex-wrap items-center gap-4 shadow-xl backdrop-blur-md z-10 font-medium"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white/40" />
+            <span>Europe</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white/40" />
+            <span>Americas</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white/40" />
+            <span>Asia &amp; SE Asia</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-violet-500 ring-2 ring-white/40" />
+            <span>Oceania &amp; Africa</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-pink-500 ring-2 ring-white" />
+            <span className="text-pink-200 font-bold">Selected</span>
+          </div>
+        </div>
       </div>
 
-    </div>
+      {/* Bottom Quick-Select Country Carousel Bar — Lets users click any country chip to rotate & zoom straight to it */}
+      <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-slate-50 via-indigo-50/40 to-teal-50/50 border-t border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-800 shrink-0 flex items-center gap-1.5 pr-1">
+          <MapPin className="w-3.5 h-3.5 text-teal-600" />
+          <span>Quick Select Haven:</span>
+        </span>
+        {filteredCountries.slice(0, 24).map(c => {
+          const isSelected = selectedPinCountry?.id === c.id;
+          return (
+            <motion.button
+              key={c.id}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleSelectCountry(c, true)}
+              className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 border transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 text-white border-transparent shadow-xs font-bold'
+                  : 'bg-white hover:bg-indigo-50/80 text-slate-700 border-slate-200/90 hover:border-indigo-300'
+              }`}
+            >
+              <CountryFlag
+                countryCode={c.code}
+                countryName={c.name}
+                fallbackEmoji={c.flag}
+                size="sm"
+                className="w-4 h-3 rounded-2xs shrink-0"
+              />
+              <span>{c.name}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 };
