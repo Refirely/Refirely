@@ -1,6 +1,9 @@
 import { Country } from '../types';
 import { ADDITIONAL_COUNTRIES } from './additionalCountries';
 import { MORE_RETIREMENT_COUNTRIES } from './moreRetirementCountries';
+import { TIER_1_COUNTRIES } from './tier1Countries';
+import { TIER_2_AFRICA_COUNTRIES } from './tier2AfricaCountries';
+import { TIER_2_ASIA_OCEANIA_ATLANTIC_COUNTRIES } from './tier2AsiaOceaniaAtlanticCountries';
 
 export const INITIAL_COUNTRIES: Country[] = [
   {
@@ -6369,6 +6372,9 @@ export const INITIAL_COUNTRIES: Country[] = [
   },
   ...ADDITIONAL_COUNTRIES,
   ...MORE_RETIREMENT_COUNTRIES,
+  ...TIER_1_COUNTRIES,
+  ...TIER_2_AFRICA_COUNTRIES,
+  ...TIER_2_ASIA_OCEANIA_ATLANTIC_COUNTRIES,
 ];
 
 

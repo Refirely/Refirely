@@ -34,7 +34,7 @@ export const DirectoryExplorer: React.FC = () => {
     setCurrentView,
   } = useApp();
 
-  const [showMap, setShowMap] = useState(true);
+  const [showMap, setShowMap] = useState(false);
 
   const regions = [
     'All',

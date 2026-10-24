@@ -28,7 +28,7 @@ const EUROPE_IDS = new Set([
 const SOUTH_AMERICA_IDS = new Set([
   'colombia', 'ecuador', 'uruguay', 'chile', 'argentina', 'peru',
   'brazil', 'paraguay', 'bolivia', 'guyana', 'suriname', 'venezuela',
-  'french-guiana',
+  'french-guiana', 'falkland-islands',
 ]);
 
 const NORTH_CENTRAL_CARIBBEAN_IDS = new Set([
@@ -41,7 +41,7 @@ const NORTH_CENTRAL_CARIBBEAN_IDS = new Set([
   'sint-maarten', 'anguilla', 'british-virgin-islands', 'martinique',
   'guadeloupe', 'trinidad-and-tobago', 'united-states',
   'saint-vincent-and-the-grenadines', 'cuba', 'haiti', 'st-barts',
-  'montserrat', 'greenland',
+  'montserrat', 'greenland', 'saint-pierre-and-miquelon',
 ]);
 
 const SOUTHEAST_ASIA_IDS = new Set([
@@ -53,17 +53,29 @@ const SOUTHEAST_ASIA_IDS = new Set([
 const EAST_SOUTH_ASIA_MIDDLE_EAST_IDS = new Set([
   'taiwan', 'sri-lanka', 'japan', 'south-korea', 'india', 'nepal',
   'maldives', 'hong-kong', 'united-arab-emirates', 'oman', 'jordan',
-  'bahrain',
+  'bahrain', 'qatar', 'saudi-arabia', 'kuwait', 'china', 'macau',
+  'kazakhstan', 'uzbekistan', 'kyrgyzstan', 'bhutan', 'mongolia',
+  'tajikistan', 'turkmenistan',
 ]);
 
 const AFRICA_IDS = new Set([
   'mauritius', 'morocco', 'south-africa', 'seychelles', 'tunisia',
-  'namibia', 'cape-verde', 'kenya', 'tanzania',
+  'namibia', 'cape-verde', 'kenya', 'tanzania', 'botswana', 'rwanda',
+  'ghana', 'senegal', 'egypt', 'zambia', 'gambia', 'uganda',
+  'madagascar', 'reunion', 'cote-divoire', 'benin', 'togo',
+  'sao-tome-and-principe', 'malawi', 'eswatini', 'lesotho',
+  'algeria', 'angola', 'gabon', 'republic-of-the-congo', 'cameroon',
+  'comoros', 'djibouti', 'equatorial-guinea', 'ethiopia', 'guinea',
+  'guinea-bissau', 'liberia', 'mauritania', 'sierra-leone',
+  'zimbabwe', 'mozambique', 'saint-helena',
 ]);
 
 const OCEANIA_IDS = new Set([
   'australia', 'new-zealand', 'fiji', 'vanuatu', 'french-polynesia',
-  'samoa', 'cook-islands',
+  'samoa', 'cook-islands', 'palau', 'tonga', 'guam',
+  'northern-mariana-islands', 'new-caledonia', 'norfolk-island',
+  'micronesia', 'marshall-islands', 'solomon-islands', 'kiribati',
+  'tuvalu', 'nauru', 'niue', 'american-samoa',
 ]);
 
 export function getCountryContinentLabel(country: Country): string {
