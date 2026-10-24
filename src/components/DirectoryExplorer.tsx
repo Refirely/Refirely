@@ -165,7 +165,7 @@ export const DirectoryExplorer: React.FC = () => {
                   <span>{countries.length} Global Havens Scored</span>
                 </span>
                 <span aria-hidden="true" className="text-slate-300">·</span>
-                <span>28 Empirical Living Factors</span>
+                <span>55+ Empirical Living Factors</span>
                 <span aria-hidden="true" className="text-slate-300">·</span>
                 <span>Vetted Visa Pathways</span>
               </div>
@@ -213,7 +213,7 @@ export const DirectoryExplorer: React.FC = () => {
                   className="h-48 sm:h-52 relative rounded-xl overflow-hidden shadow-2xs group cursor-pointer border border-slate-200/60"
                   title={`View ${spotlightCountry.name} Dossier`}
                 >
-                  <CountryThumbnail country={spotlightCountry} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <CountryThumbnail country={spotlightCountry} hideLandmarkLabel className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   
                   {/* Floating Top Badges */}
                   <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">

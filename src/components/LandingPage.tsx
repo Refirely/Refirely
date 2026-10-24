@@ -14,7 +14,7 @@ import {
   Compass, Sparkles, Flame, ArrowRight, ArrowDown, Heart,
   ShieldCheck, Sun, Globe, Users, CheckCircle2,
   SlidersHorizontal, ChevronRight,
-  LogIn, UserPlus, Search, RotateCcw, X
+  LogIn, UserPlus, RotateCcw
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
@@ -42,11 +42,10 @@ export const LandingPage: React.FC = () => {
   const [matchClimate, setMatchClimate] = useState<ClimateCategory | 'Any'>('Any');
   const [matchPriority, setMatchPriority] = useState<'value' | 'healthcare' | 'safety' | 'leisure'>('leisure');
   const [previewContinent, setPreviewContinent] = useState<ContinentFilter>('All');
-  const [previewSearch, setPreviewSearch] = useState<string>('');
   const [previewSort, setPreviewSort] = useState<'match-desc' | SortByType>('match-desc');
   const [visibleCount, setVisibleCount] = useState<number>(12);
 
-  // Continent counts across all 147 countries
+  // Continent counts across all countries
   const continentCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const opt of CONTINENT_FILTER_OPTIONS) {
@@ -95,7 +94,7 @@ export const LandingPage: React.FC = () => {
       return { country, matchScore: normalizedScore, travelScore };
     });
 
-    // Apply Continent, Climate, Strict Budget, and Search filters
+    // Apply Continent, Climate, and Strict Budget filters
     const filtered = scored.filter(({ country }) => {
       if (!matchesContinentFilter(country, previewContinent)) {
         return false;
@@ -105,18 +104,6 @@ export const LandingPage: React.FC = () => {
       }
       if (strictBudgetFilter && country.costOfLiving.monthlyBudgetCoupleUSD > matchBudget) {
         return false;
-      }
-      if (previewSearch.trim()) {
-        const q = previewSearch.trim().toLowerCase();
-        const matchesQuery =
-          country.name.toLowerCase().includes(q) ||
-          country.capital.toLowerCase().includes(q) ||
-          country.tagline.toLowerCase().includes(q) ||
-          country.climate.category.toLowerCase().includes(q) ||
-          country.visa.retirementVisaName.toLowerCase().includes(q) ||
-          country.visa.taxStatus.toLowerCase().includes(q) ||
-          getCountryContinentLabel(country).toLowerCase().includes(q);
-        if (!matchesQuery) return false;
       }
       return true;
     });
@@ -164,7 +151,6 @@ export const LandingPage: React.FC = () => {
     matchClimate,
     matchPriority,
     previewContinent,
-    previewSearch,
     previewSort,
   ]);
 
@@ -182,7 +168,6 @@ export const LandingPage: React.FC = () => {
     setMatchClimate('Any');
     setMatchPriority('leisure');
     setPreviewContinent('All');
-    setPreviewSearch('');
     setPreviewSort('match-desc');
     setVisibleCount(12);
   };
@@ -190,7 +175,7 @@ export const LandingPage: React.FC = () => {
   const handleOpenAdvancedExplorer = () => {
     setSelectedRegion(previewContinent);
     setSelectedClimate(matchClimate === 'Any' ? 'All' : matchClimate);
-    setSearchQuery(previewSearch);
+    setSearchQuery('');
     if (previewSort !== 'match-desc') {
       setSortBy(previewSort);
     }
@@ -235,7 +220,64 @@ export const LandingPage: React.FC = () => {
   const yearsToFireAbroad = calculateYearsToFire(fireNestEggAbroad, currentNetWorth, annualSavings, expectedGrowthRate);
   const yearsToFireDomestic = calculateYearsToFire(fireNestEggDomestic, currentNetWorth, annualSavings, expectedGrowthRate);
   const yearsSaved = Math.max(0, yearsToFireDomestic - yearsToFireAbroad);
-  const fireProgressPercent = Math.min(100, Math.round((currentNetWorth / fireNestEggAbroad) * 100));
+  const fireProgressPercent = Math.min(100, Math.round((currentNetWorth / Math.max(1, fireNestEggAbroad)) * 100));
+
+  // Top 4 matching countries dynamically synced with the user's FIRE Calculator inputs
+  const fireMatchedCountries = useMemo(() => {
+    const useSingleBasis = targetMonthlyExpenseAbroad < 1350;
+
+    const evaluated = countries.map(country => {
+      const referenceMonthlyCost = useSingleBasis
+        ? country.costOfLiving.monthlyBudgetSingleUSD
+        : country.costOfLiving.monthlyBudgetCoupleUSD;
+      const countryNestEgg = Math.round((referenceMonthlyCost * 12) / swrDecimal);
+      const fundedPercent = Math.min(100, Math.round((currentNetWorth / Math.max(1, countryNestEgg)) * 100));
+      const yearsToFireInCountry = calculateYearsToFire(
+        countryNestEgg,
+        currentNetWorth,
+        annualSavings,
+        expectedGrowthRate
+      );
+      const budgetDelta = targetMonthlyExpenseAbroad - referenceMonthlyCost;
+      const qualityScore =
+        (country.lifestyle.healthcareScore +
+          country.lifestyle.safetyScore +
+          getCountryTravelLeisureScore(country)) /
+        3;
+
+      // Rank countries that fit comfortably within or near targetMonthlyExpenseAbroad
+      let fitRank = qualityScore;
+      if (budgetDelta >= 0 && budgetDelta <= 700) {
+        fitRank += 40; // Sweet-spot match under user's target monthly budget
+      } else if (budgetDelta > 700) {
+        fitRank += 28; // Well under user's target budget
+      } else if (budgetDelta >= -250) {
+        fitRank += 12; // Slightly above budget
+      } else {
+        fitRank -= Math.abs(budgetDelta) / 20;
+      }
+
+      return {
+        country,
+        referenceMonthlyCost,
+        budgetModeLabel: useSingleBasis ? 'Solo' : 'Couple',
+        countryNestEgg,
+        fundedPercent,
+        yearsToFireInCountry,
+        fitRank,
+      };
+    });
+
+    evaluated.sort((a, b) => b.fitRank - a.fitRank);
+    return evaluated.slice(0, 4);
+  }, [
+    countries,
+    targetMonthlyExpenseAbroad,
+    swrDecimal,
+    currentNetWorth,
+    annualSavings,
+    expectedGrowthRate,
+  ]);
 
   const scrollToSection = (id: string) => {
     const targetId = id === 'countries-grid' ? 'haven-matcher' : id;
@@ -252,15 +294,15 @@ export const LandingPage: React.FC = () => {
       {/* 1. CINEMATIC HERO SECTION                                      */}
       {/* ============================================================ */}
       <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center bg-slate-950 text-white overflow-hidden border-b border-slate-800">
-        {/* Background Visual with subtle pan effect & rich vignette */}
+        {/* Background Visual: Iconic Nature & Touristic Alpine Emerald Lake Panorama */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=2000&q=85"
-            alt="Mediterranean coastal haven"
-            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.42] contrast-[1.12]"
+            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2200&q=85"
+            alt="Iconic mountain valley, sunlit lake, and nature haven panorama"
+            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.62] contrast-[1.08]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-950/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/45" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
@@ -321,8 +363,8 @@ export const LandingPage: React.FC = () => {
                 <div className="text-slate-400">Verified Havens</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-amber-400">28+</div>
-                <div className="text-slate-400">Living Metrics</div>
+                <div className="text-xl sm:text-2xl font-black text-amber-400">55+</div>
+                <div className="text-slate-400">Living Parameters</div>
               </div>
               <div>
                 <div className="text-xl sm:text-2xl font-black text-emerald-400">8.4 Yrs</div>
@@ -450,7 +492,7 @@ export const LandingPage: React.FC = () => {
               className="self-start lg:self-end px-4 py-2.5 rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-300 hover:text-white border border-orange-500/30 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Advanced Explorer (28+ Parameters)</span>
+              <span>Advanced Explorer (55+ Parameters)</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -486,9 +528,9 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
-                  min="1400"
-                  max="5000"
-                  step="100"
+                  min={1000}
+                  max={5000}
+                  step={50}
                   value={matchBudget}
                   onChange={e => {
                     setMatchBudget(Number(e.target.value));
@@ -497,7 +539,7 @@ export const LandingPage: React.FC = () => {
                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400">
-                  <span>$1,400 (Frugal)</span>
+                  <span>$1,000 (Frugal)</span>
                   <span>$2,800 (Moderate)</span>
                   <span>$5,000+ (Luxury)</span>
                 </div>
@@ -625,44 +667,11 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Search, Sort Dropdown, and Reset Row */}
+              {/* Sort Dropdown and Reset Row */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-1">
                 
-                {/* Search Input */}
-                <div className="md:col-span-5 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 block">
-                    Search Country, Capital, or Visa Keyword
-                  </label>
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={previewSearch}
-                      onChange={e => {
-                        setPreviewSearch(e.target.value);
-                        setVisibleCount(12);
-                      }}
-                      placeholder="e.g. Portugal, Costa Rica, D7, Pensionado, 0% tax..."
-                      className="w-full pl-9 pr-8 py-2 bg-slate-700/90 border border-slate-600 rounded-xl text-white placeholder:text-slate-400 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    {previewSearch && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewSearch('');
-                          setVisibleCount(12);
-                        }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
-                        title="Clear search"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
                 {/* Sort Dropdown */}
-                <div className="md:col-span-5 space-y-1.5">
+                <div className="md:col-span-9 space-y-1.5">
                   <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-orange-400" />
                     <span>Sort Directory Rankings By</span>
@@ -689,7 +698,7 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Reset Controls */}
-                <div className="md:col-span-2 flex flex-col justify-end">
+                <div className="md:col-span-3 flex flex-col justify-end">
                   <button
                     type="button"
                     onClick={handleResetMatchEngine}
@@ -767,7 +776,7 @@ export const LandingPage: React.FC = () => {
                       <div>
                         {/* Photo Header */}
                         <div className="h-44 relative overflow-hidden">
-                          <CountryThumbnail country={country} className="h-full w-full" />
+                          <CountryThumbnail country={country} hideLandmarkLabel className="h-full w-full" />
 
                           {/* Top-left Continent pill */}
                           <div className="absolute top-3 left-3 flex items-center gap-1.5">
@@ -910,26 +919,14 @@ export const LandingPage: React.FC = () => {
 
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
                   {hasMoreCountries ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleLoadMore(12)}
-                        className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
-                      >
-                        <span>Load 12 More Havens (+{Math.min(12, remainingCountriesCount)})</span>
-                        <ArrowDown className="w-4 h-4 text-amber-200" />
-                      </button>
-                      {remainingCountriesCount > 12 && (
-                        <button
-                          type="button"
-                          onClick={() => handleLoadMore(16)}
-                          className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold border border-slate-700 transition-all cursor-pointer flex items-center gap-2"
-                        >
-                          <span>Load +16</span>
-                          <ArrowDown className="w-4 h-4 text-orange-400" />
-                        </button>
-                      )}
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadMore(12)}
+                      className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      <span>Load 12 More Havens (+{Math.min(12, remainingCountriesCount)})</span>
+                      <ArrowDown className="w-4 h-4 text-amber-200" />
+                    </button>
                   ) : (
                     <div className="text-xs font-bold text-slate-300 bg-slate-800/90 border border-slate-700 px-4 py-2.5 rounded-xl">
                       All {sortedMatchedCountries.length} matching havens are displayed
@@ -942,7 +939,7 @@ export const LandingPage: React.FC = () => {
                     className="px-6 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-orange-300 hover:text-white text-xs sm:text-sm font-bold border border-orange-500/40 shadow-2xs transition-all cursor-pointer flex items-center gap-2"
                   >
                     <Compass className="w-4 h-4 text-orange-400" />
-                    <span>Explore Havens · Advanced Filtering (28+ Parameters)</span>
+                    <span>Explore Havens · Advanced Filtering (55+ Parameters)</span>
                     <ArrowRight className="w-4 h-4 text-orange-400" />
                   </button>
                 </div>
@@ -1005,7 +1002,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
-                  min="1200"
+                  min="500"
                   max="4500"
                   step="100"
                   value={targetMonthlyExpenseAbroad}
@@ -1013,7 +1010,7 @@ export const LandingPage: React.FC = () => {
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400">
-                  <span>$1,200 (Lean FIRE)</span>
+                  <span>$500 (Ultra-Lean)</span>
                   <span>$2,400 (Algarve / Spain)</span>
                   <span>$4,500 (Fat FIRE)</span>
                 </div>
@@ -1026,7 +1023,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <input
                   type="range"
-                  min="2500"
+                  min="500"
                   max="8000"
                   step="100"
                   value={domesticMonthlyExpense}
@@ -1034,27 +1031,34 @@ export const LandingPage: React.FC = () => {
                   className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600"
                 />
                 <div className="flex justify-between text-[11px] text-slate-400">
-                  <span>$2,500</span>
-                  <span>$4,800 (US/UK Avg)</span>
+                  <span>$500</span>
+                  <span>$4,000 (Global Avg)</span>
                   <span>$8,000</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center text-xs">
                     <label className="font-bold text-slate-800">Annual Savings</label>
-                    <span className="font-extrabold text-slate-900">${(annualSavings / 1000).toFixed(0)}k/yr</span>
+                    <span className="font-extrabold text-slate-900">
+                      ${annualSavings >= 1000 ? `${(annualSavings / 1000).toFixed(0)}k` : annualSavings.toLocaleString()}/yr
+                    </span>
                   </div>
                   <input
                     type="range"
-                    min="5000"
-                    max="80000"
-                    step="2500"
+                    min="1000"
+                    max="100000"
+                    step="1000"
                     value={annualSavings}
                     onChange={e => setAnnualSavings(Number(e.target.value))}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>$1k</span>
+                    <span>$50k</span>
+                    <span>$100k</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -1071,6 +1075,11 @@ export const LandingPage: React.FC = () => {
                     onChange={e => setSafeWithdrawalRate(Number(e.target.value))}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>3.0%</span>
+                    <span>4.0%</span>
+                    <span>5.0%</span>
+                  </div>
                 </div>
               </div>
 
@@ -1162,6 +1171,142 @@ export const LandingPage: React.FC = () => {
 
             </div>
 
+          </div>
+
+          {/* Live Matching Retirement Havens for the User's FIRE Parameters + Signup CTA */}
+          <div className="mt-10 pt-8 border-t border-slate-200/90 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Live FIRE-Ready Destination Matches</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">
+                  Top 4 Havens Matching Your ${targetMonthlyExpenseAbroad.toLocaleString()}/mo Target &amp; {safeWithdrawalRate.toFixed(1)}% SWR
+                </h3>
+              </div>
+              <span className="text-xs text-slate-500">
+                Ranked by budget fit, healthcare quality, safety &amp; portfolio readiness
+              </span>
+            </div>
+
+            {/* 4 Matching Countries Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {fireMatchedCountries.map(({
+                country,
+                referenceMonthlyCost,
+                budgetModeLabel,
+                countryNestEgg,
+                fundedPercent,
+                yearsToFireInCountry,
+              }) => (
+                <div
+                  key={country.id}
+                  onClick={() => navigateToCountry(country.id)}
+                  className="group p-4 rounded-2xl bg-slate-50 hover:bg-orange-50/40 border border-slate-200/90 hover:border-orange-300 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-2xs"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CountryFlag
+                          countryCode={country.code}
+                          countryName={country.name}
+                          fallbackEmoji={country.flag}
+                          className="w-6 h-6 rounded-xs shadow-2xs shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-orange-700 truncate">
+                            {country.name}
+                          </h4>
+                          <span className="text-[11px] text-slate-500 block truncate">
+                            {getCountryContinentLabel(country)} · {country.climate.category}
+                          </span>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${
+                          yearsToFireInCountry === 0
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-orange-100 text-orange-800 border border-orange-200'
+                        }`}
+                      >
+                        {yearsToFireInCountry === 0 ? 'FIRE Ready!' : `${yearsToFireInCountry} Yrs`}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 rounded-xl bg-white border border-slate-200/80">
+                        <span className="text-[10px] text-slate-400 block">{budgetModeLabel} Budget</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          ${referenceMonthlyCost.toLocaleString()}/mo
+                        </span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white border border-slate-200/80">
+                        <span className="text-[10px] text-slate-400 block">FIRE Nest Egg</span>
+                        <span className="font-mono font-bold text-orange-700">
+                          ${(countryNestEgg / 1000).toFixed(0)}k
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-500">Current Assets Cover</span>
+                        <span className="font-bold text-slate-800">{fundedPercent}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            fundedPercent >= 100 ? 'bg-emerald-500' : 'bg-orange-500'
+                          }`}
+                          style={{ width: `${fundedPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-xs font-bold text-orange-600 group-hover:text-orange-700">
+                    <span>Health {country.lifestyle.healthcareScore} · Safety {country.lifestyle.safetyScore}</span>
+                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Catchy Signup & Advanced FIRE Tracking Call-to-Action Banner */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-md">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Turn Your Numbers Into a Freedom Countdown</span>
+                </div>
+                <h4 className="text-base sm:text-xl font-extrabold text-white">
+                  Don&rsquo;t Just Guess Your Retirement Date—Lock In Your Exact Overseas Freedom Blueprint.
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Sign up free to track your live FIRE portfolio with advanced parameters: multi-asset allocation (stocks, real estate, gold, cash), loan &amp; EMI paydown timelines, real inflation stress-testing, and visa solvency grades across all {countries.length} countries.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('signup')}
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4 text-amber-100" />
+                  <span>Sign Up &amp; Track Your FIRE Free</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('dashboard')}
+                  className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
+                >
+                  Advanced FIRE Dashboard
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1299,7 +1444,7 @@ export const LandingPage: React.FC = () => {
             <div className="pt-6 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-orange-50 font-medium">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                <span>100 Country PDF Dossier Downloads</span>
+                <span>{countries.length} Country PDF Dossier Downloads</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-white shrink-0" />

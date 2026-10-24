@@ -5,6 +5,7 @@ interface CountryThumbnailProps {
   country: Country;
   className?: string;
   children?: React.ReactNode;
+  hideLandmarkLabel?: boolean;
 }
 
 interface CountryPhotoConfig {
@@ -478,6 +479,7 @@ export const CountryThumbnail: React.FC<CountryThumbnailProps> = ({
   country,
   className = 'h-48',
   children,
+  hideLandmarkLabel = false,
 }) => {
   const config = COUNTRY_PHOTOS[country.id] || DEFAULT_PHOTO;
   const [attempt, setAttempt] = useState<number>(0);
@@ -508,10 +510,12 @@ export const CountryThumbnail: React.FC<CountryThumbnailProps> = ({
       {/* Measured Contrast Scrim for WCAG AA Legibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-slate-950/15 pointer-events-none" />
 
-      {/* Subtle Landmark Kicker Top-Left */}
-      <div className="absolute top-3 left-3.5 text-[11px] font-medium text-white/90 tracking-wide drop-shadow-xs pointer-events-none">
-        {config.landmarkLabel}
-      </div>
+      {/* Subtle Landmark Kicker Top-Left (hidden when card renders custom top badges) */}
+      {!hideLandmarkLabel && (
+        <div className="absolute top-3 left-3.5 text-[11px] font-medium text-white/90 tracking-wide drop-shadow-xs pointer-events-none">
+          {config.landmarkLabel}
+        </div>
+      )}
 
       {/* Overlaid Content Slot */}
       {children}

@@ -79,7 +79,7 @@ export const CompareStudio: React.FC = () => {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Evaluate up to 4 retirement destinations side-by-side across 20+ empirical parameters.
+            Evaluate up to 4 retirement destinations side-by-side across 55+ empirical parameters.
           </p>
         </div>
 
