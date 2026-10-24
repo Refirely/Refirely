@@ -8,6 +8,7 @@ import { AnnualRetirementBudgetCalculator } from './AnnualRetirementBudgetCalcul
 import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryHealthcareTab } from './CountryHealthcareTab';
+import { CountryFinancesAndTaxesTab } from './CountryFinancesAndTaxesTab';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import { getFullCountryUrl } from '../utils/seo';
@@ -88,6 +89,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     | 'overview'
     | 'visa'
     | 'healthcare'
+    | 'finances'
     | 'cost'
     | 'travel'
     | 'faq'
@@ -363,6 +365,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               { id: 'overview', label: 'Overview' },
               { id: 'visa', label: 'Visas & Rules' },
               { id: 'healthcare', label: 'Healthcare & Insurance' },
+              { id: 'finances', label: 'Finances & Taxes' },
               { id: 'cost', label: 'Budget Calc' },
               { id: 'travel', label: 'Travel & Leisure' },
               { id: 'faq', label: 'FAQ & Hurdles' },
@@ -802,6 +805,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
+                      onClick={() => setActiveTab('finances')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs shadow-2xs cursor-pointer"
+                    >
+                      Finances, Banking &amp; Expat Taxes →
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => setActiveTab('faq')}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xs cursor-pointer"
                     >
@@ -815,6 +826,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             {/* TAB 2.5: HEALTHCARE ACCESS, EMERGENCY SERVICES & INSURANCE */}
             {activeTab === 'healthcare' && (
               <CountryHealthcareTab
+                country={country}
+                onNavigateTab={tab => setActiveTab(tab)}
+              />
+            )}
+
+            {/* TAB 2.75: FINANCES, NATIONAL & PRIVATE BANKS, REMITTANCES & EXPAT TAXES */}
+            {activeTab === 'finances' && (
+              <CountryFinancesAndTaxesTab
                 country={country}
                 onNavigateTab={tab => setActiveTab(tab)}
               />
