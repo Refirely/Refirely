@@ -466,41 +466,41 @@ export const LandingPage: React.FC = () => {
       {/* 3. UNIFIED INTERACTIVE MATCH ENGINE & VERIFIED HAVEN DIRECTORY */}
       {/* ============================================================ */}
       <section id="haven-matcher" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
-        <div id="countries-grid" className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white shadow-xl border border-slate-800">
+        <div id="countries-grid" className="p-6 sm:p-10 rounded-3xl bg-slate-100/90 text-slate-900 shadow-sm border border-slate-200/90">
           
           {/* Header & Badges */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div className="max-w-3xl space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-semibold border border-orange-500/30">
-                  <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>Interactive Match Engine</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 text-teal-300 text-xs font-semibold border border-slate-700">
-                  <Globe className="w-3.5 h-3.5 text-teal-400" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-slate-700 text-xs font-semibold border border-slate-200/90 shadow-2xs">
+                  <Globe className="w-3.5 h-3.5 text-teal-600" />
                   <span>Explore {countries.length} Global Retirement Havens · Verified Haven Directory</span>
                 </div>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Find Your Ideal Haven &amp; Explore {countries.length} Verified Destinations
               </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Simulate live match rankings across all {countries.length} destinations based on your target budget, preferred climate, continent, and top relocation priority—or sort by any empirical directory metric.
               </p>
             </div>
 
             <button
               onClick={handleOpenAdvancedExplorer}
-              className="self-start lg:self-end px-4 py-2.5 rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-300 hover:text-white border border-orange-500/30 text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              className="self-start lg:self-end px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
               <span>Advanced Explorer (55+ Parameters)</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Interactive Parameters & Directory Filters Console (Match Engine Style) */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 mb-8 backdrop-blur-md space-y-6">
+          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs mb-8 space-y-6">
             
             {/* Row 1: Core Match Parameters (Budget, Climate, Priority) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -508,9 +508,9 @@ export const LandingPage: React.FC = () => {
               {/* Control 1: Budget */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-bold text-slate-300">Monthly Couple Budget</label>
+                  <label className="text-xs font-bold text-slate-700">Monthly Couple Budget</label>
                   <div className="flex items-center gap-2">
-                    <span className="text-orange-400 font-extrabold text-sm">${matchBudget.toLocaleString()}/mo</span>
+                    <span className="font-mono tabular-nums text-slate-900 font-extrabold text-sm">${matchBudget.toLocaleString()}/mo</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -520,8 +520,8 @@ export const LandingPage: React.FC = () => {
                       title="Toggle between scoring all countries by budget fit vs strictly hiding countries above this budget"
                       className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors cursor-pointer ${
                         strictBudgetFilter
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                       }`}
                     >
                       {strictBudgetFilter ? 'Strict ≤ Budget' : 'Score All'}
@@ -538,9 +538,9 @@ export const LandingPage: React.FC = () => {
                     setMatchBudget(Number(e.target.value));
                     if (strictBudgetFilter) setVisibleCount(12);
                   }}
-                  className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-900"
                 />
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
                   <span>$1,000 (Frugal)</span>
                   <span>$2,800 (Moderate)</span>
                   <span>$5,000+ (Luxury)</span>
@@ -549,14 +549,14 @@ export const LandingPage: React.FC = () => {
 
               {/* Control 2: Climate */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 block">Preferred Climate</label>
+                <label className="text-xs font-bold text-slate-700 block">Preferred Climate</label>
                 <select
                   value={matchClimate}
                   onChange={e => {
                     setMatchClimate(e.target.value as ClimateCategory | 'Any');
                     setVisibleCount(12);
                   }}
-                  className="w-full px-3 py-2.5 bg-slate-700/90 border border-slate-600 rounded-xl text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
+                  className="w-full px-3 py-2.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white cursor-pointer transition-colors"
                 >
                   <option value="Any">Any Climate (All {countries.length} Havens)</option>
                   <option value="Mediterranean">Mediterranean (Mild &amp; Sunny)</option>
@@ -572,15 +572,15 @@ export const LandingPage: React.FC = () => {
 
               {/* Control 3: Priority */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 block">Primary Priority</label>
+                <label className="text-xs font-bold text-slate-700 block">Primary Priority</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setMatchPriority('value')}
                     className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
                       matchPriority === 'value'
-                        ? 'bg-orange-500 text-white font-bold'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Low Cost
@@ -590,8 +590,8 @@ export const LandingPage: React.FC = () => {
                     onClick={() => setMatchPriority('healthcare')}
                     className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
                       matchPriority === 'healthcare'
-                        ? 'bg-orange-500 text-white font-bold'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Healthcare
@@ -601,8 +601,8 @@ export const LandingPage: React.FC = () => {
                     onClick={() => setMatchPriority('safety')}
                     className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
                       matchPriority === 'safety'
-                        ? 'bg-orange-500 text-white font-bold'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Top Safety
@@ -612,8 +612,8 @@ export const LandingPage: React.FC = () => {
                     onClick={() => setMatchPriority('leisure')}
                     className={`px-3 py-2 text-xs rounded-xl font-semibold transition-colors text-left cursor-pointer ${
                       matchPriority === 'leisure'
-                        ? 'bg-orange-500 text-white font-bold'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     Travel &amp; Leisure
@@ -624,20 +624,20 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Row 2: Continent Filters & Directory Sort / Search Controls (in Match Engine Style) */}
-            <div className="pt-5 border-t border-slate-700/70 space-y-4">
+            <div className="pt-5 border-t border-slate-100 space-y-4">
               
               {/* Continent Filter Buttons */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-orange-400" />
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-teal-600" />
                     <span>Continent &amp; Region Filter</span>
                   </label>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] font-medium text-slate-400">
                     {sortedMatchedCountries.length} matching destinations
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {CONTINENT_FILTER_OPTIONS.map(option => {
                     const active = previewContinent === option.value;
                     const count = continentCounts[option.value] ?? 0;
@@ -649,16 +649,16 @@ export const LandingPage: React.FC = () => {
                           setPreviewContinent(option.value);
                           setVisibleCount(12);
                         }}
-                        className={`px-3 py-1.5 text-xs rounded-xl font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                           active
-                            ? 'bg-orange-500 text-white font-bold shadow-xs'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                         }`}
                       >
                         <span>{option.label}</span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-                            active ? 'bg-orange-600/80 text-white' : 'bg-slate-800/80 text-slate-400'
+                          className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                            active ? 'bg-slate-700 text-slate-100' : 'bg-white text-slate-500'
                           }`}
                         >
                           {count}
@@ -674,8 +674,8 @@ export const LandingPage: React.FC = () => {
                 
                 {/* Sort Dropdown */}
                 <div className="md:col-span-9 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-orange-400" />
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
                     <span>Sort Directory Rankings By</span>
                   </label>
                   <select
@@ -684,7 +684,7 @@ export const LandingPage: React.FC = () => {
                       setPreviewSort(e.target.value as 'match-desc' | SortByType);
                       setVisibleCount(12);
                     }}
-                    className="w-full px-3 py-2 bg-slate-700/90 border border-slate-600 rounded-xl text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white cursor-pointer transition-colors"
                   >
                     <option value="match-desc">AI Match Score (Best Fit for Your Parameters)</option>
                     <option value="travel-leisure-desc">Travel &amp; Leisure Score (High to Low)</option>
@@ -704,9 +704,9 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleResetMatchEngine}
-                    className="w-full px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 hover:text-white border border-slate-600 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-orange-400" />
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
                     <span>Reset All</span>
                   </button>
                 </div>
@@ -719,18 +719,18 @@ export const LandingPage: React.FC = () => {
 
           {/* Results Header Strip */}
           <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold uppercase tracking-wider text-slate-200">
+                <span className="font-bold uppercase tracking-wider text-slate-700">
                   Showing {displayedCountries.length} of {sortedMatchedCountries.length} Verified Havens
                 </span>
                 {previewContinent !== 'All' && (
-                  <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/30 font-semibold">
+                  <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white font-semibold">
                     {previewContinent}
                   </span>
                 )}
                 {matchClimate !== 'Any' && (
-                  <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">
+                  <span className="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
                     {matchClimate}
                   </span>
                 )}
@@ -738,7 +738,7 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={handleOpenAdvancedExplorer}
-                className="text-orange-400 hover:text-orange-300 font-semibold inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                className="text-slate-800 hover:text-orange-600 font-bold inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto transition-colors"
               >
                 <span>Explore All {countries.length} with Advanced Filters</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -747,16 +747,16 @@ export const LandingPage: React.FC = () => {
 
             {/* Empty State if filters are too restrictive */}
             {displayedCountries.length === 0 ? (
-              <div className="p-12 rounded-2xl bg-slate-800/60 border border-slate-700/80 text-center space-y-3">
-                <Compass className="w-10 h-10 text-orange-400 mx-auto" />
-                <h3 className="text-base font-bold text-white">No destinations match this exact filter combination</h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
+              <div className="p-12 rounded-2xl bg-white border border-slate-200/90 text-center space-y-3 shadow-2xs">
+                <Compass className="w-10 h-10 text-slate-400 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900">No destinations match this exact filter combination</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
                   Try switching Preferred Climate to &ldquo;Any Climate&rdquo;, selecting &ldquo;All Continents&rdquo;, or resetting your search parameters.
                 </p>
                 <button
                   type="button"
                   onClick={handleResetMatchEngine}
-                  className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer"
                 >
                   Reset Match Engine Filters
                 </button>
@@ -773,7 +773,7 @@ export const LandingPage: React.FC = () => {
                     <div
                       key={country.id}
                       onClick={() => navigateToCountry(country.id)}
-                      className="group bg-slate-800/90 rounded-2xl border border-slate-700/80 overflow-hidden hover:border-orange-500/70 transition-all cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-1"
+                      className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden hover:border-slate-300 transition-all cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-lg hover:-translate-y-0.5"
                     >
                       <div>
                         {/* Photo Header */}
@@ -782,14 +782,14 @@ export const LandingPage: React.FC = () => {
 
                           {/* Top-left Continent pill */}
                           <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                            <span className="px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-slate-200 text-[11px] font-semibold border border-slate-700/70">
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
                               {continentLabel}
                             </span>
                           </div>
 
                           {/* Top-right Match Score & Save Heart */}
                           <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                            <div className="px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 text-xs font-black flex items-center gap-1 shadow-md">
+                            <div className="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-amber-300 text-xs font-black flex items-center gap-1 shadow-md">
                               <Sparkles className="w-3 h-3 text-amber-400" />
                               <span>{matchScore}% Match</span>
                             </div>
@@ -803,7 +803,7 @@ export const LandingPage: React.FC = () => {
                               className={`p-1.5 rounded-full backdrop-blur-md transition-colors cursor-pointer ${
                                 saved
                                   ? 'bg-rose-500 text-white'
-                                  : 'bg-slate-900/80 text-slate-300 hover:text-white'
+                                  : 'bg-slate-950/70 text-slate-200 hover:text-white'
                               }`}
                             >
                               <Heart className="w-3.5 h-3.5 fill-current" />
@@ -829,42 +829,42 @@ export const LandingPage: React.FC = () => {
                         {/* Content details */}
                         <div className="p-4 space-y-3">
                           <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="p-2 rounded-lg bg-slate-900/60">
-                              <span className="text-slate-400 block text-[11px]">Couple Budget</span>
-                              <span className="font-bold text-white text-sm">
+                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
+                              <span className="text-slate-400 font-medium block text-[11px]">Couple Budget</span>
+                              <span className="font-mono tabular-nums font-bold text-slate-900 text-sm">
                                 ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
                               </span>
                             </div>
-                            <div className="p-2 rounded-lg bg-slate-900/60">
-                              <span className="text-slate-400 block text-[11px]">Travel &amp; Leisure</span>
-                              <span className="font-bold text-orange-400 text-sm">
+                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
+                              <span className="text-slate-400 font-medium block text-[11px]">Travel &amp; Leisure</span>
+                              <span className="font-mono tabular-nums font-bold text-teal-700 text-sm">
                                 {travelScore}/100
                               </span>
                             </div>
                           </div>
 
-                          <p className="text-xs text-slate-400 line-clamp-1 leading-relaxed">
+                          <p className="text-xs text-slate-500 line-clamp-1 leading-relaxed">
                             {country.tagline}
                           </p>
 
-                          <div className="text-xs text-slate-300 space-y-1 border-t border-slate-700/60 pt-2.5">
-                            <div className="flex items-center gap-1.5 text-slate-300">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2.5">
+                            <div className="flex items-center gap-1.5 text-slate-700">
+                              <ShieldCheck className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                               <span>
-                                Safety {country.lifestyle.safetyScore}/100 · Health {country.lifestyle.healthcareScore}/100
+                                Safety <strong className="font-mono font-bold text-slate-900">{country.lifestyle.safetyScore}/100</strong> · Health <strong className="font-mono font-bold text-slate-900">{country.lifestyle.healthcareScore}/100</strong>
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-slate-300">
-                              <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <div className="flex items-center gap-1.5 text-slate-700">
+                              <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                               <span>
-                                {country.climate.annualSunnyDays} sunny days · {country.climate.category}
+                                <strong className="font-mono font-bold text-slate-900">{country.climate.annualSunnyDays}</strong> sunny days · {country.climate.category}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-                              <span className="truncate">
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                              <span className="font-medium text-slate-600 truncate">
                                 Visa: {country.visa.minimumIncomeUSD > 0 ? `$${country.visa.minimumIncomeUSD.toLocaleString()}/mo min` : 'Accessible'}
                               </span>
-                              <span className="text-slate-500 shrink-0">{country.capital}</span>
+                              <span className="text-slate-400 shrink-0">{country.capital}</span>
                             </div>
                           </div>
                         </div>
@@ -880,13 +880,13 @@ export const LandingPage: React.FC = () => {
                           }}
                           className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer shrink-0 ${
                             compared
-                              ? 'bg-orange-500 text-white border-orange-500'
-                              : 'bg-slate-900/70 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
+                              ? 'bg-slate-900 text-white border-slate-900'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
                           }`}
                         >
                           {compared ? 'In Matrix' : 'Compare'}
                         </button>
-                        <div className="flex-1 py-2 px-3 rounded-xl bg-orange-500/15 group-hover:bg-orange-500 text-orange-300 group-hover:text-white text-xs font-bold text-center transition-colors flex items-center justify-center gap-1.5">
+                        <div className="flex-1 py-2 px-3 rounded-xl bg-slate-900 group-hover:bg-orange-600 text-white text-xs font-bold text-center transition-colors flex items-center justify-center gap-1.5">
                           <span>View Dossier</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </div>
@@ -897,21 +897,21 @@ export const LandingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Pagination / Load More (12 or 16) & Advanced Explore Havens CTA */}
+            {/* Pagination / Load More (12) & Advanced Explore Havens CTA */}
             {sortedMatchedCountries.length > 0 && (
-              <div className="pt-6 mt-4 border-t border-slate-800/90 text-center space-y-4">
+              <div className="pt-6 mt-4 border-t border-slate-200/90 text-center space-y-4">
                 <div className="max-w-xs mx-auto space-y-1.5">
-                  <div className="flex justify-between text-xs text-slate-400 font-semibold">
+                  <div className="flex justify-between text-xs text-slate-500 font-semibold">
                     <span>
                       Showing {displayedCountries.length} of {sortedMatchedCountries.length} Havens
                     </span>
-                    <span className="text-orange-400">
+                    <span className="font-mono font-bold text-slate-800">
                       {Math.round((displayedCountries.length / sortedMatchedCountries.length) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700/70">
+                  <div className="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-200">
                     <div
-                      className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-300"
+                      className="h-full bg-slate-900 rounded-full transition-all duration-300"
                       style={{
                         width: `${(displayedCountries.length / sortedMatchedCountries.length) * 100}%`,
                       }}
@@ -924,13 +924,13 @@ export const LandingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleLoadMore(12)}
-                      className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
+                      className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
                     >
                       <span>Load 12 More Havens (+{Math.min(12, remainingCountriesCount)})</span>
-                      <ArrowDown className="w-4 h-4 text-amber-200" />
+                      <ArrowDown className="w-4 h-4 text-slate-300" />
                     </button>
                   ) : (
-                    <div className="text-xs font-bold text-slate-300 bg-slate-800/90 border border-slate-700 px-4 py-2.5 rounded-xl">
+                    <div className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-2xs">
                       All {sortedMatchedCountries.length} matching havens are displayed
                     </div>
                   )}
@@ -938,11 +938,11 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleOpenAdvancedExplorer}
-                    className="px-6 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-orange-300 hover:text-white text-xs sm:text-sm font-bold border border-orange-500/40 shadow-2xs transition-all cursor-pointer flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 hover:text-slate-950 text-xs sm:text-sm font-bold border border-slate-300 shadow-2xs transition-all cursor-pointer flex items-center gap-2"
                   >
-                    <Compass className="w-4 h-4 text-orange-400" />
+                    <Compass className="w-4 h-4 text-teal-600" />
                     <span>Explore Havens · Advanced Filtering (55+ Parameters)</span>
-                    <ArrowRight className="w-4 h-4 text-orange-400" />
+                    <ArrowRight className="w-4 h-4 text-slate-500" />
                   </button>
                 </div>
               </div>
@@ -1228,102 +1228,133 @@ export const LandingPage: React.FC = () => {
 
           {/* Live Matching Retirement Havens for the User's FIRE Parameters + Signup CTA */}
           <div className="mt-10 pt-8 border-t border-slate-200/90 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-                  <span>Live FIRE-Ready Destination Matches</span>
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/90 border border-slate-200/90 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 border border-teal-200/80 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Live FIRE-Ready Destination Matches</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                    Top 4 Havens Matching Your ${targetMonthlyExpenseAbroad.toLocaleString()}/mo Target &amp; {safeWithdrawalRate.toFixed(1)}% SWR
+                  </h3>
                 </div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">
-                  Top 4 Havens Matching Your ${targetMonthlyExpenseAbroad.toLocaleString()}/mo Target &amp; {safeWithdrawalRate.toFixed(1)}% SWR
-                </h3>
+                <span className="text-xs font-medium text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs self-start sm:self-auto">
+                  Ranked by budget fit, healthcare, safety &amp; portfolio readiness
+                </span>
               </div>
-              <span className="text-xs text-slate-500">
-                Ranked by budget fit, healthcare quality, safety &amp; portfolio readiness
-              </span>
-            </div>
 
-            {/* 4 Matching Countries Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {fireMatchedCountries.map(({
-                country,
-                referenceMonthlyCost,
-                budgetModeLabel,
-                countryNestEgg,
-                fundedPercent,
-                yearsToFireInCountry,
-              }) => (
-                <div
-                  key={country.id}
-                  onClick={() => navigateToCountry(country.id)}
-                  className="group p-4 rounded-2xl bg-slate-50 hover:bg-orange-50/40 border border-slate-200/90 hover:border-orange-300 transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-2xs"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+              {/* 4 Matching Countries Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {fireMatchedCountries.map(({
+                  country,
+                  referenceMonthlyCost,
+                  budgetModeLabel,
+                  countryNestEgg,
+                  fundedPercent,
+                  yearsToFireInCountry,
+                }) => (
+                  <div
+                    key={country.id}
+                    onClick={() => navigateToCountry(country.id)}
+                    className="group rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md"
+                  >
+                    {/* Scenic Header */}
+                    <CountryThumbnail
+                      country={country}
+                      className="h-28"
+                      hideLandmarkLabel
+                    >
+                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/15 truncate">
+                          {getCountryContinentLabel(country)}
+                        </span>
+                        <span
+                          className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0 shadow-xs ${
+                            yearsToFireInCountry === 0
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-white/95 text-slate-900'
+                          }`}
+                        >
+                          {yearsToFireInCountry === 0 ? 'FIRE Ready!' : `${yearsToFireInCountry} Yrs`}
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
                         <CountryFlag
                           countryCode={country.code}
                           countryName={country.name}
                           fallbackEmoji={country.flag}
-                          className="w-6 h-6 rounded-xs shadow-2xs shrink-0"
+                          className="w-5 h-5 rounded-xs shadow-xs shrink-0 ring-1 ring-white/30"
                         />
                         <div className="min-w-0">
-                          <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-orange-700 truncate">
+                          <h4 className="text-sm font-extrabold text-white truncate drop-shadow-xs">
                             {country.name}
                           </h4>
-                          <span className="text-[11px] text-slate-500 block truncate">
-                            {getCountryContinentLabel(country)} · {country.climate.category}
+                          <span className="text-[10px] font-medium text-slate-200 block truncate">
+                            {country.climate.category}
                           </span>
                         </div>
                       </div>
-                      <span
-                        className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${
-                          yearsToFireInCountry === 0
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-orange-100 text-orange-800 border border-orange-200'
-                        }`}
-                      >
-                        {yearsToFireInCountry === 0 ? 'FIRE Ready!' : `${yearsToFireInCountry} Yrs`}
-                      </span>
-                    </div>
+                    </CountryThumbnail>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/80">
-                        <span className="text-[10px] text-slate-400 block">{budgetModeLabel} Budget</span>
-                        <span className="font-mono font-bold text-slate-900">
-                          ${referenceMonthlyCost.toLocaleString()}/mo
-                        </span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white border border-slate-200/80">
-                        <span className="text-[10px] text-slate-400 block">FIRE Nest Egg</span>
-                        <span className="font-mono font-bold text-orange-700">
-                          ${(countryNestEgg / 1000).toFixed(0)}k
-                        </span>
-                      </div>
-                    </div>
+                    {/* Card Body */}
+                    <div className="p-4 flex-1 flex flex-col justify-between gap-3.5">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                              {budgetModeLabel} Budget
+                            </span>
+                            <span className="font-mono font-extrabold text-sm text-slate-900 tabular-nums mt-0.5 block">
+                              ${referenceMonthlyCost.toLocaleString()}/mo
+                            </span>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                              FIRE Nest Egg
+                            </span>
+                            <span className="font-mono font-extrabold text-sm text-teal-700 tabular-nums mt-0.5 block">
+                              ${(countryNestEgg / 1000).toFixed(0)}k
+                            </span>
+                          </div>
+                        </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-500">Current Assets Cover</span>
-                        <span className="font-bold text-slate-800">{fundedPercent}%</span>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-semibold text-slate-600">Current Assets Cover</span>
+                            <span
+                              className={`font-mono font-extrabold tabular-nums ${
+                                fundedPercent >= 100 ? 'text-emerald-700' : 'text-teal-700'
+                              }`}
+                            >
+                              {fundedPercent}%
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                fundedPercent >= 100 ? 'bg-emerald-500' : 'bg-teal-600'
+                              }`}
+                              style={{ width: `${fundedPercent}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            fundedPercent >= 100 ? 'bg-emerald-500' : 'bg-orange-500'
-                          }`}
-                          style={{ width: `${fundedPercent}%` }}
-                        />
+
+                      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-600">
+                          Health <strong className="font-mono text-slate-900">{country.lifestyle.healthcareScore}</strong> · Safety <strong className="font-mono text-slate-900">{country.lifestyle.safetyScore}</strong>
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                          <span>Dossier</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-xs font-bold text-orange-600 group-hover:text-orange-700">
-                    <span>Health {country.lifestyle.healthcareScore} · Safety {country.lifestyle.safetyScore}</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Catchy Signup & Advanced FIRE Tracking Call-to-Action Banner */}
