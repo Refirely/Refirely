@@ -9,6 +9,7 @@ import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryHealthcareTab } from './CountryHealthcareTab';
 import { CountryFinancesAndTaxesTab } from './CountryFinancesAndTaxesTab';
+import { CountryLifestyleAndDatingSection } from './CountryLifestyleAndDatingSection';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import { getFullCountryUrl } from '../utils/seo';
@@ -93,7 +94,6 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     | 'cost'
     | 'travel'
     | 'faq'
-    | 'climate'
     | 'lifestyle'
     | 'cities'
     | 'community'
@@ -359,32 +359,39 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             </div>
           </div>
 
-          {/* Section Navigation Tabs (Animated Segmented Controls) */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-8 pb-1 border-t border-indigo-100/80 mt-8 text-xs font-medium">
+          {/* Section Navigation Tabs (Animated Segmented Controls — Full Visibility & Responsive Wrap) */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-6 pb-1 border-t border-indigo-100/80 mt-6 text-xs font-medium">
             {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'visa', label: 'Visas & Rules' },
-              { id: 'healthcare', label: 'Healthcare & Insurance' },
-              { id: 'finances', label: 'Finances & Taxes' },
-              { id: 'cost', label: 'Budget Calc' },
-              { id: 'travel', label: 'Travel & Leisure' },
-              { id: 'faq', label: 'FAQ & Hurdles' },
-              { id: 'climate', label: 'Climate' },
-              { id: 'lifestyle', label: 'Lifestyle & Dating' },
-              { id: 'cities', label: 'Top Towns' },
+              { id: 'overview', label: 'Overview', title: 'Country Overview, Climate & Core Metrics' },
+              { id: 'visa', label: 'Visas', title: 'Visas, Residency & Qualification Rules' },
+              { id: 'healthcare', label: 'Healthcare', title: 'Healthcare Access, Emergency & Insurance' },
+              { id: 'finances', label: 'Finances & Tax', title: 'National & Private Banks, Remittances & Expat Taxes' },
+              { id: 'cost', label: 'Budget', title: 'Interactive Annual Retirement Budget Calculator' },
+              { id: 'travel', label: 'Travel', title: 'Travel, Leisure & Domestic Mobility' },
+              { id: 'faq', label: 'FAQ', title: 'Relocation FAQs & Practical Hurdles' },
+              {
+                id: 'lifestyle',
+                label: 'Lifestyle & Dating',
+                title: 'Culture, Dating Expectations, Dos & Don’ts & Scam Protection',
+              },
               {
                 id: 'community',
-                label: `Community (${countryThreads.length + countryMeetups.length})`,
+                label: 'Expat cities & Community',
+                title: `Top Expat Cities, Mentors, Forum Discussions & Meetups (${
+                  country.topCities.length + countryThreads.length + countryMeetups.length
+                })`,
               },
             ].map(tab => {
-              const isActive = activeTab === tab.id;
+              const isActive =
+                activeTab === tab.id || (tab.id === 'community' && activeTab === 'cities');
               return (
                 <motion.button
                   key={tab.id}
+                  title={tab.title}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                  className={`relative px-3.5 py-2 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-bold cursor-pointer ${
+                  className={`relative px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl whitespace-nowrap transition-all font-bold cursor-pointer ${
                     isActive
                       ? 'text-white shadow-sm shadow-indigo-500/20'
                       : 'bg-white text-slate-700 hover:text-indigo-950 hover:bg-indigo-50/80 border border-indigo-200/70 shadow-2xs'
@@ -576,6 +583,116 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   </motion.div>
                 </div>
 
+                {/* Climate & Meteorological Profile (Integrated under Overview) */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-teal-500 to-indigo-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 block mb-0.5">
+                    Atmospheric &amp; Seasonal Profile
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mb-1">
+                    Climate &amp; Weather Overview
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6">
+                    Objective climate data for {country.name} to help you plan outdoor living and seasonal travel.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border border-amber-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
+                      <div className="flex items-center gap-2 text-amber-800">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-2xs">
+                          <Sun className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Annual Sunshine
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-amber-950 mt-3">
+                        {country.climate.annualSunnyDays}
+                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
+                          days / year
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900/80 mt-2 font-medium">
+                        Ranked among top sunny destinations worldwide.
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/50 to-white border border-indigo-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
+                      <div className="flex items-center gap-2 text-indigo-900">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-2xs">
+                          <Compass className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Average Temperature
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-indigo-950 mt-3">
+                        {country.climate.averageTempC}°C
+                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
+                          ({Math.round((country.climate.averageTempC * 9) / 5 + 32)}°F)
+                        </span>
+                      </div>
+                      <p className="text-xs text-indigo-900/80 mt-2 font-medium">
+                        Category: {country.climate.category}
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white border border-teal-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-emerald-500 to-cyan-500" />
+                      <div className="flex items-center gap-2 text-teal-900">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center shadow-2xs">
+                          <SlidersHorizontal className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Relative Humidity
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-teal-950 mt-3">
+                        {country.climate.humidityPercent}%
+                      </div>
+                      <p className="text-xs text-teal-900/80 mt-2 font-medium">
+                        Annual average ambient relative humidity.
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  {/* Seasonal Calendar Summary */}
+                  <div className="mt-8 pt-6 border-t border-indigo-100/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80">
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 to-teal-500" />
+                      <span className="text-xs font-bold text-emerald-900 block mb-1 pl-2">
+                        Peak Ideal Weather Months
+                      </span>
+                      <span className="text-sm font-extrabold text-emerald-950 pl-2 block">
+                        {country.climate.bestMonths}
+                      </span>
+                    </div>
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-indigo-50/70 to-blue-50/50 border border-indigo-200/80">
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-400 to-blue-500" />
+                      <span className="text-xs font-bold text-indigo-900 block mb-1 pl-2">
+                        Rainfall &amp; Wet Season
+                      </span>
+                      <span className="text-sm font-extrabold text-indigo-950 pl-2 block">
+                        {country.climate.rainyMonths}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Healthcare, Emergency & Insurance Snapshot Callout */}
                 <div className="relative overflow-hidden bg-gradient-to-r from-teal-50/90 via-white to-indigo-50/80 border border-teal-200/90 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-cyan-500 to-indigo-500" />
@@ -659,7 +776,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     onClick={() => setActiveTab('community')}
                     className="relative px-5 py-3 rounded-xl bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 text-white font-extrabold text-xs transition-all whitespace-nowrap shrink-0 shadow-md cursor-pointer"
                   >
-                    View Community &amp; Meetups →
+                    Explore Expat Cities &amp; Community →
                   </motion.button>
                 </div>
               </div>
@@ -862,120 +979,6 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               </div>
             )}
 
-            {/* TAB 6: CLIMATE & WEATHER */}
-            {activeTab === 'climate' && (
-              <div className="space-y-6">
-                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-teal-500 to-indigo-500" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 block mb-0.5">
-                    Atmospheric &amp; Seasonal Telemetry
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mb-1">
-                    Climate &amp; Meteorological Profile
-                  </h2>
-                  <p className="text-xs text-slate-500 mb-6">
-                    Objective climate data for {country.name} to help you plan outdoor living and seasonal travel.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
-                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border border-amber-200/80 shadow-xs"
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
-                      <div className="flex items-center gap-2 text-amber-800">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-2xs">
-                          <Sun className="w-4 h-4" />
-                        </div>
-                        <span className="text-xs font-extrabold uppercase tracking-wider">
-                          Annual Sunshine
-                        </span>
-                      </div>
-                      <div className="font-mono tabular-nums text-3xl font-extrabold text-amber-950 mt-3">
-                        {country.climate.annualSunnyDays}
-                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
-                          days / year
-                        </span>
-                      </div>
-                      <p className="text-xs text-amber-900/80 mt-2 font-medium">
-                        Ranked among top sunny destinations worldwide.
-                      </p>
-                    </motion.div>
-
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
-                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/50 to-white border border-indigo-200/80 shadow-xs"
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
-                      <div className="flex items-center gap-2 text-indigo-900">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-2xs">
-                          <Compass className="w-4 h-4" />
-                        </div>
-                        <span className="text-xs font-extrabold uppercase tracking-wider">
-                          Average Temperature
-                        </span>
-                      </div>
-                      <div className="font-mono tabular-nums text-3xl font-extrabold text-indigo-950 mt-3">
-                        {country.climate.averageTempC}°C
-                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
-                          ({Math.round((country.climate.averageTempC * 9) / 5 + 32)}°F)
-                        </span>
-                      </div>
-                      <p className="text-xs text-indigo-900/80 mt-2 font-medium">
-                        Category: {country.climate.category}
-                      </p>
-                    </motion.div>
-
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
-                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white border border-teal-200/80 shadow-xs"
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-emerald-500 to-cyan-500" />
-                      <div className="flex items-center gap-2 text-teal-900">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center shadow-2xs">
-                          <SlidersHorizontal className="w-4 h-4" />
-                        </div>
-                        <span className="text-xs font-extrabold uppercase tracking-wider">
-                          Relative Humidity
-                        </span>
-                      </div>
-                      <div className="font-mono tabular-nums text-3xl font-extrabold text-teal-950 mt-3">
-                        {country.climate.humidityPercent}%
-                      </div>
-                      <p className="text-xs text-teal-900/80 mt-2 font-medium">
-                        Annual average ambient relative humidity.
-                      </p>
-                    </motion.div>
-                  </div>
-
-                  {/* Seasonal Calendar Summary */}
-                  <div className="mt-8 pt-6 border-t border-indigo-100/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80">
-                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 to-teal-500" />
-                      <span className="text-xs font-bold text-emerald-900 block mb-1 pl-2">
-                        Peak Ideal Weather Months
-                      </span>
-                      <span className="text-sm font-extrabold text-emerald-950 pl-2 block">
-                        {country.climate.bestMonths}
-                      </span>
-                    </div>
-                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-indigo-50/70 to-blue-50/50 border border-indigo-200/80">
-                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-400 to-blue-500" />
-                      <span className="text-xs font-bold text-indigo-900 block mb-1 pl-2">
-                        Rainfall &amp; Wet Season
-                      </span>
-                      <span className="text-sm font-extrabold text-indigo-950 pl-2 block">
-                        {country.climate.rainyMonths}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* TAB 7: DEMOGRAPHICS, DATING & NIGHTLIFE */}
             {activeTab === 'lifestyle' && (
               <div className="space-y-6">
@@ -1066,6 +1069,9 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Deep-Dive Dating Style, Partner Expectations, Normal vs Not Normal, Dos/Don'ts & Scam Protection */}
+                <CountryLifestyleAndDatingSection country={country} />
 
                 {/* Nightlife & Adult Entertainment Section (with discreet toggle) */}
                 <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
@@ -1167,19 +1173,20 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               </div>
             )}
 
-            {/* TAB 8: TOP EXPAT TOWNS */}
-            {activeTab === 'cities' && (
-              <div className="space-y-6">
+            {/* TAB 8: EXPAT CITIES & COMMUNITY (COMBINED TOWNS, MENTORS, MEETUPS & FORUM) */}
+            {(activeTab === 'community' || activeTab === 'cities') && (
+              <div className="space-y-8">
+                {/* Premier Expat Towns & Regions */}
                 <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
                   <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 block mb-0.5">
                     Regional Micro-Markets
                   </span>
                   <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mb-1">
-                    Premier Expat Towns &amp; Regions
+                    Premier Expat Cities, Towns &amp; Regions in {country.name}
                   </h2>
                   <p className="text-xs text-slate-500 mb-6">
-                    Explore the top retirement hubs across {country.name}, from coastal beach havens to cultural mountain valleys.
+                    Explore the top retirement hubs across {country.name}, from coastal beach havens to cultural mountain valleys, and connect with local residents below.
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1242,12 +1249,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     })}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* TAB 9: COMMUNITY & CONNECT */}
-            {activeTab === 'community' && (
-              <div className="space-y-8">
                 {/* Direct Connect with Local Expats Box */}
                 <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
