@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
   <defs>
     <!-- Multi-colored outer border gradient -->
     <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -15,71 +15,86 @@
       <stop offset="100%" stop-color="#042f2e" />
     </radialGradient>
 
-    <!-- FIRE Flame Gradient (Rose -> Orange -> Amber Gold) -->
-    <linearGradient id="flameMain" x1="20%" y1="95%" x2="65%" y2="5%">
-      <stop offset="0%" stop-color="#f43f5e" />
-      <stop offset="48%" stop-color="#f97316" />
+    <!-- FIRE Flame Gradients -->
+    <linearGradient id="flameLeft" x1="34" y1="146" x2="96" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e11d48" />
+      <stop offset="52%" stop-color="#f97316" />
       <stop offset="100%" stop-color="#fbbf24" />
     </linearGradient>
 
-    <linearGradient id="flameInner" x1="30%" y1="90%" x2="70%" y2="15%">
-      <stop offset="0%" stop-color="#fb923c" />
-      <stop offset="100%" stop-color="#fde047" />
+    <linearGradient id="flameRight" x1="62" y1="146" x2="114" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="55%" stop-color="#fb923c" />
+      <stop offset="100%" stop-color="#fef08a" />
     </linearGradient>
 
-    <!-- Tropical Palm Frond Gradient (Emerald -> Teal -> Cyan) -->
-    <linearGradient id="palmGrad" x1="25%" y1="90%" x2="95%" y2="20%">
+    <!-- Tropical Palm Frond Gradient -->
+    <linearGradient id="palmGrad" x1="72" y1="154" x2="166" y2="46" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#10b981" />
-      <stop offset="55%" stop-color="#14b8a6" />
+      <stop offset="52%" stop-color="#14b8a6" />
       <stop offset="100%" stop-color="#22d3ee" />
     </linearGradient>
 
-    <!-- Global Orbit & Airplane Gradient (Cyan -> Indigo -> Violet) -->
-    <linearGradient id="orbitGrad" x1="10%" y1="85%" x2="95%" y2="65%">
+    <!-- Global Flight-Path & Globe Cradle Gradient -->
+    <linearGradient id="flightPath" x1="24" y1="136" x2="160" y2="128" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="55%" stop-color="#818cf8" />
       <stop offset="100%" stop-color="#c084fc" />
     </linearGradient>
   </defs>
 
   <!-- Outer Multi-Color Rounded Squircle -->
-  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#bgGrad)" stroke="url(#ringGrad)" stroke-width="5" />
+  <rect x="6" y="6" width="188" height="188" rx="46" fill="url(#bgGrad)" stroke="url(#ringGrad)" stroke-width="8" />
 
   <!-- Subtle Ambient Glows -->
-  <circle cx="44" cy="44" r="32" fill="#f97316" fill-opacity="0.16" />
-  <circle cx="84" cy="64" r="28" fill="#14b8a6" fill-opacity="0.18" />
+  <circle cx="68" cy="70" r="46" fill="#f97316" fill-opacity="0.16" />
+  <circle cx="128" cy="96" r="42" fill="#14b8a6" fill-opacity="0.18" />
 
-  <!-- Left/Center FIRE Flame -->
+  <!-- 1. Left/Center FIRE Flame (3 Tongues + S-Curve Split + Lower Wisp) -->
   <path
-    d="M32 94C21 81 19 61 29 45C31 53 36 56 39 51C36 37 44 21 56 12C54 25 63 34 68 46C72 56 69 68 62 77C58 62 50 56 44 65C39 73 41 85 32 94Z"
-    fill="url(#flameMain)"
+    d="M 70 146 C 40 130 32 98 48 66 C 50 76 55 82 59 77 C 56 58 64 44 74 36 C 73 48 77 56 81 60 C 83 42 91 27 100 18 C 91 48 64 76 58 112 C 55 126 61 138 70 146 Z"
+    fill="url(#flameLeft)"
   />
   <path
-    d="M41 89C34 79 35 66 43 56C44 62 49 63 51 58C50 47 56 36 62 29C62 39 67 47 67 57C67 68 58 80 41 89Z"
-    fill="url(#flameInner)"
-    fill-opacity="0.88"
+    d="M 75 146 C 63 116 69 84 94 56 C 102 46 106 34 105 22 C 118 42 117 74 100 102 C 89 120 80 132 75 146 Z"
+    fill="url(#flameRight)"
+  />
+  <path
+    d="M 39 138 C 28 128 27 111 36 98 C 35 113 40 125 49 134 C 45 138 42 139 39 138 Z"
+    fill="url(#flameLeft)"
   />
 
-  <!-- Tropical Haven Palm Frond curving right -->
+  <!-- 2. Tropical Haven Palm Frond (5 Distinct Leaflets) -->
   <path
-    d="M47 98C45 76 55 55 77 42C89 35 99 30 106 23C104 33 98 41 89 46C96 45 103 42 108 38C103 46 95 52 84 55C92 55 99 54 105 51C99 58 90 62 79 63C86 64 93 64 98 62C91 68 81 71 71 70C77 72 83 73 88 72C80 77 69 78 60 76C54 83 52 91 52 98H47Z"
+    d="M 72 154 C 76 110 104 66 164 46 C 153 55 141 61 126 64 L 168 62 C 155 72 141 78 121 80 L 162 80 C 147 90 133 95 113 96 L 150 98 C 135 107 121 110 103 110 L 136 115 C 121 123 107 125 93 123 C 85 134 80 144 78 154 Z"
     fill="url(#palmGrad)"
   />
 
-  <!-- Global Latitude Orbit Swoosh -->
+  <!-- 3. Globe Cradle & Curved Flight-Path Arrow -->
   <path
-    d="M18 89C24 105 56 109 86 92L82 87L97 85L91 99L88 95C56 115 21 111 18 89Z"
-    fill="url(#orbitGrad)"
+    d="M 46 155 C 76 183 118 181 146 153"
+    stroke="url(#flightPath)"
+    stroke-width="5.5"
+    stroke-linecap="round"
   />
   <path
-    d="M34 103C48 113 74 112 96 96C80 115 48 118 34 103Z"
-    fill="url(#orbitGrad)"
-    fill-opacity="0.75"
+    d="M 68 156 L 62 166 M 91 161 L 89 175 M 114 157 L 117 171"
+    stroke="url(#flightPath)"
+    stroke-width="3.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 22 130 C 48 160 100 163 135 139 L 128 130 L 153 131 L 143 152 L 139 144 C 102 172 46 168 22 130 Z"
+    fill="url(#flightPath)"
   />
 
-  <!-- Ascending Jet Airplane -->
-  <path
-    d="M96 76L113 68L115 70L106 81L111 91L108 93L100 84L93 88L92 93L89 94L90 86L83 83L85 80L90 83L97 78L90 68L93 66L102 74L96 76Z"
-    fill="#f8fafc"
-  />
+  <!-- 4. Ascending Commercial Passenger Jet Airplane -->
+  <g transform="translate(168, 111) rotate(-38)">
+    <path
+      d="M 25 0 C 25 -3.0 18.5 -4.0 11 -4.0 L 5.5 -4.0 L -6 -24 L -11 -24 L -3.5 -3.8 L -14.5 -2.7 L -21.5 -11 L -24.5 -11 L -20 -1.5 L -22.5 0 L -20 1.5 L -24.5 11 L -21.5 11 L -14.5 2.7 L -3.5 3.8 L -11 24 L -6 24 L 5.5 4.0 L 11 4.0 C 18.5 4.0 25 3.0 25 0 Z"
+      fill="#ffffff"
+    />
+    <path d="M 1.5 -11.2 L 7 -11.2 C 8.2 -11.2 8.2 -8.2 7 -8.2 L 0.5 -8.2 Z" fill="#ffffff" />
+    <path d="M 1.5 11.2 L 7 11.2 C 8.2 11.2 8.2 8.2 7 8.2 L 0.5 8.2 Z" fill="#ffffff" />
+  </g>
 </svg>

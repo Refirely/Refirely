@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Country, CommunityThread, ExpatMeetup } from '../types';
+import { Country } from '../types';
 import { useApp } from '../context/AppContext';
 import { CountryRadarComparison } from './CountryRadarComparison';
 import { VisaRequirementsTable } from './VisaRequirementsTable';
@@ -12,17 +12,57 @@ import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
 import { getFullCountryUrl } from '../utils/seo';
 import {
-  ArrowLeft, Heart, Scale, Sun, DollarSign, Shield,
-  FileCheck, Users, MapPin, CheckCircle2, AlertCircle,
-  MessageCircle, Calendar, Sparkles, ChevronRight, Share2,
-  SlidersHorizontal, Stethoscope, Compass, ExternalLink, BookOpen,
-  Download, FileText
+  ArrowLeft,
+  Heart,
+  Scale,
+  Sun,
+  FileCheck,
+  CheckCircle2,
+  AlertCircle,
+  MessageCircle,
+  Calendar,
+  ChevronRight,
+  Share2,
+  SlidersHorizontal,
+  Stethoscope,
+  Compass,
+  BookOpen,
+  Download,
+  FileText,
+  Sparkles,
+  MapPin,
+  Users,
+  Shield,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface CountryDossierProps {
   country: Country;
 }
+
+const TOWN_CARD_ACCENTS = [
+  {
+    ribbon: 'from-teal-400 via-emerald-500 to-cyan-500',
+    bg: 'from-teal-50/60 via-white to-emerald-50/40',
+    border: 'border-teal-200/80 hover:border-teal-300',
+    badge: 'bg-teal-50 text-teal-900 border-teal-200',
+    btn: 'from-teal-600 to-emerald-600',
+  },
+  {
+    ribbon: 'from-indigo-500 via-violet-500 to-purple-500',
+    bg: 'from-indigo-50/60 via-white to-violet-50/40',
+    border: 'border-indigo-200/80 hover:border-indigo-300',
+    badge: 'bg-indigo-50 text-indigo-900 border-indigo-200',
+    btn: 'from-indigo-600 to-violet-600',
+  },
+  {
+    ribbon: 'from-amber-400 via-orange-500 to-rose-500',
+    bg: 'from-amber-50/60 via-white to-orange-50/40',
+    border: 'border-amber-200/80 hover:border-amber-300',
+    badge: 'bg-amber-50 text-amber-900 border-amber-200',
+    btn: 'from-amber-500 to-orange-600',
+  },
+];
 
 export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   const {
@@ -40,10 +80,22 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     userProfile,
     isAuthenticated,
     openAuthModal,
+    toggleRsvpMeetup,
   } = useApp();
 
   // Active section tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'visa' | 'healthcare' | 'cost' | 'travel' | 'faq' | 'climate' | 'lifestyle' | 'cities' | 'community'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    | 'overview'
+    | 'visa'
+    | 'healthcare'
+    | 'cost'
+    | 'travel'
+    | 'faq'
+    | 'climate'
+    | 'lifestyle'
+    | 'cities'
+    | 'community'
+  >('overview');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -66,14 +118,28 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   // Local expat representatives to connect with
   const localExpats = [
     {
-      name: country.id === 'portugal' ? 'Arthur Sterling' : country.id === 'thailand' ? 'David Chen' : country.id === 'spain' ? 'Elena Rostova' : 'Michael Thorne',
+      name:
+        country.id === 'portugal'
+          ? 'Arthur Sterling'
+          : country.id === 'thailand'
+          ? 'David Chen'
+          : country.id === 'spain'
+          ? 'Elena Rostova'
+          : 'Michael Thorne',
       origin: 'United States',
       yearsInCountry: '4 years living locally',
       city: country.topCities[0]?.name || country.capital,
       note: `Happy to share tips on renting, immigration appointments, and local healthcare in ${country.name}.`,
     },
     {
-      name: country.id === 'portugal' ? 'Margaret O’Connor' : country.id === 'thailand' ? 'Frank Gallagher' : country.id === 'spain' ? 'Carlos Mendonza' : 'Claire Dupont',
+      name:
+        country.id === 'portugal'
+          ? 'Margaret O’Connor'
+          : country.id === 'thailand'
+          ? 'Frank Gallagher'
+          : country.id === 'spain'
+          ? 'Carlos Mendonza'
+          : 'Claire Dupont',
       origin: 'United Kingdom / Canada',
       yearsInCountry: '2 years living locally',
       city: country.topCities[1]?.name || country.capital,
@@ -82,10 +148,9 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-indigo-50/20 to-slate-50 pb-20">
       {/* Breadcrumb Navigation & Top Action Bar */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-white/90 backdrop-blur-md border-b border-indigo-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
           <a
             href="/?view=explore"
@@ -95,7 +160,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 setCurrentView('explore');
               }
             }}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-bold text-indigo-900 hover:text-teal-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to All Destinations</span>
@@ -111,24 +176,26 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   setCurrentView('explore');
                 }
               }}
-              className="hover:text-slate-800 transition-colors"
+              className="hover:text-indigo-800 transition-colors"
             >
               Explore
             </a>
             <span aria-hidden="true">/</span>
             <span>{country.region}</span>
             <span aria-hidden="true">/</span>
-            <span className="text-slate-900 font-semibold">{country.name}</span>
+            <span className="text-indigo-950 font-bold">{country.name}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Share / Copy Dedicated Country URL Button */}
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={handleCopyCountryLink}
               className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer ${
                 copiedLink
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                  : 'bg-white border-indigo-200/80 text-slate-700 hover:bg-indigo-50/50'
               }`}
               title={`Copy direct link to ${country.name} dossier (${getFullCountryUrl(country.id)})`}
             >
@@ -139,65 +206,75 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 </>
               ) : (
                 <>
-                  <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                  <Share2 className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Share Link</span>
                 </>
               )}
-            </button>
+            </motion.button>
 
             {/* Export Full Dossier PDF Button */}
-            <button
+            <motion.button
+              whileHover={{ y: -1, scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setIsPdfModalOpen(true)}
-              className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 hover:from-orange-700 hover:to-purple-700 text-white transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title={`Export complete ${country.name} retirement dossier as a formatted PDF`}
+              className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-teal-500 via-indigo-600 to-amber-500 hover:from-teal-600 hover:to-amber-600 text-white transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+              title={`Export complete 29-page ${country.name} master retirement dossier as a formatted PDF`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Dossier PDF</span>
-            </button>
+              <span>Export 29-Page Dossier PDF</span>
+            </motion.button>
 
             {journalEntries[country.id] ? (
-              <button
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setCurrentView('dashboard')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100 transition-colors flex items-center gap-1.5 shadow-2xs"
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 title="View your private notes for this country in the Country Journal"
               >
-                <BookOpen className="w-3.5 h-3.5 text-orange-700" />
+                <BookOpen className="w-3.5 h-3.5 text-amber-700" />
                 <span>Journal: {journalEntries[country.id].interestLevel}</span>
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setCurrentView('dashboard')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-2xs"
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-indigo-200/80 text-slate-700 hover:bg-indigo-50/50 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 title="Log private notes and interest level in Country Journal"
               >
-                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                <BookOpen className="w-3.5 h-3.5 text-violet-600" />
                 <span>Add to Journal</span>
-              </button>
+              </motion.button>
             )}
 
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => toggleCompareCountry(country.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
                 compared
-                  ? 'bg-purple-700 text-white border-purple-700'
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-600 shadow-xs'
+                  : 'bg-white border-indigo-200/80 text-slate-700 hover:bg-indigo-50/50'
               }`}
             >
               <Scale className="w-3.5 h-3.5" />
               <span>{compared ? 'In Compare Matrix' : 'Add to Compare'}</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
               onClick={() => toggleSaveCountry(country.id)}
-              className={`p-2 rounded-xl border transition-colors ${
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                 saved
-                  ? 'bg-rose-50 text-rose-600 border-rose-200'
-                  : 'bg-white text-slate-600 border-slate-300 hover:text-rose-600'
+                  ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-2xs'
+                  : 'bg-white text-slate-600 border-indigo-200/80 hover:text-rose-600'
               }`}
-              title={saved ? "Saved in your shortlist" : "Save to shortlist"}
+              title={saved ? 'Saved in your shortlist' : 'Save to shortlist'}
             >
               <Heart className={`w-4 h-4 ${saved ? 'fill-rose-600' : ''}`} />
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -210,7 +287,6 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            
             <div className="space-y-2">
               <div className="flex items-center gap-3.5">
                 <CountryFlag
@@ -227,7 +303,6 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                       Retirement Guide
                     </span>
                   </h1>
-                  {/* Clean unboxed metadata with typographic separators */}
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">
                     <span className="font-bold text-indigo-900">Capital: {country.capital}</span>
                     <span aria-hidden="true">·</span>
@@ -235,7 +310,9 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     <span aria-hidden="true">·</span>
                     <span>Language: {country.language}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="text-teal-800 font-bold">English: {country.lifestyle.englishProficiency}</span>
+                    <span className="text-teal-800 font-bold">
+                      English: {country.lifestyle.englishProficiency}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -247,7 +324,9 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
             {/* Quick KPI Strip - Multi-Colored Luminous Cards */}
             <div className="flex items-center gap-4 sm:gap-6 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl px-5 py-4 shrink-0 shadow-sm">
               <div>
-                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block">Single Living</span>
+                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block">
+                  Single Living
+                </span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
                   ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
                   <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
@@ -259,20 +338,23 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 className="text-left group cursor-pointer"
                 title="Click to open full Healthcare, Emergency & Insurance guide"
               >
-                <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">Healthcare Score →</span>
+                <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">
+                  Healthcare Score →
+                </span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-indigo-950">
                   {country.lifestyle.healthcareScore}/100
                 </span>
               </button>
               <div className="w-px h-9 bg-indigo-100" />
               <div>
-                <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider block">Sunny Days</span>
+                <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider block">
+                  Sunny Days
+                </span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-amber-900">
                   {country.climate.annualSunnyDays} d/yr
                 </span>
               </div>
             </div>
-
           </div>
 
           {/* Section Navigation Tabs (Animated Segmented Controls) */}
@@ -287,728 +369,1068 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               { id: 'climate', label: 'Climate' },
               { id: 'lifestyle', label: 'Lifestyle & Dating' },
               { id: 'cities', label: 'Top Towns' },
-              { id: 'community', label: `Community (${countryThreads.length + countryMeetups.length})` },
-            ].map(tab => (
-              <motion.button
-                key={tab.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-bold shadow-2xs cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                    : 'bg-white text-slate-700 hover:text-indigo-950 hover:bg-indigo-50/80 border border-indigo-200/70'
-                }`}
-              >
-                {tab.label}
-              </motion.button>
-            ))}
+              {
+                id: 'community',
+                label: `Community (${countryThreads.length + countryMeetups.length})`,
+              },
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <motion.button
+                  key={tab.id}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className={`relative px-3.5 py-2 sm:px-4 sm:py-2 rounded-xl whitespace-nowrap shrink-0 transition-all font-bold cursor-pointer ${
+                    isActive
+                      ? 'text-white shadow-sm shadow-indigo-500/20'
+                      : 'bg-white text-slate-700 hover:text-indigo-950 hover:bg-indigo-50/80 border border-indigo-200/70 shadow-2xs'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="dossierActiveTabPill"
+                      transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-500 via-indigo-600 to-violet-600"
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
+                </motion.button>
+              );
+            })}
           </div>
-
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area with Smooth Animated Tab Transitions */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-
-        {/* TAB 1: OVERVIEW & HIGHLIGHTS */}
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            
-            {/* Overview paragraph & quick card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                <h2 className="text-xl font-bold text-slate-900">Country Dossier Overview</h2>
-                <button
-                  onClick={() => setIsPdfModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-900 border border-orange-200 text-xs font-bold transition-colors self-start sm:self-auto cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-orange-600" />
-                  <span>Preview & Export Complete {country.name} PDF</span>
-                </button>
-              </div>
-              <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
-                {country.overview}
-              </p>
-
-              {/* Empirical Core Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-100">
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500">Safety Index</span>
-                  <div className="font-mono tabular-nums text-xl font-bold text-slate-900 mt-1">
-                    {country.lifestyle.safetyScore}/100
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">Global Peace metric</span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500">Walkability Score</span>
-                  <div className="font-mono tabular-nums text-xl font-bold text-slate-900 mt-1">
-                    {country.lifestyle.walkabilityScore}/100
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">Town center accessibility</span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500">Expat Community</span>
-                  <div className="text-sm font-bold text-slate-900 mt-1 truncate" title={country.lifestyle.expatCommunitySize}>
-                    {country.lifestyle.expatCommunitySize}
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">Active resident base</span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500">Tax Treatment</span>
-                  <div className="text-sm font-bold text-teal-700 mt-1 truncate" title={country.visa.taxStatus}>
-                    Special Expat Regime
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">Favorable treaties</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recharts Radar Comparison: Country vs. Global Benchmark */}
-            <CountryRadarComparison country={country} />
-
-            {/* Pros & Cons Balanced Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center gap-2 mb-4 text-emerald-800">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-base font-bold text-slate-900">Retirement Advantages</h3>
-                </div>
-                <ul className="space-y-2.5 text-sm text-slate-700">
-                  {country.pros.map((pro, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-2 shrink-0" />
-                      <span>{pro}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center gap-2 mb-4 text-amber-800">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
-                  <h3 className="text-base font-bold text-slate-900">Trade-offs & Considerations</h3>
-                </div>
-                <ul className="space-y-2.5 text-sm text-slate-700">
-                  {country.cons.map((con, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-2 shrink-0" />
-                      <span>{con}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Healthcare, Emergency & Insurance Snapshot Callout */}
-            <div className="bg-white border border-teal-200 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center shrink-0">
-                  <Stethoscope className="w-5 h-5 text-teal-700" />
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-sm font-bold text-slate-900">
-                      Healthcare Access, Emergency Services & Expat Insurance
-                    </h4>
-                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-200">
-                      Score: {country.lifestyle.healthcareScore}/100 · ~${country.costOfLiving.healthcareMonthlyUSD}/mo
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                    {country.lifestyle.healthcareSummary} {country.lifestyle.publicHealthcareAccess}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab('healthcare')}
-                className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Healthcare & Insurance Guide</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Pre-Retirement FAQ & Relocation Hurdles Callout */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-800 flex items-center justify-center shrink-0">
-                  <FileCheck className="w-5 h-5 text-orange-700" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    Pre-Retirement Hurdles & Knowledge Base: Banking, Taxes & Leases
-                  </h4>
-                  <p className="text-xs text-slate-600 mt-0.5 max-w-2xl leading-relaxed">
-                    Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), language bureaucracy, and rental lease protocols in {country.name}.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab('faq')}
-                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Explore Relocation FAQ</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Meet Fellow Expats Teaser - Saffron & Lavender Luminous Gradient */}
-            <div className="bg-gradient-to-r from-orange-50/90 via-purple-50/40 to-blue-50/50 border border-orange-200/80 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900">Connect with {country.name} Expats</h3>
-                <p className="text-slate-600 text-sm mt-1 max-w-xl leading-relaxed">
-                  Chat directly with fellow retirees already living in {country.name} or join upcoming meetups in Cascais, Chiang Mai, or Medellín.
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveTab('community')}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-bold text-xs hover:from-orange-700 hover:to-purple-700 transition-all whitespace-nowrap shrink-0 shadow-2xs"
-              >
-                View Community & Meetups
-              </button>
-            </div>
-
-          </div>
-        )}
-
-        {/* TAB 2: VISA & RESIDENCY RULES */}
-        {activeTab === 'visa' && (
-          <div className="space-y-6">
-            
-            {/* Primary Visa Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-orange-800">Official Visa Classification</span>
-                  <h2 className="text-2xl font-bold text-slate-900 mt-1">
-                    {country.visa.retirementVisaName}
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Permitted to work locally: {country.visa.allowedToWork ? 'Yes (Remote / Investment)' : 'Strictly passive income only (No local employment)'}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-lg p-3 shrink-0">
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Min. Passive Income</span>
-                    <span className="font-mono tabular-nums text-lg font-bold text-slate-900">
-                      ${country.visa.minimumIncomeUSD.toLocaleString()}
-                      <span className="text-xs font-sans text-slate-500 font-normal">/mo</span>
-                    </span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200" />
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Processing Time</span>
-                    <span className="font-mono tabular-nums text-lg font-bold text-slate-900">
-                      ~{country.visa.processingMonths} mos
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Roadmap to PR / Citizenship */}
-              <div className="my-6 p-4 rounded-lg bg-orange-50/70 border border-orange-200 flex items-start gap-3">
-                <FileCheck className="w-5 h-5 text-orange-700 shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-xs font-bold text-orange-950 block">Path to Permanent Residency & Citizenship</span>
-                  <p className="text-xs text-orange-900 mt-0.5 leading-relaxed">
-                    {country.visa.pathwayToPR}
-                  </p>
-                </div>
-              </div>
-
-              {/* Mandatory Checklist / Requirements */}
-              <h3 className="text-base font-bold text-slate-900 mb-3">Key Qualification Requirements</h3>
-              <div className="space-y-2.5">
-                {country.visa.keyRequirements.map((req, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100 text-xs sm:text-sm text-slate-700">
-                    <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-900 font-mono text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span>{req}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Tax Regime Information */}
-              <div className="mt-8 pt-6 border-t border-slate-100">
-                <h3 className="text-base font-bold text-slate-900 mb-2">Retiree Tax Landscape</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-amber-50/70 border border-amber-100 p-4 rounded-lg">
-                  <strong className="text-amber-900 block mb-1">Fiscal Status & Treaties:</strong>
-                  {country.visa.taxStatus}
-                </p>
-              </div>
-            </div>
-
-            {/* Dedicated Structured Visa Eligibility, Duration & Financial Matrix */}
-            <VisaRequirementsTable country={country} />
-
-            {/* Short-Stay, Trial & Alternative Visa Pathways */}
-            <ShortTermVisaOptions country={country} />
-
-            {/* Cross-link to Healthcare Insurance & Relocation Hurdles FAQ */}
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-amber-950 flex items-center gap-2">
-                  <span>Need Compliant Visa Health Insurance or Banking / 183-Day Tax Guidance?</span>
-                </h4>
-                <p className="text-xs text-amber-900/80 mt-1">
-                  Review mandatory consular health insurance policies in the Healthcare tab, or explore banking, FATCA, and tax treaties in our Relocation FAQ.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setActiveTab('healthcare')}
-                  className="px-3.5 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors whitespace-nowrap cursor-pointer"
-                >
-                  Visa Health Insurance Guide →
-                </button>
-                <button
-                  onClick={() => setActiveTab('faq')}
-                  className="px-3.5 py-2 rounded-lg bg-amber-900 text-white font-semibold text-xs hover:bg-amber-950 transition-colors whitespace-nowrap cursor-pointer"
-                >
-                  Relocation & Hurdles FAQ →
-                </button>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* TAB 2.5: HEALTHCARE ACCESS, EMERGENCY SERVICES & INSURANCE */}
-        {activeTab === 'healthcare' && (
-          <CountryHealthcareTab
-            country={country}
-            onNavigateTab={tab => setActiveTab(tab)}
-          />
-        )}
-
-        {/* TAB 3: ANNUAL RETIREMENT BUDGET CALCULATOR */}
-        {activeTab === 'cost' && (
-          <div className="space-y-8">
-            <AnnualRetirementBudgetCalculator
-              country={country}
-              onNavigateToHealthcare={() => setActiveTab('healthcare')}
-            />
-          </div>
-        )}
-
-        {/* TAB 4: TRAVEL, FAMOUS RETIREMENT ACTIVITIES & DOMESTIC MOBILITY */}
-        {activeTab === 'travel' && (
-          <CountryTravelAndMobility country={country} />
-        )}
-
-        {/* TAB 5: PRE-RETIREMENT FAQS & RELOCATION HURDLES */}
-        {activeTab === 'faq' && (
-          <div className="space-y-8">
-            <CountryFaqHurdles
-              country={country}
-              onNavigateToHealthcare={() => setActiveTab('healthcare')}
-            />
-          </div>
-        )}
-
-        {/* TAB 4: CLIMATE & WEATHER */}
-        {activeTab === 'climate' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Climate & Meteorological Profile</h2>
-              <p className="text-xs text-slate-500 mb-6">
-                Objective climate data for {country.name} to help you plan outdoor living and seasonal travel.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="p-5 rounded-xl bg-amber-50/60 border border-amber-100">
-                  <div className="flex items-center gap-2 text-amber-700">
-                    <Sun className="w-5 h-5" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Annual Sunshine</span>
-                  </div>
-                  <div className="font-mono tabular-nums text-3xl font-extrabold text-slate-900 mt-2">
-                    {country.climate.annualSunnyDays}
-                    <span className="text-sm font-sans font-normal text-slate-500 ml-1">days / year</span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-2">
-                    Ranked among top sunny destinations worldwide.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-xl bg-purple-50/60 border border-purple-100">
-                  <div className="flex items-center gap-2 text-purple-700">
-                    <Compass className="w-5 h-5" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Average Temperature</span>
-                  </div>
-                  <div className="font-mono tabular-nums text-3xl font-extrabold text-slate-900 mt-2">
-                    {country.climate.averageTempC}°C
-                    <span className="text-sm font-sans font-normal text-slate-500 ml-1">
-                      ({Math.round((country.climate.averageTempC * 9) / 5 + 32)}°F)
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-2">
-                    Category: {country.climate.category}
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <SlidersHorizontal className="w-5 h-5" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Relative Humidity</span>
-                  </div>
-                  <div className="font-mono tabular-nums text-3xl font-extrabold text-slate-900 mt-2">
-                    {country.climate.humidityPercent}%
-                  </div>
-                  <p className="text-xs text-slate-600 mt-2">
-                    Annual average ambient relative humidity.
-                  </p>
-                </div>
-              </div>
-
-              {/* Seasonal Calendar Summary */}
-              <div className="mt-8 pt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs font-bold text-slate-700 block mb-1">Peak Ideal Weather Months</span>
-                  <span className="text-sm font-medium text-orange-900 font-semibold">{country.climate.bestMonths}</span>
-                </div>
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs font-bold text-slate-700 block mb-1">Rainfall & Wet Season</span>
-                  <span className="text-sm font-medium text-slate-700">{country.climate.rainyMonths}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: DEMOGRAPHICS, DATING & NIGHTLIFE */}
-        {activeTab === 'lifestyle' && (
-          <div className="space-y-6">
-            
-            {/* Demographics Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Demographics & Social Atmosphere</h2>
-              <p className="text-xs text-slate-500 mb-6">
-                Factual population metrics and local social dynamics for {country.name}.
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500 block">Median National Age</span>
-                  <span className="font-mono tabular-nums text-2xl font-bold text-slate-900 mt-1 block">
-                    {country.demographics.medianAge} yrs
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500 block">Females per 100 Males</span>
-                  <span className="font-mono tabular-nums text-2xl font-bold text-purple-700 mt-1 block">
-                    {country.demographics.femalesPer100Males.toFixed(1)} : 100
-                  </span>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    Ratio {(country.demographics.femalesPer100Males / 100).toFixed(2)} F : 1 M
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500 block">Youth Population (&lt;30)</span>
-                  <span className="font-mono tabular-nums text-2xl font-bold text-purple-700 mt-1 block">
-                    {country.demographics.youngPopulationPercent}%
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-xs text-slate-500 block">Dating Openness Score</span>
-                  <span className="font-mono tabular-nums text-2xl font-bold text-amber-700 mt-1 block">
-                    {country.demographics.datingRating} / 5
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4 text-xs sm:text-sm text-slate-700">
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <strong className="text-slate-900 block mb-1">Dating Culture Dynamics:</strong>
-                  {country.demographics.datingCultureSummary}
-                </div>
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <strong className="text-slate-900 block mb-1">Everyday Social Atmosphere:</strong>
-                  {country.demographics.socialAtmosphere}
-                </div>
-              </div>
-            </div>
-
-            {/* Nightlife & Adult Entertainment Section (with discreet toggle) */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Nightlife, Venues & Adult Entertainment</h3>
-                  <span className="text-xs text-slate-500">Empirical regulatory status and entertainment density</span>
-                </div>
-
-                <button
-                  onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                    discreetLifestyleEnabled
-                      ? 'bg-amber-500 text-slate-950 border-amber-400'
-                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                  }`}
-                >
-                  {discreetLifestyleEnabled ? 'Hide Details' : 'Show Details'}
-                </button>
-              </div>
-
-              {discreetLifestyleEnabled ? (
-                <div className="space-y-4 mt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                      <span className="text-xs text-slate-500 block">Nightlife Vibrancy</span>
-                      <span className="text-sm font-bold text-slate-900 mt-1 block">
-                        {country.adultEntertainment.nightlifeVibrancy}
-                      </span>
-                    </div>
-
-                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                      <span className="text-xs text-slate-500 block">Adult Venue Score</span>
-                      <span className="font-mono tabular-nums text-lg font-bold text-slate-900 mt-1 block">
-                        {country.adultEntertainment.adultEntertainmentScore} / 5
-                      </span>
-                    </div>
-
-                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                      <span className="text-xs text-slate-500 block">Regulatory Framework</span>
-                      <span className="text-xs font-medium text-slate-700 mt-1 block">
-                        {country.adultEntertainment.legalStatus}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 text-xs sm:text-sm text-slate-700 space-y-3">
-                    <p>{country.adultEntertainment.overview}</p>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+          >
+            {/* TAB 1: OVERVIEW & HIGHLIGHTS */}
+            {activeTab === 'overview' && (
+              <div className="space-y-8">
+                {/* Overview paragraph & quick card */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                     <div>
-                      <strong className="text-slate-900 block mb-1">Key Entertainment Zones:</strong>
-                      <div className="flex flex-wrap gap-2">
-                        {country.adultEntertainment.topVenuesOrDistricts.map((d, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded bg-slate-200/70 text-slate-800 text-xs font-medium">
-                            {d}
-                          </span>
-                        ))}
-                      </div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 block mb-0.5">
+                        Executive Haven Summary
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
+                        Country Dossier Overview
+                      </h2>
                     </div>
-                    <p className="text-xs text-slate-500 border-t border-slate-200 pt-2">
-                      <strong className="text-slate-700">Safety Guidance:</strong> {country.adultEntertainment.safetyGuidance}
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setIsPdfModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-50 via-indigo-50 to-amber-50 hover:from-teal-100 hover:to-amber-100 text-indigo-950 border border-indigo-200/80 text-xs font-bold transition-all self-start sm:self-auto cursor-pointer shadow-2xs"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Preview &amp; Export 29-Page {country.name} PDF</span>
+                    </motion.button>
+                  </div>
+                  <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
+                    {country.overview}
+                  </p>
+
+                  {/* Empirical Core Metrics Grid - 4-Color Luminous Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-indigo-100/80">
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border border-emerald-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
+                        Safety Index
+                      </span>
+                      <div className="font-mono tabular-nums text-2xl font-extrabold text-emerald-950 mt-1">
+                        {country.lifestyle.safetyScore}/100
+                      </div>
+                      <span className="text-[11px] text-emerald-700/80 font-medium mt-0.5 block">
+                        Global Peace metric
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-blue-50/50 to-white border border-indigo-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 block">
+                        Walkability Score
+                      </span>
+                      <div className="font-mono tabular-nums text-2xl font-extrabold text-indigo-950 mt-1">
+                        {country.lifestyle.walkabilityScore}/100
+                      </div>
+                      <span className="text-[11px] text-indigo-700/80 font-medium mt-0.5 block">
+                        Town center accessibility
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-purple-50/50 to-white border border-violet-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-800 block">
+                        Expat Community
+                      </span>
+                      <div
+                        className="text-sm sm:text-base font-extrabold text-violet-950 mt-1.5 truncate"
+                        title={country.lifestyle.expatCommunitySize}
+                      >
+                        {country.lifestyle.expatCommunitySize}
+                      </div>
+                      <span className="text-[11px] text-violet-700/80 font-medium mt-0.5 block">
+                        Active resident base
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border border-amber-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">
+                        Tax Treatment
+                      </span>
+                      <div
+                        className="text-sm sm:text-base font-extrabold text-amber-950 mt-1.5 truncate"
+                        title={country.visa.taxStatus}
+                      >
+                        Special Expat Regime
+                      </div>
+                      <span className="text-[11px] text-amber-700/80 font-medium mt-0.5 block">
+                        Favorable treaties
+                      </span>
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Recharts Radar Comparison: Country vs. Global Benchmark */}
+                <CountryRadarComparison country={country} />
+
+                {/* Pros & Cons Balanced Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <motion.div
+                    whileHover={{ y: -3 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                    className="relative overflow-hidden bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/40 rounded-3xl border border-emerald-200/90 p-6 sm:p-7 shadow-xs"
+                  >
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500" />
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                        Retirement Advantages
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-sm text-slate-700">
+                      {country.pros.map((pro, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5">
+                          <span className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 mt-2 shrink-0" />
+                          <span className="leading-relaxed">{pro}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+
+                  <motion.div
+                    whileHover={{ y: -3 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                    className="relative overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-rose-50/40 rounded-3xl border border-amber-200/90 p-6 sm:p-7 shadow-xs"
+                  >
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center shadow-2xs">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                        Trade-offs &amp; Considerations
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-sm text-slate-700">
+                      {country.cons.map((con, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5">
+                          <span className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 mt-2 shrink-0" />
+                          <span className="leading-relaxed">{con}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                </div>
+
+                {/* Healthcare, Emergency & Insurance Snapshot Callout */}
+                <div className="relative overflow-hidden bg-gradient-to-r from-teal-50/90 via-white to-indigo-50/80 border border-teal-200/90 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-cyan-500 to-indigo-500" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Healthcare Access, Emergency Services &amp; Expat Insurance
+                        </h4>
+                        <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-teal-100/80 text-teal-900 border border-teal-200">
+                          Score: {country.lifestyle.healthcareScore}/100 · ~$
+                          {country.costOfLiving.healthcareMonthlyUSD}/mo
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                        {country.lifestyle.healthcareSummary}{' '}
+                        {country.lifestyle.publicHealthcareAccess}
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.03, x: 2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setActiveTab('healthcare')}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <span>Healthcare &amp; Insurance Guide</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </motion.button>
+                </div>
+
+                {/* Pre-Retirement FAQ & Relocation Hurdles Callout */}
+                <div className="relative overflow-hidden bg-gradient-to-r from-indigo-50/80 via-white to-amber-50/80 border border-indigo-200/80 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <FileCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        Pre-Retirement Hurdles &amp; Knowledge Base: Banking, Taxes &amp; Leases
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                        Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), language bureaucracy, and rental lease protocols in {country.name}.
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.03, x: 2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setActiveTab('faq')}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-amber-500 text-white font-bold text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <span>Explore Relocation FAQ</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </motion.button>
+                </div>
+
+                {/* Meet Fellow Expats Teaser */}
+                <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md text-white">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-400 to-amber-400" />
+                  <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-teal-400/15 blur-3xl" />
+                  <div className="relative">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-teal-300 border border-white/15 mb-2">
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      Verified Local Network
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+                      Connect with {country.name} Expats
+                    </h3>
+                    <p className="text-indigo-200/90 text-xs sm:text-sm mt-1 max-w-xl leading-relaxed">
+                      Chat directly with fellow retirees already living in {country.name} or join upcoming meetups in {country.topCities[0]?.name || country.capital}.
                     </p>
                   </div>
-                </div>
-              ) : (
-                <div className="p-6 rounded-lg bg-slate-50 border border-slate-200 text-center">
-                  <p className="text-xs text-slate-600 mb-3">
-                    Nightlife and adult entertainment indicators are currently softened. Click "Show Details" above to view complete regulatory status and district metrics.
-                  </p>
-                  <button
-                    onClick={() => setDiscreetLifestyleEnabled(true)}
-                    className="px-4 py-1.5 text-xs font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                  <motion.button
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setActiveTab('community')}
+                    className="relative px-5 py-3 rounded-xl bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 text-white font-extrabold text-xs transition-all whitespace-nowrap shrink-0 shadow-md cursor-pointer"
                   >
-                    Reveal Nightlife & Lifestyle Data
-                  </button>
+                    View Community &amp; Meetups →
+                  </motion.button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-          </div>
-        )}
-
-        {/* TAB 6: TOP EXPAT TOWNS */}
-        {activeTab === 'cities' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Premier Expat Towns & Regions</h2>
-              <p className="text-xs text-slate-500 mb-6">
-                Explore the top retirement hubs across {country.name}, from coastal beach havens to cultural mountain valleys.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {country.topCities.map((city, idx) => (
-                  <div key={idx} className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
+            {/* TAB 2: VISA & RESIDENCY RULES */}
+            {activeTab === 'visa' && (
+              <div className="space-y-6">
+                {/* Primary Visa Card */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-indigo-100/80">
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <h3 className="text-base font-bold text-slate-900">{city.name}</h3>
-                        <span className="font-mono tabular-nums text-xs font-semibold text-orange-900 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
-                          ~${city.monthlyCostUSD}/mo
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-800 border border-indigo-200">
+                        <Shield className="w-3 h-3 text-indigo-600" />
+                        Official Visa Classification
+                      </span>
+                      <h2 className="text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mt-1.5">
+                        {country.visa.retirementVisaName}
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Permitted to work locally:{' '}
+                        <strong className="text-slate-800">
+                          {country.visa.allowedToWork
+                            ? 'Yes (Remote / Investment)'
+                            : 'Strictly passive income only (No local employment)'}
+                        </strong>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 bg-gradient-to-r from-emerald-50/80 via-indigo-50/50 to-amber-50/70 border border-indigo-200/80 rounded-2xl p-3.5 shrink-0 shadow-2xs">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+                          Min. Passive Income
+                        </span>
+                        <span className="font-mono tabular-nums text-lg font-extrabold text-emerald-950">
+                          ${country.visa.minimumIncomeUSD.toLocaleString()}
+                          <span className="text-xs font-sans text-slate-500 font-normal">/mo</span>
                         </span>
                       </div>
-                      <p className="text-xs font-medium text-slate-600 mb-3">
-                        {city.vibe}
-                      </p>
-                      <p className="text-xs text-slate-500 leading-relaxed">
-                        {city.highlight}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                      <span className="text-slate-400">Regional Tier</span>
-                      <button
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            openAuthModal('login');
-                            return;
-                          }
-                          startDmWithPeer(`Resident of ${city.name}`, country.name, city.name, `Hi! I saw ${city.name} on ReFirely and would love to ask about living there.`);
-                        }}
-                        className="text-orange-700 font-semibold hover:underline cursor-pointer"
-                      >
-                        Ask a Local
-                      </button>
+                      <div className="w-px h-8 bg-indigo-200/80" />
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-800 block">
+                          Processing Time
+                        </span>
+                        <span className="font-mono tabular-nums text-lg font-extrabold text-indigo-950">
+                          ~{country.visa.processingMonths} mos
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* TAB 7: COMMUNITY & CONNECT */}
-        {activeTab === 'community' && (
-          <div className="space-y-8">
-            
-            {/* Direct Connect with Local Expats Box */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Connect with Fellow Retirees in {country.name}</h2>
-                  <p className="text-xs text-slate-500">
-                    Reach out directly for firsthand answers on leases, healthcare, and expat friendship circles.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                {localExpats.map((expat, idx) => (
-                  <div key={idx} className="p-5 rounded-xl border border-slate-200 bg-slate-50 flex items-start justify-between gap-4">
+                  {/* Roadmap to PR / Citizenship */}
+                  <div className="my-6 p-4 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/60 to-amber-50/70 border border-teal-200/80 flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <FileCheck className="w-4 h-4" />
+                    </div>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">{expat.name}</h4>
-                      {/* Clean unboxed metadata with typographic separators */}
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5 mb-2">
-                        <span>{expat.city}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{expat.yearsInCountry}</span>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        "{expat.note}"
+                      <span className="text-xs font-extrabold text-indigo-950 block">
+                        Path to Permanent Residency &amp; Citizenship
+                      </span>
+                      <p className="text-xs text-slate-700 mt-0.5 leading-relaxed">
+                        {country.visa.pathwayToPR}
                       </p>
                     </div>
+                  </div>
 
-                    <button
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          openAuthModal('login');
-                          return;
-                        }
-                        startDmWithPeer(expat.name, country.name, expat.city, `Hello ${expat.name}! I am exploring retirement in ${country.name} and would love to ask your advice.`);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white font-semibold text-xs hover:from-orange-700 hover:to-purple-700 transition-all shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  {/* Mandatory Checklist / Requirements */}
+                  <h3 className="text-base font-extrabold text-slate-900 mb-3">
+                    Key Qualification Requirements
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {country.visa.keyRequirements.map((req, idx) => {
+                      const badgeGradients = [
+                        'from-teal-500 to-emerald-600',
+                        'from-indigo-500 to-violet-600',
+                        'from-amber-500 to-orange-600',
+                        'from-rose-500 to-pink-600',
+                      ];
+                      return (
+                        <motion.div
+                          key={idx}
+                          whileHover={{ y: -2 }}
+                          transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+                          className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50/90 hover:bg-white border border-slate-200/80 hover:border-indigo-200 text-xs sm:text-sm text-slate-700 shadow-2xs transition-colors"
+                        >
+                          <span
+                            className={`w-6 h-6 rounded-lg bg-gradient-to-br ${
+                              badgeGradients[idx % badgeGradients.length]
+                            } text-white font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs`}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span className="leading-relaxed">{req}</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Tax Regime Information */}
+                  <div className="mt-8 pt-6 border-t border-indigo-100/80">
+                    <h3 className="text-base font-extrabold text-slate-900 mb-2">
+                      Retiree Tax Landscape
+                    </h3>
+                    <div className="relative overflow-hidden text-xs sm:text-sm text-slate-700 leading-relaxed bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-indigo-50/50 border border-amber-200/80 p-4 rounded-2xl">
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 via-orange-500 to-indigo-500" />
+                      <strong className="text-amber-950 block mb-1 pl-2">
+                        Fiscal Status &amp; Treaties:
+                      </strong>
+                      <p className="pl-2">{country.visa.taxStatus}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dedicated Structured Visa Eligibility, Duration & Financial Matrix */}
+                <VisaRequirementsTable country={country} />
+
+                {/* Short-Stay, Trial & Alternative Visa Pathways */}
+                <ShortTermVisaOptions country={country} />
+
+                {/* Cross-link to Healthcare Insurance & Relocation Hurdles FAQ */}
+                <div className="relative overflow-hidden bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/80 border border-indigo-200/80 rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+                  <div>
+                    <h4 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                      <span>
+                        Need Compliant Visa Health Insurance or Banking / 183-Day Tax Guidance?
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Review mandatory consular health insurance policies in the Healthcare tab, or explore banking, FATCA, and tax treaties in our Relocation FAQ.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setActiveTab('healthcare')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-xs shadow-2xs cursor-pointer"
                     >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Chat</span>
+                      Visa Health Insurance Guide →
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setActiveTab('faq')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xs cursor-pointer"
+                    >
+                      Relocation &amp; Hurdles FAQ →
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2.5: HEALTHCARE ACCESS, EMERGENCY SERVICES & INSURANCE */}
+            {activeTab === 'healthcare' && (
+              <CountryHealthcareTab
+                country={country}
+                onNavigateTab={tab => setActiveTab(tab)}
+              />
+            )}
+
+            {/* TAB 3: ANNUAL RETIREMENT BUDGET CALCULATOR */}
+            {activeTab === 'cost' && (
+              <div className="space-y-8">
+                <AnnualRetirementBudgetCalculator
+                  country={country}
+                  onNavigateToHealthcare={() => setActiveTab('healthcare')}
+                />
+              </div>
+            )}
+
+            {/* TAB 4: TRAVEL, FAMOUS RETIREMENT ACTIVITIES & DOMESTIC MOBILITY */}
+            {activeTab === 'travel' && <CountryTravelAndMobility country={country} />}
+
+            {/* TAB 5: PRE-RETIREMENT FAQS & RELOCATION HURDLES */}
+            {activeTab === 'faq' && (
+              <div className="space-y-8">
+                <CountryFaqHurdles
+                  country={country}
+                  onNavigateToHealthcare={() => setActiveTab('healthcare')}
+                />
+              </div>
+            )}
+
+            {/* TAB 6: CLIMATE & WEATHER */}
+            {activeTab === 'climate' && (
+              <div className="space-y-6">
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-teal-500 to-indigo-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 block mb-0.5">
+                    Atmospheric &amp; Seasonal Telemetry
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mb-1">
+                    Climate &amp; Meteorological Profile
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6">
+                    Objective climate data for {country.name} to help you plan outdoor living and seasonal travel.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border border-amber-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
+                      <div className="flex items-center gap-2 text-amber-800">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-2xs">
+                          <Sun className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Annual Sunshine
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-amber-950 mt-3">
+                        {country.climate.annualSunnyDays}
+                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
+                          days / year
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900/80 mt-2 font-medium">
+                        Ranked among top sunny destinations worldwide.
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/50 to-white border border-indigo-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
+                      <div className="flex items-center gap-2 text-indigo-900">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-2xs">
+                          <Compass className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Average Temperature
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-indigo-950 mt-3">
+                        {country.climate.averageTempC}°C
+                        <span className="text-sm font-sans font-normal text-slate-500 ml-1">
+                          ({Math.round((country.climate.averageTempC * 9) / 5 + 32)}°F)
+                        </span>
+                      </div>
+                      <p className="text-xs text-indigo-900/80 mt-2 font-medium">
+                        Category: {country.climate.category}
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                      className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-teal-50/90 via-cyan-50/50 to-white border border-teal-200/80 shadow-xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-emerald-500 to-cyan-500" />
+                      <div className="flex items-center gap-2 text-teal-900">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center shadow-2xs">
+                          <SlidersHorizontal className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider">
+                          Relative Humidity
+                        </span>
+                      </div>
+                      <div className="font-mono tabular-nums text-3xl font-extrabold text-teal-950 mt-3">
+                        {country.climate.humidityPercent}%
+                      </div>
+                      <p className="text-xs text-teal-900/80 mt-2 font-medium">
+                        Annual average ambient relative humidity.
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  {/* Seasonal Calendar Summary */}
+                  <div className="mt-8 pt-6 border-t border-indigo-100/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-50/70 to-teal-50/50 border border-emerald-200/80">
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 to-teal-500" />
+                      <span className="text-xs font-bold text-emerald-900 block mb-1 pl-2">
+                        Peak Ideal Weather Months
+                      </span>
+                      <span className="text-sm font-extrabold text-emerald-950 pl-2 block">
+                        {country.climate.bestMonths}
+                      </span>
+                    </div>
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-indigo-50/70 to-blue-50/50 border border-indigo-200/80">
+                      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-400 to-blue-500" />
+                      <span className="text-xs font-bold text-indigo-900 block mb-1 pl-2">
+                        Rainfall &amp; Wet Season
+                      </span>
+                      <span className="text-sm font-extrabold text-indigo-950 pl-2 block">
+                        {country.climate.rainyMonths}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 7: DEMOGRAPHICS, DATING & NIGHTLIFE */}
+            {activeTab === 'lifestyle' && (
+              <div className="space-y-6">
+                {/* Demographics Card */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block mb-0.5">
+                    Social Fabric &amp; Community Dynamics
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-violet-900 bg-clip-text text-transparent mb-1">
+                    Demographics &amp; Social Atmosphere
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6">
+                    Factual population metrics and local social dynamics for {country.name}.
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-white border border-indigo-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 block">
+                        Median National Age
+                      </span>
+                      <span className="font-mono tabular-nums text-2xl font-extrabold text-indigo-950 mt-1 block">
+                        {country.demographics.medianAge} yrs
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 to-white border border-violet-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-800 block">
+                        Females per 100 Males
+                      </span>
+                      <span className="font-mono tabular-nums text-2xl font-extrabold text-violet-950 mt-1 block">
+                        {country.demographics.femalesPer100Males.toFixed(1)} : 100
+                      </span>
+                      <span className="text-[11px] text-violet-700 mt-0.5 block">
+                        Ratio {(country.demographics.femalesPer100Males / 100).toFixed(2)} F : 1 M
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-teal-50/90 to-white border border-teal-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-emerald-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800 block">
+                        Youth Population (&lt;30)
+                      </span>
+                      <span className="font-mono tabular-nums text-2xl font-extrabold text-teal-950 mt-1 block">
+                        {country.demographics.youngPopulationPercent}%
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 shadow-2xs"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-rose-500" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">
+                        Dating Openness Score
+                      </span>
+                      <span className="font-mono tabular-nums text-2xl font-extrabold text-amber-950 mt-1 block">
+                        {country.demographics.datingRating} / 5
+                      </span>
+                    </motion.div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-700">
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-rose-50/50 via-white to-amber-50/40 border border-rose-200/70">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-amber-400" />
+                      <strong className="text-slate-900 font-extrabold block mb-1">
+                        Dating Culture Dynamics:
+                      </strong>
+                      <p className="leading-relaxed">{country.demographics.datingCultureSummary}</p>
+                    </div>
+                    <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-teal-50/50 via-white to-indigo-50/40 border border-teal-200/70">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-indigo-500" />
+                      <strong className="text-slate-900 font-extrabold block mb-1">
+                        Everyday Social Atmosphere:
+                      </strong>
+                      <p className="leading-relaxed">{country.demographics.socialAtmosphere}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nightlife & Adult Entertainment Section (with discreet toggle) */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-rose-500 to-violet-600" />
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="text-lg font-extrabold text-slate-900">
+                        Nightlife, Venues &amp; Adult Entertainment
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        Empirical regulatory status and entertainment density
+                      </span>
+                    </div>
+
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                        discreetLifestyleEnabled
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                      }`}
+                    >
+                      {discreetLifestyleEnabled ? 'Hide Details' : 'Show Details'}
+                    </motion.button>
+                  </div>
+
+                  {discreetLifestyleEnabled ? (
+                    <div className="space-y-4 mt-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-white border border-amber-200/80">
+                          <span className="text-xs font-bold text-amber-800 block">
+                            Nightlife Vibrancy
+                          </span>
+                          <span className="text-sm font-extrabold text-slate-900 mt-1 block">
+                            {country.adultEntertainment.nightlifeVibrancy}
+                          </span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50/80 to-white border border-rose-200/80">
+                          <span className="text-xs font-bold text-rose-800 block">
+                            Adult Venue Score
+                          </span>
+                          <span className="font-mono tabular-nums text-lg font-extrabold text-rose-950 mt-1 block">
+                            {country.adultEntertainment.adultEntertainmentScore} / 5
+                          </span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/80 to-white border border-violet-200/80">
+                          <span className="text-xs font-bold text-violet-800 block">
+                            Regulatory Framework
+                          </span>
+                          <span className="text-xs font-bold text-slate-800 mt-1 block">
+                            {country.adultEntertainment.legalStatus}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-xs sm:text-sm text-slate-700 space-y-3">
+                        <p className="leading-relaxed">{country.adultEntertainment.overview}</p>
+                        <div>
+                          <strong className="text-slate-900 block mb-1.5">
+                            Key Entertainment Zones:
+                          </strong>
+                          <div className="flex flex-wrap gap-2">
+                            {country.adultEntertainment.topVenuesOrDistricts.map((d, i) => (
+                              <span
+                                key={i}
+                                className="px-3 py-1 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200/80 text-indigo-950 text-xs font-bold"
+                              >
+                                {d}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500 border-t border-slate-200 pt-2.5">
+                          <strong className="text-slate-800">Safety Guidance:</strong>{' '}
+                          {country.adultEntertainment.safetyGuidance}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-amber-50/40 border border-indigo-100 text-center">
+                      <p className="text-xs text-slate-600 mb-3">
+                        Nightlife and adult entertainment indicators are currently softened. Click "Show Details" above to view complete regulatory status and district metrics.
+                      </p>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setDiscreetLifestyleEnabled(true)}
+                        className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-amber-500 text-white shadow-xs cursor-pointer"
+                      >
+                        Reveal Nightlife &amp; Lifestyle Data
+                      </motion.button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 8: TOP EXPAT TOWNS */}
+            {activeTab === 'cities' && (
+              <div className="space-y-6">
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 block mb-0.5">
+                    Regional Micro-Markets
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mb-1">
+                    Premier Expat Towns &amp; Regions
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-6">
+                    Explore the top retirement hubs across {country.name}, from coastal beach havens to cultural mountain valleys.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {country.topCities.map((city, idx) => {
+                      const theme = TOWN_CARD_ACCENTS[idx % TOWN_CARD_ACCENTS.length];
+                      return (
+                        <motion.div
+                          key={idx}
+                          whileHover={{ y: -5 }}
+                          transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                          className={`relative overflow-hidden p-5 rounded-2xl border bg-gradient-to-br ${theme.bg} ${theme.border} flex flex-col justify-between shadow-xs`}
+                        >
+                          <div
+                            className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${theme.ribbon}`}
+                          />
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2.5 pt-1">
+                              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-1.5">
+                                <MapPin className="w-4 h-4 text-indigo-600 shrink-0" />
+                                <span>{city.name}</span>
+                              </h3>
+                              <span
+                                className={`font-mono tabular-nums text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${theme.badge}`}
+                              >
+                                ~${city.monthlyCostUSD}/mo
+                              </span>
+                            </div>
+                            <p className="text-xs font-bold text-indigo-950 mb-2">{city.vibe}</p>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              {city.highlight}
+                            </p>
+                          </div>
+
+                          <div className="mt-5 pt-3.5 border-t border-slate-200/70 flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-semibold">
+                              Hub #{idx + 1} in {country.name}
+                            </span>
+                            <motion.button
+                              whileHover={{ scale: 1.04 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => {
+                                if (!isAuthenticated) {
+                                  openAuthModal('login');
+                                  return;
+                                }
+                                startDmWithPeer(
+                                  `Resident of ${city.name}`,
+                                  country.name,
+                                  city.name,
+                                  `Hi! I saw ${city.name} on ReFirely and would love to ask about living there.`
+                                );
+                              }}
+                              className={`px-3 py-1 rounded-lg bg-gradient-to-r ${theme.btn} text-white font-bold text-[11px] shadow-2xs cursor-pointer`}
+                            >
+                              Ask a Local →
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 9: COMMUNITY & CONNECT */}
+            {activeTab === 'community' && (
+              <div className="space-y-8">
+                {/* Direct Connect with Local Expats Box */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 block mb-0.5">
+                        Direct Peer-to-Peer Mentorship
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
+                        Connect with Fellow Retirees in {country.name}
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Reach out directly for firsthand answers on leases, healthcare, and expat friendship circles.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    {localExpats.map((expat, idx) => (
+                      <motion.div
+                        key={idx}
+                        whileHover={{ y: -3 }}
+                        transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+                        className="relative overflow-hidden p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-teal-50/30 flex items-start justify-between gap-4 shadow-2xs"
+                      >
+                        <div
+                          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${
+                            idx % 2 === 0
+                              ? 'from-teal-400 via-emerald-500 to-indigo-500'
+                              : 'from-indigo-500 via-violet-500 to-amber-500'
+                          }`}
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                              {expat.name.charAt(0)}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-extrabold text-slate-900">
+                                {expat.name}
+                              </h4>
+                              <div className="flex items-center gap-2 text-[11px] text-indigo-700 font-semibold">
+                                <span>{expat.city}</span>
+                                <span aria-hidden="true">·</span>
+                                <span>{expat.yearsInCountry}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed mt-3 italic">
+                            "{expat.note}"
+                          </p>
+                        </div>
+
+                        <motion.button
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => {
+                            if (!isAuthenticated) {
+                              openAuthModal('login');
+                              return;
+                            }
+                            startDmWithPeer(
+                              expat.name,
+                              country.name,
+                              expat.city,
+                              `Hello ${expat.name}! I am exploring retirement in ${country.name} and would love to ask your advice.`
+                            );
+                          }}
+                          className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-500 via-indigo-600 to-amber-500 text-white font-bold text-xs transition-all shrink-0 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Chat</span>
+                        </motion.button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Upcoming Meetups in Country */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500" />
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-indigo-600" />
+                      <span>Expat Meetups in {country.name}</span>
+                    </h3>
+                    <button
+                      onClick={() => setCurrentView('meetups')}
+                      className="text-xs font-bold text-indigo-700 hover:text-indigo-900 hover:underline cursor-pointer"
+                    >
+                      View All Platform Meetups →
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Upcoming Meetups in Country */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Expat Meetups in {country.name}</h3>
-                <button
-                  onClick={() => setCurrentView('meetups')}
-                  className="text-xs font-semibold text-orange-700 hover:text-orange-800 hover:underline"
-                >
-                  View All Platform Meetups →
-                </button>
-              </div>
-
-              {countryMeetups.length > 0 ? (
-                <div className="space-y-3">
-                  {countryMeetups.map(meetup => (
-                    <div key={meetup.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                          <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                          <span>{meetup.date} ({meetup.time})</span>
-                          <span aria-hidden="true">·</span>
-                          <span>{meetup.city}</span>
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-900">{meetup.title}</h4>
-                        <p className="text-xs text-slate-600 mt-1">{meetup.location}</p>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-mono tabular-nums text-slate-600">
-                          {meetup.attendeesCount} attending
-                        </span>
-                        <button
-                          onClick={() => useApp().toggleRsvpMeetup(meetup.id)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                            meetup.isRsvped
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-slate-900 text-white hover:bg-slate-800'
-                          }`}
+                  {countryMeetups.length > 0 ? (
+                    <div className="space-y-3">
+                      {countryMeetups.map(meetup => (
+                        <motion.div
+                          key={meetup.id}
+                          whileHover={{ y: -2 }}
+                          className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-amber-50/30 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                         >
-                          {meetup.isRsvped ? 'RSVP Confirmed ✓' : 'RSVP Free'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500">
-                  No scheduled meetups in {country.name} this month. Check out our Community Hub to propose one!
-                </p>
-              )}
-            </div>
+                          <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-teal-400 via-indigo-500 to-amber-500" />
+                          <div className="pl-2">
+                            <div className="flex items-center gap-2 text-xs text-indigo-800 font-semibold mb-1">
+                              <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                              <span>
+                                {meetup.date} ({meetup.time})
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span>{meetup.city}</span>
+                            </div>
+                            <h4 className="text-sm font-extrabold text-slate-900">
+                              {meetup.title}
+                            </h4>
+                            <p className="text-xs text-slate-600 mt-1">{meetup.location}</p>
+                          </div>
 
-            {/* Forum Discussions */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Discussion Threads on {country.name}</h3>
-                <button
-                  onClick={() => setCurrentView('community')}
-                  className="text-xs font-semibold text-orange-700 hover:text-orange-800 hover:underline"
-                >
-                  Go to Community Hub →
-                </button>
+                          <div className="flex items-center gap-3 shrink-0 pl-2 sm:pl-0">
+                            <span className="text-xs font-mono tabular-nums font-bold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200/70">
+                              {meetup.attendeesCount} attending
+                            </span>
+                            <motion.button
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => toggleRsvpMeetup(meetup.id)}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                                meetup.isRsvped
+                                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
+                                  : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white'
+                              }`}
+                            >
+                              {meetup.isRsvped ? 'RSVP Confirmed ✓' : 'RSVP Free'}
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      No scheduled meetups in {country.name} this month. Check out our Community Hub to propose one!
+                    </p>
+                  )}
+                </div>
+
+                {/* Forum Discussions */}
+                <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" />
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      Discussion Threads on {country.name}
+                    </h3>
+                    <button
+                      onClick={() => setCurrentView('community')}
+                      className="text-xs font-bold text-indigo-700 hover:text-indigo-900 hover:underline cursor-pointer"
+                    >
+                      Go to Community Hub →
+                    </button>
+                  </div>
+
+                  {countryThreads.length > 0 ? (
+                    <div className="space-y-3">
+                      {countryThreads.map(thread => (
+                        <motion.div
+                          key={thread.id}
+                          whileHover={{ y: -2 }}
+                          onClick={() => setCurrentView('community')}
+                          className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-slate-50 via-white to-indigo-50/30 border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer"
+                        >
+                          <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 to-indigo-500" />
+                          <div className="pl-2">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-bold text-[10px] border border-indigo-200/70">
+                                {thread.category}
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span className="font-semibold text-slate-700">
+                                {thread.authorName}
+                              </span>
+                              <span aria-hidden="true">·</span>
+                              <span>{thread.createdAt}</span>
+                            </div>
+                            <h4 className="text-sm font-extrabold text-slate-900 hover:text-indigo-700">
+                              {thread.title}
+                            </h4>
+                            <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                              {thread.content}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Be the first to start a discussion thread for {country.name}!
+                    </p>
+                  )}
+                </div>
               </div>
-
-              {countryThreads.length > 0 ? (
-                <div className="space-y-3">
-                  {countryThreads.map(thread => (
-                    <div key={thread.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                        <span>{thread.category}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{thread.authorName}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{thread.createdAt}</span>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-900 hover:text-orange-700 cursor-pointer" onClick={() => setCurrentView('community')}>
-                        {thread.title}
-                      </h4>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">
-                        {thread.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500">
-                  Be the first to start a discussion thread for {country.name}!
-                </p>
-              )}
-            </div>
-
-          </div>
-        )}
-
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Complete Country Dossier PDF Export & Preview Studio Modal */}

@@ -144,63 +144,63 @@ export const VisaRequirementsTable: React.FC<VisaRequirementsTableProps> = ({ co
     return [
       {
         category: 'Eligibility & Age Limit',
-        icon: <Award className="w-4 h-4 text-teal-700" />,
+        icon: <Award className="w-4 h-4 text-teal-600" />,
         detail: 'Age & Solvency Criteria',
         requirement: ageReq,
         notes: 'Applicants must demonstrate clean police record and financial independence.',
       },
       {
         category: 'Financial Threshold (Single)',
-        icon: <DollarSign className="w-4 h-4 text-teal-700" />,
+        icon: <DollarSign className="w-4 h-4 text-emerald-600" />,
         detail: 'Minimum Monthly Passive Income',
         requirement: singleIncome,
         notes: 'Verifiable via state pension, social security, annuity, or certified dividend yield.',
       },
       {
         category: 'Financial Threshold (Couple)',
-        icon: <DollarSign className="w-4 h-4 text-teal-700" />,
+        icon: <DollarSign className="w-4 h-4 text-indigo-600" />,
         detail: 'Spouse & Dependent Allowance',
         requirement: coupleIncome,
         notes: 'Marriage certificate legalized with apostille required for spouse inclusion.',
       },
       {
         category: 'Capital / Bank Reserve',
-        icon: <FileText className="w-4 h-4 text-teal-700" />,
+        icon: <FileText className="w-4 h-4 text-violet-600" />,
         detail: 'Local In-Country Bank Buffer',
         requirement: bankBuffer,
         notes: 'Funds typically deposited in a local bank account prior to final interview.',
       },
       {
         category: 'Initial Visa Duration',
-        icon: <Clock className="w-4 h-4 text-teal-700" />,
+        icon: <Clock className="w-4 h-4 text-amber-600" />,
         detail: 'Initial Validity Period',
         requirement: initialDuration,
         notes: 'Begins with consular vignette stamp, followed by biometric residence card issue.',
       },
       {
         category: 'Renewal & PR Pathway',
-        icon: <Calendar className="w-4 h-4 text-teal-700" />,
+        icon: <Calendar className="w-4 h-4 text-teal-600" />,
         detail: 'Long-Term Residency Cadence',
         requirement: renewalCadence,
         notes: c.visa.pathwayToPR,
       },
       {
         category: 'Physical Presence Mandate',
-        icon: <Globe className="w-4 h-4 text-teal-700" />,
+        icon: <Globe className="w-4 h-4 text-indigo-600" />,
         detail: 'Minimum In-Country Stay',
         requirement: stayRequirement,
         notes: 'Important consideration if planning frequent international travel.',
       },
       {
         category: 'Employment Rights',
-        icon: <Briefcase className="w-4 h-4 text-teal-700" />,
+        icon: <Briefcase className="w-4 h-4 text-violet-600" />,
         detail: 'Permitted Economic Activities',
         requirement: workRights,
         notes: c.visa.allowedToWork ? 'Allows remote international earnings.' : 'Preserves retirement nature of permit.',
       },
       {
         category: 'Medical & Police Clearances',
-        icon: <ShieldAlert className="w-4 h-4 text-teal-700" />,
+        icon: <ShieldAlert className="w-4 h-4 text-rose-600" />,
         detail: 'Health & Background Checks',
         requirement: medicalReq,
         notes: 'FBI or national police certificate apostilled within 90 days of application.',
@@ -210,34 +210,47 @@ export const VisaRequirementsTable: React.FC<VisaRequirementsTableProps> = ({ co
 
   const rows = getVisaSpecifications(country);
 
+  const badgeColors = [
+    'bg-teal-50 text-teal-900 border-teal-200',
+    'bg-emerald-50 text-emerald-900 border-emerald-200',
+    'bg-indigo-50 text-indigo-900 border-indigo-200',
+    'bg-violet-50 text-violet-900 border-violet-200',
+    'bg-amber-50 text-amber-900 border-amber-200',
+  ];
+
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs mt-6">
+    <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 shadow-sm mt-6">
+      <div className="h-1.5 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
       
       {/* Table Header Banner */}
-      <div className="p-5 sm:p-6 border-b border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 border-b border-indigo-100 bg-gradient-to-r from-teal-50/50 via-indigo-50/40 to-amber-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-teal-800" />
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">
-              Structured Visa Eligibility, Duration & Financial Matrix
-            </h3>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center shadow-2xs shrink-0">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                Structured Visa Eligibility, Duration &amp; Financial Matrix
+              </h3>
+              <p className="text-xs text-slate-500">
+                Empirical legal parameters for {country.name} ({country.visa.retirementVisaName}).
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Empirical legal parameters for {country.name} ({country.visa.retirementVisaName}).
-          </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 bg-white/90 px-4 py-2 rounded-2xl border border-indigo-100 shadow-2xs">
           <div className="text-right">
-            <span className="text-[11px] text-slate-400 block font-medium">Processing Time</span>
-            <span className="font-mono tabular-nums text-sm font-bold text-slate-900">
+            <span className="text-[10px] text-indigo-700 uppercase tracking-wider block font-bold">Processing Time</span>
+            <span className="font-mono tabular-nums text-sm font-extrabold text-slate-900">
               ~{country.visa.processingMonths} Months
             </span>
           </div>
-          <div className="w-px h-7 bg-slate-300" />
+          <div className="w-px h-7 bg-indigo-100" />
           <div className="text-right">
-            <span className="text-[11px] text-slate-400 block font-medium">Difficulty Level</span>
-            <span className="font-mono tabular-nums text-sm font-bold text-teal-800">
+            <span className="text-[10px] text-teal-700 uppercase tracking-wider block font-bold">Difficulty Level</span>
+            <span className="font-mono tabular-nums text-sm font-extrabold text-teal-800">
               Tier {country.visa.difficultyRating} / 5
             </span>
           </div>
@@ -246,35 +259,34 @@ export const VisaRequirementsTable: React.FC<VisaRequirementsTableProps> = ({ co
 
       {/* Structured Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs divide-y divide-slate-200">
-          <thead className="bg-slate-100/70 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+        <table className="w-full text-left text-xs divide-y divide-indigo-100/70">
+          <thead className="bg-slate-50 text-indigo-950 font-extrabold uppercase tracking-wider text-[11px]">
             <tr>
-              <th className="py-3.5 px-4 w-44">Regulatory Category</th>
+              <th className="py-3.5 px-4 w-48">Regulatory Category</th>
               <th className="py-3.5 px-4 w-48">Parameter Dimension</th>
               <th className="py-3.5 px-4 min-w-[240px]">Official {country.name} Requirement</th>
-              <th className="py-3.5 px-4 min-w-[200px] text-slate-500">Legal Notes & Practical Advice</th>
+              <th className="py-3.5 px-4 min-w-[200px] text-slate-500">Legal Notes &amp; Practical Advice</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((row, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                
+              <tr key={idx} className="hover:bg-indigo-50/30 transition-colors">
                 {/* Category with Icon */}
-                <td className="py-3.5 px-4 font-semibold text-slate-900 align-top">
+                <td className="py-3.5 px-4 font-bold text-slate-900 align-top">
                   <div className="flex items-center gap-2">
-                    {row.icon}
+                    <span className="p-1.5 rounded-lg bg-slate-100 shrink-0">{row.icon}</span>
                     <span>{row.category}</span>
                   </div>
                 </td>
 
                 {/* Dimension label */}
-                <td className="py-3.5 px-4 text-slate-600 align-top font-medium">
+                <td className="py-3.5 px-4 text-slate-600 align-top font-semibold">
                   {row.detail}
                 </td>
 
                 {/* Official Requirement (Tabular figures) */}
-                <td className="py-3.5 px-4 font-semibold text-slate-900 align-top leading-relaxed">
-                  <span className="font-mono tabular-nums text-teal-900 bg-teal-50/80 px-2 py-0.5 rounded border border-teal-200/60 inline-block">
+                <td className="py-3.5 px-4 font-bold text-slate-900 align-top leading-relaxed">
+                  <span className={`font-mono tabular-nums px-2.5 py-1 rounded-xl border inline-block ${badgeColors[idx % badgeColors.length]}`}>
                     {row.requirement}
                   </span>
                 </td>
@@ -283,7 +295,6 @@ export const VisaRequirementsTable: React.FC<VisaRequirementsTableProps> = ({ co
                 <td className="py-3.5 px-4 text-slate-500 align-top leading-relaxed">
                   {row.notes}
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -291,13 +302,12 @@ export const VisaRequirementsTable: React.FC<VisaRequirementsTableProps> = ({ co
       </div>
 
       {/* Table Footer Note */}
-      <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-start gap-2 text-xs text-slate-500">
-        <AlertCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+      <div className="p-4 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-teal-50/30 border-t border-indigo-100 flex items-start gap-2.5 text-xs text-slate-600">
+        <AlertCircle className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong className="text-slate-700">Immigration Advisory:</strong> Requirements are verified directly against official consulate decrees. Income requirements are calculated based on national minimum wage baselines or statutory exchange rates. Consult an accredited immigration attorney before submitting consular dossiers.
+          <strong className="text-slate-900">Immigration Advisory:</strong> Requirements are verified directly against official consulate decrees. Income requirements are calculated based on national minimum wage baselines or statutory exchange rates. Consult an accredited immigration attorney before submitting consular dossiers.
         </p>
       </div>
-
     </div>
   );
 };

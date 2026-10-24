@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Country } from '../types';
 import { getCountryTravelMobility } from '../data/countryTravelMobility';
 import {
@@ -62,22 +63,30 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
     }
   };
 
+  const ACTIVITY_ACCENTS = [
+    'from-teal-400 via-emerald-500 to-cyan-500',
+    'from-indigo-500 via-violet-500 to-purple-500',
+    'from-amber-400 via-orange-500 to-rose-500',
+    'from-rose-500 via-pink-500 to-fuchsia-500',
+  ];
+
   return (
     <div className="space-y-8">
       {/* Hero Overview Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-900">
-                <Compass className="w-3.5 h-3.5 text-orange-700" />
-                Retiree Lifestyle & Mobility
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-teal-50 via-indigo-50 to-amber-50 text-indigo-950 border border-indigo-200/80">
+                <Compass className="w-3.5 h-3.5 text-indigo-600" />
+                Retiree Lifestyle &amp; Mobility
               </span>
               <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs font-semibold text-slate-500">{country.name} Dossier</span>
+              <span className="text-xs font-bold text-teal-800">{country.name} Dossier</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Travel, Famous Activities & Domestic Mobility
+            <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent tracking-tight">
+              Travel, Famous Activities &amp; Domestic Mobility
             </h2>
             <p className="text-slate-600 text-sm sm:text-base mt-2 leading-relaxed">
               {mobilityData.activitiesHeadline}. How retirees pass their days, explore regions, and move around safely as a couple, solo traveler, or solo female.
@@ -86,27 +95,39 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
 
           {/* Quick Mobility Score Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
-            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-teal-50/90 to-white border border-teal-200/80 rounded-2xl text-center shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-emerald-500" />
+              <span className="text-[10px] font-bold text-teal-900 uppercase tracking-wider block">
                 Transit Index
               </span>
-              <span className="text-lg font-extrabold text-slate-900 font-mono mt-0.5 block">
+              <span className="text-lg font-extrabold text-teal-950 font-mono mt-0.5 block">
                 {domesticTransit.publicTransitScore}/100
               </span>
               <span className="text-[10px] text-teal-700 font-medium">Intercity Ease</span>
-            </div>
+            </motion.div>
 
-            <div className="p-3 bg-orange-50/70 border border-orange-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-orange-900 uppercase tracking-wider block">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-rose-50/90 to-white border border-rose-200/80 rounded-2xl text-center shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-orange-500" />
+              <span className="text-[10px] font-bold text-rose-900 uppercase tracking-wider block">
                 Couple Safety
               </span>
-              <span className="text-lg font-extrabold text-orange-950 font-mono mt-0.5 block">
+              <span className="text-lg font-extrabold text-rose-950 font-mono mt-0.5 block">
                 {couples.safetyRating}/100
               </span>
-              <span className="text-[10px] text-orange-800 font-medium">{couples.safetyVerdict}</span>
-            </div>
+              <span className="text-[10px] text-rose-800 font-medium">{couples.safetyVerdict}</span>
+            </motion.div>
 
-            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-center">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 rounded-2xl text-center shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
               <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
                 Solo Ease
               </span>
@@ -114,28 +135,33 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
                 {solo.socialEaseRating}/100
               </span>
               <span className="text-[10px] text-amber-800 font-medium">Social Cafes</span>
-            </div>
+            </motion.div>
 
-            <div className="p-3 bg-purple-50/70 border border-purple-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider block">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-violet-50/90 to-white border border-violet-200/80 rounded-2xl text-center shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
+              <span className="text-[10px] font-bold text-violet-900 uppercase tracking-wider block">
                 Solo Female
               </span>
-              <span className="text-lg font-extrabold text-purple-950 font-mono mt-0.5 block">
+              <span className="text-lg font-extrabold text-violet-950 font-mono mt-0.5 block">
                 {soloFemale.femaleSafetyScore}/100
               </span>
-              <span className="text-[10px] text-purple-800 font-medium">{soloFemale.streetHarassmentLevel}</span>
-            </div>
+              <span className="text-[10px] text-violet-800 font-medium">{soloFemale.streetHarassmentLevel}</span>
+            </motion.div>
           </div>
         </div>
       </div>
 
       {/* SECTION 1: WHAT RETIREES DO - FAMOUS ACTIVITIES */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-teal-500 to-indigo-500" />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-600" />
-              <h3 className="text-lg font-extrabold text-slate-900">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                 Famous Retirement Activities in {country.name}
               </h3>
             </div>
@@ -143,29 +169,32 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
               What resident expats and retirees actively do to pass time, stay vibrant, and immerse in the local culture.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-700 self-start sm:self-auto">
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-900 border border-indigo-200 rounded-full text-xs font-extrabold self-start sm:self-auto">
             {retireeActivities.length} Key Leisure Pursuits
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {retireeActivities.map((act) => (
-            <div
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {retireeActivities.map((act, idx) => (
+            <motion.div
               key={act.id}
-              className="p-5 rounded-xl border border-slate-200/90 bg-slate-50/50 hover:bg-white hover:border-orange-300 transition-all flex flex-col justify-between group shadow-2xs"
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 340, damping: 24 }}
+              className="relative overflow-hidden p-5 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/40 to-indigo-50/20 hover:border-indigo-300 transition-all flex flex-col justify-between group shadow-xs"
             >
-              <div>
+              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${ACTIVITY_ACCENTS[idx % ACTIVITY_ACCENTS.length]}`} />
+              <div className="pt-1">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white border border-slate-200 text-slate-700 shadow-2xs">
                     {getActivityIcon(act.category)}
                     <span>{act.category}</span>
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
                     {act.intensity}
                   </span>
                 </div>
 
-                <h4 className="text-sm font-bold text-slate-900 group-hover:text-orange-900 transition-colors">
+                <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-900 transition-colors">
                   {act.title}
                 </h4>
 
@@ -176,28 +205,29 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
 
               <div className="mt-4 pt-3.5 border-t border-slate-200/70 space-y-2">
                 <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                  <MapPin className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
                   <span>
-                    <strong className="text-slate-700">Top Spots:</strong> {act.popularLocations}
+                    <strong className="text-slate-800">Top Spots:</strong> {act.popularLocations}
                   </span>
                 </div>
-                <div className="bg-orange-50/70 rounded-lg p-2 border border-orange-100 text-[11px] text-orange-950 leading-snug">
-                  <strong className="text-orange-900">Why Retirees Love It:</strong> {act.whyRetireesLoveIt}
+                <div className="bg-gradient-to-r from-teal-50/70 via-indigo-50/40 to-amber-50/60 rounded-xl p-2.5 border border-teal-200/70 text-[11px] text-slate-800 leading-snug">
+                  <strong className="text-teal-950">Why Retirees Love It:</strong> {act.whyRetireesLoveIt}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
       {/* SECTION 2: MOBILITY & SAFETY PROFILE - COUPLES vs SOLO vs SOLO FEMALE */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-rose-500" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-indigo-100/80">
           <div>
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-teal-700" />
-              <h3 className="text-lg font-extrabold text-slate-900">
-                Domestic Mobility & Safety Profiles
+              <Shield className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                Domestic Mobility &amp; Safety Profiles
               </h3>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -206,42 +236,48 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
           </div>
 
           {/* Persona Segmented Buttons */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-            <button
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 self-start sm:self-auto">
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedPersona('couples')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 selectedPersona === 'couples'
-                  ? 'bg-white text-orange-950 shadow-xs'
+                  ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Heart className="w-3.5 h-3.5 text-rose-600" />
+              <Heart className={`w-3.5 h-3.5 ${selectedPersona === 'couples' ? 'text-white' : 'text-rose-600'}`} />
               <span>As a Couple</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedPersona('solo')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 selectedPersona === 'solo'
-                  ? 'bg-white text-orange-950 shadow-xs'
+                  ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <User className="w-3.5 h-3.5 text-amber-600" />
+              <User className={`w-3.5 h-3.5 ${selectedPersona === 'solo' ? 'text-white' : 'text-teal-600'}`} />
               <span>Solo Traveler</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setSelectedPersona('soloFemale')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 selectedPersona === 'soloFemale'
-                  ? 'bg-white text-purple-950 shadow-xs'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <Sparkles className={`w-3.5 h-3.5 ${selectedPersona === 'soloFemale' ? 'text-white' : 'text-violet-600'}`} />
               <span>Solo Female</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -464,11 +500,12 @@ export const CountryTravelAndMobility: React.FC<CountryTravelAndMobilityProps> =
       </div>
 
       {/* SECTION 3: DOMESTIC TRANSIT & INFRASTRUCTURE MATRIX */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
         <div className="flex items-center gap-2 mb-1">
-          <Train className="w-5 h-5 text-teal-700" />
+          <Train className="w-5 h-5 text-teal-600" />
           <h3 className="text-lg font-extrabold text-slate-900">
-            Domestic Transit & Moving Around {country.name}
+            Domestic Transit &amp; Moving Around {country.name}
           </h3>
         </div>
         <p className="text-xs sm:text-sm text-slate-500 mb-6">

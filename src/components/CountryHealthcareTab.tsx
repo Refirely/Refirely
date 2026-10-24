@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Country } from '../types';
 import { getCountryHealthcareProfile } from '../data/countryHealthcare';
 import {
@@ -39,22 +40,23 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
   return (
     <div className="space-y-8">
       {/* Hero Healthcare Intelligence Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-indigo-100/80">
           <div className="max-w-2xl">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-900 border border-teal-200">
-                <Stethoscope className="w-3.5 h-3.5 text-teal-700" />
-                Medical Care, Emergency & Insurance Dossier
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-teal-50 to-indigo-50 text-teal-900 border border-teal-200">
+                <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+                Medical Care, Emergency &amp; Insurance Dossier
               </span>
               <span className="text-xs text-slate-400">·</span>
-              <span className="text-xs font-semibold text-slate-600">
+              <span className="text-xs font-bold text-indigo-800">
                 {profile.headlineVerdict}
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Healthcare Access, Emergency Services & Expat Insurance in {country.name}
+            <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent tracking-tight">
+              Healthcare Access, Emergency Services &amp; Expat Insurance in {country.name}
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm mt-2 leading-relaxed">
               {routineCare.executiveSummary}
@@ -63,17 +65,25 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
 
           {/* 4-Card Healthcare KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
-            <div className="p-3.5 bg-purple-50/70 border border-purple-200/80 rounded-xl">
-              <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider block">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-violet-50/90 to-white border border-violet-200/80 rounded-2xl shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
+              <span className="text-[10px] font-bold text-violet-900 uppercase tracking-wider block">
                 Healthcare Score
               </span>
-              <span className="text-xl font-extrabold text-purple-950 font-mono tabular-nums mt-0.5 block">
+              <span className="text-xl font-extrabold text-violet-950 font-mono tabular-nums mt-0.5 block">
                 {country.lifestyle.healthcareScore}/100
               </span>
-              <span className="text-[10px] text-purple-800 font-medium">Quality & Infrastructure</span>
-            </div>
+              <span className="text-[10px] text-violet-800 font-medium">Quality &amp; Infrastructure</span>
+            </motion.div>
 
-            <div className="p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-xl">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-teal-50/90 to-white border border-teal-200/80 rounded-2xl shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-emerald-500" />
               <span className="text-[10px] font-bold text-teal-900 uppercase tracking-wider block">
                 Routine Access
               </span>
@@ -81,9 +91,13 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                 {routineCare.easeScore}/100
               </span>
               <span className="text-[10px] text-teal-800 font-medium">Private GP in 24–48h</span>
-            </div>
+            </motion.div>
 
-            <div className="p-3.5 bg-rose-50/70 border border-rose-200/80 rounded-xl">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-rose-50/90 to-white border border-rose-200/80 rounded-2xl shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-pink-500" />
               <span className="text-[10px] font-bold text-rose-900 uppercase tracking-wider block">
                 Emergency Dial
               </span>
@@ -91,18 +105,22 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                 {emergencyServices.emergencyNumberPrimary}
               </span>
               <span className="text-[10px] text-rose-800 font-medium">24/7 Medical Dispatch</span>
-            </div>
+            </motion.div>
 
-            <div className="p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-xl">
-              <span className="text-[10px] font-bold text-orange-900 uppercase tracking-wider block">
+            <motion.div
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden p-3.5 bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 rounded-2xl shadow-2xs"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+              <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
                 Base Insurance
               </span>
-              <span className="text-xl font-extrabold text-orange-950 font-mono tabular-nums mt-0.5 block">
+              <span className="text-xl font-extrabold text-amber-950 font-mono tabular-nums mt-0.5 block">
                 ${country.costOfLiving.healthcareMonthlyUSD}
-                <span className="text-xs font-sans font-normal text-orange-800">/mo</span>
+                <span className="text-xs font-sans font-normal text-amber-800">/mo</span>
               </span>
-              <span className="text-[10px] text-orange-800 font-medium">Single Est. Baseline</span>
-            </div>
+              <span className="text-[10px] text-amber-800 font-medium">Single Est. Baseline</span>
+            </motion.div>
           </div>
         </div>
 
@@ -115,18 +133,20 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
               { id: 'emergency', label: '2. Emergency Services & ER Triage', icon: <Ambulance className="w-3.5 h-3.5" /> },
               { id: 'insurance', label: '3. Health Insurance & Out-of-Pocket Costs', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
             ].map(tab => (
-              <button
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
                 key={tab.id}
                 onClick={() => setSelectedSection(tab.id as typeof selectedSection)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
                   selectedSection === tab.id
-                    ? 'bg-teal-800 text-white font-bold shadow-2xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-950'
                 }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -148,7 +168,8 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
           PILLAR 1: ROUTINE & EVERYDAY MEDICAL CARE ACCESS
          ===================================================================== */}
       {(selectedSection === 'all' || selectedSection === 'routine') && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="relative overflow-hidden bg-white rounded-3xl border border-teal-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500" />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1.5">
@@ -324,7 +345,8 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
           PILLAR 2: EMERGENCY SERVICES, AMBULANCE DISPATCH & MEDEVAC
          ===================================================================== */}
       {(selectedSection === 'all' || selectedSection === 'emergency') && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="relative overflow-hidden bg-white rounded-3xl border border-rose-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500" />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1.5">
@@ -443,7 +465,8 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
           PILLAR 3: HEALTHCARE INSURANCE, VISA RULES & OUT-OF-POCKET COSTS
          ===================================================================== */}
       {(selectedSection === 'all' || selectedSection === 'insurance') && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500" />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-orange-700 flex items-center gap-1.5">

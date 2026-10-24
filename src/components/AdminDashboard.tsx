@@ -15,7 +15,11 @@ import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 
 type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'cloud';
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  onOpenBrandKit?: () => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }) => {
   const {
     countries,
     updateCountry,
@@ -467,6 +471,18 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Right Quick Actions */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
+            {onOpenBrandKit && (
+              <motion.button
+                whileHover={{ scale: 1.03, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onOpenBrandKit}
+                className="px-3.5 py-2 bg-slate-900 hover:bg-indigo-950 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer border border-indigo-400/40"
+                title="Open 4K High-Resolution Brand & Logo Kit (Admin Only)"
+              >
+                <Download className="w-3.5 h-3.5 text-teal-300" />
+                <span>4K Brand &amp; Logo Kit</span>
+              </motion.button>
+            )}
             <motion.button
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}

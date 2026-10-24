@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
@@ -19,8 +19,10 @@ import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { BrandLogo } from './components/BrandLogo';
+import { BrandKitModal } from './components/BrandKitModal';
+import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
-import { Compass, Shield } from 'lucide-react';
+import { Compass, Shield, Download, Sparkles } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const {
@@ -35,6 +37,8 @@ const MainContent: React.FC = () => {
     isAuthenticated,
     currentUserId,
   } = useApp();
+
+  const [brandKitOpen, setBrandKitOpen] = useState(false);
 
   useEffect(() => {
     updatePageSeo(currentView, selectedCountry, countries);
@@ -59,7 +63,7 @@ const MainContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-indigo-50/15 to-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-950">
       
       {/* Top Bar (Follows 3-zone contract) */}
-      <Navbar />
+      <Navbar onOpenBrandKit={() => setBrandKitOpen(true)} />
 
       {/* Main Viewport Router with Smooth Page Transitions */}
       <div className="flex-1">
@@ -85,7 +89,7 @@ const MainContent: React.FC = () => {
               )
             )}
             {currentView === 'dashboard' && <UserDashboard />}
-            {currentView === 'admin' && <AdminDashboard />}
+            {currentView === 'admin' && <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -93,11 +97,12 @@ const MainContent: React.FC = () => {
       {/* Global In-App Notifications Toast */}
       <MessageNotificationToast />
 
-      {/* Global Auth and Profile Modals */}
+      {/* Global Auth, Profile & Brand Kit Modals */}
       <AuthModal />
       <EditProfileModal />
       <FirebaseConnectionModal />
       <PublicProfileModal />
+      <BrandKitModal isOpen={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
       <FeedbackWidget />
 
       {/* Multi-Colored Elegant Footer */}
@@ -169,9 +174,16 @@ const MainContent: React.FC = () => {
                   </div>
                   <button
                     onClick={toggleRole}
-                    className="w-full py-1.5 text-center text-xs font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-900 transition-colors shadow-2xs"
+                    className="w-full py-1.5 text-center text-xs font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-900 transition-colors shadow-2xs cursor-pointer"
                   >
                     Switch to {userProfile.role === 'admin' ? 'Member Mode' : 'Admin Mode'}
+                  </button>
+                  <button
+                    onClick={() => setBrandKitOpen(true)}
+                    className="w-full py-1.5 px-2.5 text-center text-xs font-bold rounded-lg bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white hover:from-indigo-700 hover:to-teal-700 transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>4K Brand &amp; Logo Kit (Owner Only)</span>
                   </button>
                 </div>
               )}

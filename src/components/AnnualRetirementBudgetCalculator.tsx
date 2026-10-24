@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Country } from '../types';
 import {
   DollarSign, Calculator, ArrowRight, RefreshCw,
@@ -164,22 +165,25 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
   const savingsPercent = Math.round((monthlySavingsUSD / US_BENCHMARK_MONTHLY) * 100);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs space-y-6 p-6 sm:p-8">
+    <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 shadow-sm space-y-6 p-6 sm:p-8">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
       
       {/* Top Banner & Currency Conversion Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-indigo-100/80">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-700">
-              <Calculator className="w-4 h-4 text-teal-700" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-600 to-amber-500 flex items-center justify-center text-white shadow-2xs shrink-0">
+              <Calculator className="w-4 h-4" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">
-              Annual Retirement Budget & Currency Calculator
-            </h2>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
+                Annual Retirement Budget &amp; Currency Calculator
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Calculates 12-month projected living expenses, annual periodic overheads, and currency conversion for {country.name}.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Calculates 12-month projected living expenses, annual periodic overheads, and currency conversion for {country.name}.
-          </p>
         </div>
 
         {/* Currency Display & Exchange Rate Controller */}
@@ -237,31 +241,38 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
 
       {/* Primary KPI Summary Strips: Monthly Outlay vs Annual Total vs Nest Egg */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        
         {/* Metric 1: Monthly Budget */}
-        <div className="p-5 rounded-xl bg-slate-900 text-white shadow-xs flex flex-col justify-between">
+        <motion.div
+          whileHover={{ y: -3 }}
+          className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-sm flex flex-col justify-between"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-emerald-400" />
           <div>
-            <span className="text-xs text-slate-400 font-medium block">
+            <span className="text-xs text-indigo-200 font-semibold block">
               Estimated Monthly Living Cost
             </span>
-            <div className="font-mono tabular-nums text-2xl sm:text-3xl font-extrabold text-teal-400 mt-2">
+            <div className="font-mono tabular-nums text-2xl sm:text-3xl font-extrabold text-teal-300 mt-2">
               ${totalMonthlyUSD.toLocaleString()}
-              <span className="text-xs font-sans text-slate-400 font-normal"> / mo</span>
+              <span className="text-xs font-sans text-indigo-300 font-normal"> / mo</span>
             </div>
-            <div className="text-xs font-mono text-slate-300 mt-1">
+            <div className="text-xs font-mono text-indigo-200/90 mt-1">
               ≈ {formatLocal(totalMonthlyUSD)} / mo
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-emerald-400 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-emerald-300 flex items-center justify-between">
             <span>Vs. US Average ($3,650):</span>
             <span className="font-bold">Save {savingsPercent}% (${monthlySavingsUSD.toLocaleString()}/mo)</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Metric 2: Grand Annual Budget */}
-        <div className="p-5 rounded-xl bg-teal-900/95 text-white shadow-xs flex flex-col justify-between">
+        <motion.div
+          whileHover={{ y: -3 }}
+          className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-teal-900 via-emerald-900 to-indigo-950 text-white shadow-sm flex flex-col justify-between"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-400 via-teal-300 to-amber-400" />
           <div>
-            <span className="text-xs text-teal-200 font-medium block">
+            <span className="text-xs text-teal-200 font-semibold block">
               Grand Total Annual Budget
             </span>
             <div className="font-mono tabular-nums text-2xl sm:text-3xl font-extrabold text-white mt-2">
@@ -272,31 +283,34 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
               ≈ {formatLocal(grandTotalAnnualUSD)} / yr
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-teal-800 text-[11px] text-teal-200 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-teal-200 flex items-center justify-between">
             <span>Includes:</span>
-            <span>12 mos rent + travel + visa & health buffer</span>
+            <span>12 mos rent + travel + visa &amp; health buffer</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Metric 3: Safe Withdrawal Nest Egg */}
-        <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 flex flex-col justify-between">
+        <motion.div
+          whileHover={{ y: -3 }}
+          className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-indigo-50/50 to-white border border-amber-200/80 text-slate-900 shadow-xs flex flex-col justify-between"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-500" />
           <div>
-            <span className="text-xs text-slate-500 font-medium block">
+            <span className="text-xs text-amber-900 font-bold block">
               Suggested Portfolio / Nest Egg
             </span>
-            <div className="font-mono tabular-nums text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+            <div className="font-mono tabular-nums text-2xl sm:text-3xl font-extrabold text-indigo-950 mt-2">
               ${recommendedNestEggUSD.toLocaleString()}
             </div>
-            <div className="text-xs font-mono text-slate-500 mt-1">
+            <div className="text-xs font-mono text-slate-600 mt-1">
               ≈ {formatLocal(recommendedNestEggUSD)}
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-amber-200/70 text-[11px] text-indigo-900 flex items-center justify-between">
             <span>Rule:</span>
-            <span className="font-medium">4% Safe Perpetual Withdrawal</span>
+            <span className="font-bold">4% Safe Perpetual Withdrawal</span>
           </div>
-        </div>
-
+        </motion.div>
       </div>
 
       {/* Interactive Scenario Adjustment Parameters */}
@@ -622,22 +636,22 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
         </div>
 
         {/* Final Grand Summary Footprint */}
-        <div className="p-4 bg-teal-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-xs font-semibold text-teal-300 block">
               Grand Total Annual Outlay (Monthly Living x 12 + Annual Overheads)
             </span>
             <div className="font-mono tabular-nums text-xl sm:text-2xl font-extrabold text-white mt-0.5">
               ${grandTotalAnnualUSD.toLocaleString()} USD
-              <span className="text-xs font-normal text-teal-300 ml-2 font-mono">
+              <span className="text-xs font-normal text-indigo-200 ml-2 font-mono">
                 (≈ {formatLocal(grandTotalAnnualUSD)})
               </span>
             </div>
           </div>
 
-          <div className="text-right sm:border-l sm:border-teal-800 sm:pl-6">
-            <span className="text-[11px] text-teal-300 block font-medium">Monthly Average Equivalent</span>
-            <span className="font-mono tabular-nums text-lg font-bold text-teal-400">
+          <div className="text-right sm:border-l sm:border-white/15 sm:pl-6">
+            <span className="text-[11px] text-amber-300 block font-bold uppercase tracking-wider">Monthly Average Equivalent</span>
+            <span className="font-mono tabular-nums text-lg font-extrabold text-teal-300">
               ${Math.round(grandTotalAnnualUSD / 12).toLocaleString()} / mo
             </span>
           </div>

@@ -5,11 +5,15 @@ import { getViewUrl } from '../utils/seo';
 import {
   User, Shield, Bookmark, MessageCircle, Menu, X, SlidersHorizontal,
   LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
-  BookOpen, Database, LayoutDashboard
+  BookOpen, Database, LayoutDashboard, Download
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onOpenBrandKit?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
   const {
     currentView,
     setCurrentView,
@@ -84,14 +88,16 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
         {/* Zone 1: Multi-Colored Animated Brand Wordmark */}
-        <a
-          href={getViewUrl('landing')}
-          onClick={(e) => handleAnchorNav(e, 'landing')}
-          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
-          aria-label="ReFIREly Home"
-        >
-          <BrandLogo variant="full" size="md" />
-        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={getViewUrl('landing')}
+            onClick={(e) => handleAnchorNav(e, 'landing')}
+            className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
+            aria-label="ReFIREly Home"
+          >
+            <BrandLogo variant="full" size="md" />
+          </a>
+        </div>
 
         {/* Zone 2: Primary navigation links with animated active pill */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-[13px] font-semibold text-slate-600 min-w-0 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/70">
@@ -274,6 +280,21 @@ export const Navbar: React.FC = () => {
                         </div>
                         <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">Manage</span>
                       </button>
+                      {onOpenBrandKit && (
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            onOpenBrandKit();
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-between transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Download className="w-3.5 h-3.5" />
+                            <span>4K Brand &amp; Logo Kit (Admin)</span>
+                          </div>
+                          <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">4K</span>
+                        </button>
+                      )}
                       <div className="grid grid-cols-2 gap-1.5 pt-1">
                         <button
                           onClick={() => {

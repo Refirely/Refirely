@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Country, FaqCategoryType, PreRetirementFaqItem } from '../types';
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { useApp } from '../context/AppContext';
@@ -140,43 +141,45 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Container */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      <div className="relative overflow-hidden bg-white rounded-3xl border border-indigo-100/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-indigo-100/80">
           <div>
-            <div className="flex items-center gap-2 text-teal-800 text-xs font-bold uppercase tracking-wider mb-1">
+            <div className="flex items-center gap-2 text-indigo-800 text-xs font-extrabold uppercase tracking-wider mb-1">
               <HelpCircle className="w-4 h-4 text-teal-600" />
-              <span>Pre-Retirement Due Diligence & Knowledge Base</span>
+              <span>Pre-Retirement Due Diligence &amp; Knowledge Base</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Common Relocation Hurdles & FAQs: {country.name}
+            <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
+              Common Relocation Hurdles &amp; FAQs: {country.name}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-              Factual, practical answers addressing banking regulations, cross-border tax residency, 
-              local language realities, healthcare transitions, and rental lease protocols.
+              Factual, practical answers addressing banking regulations, cross-border tax residency, local language realities, healthcare transitions, and rental lease protocols.
             </p>
           </div>
 
           <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-            <button
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setShowPreDepartureTimeline(!showPreDepartureTimeline)}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
                 showPreDepartureTimeline
-                  ? 'bg-teal-50 border-teal-300 text-teal-800'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-gradient-to-r from-teal-500 to-indigo-600 border-transparent text-white shadow-xs'
+                  : 'bg-white border-indigo-200/80 text-indigo-950 hover:bg-indigo-50/60'
               }`}
             >
-              <Clock className="w-3.5 h-3.5 text-teal-600" />
+              <Clock className={`w-3.5 h-3.5 ${showPreDepartureTimeline ? 'text-white' : 'text-indigo-600'}`} />
               <span>{showPreDepartureTimeline ? 'Hide Timeline' : 'Pre-Departure Timeline'}</span>
-            </button>
+            </motion.button>
             <button
               onClick={expandAll}
-              className="px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-indigo-950 hover:bg-indigo-50/60 transition-colors cursor-pointer"
             >
               Expand All
             </button>
             <button
               onClick={collapseAll}
-              className="px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-indigo-950 hover:bg-indigo-50/60 transition-colors cursor-pointer"
             >
               Collapse All
             </button>
@@ -185,33 +188,38 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
 
         {/* Optional Collapsible Pre-Departure Timeline Guide */}
         {showPreDepartureTimeline && (
-          <div className="mt-6 p-5 rounded-xl bg-teal-50/70 border border-teal-200 transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-teal-700" />
-              <h3 className="text-sm font-bold text-teal-950">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-teal-50/80 via-indigo-50/50 to-amber-50/70 border border-indigo-200/80 transition-all"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h3 className="text-sm font-extrabold text-indigo-950">
                 12-Month Pre-Departure Readiness Checklist for {country.name}
               </h3>
             </div>
             <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-              Before boarding your one-way flight, execute these steps systematically to prevent banking freeze-outs, 
-              double taxation disputes, and visa processing rejections.
+              Before boarding your one-way flight, execute these steps systematically to prevent banking freeze-outs, double taxation disputes, and visa processing rejections.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-              <div className="bg-white p-3.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-mono text-[10px]">1</span>
+              <div className="relative overflow-hidden bg-white p-3.5 rounded-xl border border-teal-200/80 shadow-2xs">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-emerald-500" />
+                <div className="font-extrabold text-teal-950 mb-1.5 flex items-center gap-1.5 pt-1">
+                  <span className="w-5 h-5 rounded-full bg-teal-500 text-white flex items-center justify-center font-mono text-[10px]">1</span>
                   12–9 Mos Out
                 </div>
                 <ul className="text-slate-600 space-y-1 pl-1 list-disc list-inside">
-                  <li>Consult cross-border CPA on tax residency & pensions</li>
+                  <li>Consult cross-border CPA on tax residency &amp; pensions</li>
                   <li>Order physical passport renewals (min 2 yrs validity)</li>
                   <li>Begin conversational language study ({country.language.split(' ')[0]})</li>
                 </ul>
               </div>
 
-              <div className="bg-white p-3.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-mono text-[10px]">2</span>
+              <div className="relative overflow-hidden bg-white p-3.5 rounded-xl border border-indigo-200/80 shadow-2xs">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
+                <div className="font-extrabold text-indigo-950 mb-1.5 flex items-center gap-1.5 pt-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-mono text-[10px]">2</span>
                   6 Mos Out
                 </div>
                 <ul className="text-slate-600 space-y-1 pl-1 list-disc list-inside">
@@ -221,9 +229,10 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
                 </ul>
               </div>
 
-              <div className="bg-white p-3.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-mono text-[10px]">3</span>
+              <div className="relative overflow-hidden bg-white p-3.5 rounded-xl border border-violet-200/80 shadow-2xs">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
+                <div className="font-extrabold text-violet-950 mb-1.5 flex items-center gap-1.5 pt-1">
+                  <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center font-mono text-[10px]">3</span>
                   3 Mos Out
                 </div>
                 <ul className="text-slate-600 space-y-1 pl-1 list-disc list-inside">
@@ -233,9 +242,10 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
                 </ul>
               </div>
 
-              <div className="bg-white p-3.5 rounded-lg border border-teal-100 shadow-2xs">
-                <div className="font-bold text-teal-900 mb-1 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-mono text-[10px]">4</span>
+              <div className="relative overflow-hidden bg-white p-3.5 rounded-xl border border-amber-200/80 shadow-2xs">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+                <div className="font-extrabold text-amber-950 mb-1.5 flex items-center gap-1.5 pt-1">
+                  <span className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-mono text-[10px]">4</span>
                   1 Mo Out
                 </div>
                 <ul className="text-slate-600 space-y-1 pl-1 list-disc list-inside">
@@ -245,19 +255,19 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
                 </ul>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Search & Category Filter Toolbar */}
         <div className="mt-6 space-y-4">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-indigo-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search hurdles in ${country.name} (e.g. banking, taxes, 183 days, Medicare, English, lease)...`}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-indigo-200/80 text-xs sm:text-sm bg-slate-50/70 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
             />
             {searchQuery && (
               <button
@@ -272,23 +282,25 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
           {/* Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
             {categories.map(cat => (
-              <button
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 flex items-center gap-1.5 transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-teal-700 text-white font-bold shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-950'
                 }`}
               >
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  selectedCategory === cat.id ? 'bg-teal-800 text-teal-100' : 'bg-slate-200 text-slate-600'
+                  selectedCategory === cat.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                 }`}>
                   {cat.count}
                 </span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -447,27 +459,30 @@ export const CountryFaqHurdles: React.FC<CountryFaqHurdlesProps> = ({
       )}
 
       {/* Community Callout & Next Steps Footer Banner */}
-      <div className="bg-linear-to-r from-slate-900 to-teal-950 rounded-xl p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-400 to-amber-400" />
         <div>
-          <span className="text-xs text-teal-400 font-bold uppercase tracking-wider block mb-1">
+          <span className="text-xs text-teal-300 font-bold uppercase tracking-wider block mb-1">
             Still Have Questions About {country.name}?
           </span>
-          <h3 className="text-base sm:text-lg font-bold text-white">
+          <h3 className="text-base sm:text-lg font-extrabold text-white">
             Connect Directly with Expat Peers Living in {country.name}
           </h3>
-          <p className="text-xs text-slate-300 mt-1 max-w-xl">
+          <p className="text-xs text-indigo-200/90 mt-1 max-w-xl">
             Ask real questions about banking, neighborhood safety, or language tutors to retirees who have already made the move.
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setCurrentView('community')}
-            className="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 text-white font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <span>Ask in Community Hub</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
