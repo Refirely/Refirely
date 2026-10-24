@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { AVATAR_PRESETS, WORLD_COUNTRIES } from '../data/userAccounts';
 import {
   X, LogIn, UserPlus, Check, AlertCircle, Compass,
   Sparkles, Lock, Mail, User, ArrowRight, Cloud, Database
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export const AuthModal: React.FC = () => {
   const {
@@ -141,18 +143,23 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-md sm:max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-auto relative max-h-[92vh] flex flex-col overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-purple-600" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white rounded-3xl max-w-md sm:max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-indigo-200/80 my-auto relative max-h-[92vh] flex flex-col overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
 
         {/* Header with Brand & Close Button */}
-        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 shrink-0 gap-2">
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <img
-              src="/assets/aistudio/refirely-icon.png"
-              alt="ReFIREly Emblem"
-              className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0"
-            />
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 shrink-0 gap-2 pt-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <BrandLogo variant="icon" size="md" />
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900 truncate">
                 {authModalTab === 'login' ? 'Sign In to ReFIREly' : 'Create User ID'}
@@ -164,20 +171,22 @@ export const AuthModal: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.08, rotate: 90 }}
+            whileTap={{ scale: 0.92 }}
             onClick={() => setIsAuthModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Cloud Database Connection Status Pill (Owner / Admin Only) */}
         {isOwnerAdmin && (
-          <div className="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-orange-50/80 via-purple-50/50 to-slate-50 border border-orange-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] shrink-0">
+          <div className="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-teal-50/80 via-indigo-50/60 to-amber-50/60 border border-indigo-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <Database className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <Database className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <span className="text-slate-700 truncate">
                 {firebaseUser ? (
                   <>
@@ -196,7 +205,7 @@ export const AuthModal: React.FC = () => {
                 setIsAuthModalOpen(false);
                 openFirebaseModal();
               }}
-              className="px-2 py-1 rounded-md bg-white border border-purple-200 text-purple-800 hover:bg-purple-50 font-bold shrink-0 transition-colors cursor-pointer text-center"
+              className="px-2.5 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-800 hover:bg-indigo-50 font-bold shrink-0 transition-colors cursor-pointer text-center"
             >
               Cloud &amp; Hosting Setup
             </button>
@@ -204,37 +213,39 @@ export const AuthModal: React.FC = () => {
         )}
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl my-3 text-xs font-semibold shrink-0">
-          <button
+        <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl my-3 text-xs font-bold shrink-0">
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setAuthModalTab('login');
               setLoginError(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authModalTab === 'login'
-                ? 'bg-white text-orange-950 font-bold shadow-xs'
+                ? 'bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <LogIn className="w-3.5 h-3.5 text-orange-600" />
+            <LogIn className="w-3.5 h-3.5" />
             <span>Sign In</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setAuthModalTab('signup');
               setSignupError(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authModalTab === 'signup'
-                ? 'bg-white text-purple-950 font-bold shadow-xs'
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <UserPlus className="w-3.5 h-3.5 text-purple-600" />
+            <UserPlus className="w-3.5 h-3.5" />
             <span>Create User ID</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Scrollable Form Body Container for Mobile Responsiveness */}
@@ -661,7 +672,7 @@ export const AuthModal: React.FC = () => {
           </div>
         )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

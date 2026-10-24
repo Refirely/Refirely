@@ -171,8 +171,10 @@ export const DirectoryExplorer: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08, ease: 'easeOut' }}
-            className="bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 p-5 sm:p-7 space-y-6"
+            className="relative overflow-hidden bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 p-5 sm:p-7 space-y-6"
           >
+            {/* Top Multi-Colored Gradient Accent Ribbon */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
             
             {/* Zone 1: Single Unified Search Bar + Action Buttons + Popular Multi-Color Chips */}
             <div className="space-y-3">
@@ -586,9 +588,11 @@ export const DirectoryExplorer: React.FC = () => {
               layout
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {filteredCountries.map(country => (
-                <CountryCard key={country.id} country={country} />
-              ))}
+              <AnimatePresence mode="popLayout">
+                {filteredCountries.map((country, idx) => (
+                  <CountryCard key={country.id} country={country} index={idx} />
+                ))}
+              </AnimatePresence>
             </motion.div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import firebaseConfig from '../../firebase-applet-config.json';
 import {
@@ -128,24 +129,33 @@ export const FirebaseConnectionModal: React.FC = () => {
   const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'ais-pre-42tzfbkwrce22dibqje3r2-165057540295.asia-southeast1.run.app';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
-        {/* Top Saffron-to-Purple Accent Bar */}
-        <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-purple-600" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-indigo-200/80 overflow-hidden my-8"
+      >
+        {/* Top Multi-Color Accent Bar */}
+        <div className="h-2 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
 
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-gradient-to-r from-orange-50/60 via-white to-purple-50/50">
+        <div className="p-6 border-b border-indigo-100/80 flex items-start justify-between gap-4 bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-amber-50/60">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-500 to-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 via-indigo-600 to-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
               <Database className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-extrabold text-slate-900">
-                  Firebase Cloud Database & Hosting Center
+                  Firebase Cloud Database &amp; Hosting Center
                 </h2>
                 <span
-                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
                     firebaseUser
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                       : 'bg-amber-50 text-amber-800 border-amber-200'
@@ -155,17 +165,19 @@ export const FirebaseConnectionModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                Project <strong className="font-mono text-orange-800">{firebaseConfig.projectId}</strong> · Persistent User ID Vault & Hosting Configuration
+                Project <strong className="font-mono text-indigo-800">{firebaseConfig.projectId}</strong> · Persistent User ID Vault &amp; Hosting Configuration
               </p>
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.08, rotate: 90 }}
+            whileTap={{ scale: 0.92 }}
             onClick={() => setIsFirebaseModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Navigation Tabs */}
@@ -742,7 +754,7 @@ export const FirebaseConnectionModal: React.FC = () => {
             Done
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

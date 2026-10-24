@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { FeedbackType, FireNumbersRating } from '../types';
 import {
@@ -183,40 +184,61 @@ export const FeedbackWidget: React.FC = () => {
       </div>
 
       {/* Floating Interactive Feedback & Bug Modal */}
-      {isFeedbackModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
-          onClick={handleClose}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-4"
-            onClick={e => e.stopPropagation()}
+      <AnimatePresence>
+        {isFeedbackModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            onClick={handleClose}
           >
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${
-                  type === 'bug' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                }`}>
-                  {type === 'bug' ? <Bug className="w-5 h-5 text-rose-400" /> : <Sparkles className="w-5 h-5 text-amber-400" />}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 18 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              className="relative bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-indigo-200/80 overflow-hidden flex flex-col max-h-[92vh] my-4"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Top Multi-Color Accent Ribbon */}
+              <div className="h-2 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
+
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-white px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between border-b border-indigo-900/60">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-xs ${
+                      type === 'bug'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-teal-500/20 text-teal-200 border border-teal-400/30'
+                    }`}
+                  >
+                    {type === 'bug' ? (
+                      <Bug className="w-5 h-5 text-rose-400" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-amber-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-white">
+                      {type === 'bug' ? 'Report a Bug or Data Issue' : 'Share Feedback & Haven Insights'}
+                    </h3>
+                    <p className="text-[11px] text-slate-300">
+                      Help us refine retirement numbers, havens, and empirical calculations.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-white">
-                    {type === 'bug' ? 'Report a Bug or Data Issue' : 'Share Feedback & Haven Insights'}
-                  </h3>
-                  <p className="text-[11px] text-slate-300">
-                    Help us refine retirement numbers, havens, and empirical calculations.
-                  </p>
-                </div>
+                <motion.button
+                  whileHover={{ scale: 1.08, rotate: 90 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={handleClose}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-rose-500/80 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  aria-label="Close feedback modal"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
               </div>
-              <button
-                onClick={handleClose}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                aria-label="Close feedback modal"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
             {/* Modal Content */}
             <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 bg-slate-50/60">
@@ -551,9 +573,10 @@ export const FeedbackWidget: React.FC = () => {
                 </form>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

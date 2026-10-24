@@ -7,6 +7,7 @@ import {
   LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
   BookOpen, Database, LayoutDashboard
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export const Navbar: React.FC = () => {
   const {
@@ -59,7 +60,7 @@ export const Navbar: React.FC = () => {
   };
 
   const handleAnchorNav = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
-    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.button) {
       e.preventDefault();
       handleNav(view);
     }
@@ -82,18 +83,14 @@ export const Navbar: React.FC = () => {
       {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
-        {/* Zone 1: Brand wordmark */}
+        {/* Zone 1: Multi-Colored Animated Brand Wordmark */}
         <a
           href={getViewUrl('landing')}
           onClick={(e) => handleAnchorNav(e, 'landing')}
-          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md group shrink-0 py-1"
+          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
           aria-label="ReFIREly Home"
         >
-          <img
-            src="/assets/aistudio/refirely-logo.png"
-            alt="ReFIREly"
-            className="h-8 sm:h-10 w-auto max-w-[120px] sm:max-w-[145px] object-contain transition-transform duration-200 group-hover:scale-[1.03]"
-          />
+          <BrandLogo variant="full" size="md" />
         </a>
 
         {/* Zone 2: Primary navigation links with animated active pill */}

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Multi-colored outer border gradient -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6" />
+      <stop offset="35%" stop-color="#6366f1" />
+      <stop offset="70%" stop-color="#d946ef" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- Rich Dark Indigo/Teal Background -->
+    <radialGradient id="bgGrad" cx="30%" cy="25%" r="85%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="55%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#042f2e" />
+    </radialGradient>
+
+    <!-- FIRE Flame Gradient (Rose -> Orange -> Amber Gold) -->
+    <linearGradient id="flameMain" x1="20%" y1="95%" x2="65%" y2="5%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="48%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+
+    <linearGradient id="flameInner" x1="30%" y1="90%" x2="70%" y2="15%">
+      <stop offset="0%" stop-color="#fb923c" />
+      <stop offset="100%" stop-color="#fde047" />
+    </linearGradient>
+
+    <!-- Tropical Palm Frond Gradient (Emerald -> Teal -> Cyan) -->
+    <linearGradient id="palmGrad" x1="25%" y1="90%" x2="95%" y2="20%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="55%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+
+    <!-- Global Orbit & Airplane Gradient (Cyan -> Indigo -> Violet) -->
+    <linearGradient id="orbitGrad" x1="10%" y1="85%" x2="95%" y2="65%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Multi-Color Rounded Squircle -->
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#bgGrad)" stroke="url(#ringGrad)" stroke-width="5" />
+
+  <!-- Subtle Ambient Glows -->
+  <circle cx="44" cy="44" r="32" fill="#f97316" fill-opacity="0.16" />
+  <circle cx="84" cy="64" r="28" fill="#14b8a6" fill-opacity="0.18" />
+
+  <!-- Left/Center FIRE Flame -->
+  <path
+    d="M32 94C21 81 19 61 29 45C31 53 36 56 39 51C36 37 44 21 56 12C54 25 63 34 68 46C72 56 69 68 62 77C58 62 50 56 44 65C39 73 41 85 32 94Z"
+    fill="url(#flameMain)"
+  />
+  <path
+    d="M41 89C34 79 35 66 43 56C44 62 49 63 51 58C50 47 56 36 62 29C62 39 67 47 67 57C67 68 58 80 41 89Z"
+    fill="url(#flameInner)"
+    fill-opacity="0.88"
+  />
+
+  <!-- Tropical Haven Palm Frond curving right -->
+  <path
+    d="M47 98C45 76 55 55 77 42C89 35 99 30 106 23C104 33 98 41 89 46C96 45 103 42 108 38C103 46 95 52 84 55C92 55 99 54 105 51C99 58 90 62 79 63C86 64 93 64 98 62C91 68 81 71 71 70C77 72 83 73 88 72C80 77 69 78 60 76C54 83 52 91 52 98H47Z"
+    fill="url(#palmGrad)"
+  />
+
+  <!-- Global Latitude Orbit Swoosh -->
+  <path
+    d="M18 89C24 105 56 109 86 92L82 87L97 85L91 99L88 95C56 115 21 111 18 89Z"
+    fill="url(#orbitGrad)"
+  />
+  <path
+    d="M34 103C48 113 74 112 96 96C80 115 48 118 34 103Z"
+    fill="url(#orbitGrad)"
+    fill-opacity="0.75"
+  />
+
+  <!-- Ascending Jet Airplane -->
+  <path
+    d="M96 76L113 68L115 70L106 81L111 91L108 93L100 84L93 88L92 93L89 94L90 86L83 83L85 80L90 83L97 78L90 68L93 66L102 74L96 76Z"
+    fill="#f8fafc"
+  />
+</svg>

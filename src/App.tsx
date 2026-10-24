@@ -18,6 +18,7 @@ import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { FeedbackWidget } from './components/FeedbackWidget';
+import { BrandLogo } from './components/BrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { Compass, Shield } from 'lucide-react';
 
@@ -113,11 +114,7 @@ const MainContent: React.FC = () => {
                 className="inline-flex items-center focus:outline-none group"
                 aria-label="ReFIREly Home"
               >
-                <img
-                  src="/assets/aistudio/refirely-logo.png"
-                  alt="ReFIREly"
-                  className="h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
-                />
+                <BrandLogo variant="full" size="md" showTagline />
               </a>
               <p className="text-slate-500 text-xs leading-relaxed">
                 Objective empirical guidance and expat community connections for prospective retirees evaluating relocation worldwide.

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { motion } from 'motion/react';
 import {
   Country,
   CommunityThread,
@@ -15,6 +16,7 @@ import {
 } from '../utils/exportCountryDossierPdf';
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { CountryFlag } from './CountryFlag';
+import { BrandLogo } from './BrandLogo';
 import {
   X,
   Download,
@@ -132,18 +134,27 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   const activeSectionsCount = Object.values(options).filter(Boolean).length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pdf-export-modal-title"
     >
-      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-orange-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="relative bg-white rounded-3xl max-w-6xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-indigo-200/80 overflow-hidden"
+      >
+        {/* Top Multi-Color Gradient Ribbon */}
+        <div className="h-2 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
+
         {/* Top Modal Header */}
-        <div className="px-5 py-4 bg-gradient-to-r from-orange-50 via-purple-50/60 to-blue-50/70 border-b border-orange-200/80 flex flex-wrap items-center justify-between gap-4 shrink-0">
+        <div className="px-5 py-4 bg-gradient-to-r from-teal-50/80 via-indigo-50/60 to-amber-50/75 border-b border-indigo-200/70 flex flex-wrap items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 via-amber-500 to-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-600 to-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -151,7 +162,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 <h2 id="pdf-export-modal-title" className="text-base sm:text-lg font-extrabold text-slate-900">
                   {country.flag} {country.name} — Official 22-Page Master Dossier Studio
                 </h2>
-                <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-900 border border-orange-200">
+                <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-200">
                   22-Page Premium Publication · {activeSectionsCount} Chapters
                 </span>
               </div>
@@ -344,19 +355,11 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-300 shadow-xs text-center space-y-5">
                   {/* Official ReFIREly Website Logo */}
                   <div className="flex flex-col items-center">
-                    <img
-                      src="/assets/aistudio/refirely-logo.png"
-                      alt="ReFIREly"
-                      className="h-12 sm:h-16 w-auto object-contain"
-                    />
+                    <BrandLogo variant="full" size="lg" />
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2">
                       Global Relocation Intelligence · FIRE Analytics · Expat Atlas
                     </p>
-                    <div className="w-28 h-0.5 flex mt-2 rounded-full overflow-hidden">
-                      <div className="w-1/3 bg-[#17253b]" />
-                      <div className="w-1/3 bg-orange-600" />
-                      <div className="w-1/3 bg-[#5d8c3e]" />
-                    </div>
+                    <div className="w-32 h-1 mt-2 rounded-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
                   </div>
 
                   {/* Edition Pill & Country Hero Title */}
@@ -422,11 +425,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   {/* Provenance & Licensing Certificate Preview */}
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-left flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
                     <div className="flex items-center gap-2">
-                      <img
-                        src="/assets/aistudio/refirely-icon.png"
-                        alt=""
-                        className="w-5 h-5 object-contain shrink-0"
-                      />
+                      <BrandLogo variant="icon" size="sm" />
                       <span className="font-bold text-[#17253b]">
                         Provenance & Audit Certificate:
                       </span>
@@ -705,7 +704,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
           </div>
 
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
