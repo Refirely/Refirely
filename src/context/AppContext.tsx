@@ -158,6 +158,7 @@ interface AppContextType {
   isCountrySaved: (id: string) => boolean;
   comparedCountryIds: string[];
   toggleCompareCountry: (id: string) => void;
+  replaceCompareCountry: (oldId: string, newId: string) => void;
   isCountryCompared: (id: string) => boolean;
   clearComparedCountries: () => void;
 
@@ -2604,6 +2605,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const replaceCompareCountry = (oldId: string, newId: string) => {
+    setComparedCountryIds(prev => {
+      if (oldId === newId) return prev;
+      // If newId is already in the list, swap their positions
+      const oldIdx = prev.indexOf(oldId);
+      const newIdx = prev.indexOf(newId);
+      if (oldIdx === -1) return prev;
+      const next = [...prev];
+      if (newIdx !== -1) {
+        next[oldIdx] = newId;
+        next[newIdx] = oldId;
+        return next;
+      }
+      next[oldIdx] = newId;
+      return next;
+    });
+  };
+
   const isCountryCompared = (id: string) => comparedCountryIds.includes(id);
 
   const clearComparedCountries = () => setComparedCountryIds([]);
@@ -3349,6 +3368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isCountrySaved,
         comparedCountryIds,
         toggleCompareCountry,
+        replaceCompareCountry,
         isCountryCompared,
         clearComparedCountries,
         checklist,

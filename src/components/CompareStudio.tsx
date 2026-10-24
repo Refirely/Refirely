@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Country } from '../types';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
 import { CountryFlag } from './CountryFlag';
+import { CountryRadarChart, SLOT_THEMES } from './CountryRadarChart';
 import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale, Search, Award } from 'lucide-react';
 
 const TOP_RETIREMENT_HAVEN_IDS = [
@@ -25,6 +26,7 @@ export const CompareStudio: React.FC = () => {
     countries,
     comparedCountryIds,
     toggleCompareCountry,
+    replaceCompareCountry,
     clearComparedCountries,
     navigateToCountry,
     discreetLifestyleEnabled,
@@ -33,7 +35,13 @@ export const CompareStudio: React.FC = () => {
 
   const [selectorSearch, setSelectorSearch] = useState('');
 
-  const comparedCountries = countries.filter(c => comparedCountryIds.includes(c.id));
+  const comparedCountries = useMemo(
+    () =>
+      comparedCountryIds
+        .map(id => countries.find(c => c.id === id))
+        .filter((c): c is Country => Boolean(c)),
+    [countries, comparedCountryIds]
+  );
 
   const availableCountriesToAdd = useMemo(() => {
     return countries
@@ -165,6 +173,16 @@ export const CompareStudio: React.FC = () => {
         </div>
       )}
 
+      {/* D3 Multi-Country Lifestyle & Economic Radar Chart (Synced 1-to-1 with Matrix) */}
+      <CountryRadarChart
+        countries={countries}
+        comparedCountries={comparedCountries}
+        discreetLifestyleEnabled={discreetLifestyleEnabled}
+        onToggleCompareCountry={toggleCompareCountry}
+        onReplaceCompareCountry={replaceCompareCountry}
+        onNavigateToCountry={navigateToCountry}
+      />
+
       {/* Empty State with Top Retirement Havens */}
       {comparedCountries.length === 0 ? (
         <div className="p-6 sm:p-10 bg-white rounded-xl border border-slate-200 my-8 shadow-2xs">
@@ -253,37 +271,46 @@ export const CompareStudio: React.FC = () => {
                   <th className="py-4 px-4 w-48 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-100/50">
                     Empirical Parameter
                   </th>
-                  {comparedCountries.map(c => (
-                    <th key={c.id} className="py-4 px-4 min-w-[210px] align-top">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="lg" className="rounded-xs" />
-                          <div>
-                            <span className="text-base font-bold text-slate-900 block leading-tight">
-                              {c.name}
-                            </span>
-                            <span className="text-xs font-normal text-slate-500">{c.region}</span>
+                  {comparedCountries.map((c, idx) => {
+                    const slotTheme = SLOT_THEMES[idx % SLOT_THEMES.length];
+                    return (
+                      <th key={c.id} className="py-4 px-4 min-w-[210px] align-top">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <CountryFlag countryCode={c.code} countryName={c.name} fallbackEmoji={c.flag} size="lg" className="rounded-xs" />
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`w-2.5 h-2.5 rounded-full ${slotTheme.dotBg} shrink-0`}
+                                  title={`Radar Overlay Slot ${idx + 1}`}
+                                />
+                                <span className="text-base font-bold text-slate-900 block leading-tight">
+                                  {c.name}
+                                </span>
+                              </div>
+                              <span className="text-xs font-normal text-slate-500">{c.region}</span>
+                            </div>
                           </div>
+
+                          <button
+                            onClick={() => toggleCompareCountry(c.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1"
+                            title={`Remove ${c.name} from comparison`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
 
                         <button
-                          onClick={() => toggleCompareCountry(c.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1"
-                          title={`Remove ${c.name} from comparison`}
+                          onClick={() => navigateToCountry(c.id)}
+                          className="text-xs text-orange-700 hover:text-orange-900 font-semibold inline-flex items-center gap-1 mt-1"
                         >
-                          <X className="w-4 h-4" />
+                          <span>View Full Dossier</span>
+                          <ArrowRight className="w-3 h-3" />
                         </button>
-                      </div>
-
-                      <button
-                        onClick={() => navigateToCountry(c.id)}
-                        className="text-xs text-orange-700 hover:text-orange-900 font-semibold inline-flex items-center gap-1 mt-1"
-                      >
-                        <span>View Full Dossier</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </th>
-                  ))}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 
