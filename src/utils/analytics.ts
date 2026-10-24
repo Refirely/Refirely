@@ -8,17 +8,17 @@ declare global {
   }
 }
 
-// Resolve Google Analytics 4 Measurement ID (e.g., "G-XXXXXXXXXX")
-// Supports VITE_GA_MEASUREMENT_ID env var or firebase-applet-config.json measurementId
+// Resolve Google Analytics 4 Measurement ID (G-BF5ZNE0F65)
 export const GA_MEASUREMENT_ID: string =
   (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined)?.trim() ||
   (firebaseConfig.measurementId as string | undefined)?.trim() ||
-  '';
+  'G-BF5ZNE0F65';
 
 let isGaInitialized = false;
+let isInitialPageLoad = true;
 
 /**
- * Dynamically loads Google Analytics 4 (gtag.js) if a valid G-XXXXXXXXXX Measurement ID is configured.
+ * Ensures Google Analytics 4 (gtag.js) is available on window.
  */
 export function initGoogleAnalytics(): void {
   if (typeof window === 'undefined' || isGaInitialized) return;
@@ -47,13 +47,9 @@ export function initGoogleAnalytics(): void {
       GA_MEASUREMENT_ID
     )}`;
     document.head.appendChild(script);
+    window.gtag('js', new Date());
+    window.gtag('config', GA_MEASUREMENT_ID);
   }
-
-  window.gtag('js', new Date());
-  window.gtag('config', GA_MEASUREMENT_ID, {
-    send_page_view: false, // Handled manually on SPA route/view transitions
-    anonymize_ip: true,
-  });
 }
 
 /**
@@ -67,6 +63,15 @@ export function trackPageView(
   initGoogleAnalytics();
 
   if (!window.gtag || !GA_MEASUREMENT_ID) return;
+
+  // The inline script in index.html already sends the initial landing page_view,
+  // so skip duplicate firing on the very first hydration unless viewing a country dossier.
+  if (isInitialPageLoad) {
+    isInitialPageLoad = false;
+    if (view === 'landing' && !selectedCountry) {
+      return;
+    }
+  }
 
   const pagePath =
     view === 'country-detail' && selectedCountry
