@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
@@ -19,10 +19,8 @@ import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { BrandLogo } from './components/BrandLogo';
-import { BrandKitModal } from './components/BrandKitModal';
-import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
-import { Compass, Shield, Download, Sparkles } from 'lucide-react';
+import { Compass, Shield } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const {
@@ -37,8 +35,6 @@ const MainContent: React.FC = () => {
     isAuthenticated,
     currentUserId,
   } = useApp();
-
-  const [brandKitOpen, setBrandKitOpen] = useState(true);
 
   useEffect(() => {
     updatePageSeo(currentView, selectedCountry, countries);
@@ -63,7 +59,7 @@ const MainContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-indigo-50/15 to-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-950">
       
       {/* Top Bar (Follows 3-zone contract) */}
-      <Navbar onOpenBrandKit={() => setBrandKitOpen(true)} />
+      <Navbar />
 
       {/* Main Viewport Router with Smooth Page Transitions */}
       <div className="flex-1">
@@ -97,12 +93,11 @@ const MainContent: React.FC = () => {
       {/* Global In-App Notifications Toast */}
       <MessageNotificationToast />
 
-      {/* Global Auth, Profile & Brand Kit Modals */}
+      {/* Global Auth and Profile Modals */}
       <AuthModal />
       <EditProfileModal />
       <FirebaseConnectionModal />
       <PublicProfileModal />
-      <BrandKitModal isOpen={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
       <FeedbackWidget />
 
       {/* Multi-Colored Elegant Footer */}
@@ -111,7 +106,7 @@ const MainContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-100">
             
-            {/* Col 1: Wordmark & Purpose + 4K Logo Download */}
+            {/* Col 1: Wordmark & Purpose */}
             <div className="space-y-3">
               <a
                 href={getViewUrl('landing')}
@@ -124,22 +119,6 @@ const MainContent: React.FC = () => {
               <p className="text-slate-500 text-xs leading-relaxed">
                 Objective empirical guidance and expat community connections for prospective retirees evaluating relocation worldwide.
               </p>
-              <div className="pt-1 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setBrandKitOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 shadow-2xs transition-all cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download 4K Logo &amp; Promo Kit</span>
-                </button>
-                <button
-                  onClick={() => downloadBrandPng('horizontal-transparent', 1)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-colors cursor-pointer"
-                  title="Directly download the 4096x1400 4K Transparent PNG to your computer"
-                >
-                  <span>1-Click 4K PNG</span>
-                </button>
-              </div>
             </div>
 
             {/* Col 2: Havens by Region */}

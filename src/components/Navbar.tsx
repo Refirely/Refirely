@@ -5,15 +5,11 @@ import { getViewUrl } from '../utils/seo';
 import {
   User, Shield, Bookmark, MessageCircle, Menu, X, SlidersHorizontal,
   LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
-  BookOpen, Database, LayoutDashboard, Download
+  BookOpen, Database, LayoutDashboard
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
-interface NavbarProps {
-  onOpenBrandKit?: () => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
+export const Navbar: React.FC = () => {
   const {
     currentView,
     setCurrentView,
@@ -87,27 +83,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
       {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
-        {/* Zone 1: Multi-Colored Animated Brand Wordmark + High-Res Logo Kit Trigger */}
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={getViewUrl('landing')}
-            onClick={(e) => handleAnchorNav(e, 'landing')}
-            className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
-            aria-label="ReFIREly Home"
-          >
-            <BrandLogo variant="full" size="md" />
-          </a>
-          {onOpenBrandKit && (
-            <button
-              onClick={onOpenBrandKit}
-              title="Download High-Resolution 4K Logo & Promo Brand Kit (PNG / SVG)"
-              className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-indigo-700 hover:text-white bg-indigo-50/90 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-teal-600 border border-indigo-200/80 transition-all shadow-2xs cursor-pointer"
-            >
-              <Download className="w-3 h-3" />
-              <span>4K Logo</span>
-            </button>
-          )}
-        </div>
+        {/* Zone 1: Multi-Colored Animated Brand Wordmark */}
+        <a
+          href={getViewUrl('landing')}
+          onClick={(e) => handleAnchorNav(e, 'landing')}
+          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
+          aria-label="ReFIREly Home"
+        >
+          <BrandLogo variant="full" size="md" />
+        </a>
 
         {/* Zone 2: Primary navigation links with animated active pill */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-[13px] font-semibold text-slate-600 min-w-0 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/70">
