@@ -49,7 +49,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     feedbackReports,
     startDmWithPeer,
     setCurrentView,
-    logout,
+    dmThreads,
+    totalUnreadDms,
+    setActiveDmThreadId,
+    switchAccount,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -262,6 +265,98 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     };
   }, [registeredAccounts]);
 
+  // Live Accounting Snapshot (reads from Accounting module localStorage keys)
+  const accountingSnapshot = useMemo(() => {
+    let fxRate = 94.5;
+    let txs: {
+      id: string;
+      date: string;
+      type: 'expense' | 'revenue';
+      currency: 'INR' | 'USD';
+      amount: number;
+      amountINR: number;
+      amountUSD: number;
+      vendor: string;
+      category: string;
+      description: string;
+    }[] = [];
+    try {
+      const savedRate = localStorage.getItem('refirely_admin_accounting_usd_inr_rate_v1');
+      if (savedRate && !isNaN(parseFloat(savedRate)) && parseFloat(savedRate) > 0) {
+        fxRate = parseFloat(savedRate);
+      }
+      const savedTxs = localStorage.getItem('refirely_admin_accounting_transactions_v1');
+      if (savedTxs) {
+        const parsed = JSON.parse(savedTxs);
+        if (Array.isArray(parsed)) txs = parsed;
+      }
+    } catch {}
+
+    const expenses = txs.filter(t => t.type === 'expense');
+    const revenues = txs.filter(t => t.type === 'revenue');
+    const totalExpenseINR = expenses.reduce((sum, t) => sum + (t.amountINR || 0), 0);
+    const totalExpenseUSD = expenses.reduce((sum, t) => sum + (t.amountUSD || 0), 0);
+    const totalRevenueINR = revenues.reduce((sum, t) => sum + (t.amountINR || 0), 0);
+    const totalRevenueUSD = revenues.reduce((sum, t) => sum + (t.amountUSD || 0), 0);
+
+    return {
+      fxRate,
+      totalTransactions: txs.length,
+      expenseCount: expenses.length,
+      revenueCount: revenues.length,
+      totalExpenseINR,
+      totalExpenseUSD,
+      totalRevenueINR,
+      totalRevenueUSD,
+      netBalanceINR: totalRevenueINR - totalExpenseINR,
+      recentTransactions: txs.slice(0, 3),
+    };
+  }, [activeTab]);
+
+  // Live Social Promo Studio Snapshot
+  const promoSnapshot = useMemo(() => {
+    let discardedIds: string[] = [];
+    let customIds: string[] = [];
+    try {
+      const savedDiscarded = localStorage.getItem('refirely_admin_discarded_promo_cards_v1');
+      if (savedDiscarded) {
+        const parsed = JSON.parse(savedDiscarded);
+        if (Array.isArray(parsed)) discardedIds = parsed;
+      }
+      const savedCustom = localStorage.getItem('refirely_admin_custom_country_promos_v1');
+      if (savedCustom) {
+        const parsed = JSON.parse(savedCustom);
+        if (Array.isArray(parsed)) customIds = parsed;
+      }
+    } catch {}
+    const totalGenerated = 8 + Math.min(6, countries.length) + customIds.length;
+    const activeCount = Math.max(0, totalGenerated - discardedIds.length);
+    return {
+      activeCount,
+      discardedCount: discardedIds.length,
+      coreModulesCount: 8,
+      countryCoversCount: Math.min(6, countries.length) + customIds.length,
+    };
+  }, [activeTab, countries.length]);
+
+  // Regional Catalog Breakdown
+  const regionBreakdown = useMemo(() => {
+    const map: Record<string, { count: number; totalBudget: number }> = {};
+    countries.forEach(c => {
+      const reg = c.region || 'Other';
+      if (!map[reg]) map[reg] = { count: 0, totalBudget: 0 };
+      map[reg].count += 1;
+      map[reg].totalBudget += c.costOfLiving.monthlyBudgetSingleUSD || 1800;
+    });
+    return Object.entries(map)
+      .map(([region, data]) => ({
+        region,
+        count: data.count,
+        avgBudget: Math.round(data.totalBudget / Math.max(1, data.count)),
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [countries]);
+
   // Export registered users to CSV
   const handleExportUsersCsv = () => {
     const headers = [
@@ -341,6 +436,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
         message: res.error || 'Displaying all local & preloaded registered user accounts.',
       });
     }
+  };
+
+  const handleSyncAllCloud = async () => {
+    const res = await syncAllAccountsToCloud();
+    setStatusBanner({
+      type: res.success ? 'success' : 'error',
+      message: res.success
+        ? `Successfully synced ${res.syncedCount} registered user accounts and workspace collections to Firestore.`
+        : res.error || 'Sync failed.',
+    });
   };
 
   const handleSaveUserEdit = async (e: React.FormEvent) => {
@@ -444,114 +549,77 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-indigo-50/40 via-slate-50 to-teal-50/30">
-      {/* Top Contextual Bar - Multi-Colored Governance Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-50/90 via-white to-amber-50/85 border-b border-indigo-200/80 shadow-xs">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50/70">
+      {/* Clean Contextual Governance Header (Zero Redundant Module Buttons) */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-bold text-indigo-900 bg-indigo-100/80 border border-indigo-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                <Shield className="w-3.5 h-3.5 text-indigo-600" />
-                <span>ReFIREly Governance</span>
-              </span>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span>Admin Console</span>
               <span aria-hidden="true">/</span>
-              <span className="text-slate-900 font-bold capitalize">
-                {activeTab === 'overview' && 'Executive Overview'}
+              <span className="text-slate-900 font-semibold">
+                {activeTab === 'overview' && 'All-Modules Executive Snapshot'}
                 {activeTab === 'users' && `Registered Users Directory (${registeredAccounts.length})`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
-                {activeTab === 'community' && 'Community & Meetups Moderation'}
+                {activeTab === 'community' && 'Forum & Meetups Moderation'}
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
                 {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger (₹ / $)'}
-                {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots'}
+                {activeTab === 'social-promo' && 'Portrait Social Promo Studio'}
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
-              Admin CMS &amp;{' '}
-              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
-                Registered Users Console
-              </span>
+              {activeTab === 'overview' && 'Platform Governance & All-Modules Snapshot'}
+              {activeTab === 'users' && 'Registered Users & Member Profiles'}
+              {activeTab === 'countries' && 'Global Country Dossier Catalog CMS'}
+              {activeTab === 'community' && 'Community Forum & Expat Meetups'}
+              {activeTab === 'feedback' && 'User Feedback, Ideas & Bug Triage'}
+              {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger'}
+              {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots Studio'}
+              {activeTab === 'cloud' && 'Firebase Cloud Database & Sync Center'}
             </h1>
           </div>
 
-          {/* Right Quick Actions */}
+          {/* Primary Creation & Asset Actions Only */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setActiveTab('accounting')}
-              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-              title="Open Admin Accounting, Expenses & Revenue Ledger (₹ INR & $ USD)"
-            >
-              <IndianRupee className="w-3.5 h-3.5 text-amber-200" />
-              <span>Accounting (₹ / $)</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setActiveTab('social-promo')}
-              className="px-3.5 py-2 bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:to-violet-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-              title="Generate, Download & Discard Portrait Social Media Snapshots (Admin Only)"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Portrait Social Snapshots</span>
-            </motion.button>
-            {onOpenBrandKit && (
-              <motion.button
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={onOpenBrandKit}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-indigo-950 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer border border-indigo-400/40"
-                title="Open 4K High-Resolution Brand & Logo Kit (Admin Only)"
+            {activeTab !== 'overview' && (
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5 text-teal-300" />
-                <span>4K Brand &amp; Logo Kit</span>
-              </motion.button>
+                <LayoutDashboard className="w-3.5 h-3.5 text-slate-600" />
+                <span>All-Modules Overview</span>
+              </button>
             )}
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={() => setIsCreateUserModalOpen(true)}
-              className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-amber-300" />
-              <span>Add User</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+              <span>Register User</span>
+            </button>
+            <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Country</span>
-            </motion.button>
-            <button
-              onClick={() => setCurrentView('messages')}
-              className="px-3.5 py-2 bg-white border border-teal-200 text-teal-900 hover:bg-teal-50 font-bold text-xs rounded-xl transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              title="Open Direct Messages to message registered users"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-teal-700" />
-              <span>Direct Messages</span>
             </button>
-            <div className="px-3 py-2 bg-amber-50 border border-amber-200 text-amber-900 font-bold text-xs rounded-xl flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-amber-600" />
-              <span>Role: Platform Admin</span>
-            </div>
-            <button
-              onClick={() => logout()}
-              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              title="Log out of Admin session and open Sign In"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-600" />
-              <span>Log Out</span>
-            </button>
+            {onOpenBrandKit && (
+              <button
+                onClick={onOpenBrandKit}
+                className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Open 4K High-Resolution Brand & Logo Kit"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-600" />
+                <span>4K Brand Kit</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Workspace Layout: Left Sidebar + Content Area */}
+      {/* Main Workspace Layout: Left Module Sidebar + Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {statusBanner && (
           <div
@@ -574,12 +642,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
         )}
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* Left Navigation Sidebar */}
-          <aside className="w-full lg:w-60 shrink-0 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl p-2.5 space-y-1.5 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
+          {/* Left Navigation Sidebar — Single Canonical Module Rail */}
+          <aside className="w-full lg:w-60 shrink-0 bg-white border border-slate-200 rounded-2xl p-2.5 space-y-1 shadow-2xs">
             <div className="px-3 py-2 border-b border-slate-100 mb-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-900/70">
-                Console Modules
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Admin Modules
               </p>
             </div>
 
@@ -587,13 +654,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               onClick={() => setActiveTab('overview')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Executive Overview</span>
+                <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                <span>All-Modules Overview</span>
+              </span>
+              <span
+                className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded ${
+                  activeTab === 'overview' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                8
               </span>
             </button>
 
@@ -601,17 +675,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               onClick={() => setActiveTab('users')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'users'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Users className="w-4 h-4" />
+                <Users className="w-4 h-4 text-indigo-500" />
                 <span>Registered Users</span>
               </span>
               <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-800'
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                  activeTab === 'users' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'
                 }`}
               >
                 {registeredAccounts.length}
@@ -622,17 +696,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               onClick={() => setActiveTab('countries')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'countries'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Globe className="w-4 h-4" />
+                <Globe className="w-4 h-4 text-teal-500" />
                 <span>Country CMS Catalog</span>
               </span>
               <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-800'
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                  activeTab === 'countries' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'
                 }`}
               >
                 {countries.length}
@@ -640,69 +714,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             </button>
 
             <button
-              onClick={() => setActiveTab('community')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'community'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <MessageSquare className="w-4 h-4" />
-                <span>Forum &amp; Meetups</span>
-              </span>
-              <span
-                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === 'community' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-800'
-                }`}
-              >
-                {threads.length + meetups.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('feedback')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'feedback'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <MessageSquarePlus className={`w-4 h-4 ${activeTab === 'feedback' ? 'text-amber-300' : 'text-orange-500'}`} />
-                <span>Feedback &amp; Bugs</span>
-              </span>
-              <div className="flex items-center gap-1.5">
-                {feedbackReports.filter(r => r.status === 'new').length > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-orange-600 text-white">
-                    {feedbackReports.filter(r => r.status === 'new').length} new
-                  </span>
-                )}
-                <span
-                  className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded-md ${
-                    activeTab === 'feedback' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {feedbackReports.length}
-                </span>
-              </div>
-            </button>
-
-            <button
               onClick={() => setActiveTab('accounting')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'accounting'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <IndianRupee className={`w-4 h-4 ${activeTab === 'accounting' ? 'text-amber-300' : 'text-emerald-600'}`} />
-                <span>Accounting &amp; Expenses</span>
+                <IndianRupee className="w-4 h-4 text-emerald-500" />
+                <span>Accounting &amp; Ledger</span>
               </span>
               <span
-                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
-                  activeTab === 'accounting' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800'
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                  activeTab === 'accounting' ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-800'
                 }`}
               >
                 ₹ / $
@@ -713,17 +738,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               onClick={() => setActiveTab('social-promo')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'social-promo'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Sparkles className={`w-4 h-4 ${activeTab === 'social-promo' ? 'text-amber-300' : 'text-teal-600'}`} />
-                <span>Social Promo Snapshots</span>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Social Promo Studio</span>
               </span>
               <span
-                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
-                  activeTab === 'social-promo' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-800'
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                  activeTab === 'social-promo' ? 'bg-white/15 text-white' : 'bg-amber-50 text-amber-800'
                 }`}
               >
                 9:16
@@ -731,15 +756,64 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             </button>
 
             <button
-              onClick={() => setActiveTab('cloud')}
+              onClick={() => setActiveTab('community')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'cloud'
-                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
-                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+                activeTab === 'community'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Database className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 text-violet-500" />
+                <span>Forum &amp; Meetups</span>
+              </span>
+              <span
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                  activeTab === 'community' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {threads.length + meetups.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('feedback')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'feedback'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <MessageSquarePlus className="w-4 h-4 text-rose-500" />
+                <span>Feedback &amp; Bugs</span>
+              </span>
+              <div className="flex items-center gap-1">
+                {feedbackReports.filter(r => r.status === 'new').length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-600 text-white">
+                    {feedbackReports.filter(r => r.status === 'new').length}
+                  </span>
+                )}
+                <span
+                  className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                    activeTab === 'feedback' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {feedbackReports.length}
+                </span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('cloud')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'cloud'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Database className="w-4 h-4 text-sky-500" />
                 <span>Cloud DB &amp; Sync</span>
               </span>
               <span
@@ -757,301 +831,159 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               </span>
             </button>
 
-            {/* Active Admin Session Summary Card */}
-            <div className="pt-3 mt-3 border-t border-slate-100 px-3 py-2.5 space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Active Session
-              </div>
-              <div className="flex items-center gap-2">
-                {userProfile.avatarUrl ? (
-                  <img
-                    src={userProfile.avatarUrl}
-                    alt={userProfile.name}
-                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
-                    {userProfile.name.charAt(0)}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-900 truncate">{userProfile.name}</p>
-                  <p className="text-[11px] text-slate-500 font-mono truncate">{currentUserId}</p>
-                </div>
-              </div>
+            <div className="pt-2 mt-2 border-t border-slate-100">
+              <button
+                onClick={() => setCurrentView('messages')}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-teal-900 bg-teal-50/70 hover:bg-teal-100/80 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-2.5">
+                  <MessageCircle className="w-4 h-4 text-teal-700" />
+                  <span>Direct Messages</span>
+                </span>
+                <span className="font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-white text-teal-900">
+                  {totalUnreadDms > 0 ? `${totalUnreadDms} new` : dmThreads.length}
+                </span>
+              </button>
             </div>
           </aside>
 
           {/* Main Content Viewport */}
           <div className="flex-1 min-w-0 w-full space-y-6">
             {/* =========================================================
-                TAB 1: EXECUTIVE OVERVIEW (Reshuffled Unified Dashboard)
+                TAB 1: ALL-MODULES EXECUTIVE SNAPSHOT OVERVIEW
             ========================================================= */}
             {activeTab === 'overview' && (
               <>
-                {/* 5-Column Multi-Color KPI Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
+                {/* 4-Column Executive Platform Pulse Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div
                     onClick={() => setActiveTab('users')}
-                    className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/80 border border-indigo-200/80 hover:border-indigo-400 transition-all shadow-xs cursor-pointer"
+                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-400 transition-all cursor-pointer shadow-2xs"
                   >
-                    <div className="flex items-center justify-between text-indigo-900">
-                      <span className="text-xs font-bold">Registered Users</span>
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-2xs">
-                        <Users className="w-3.5 h-3.5" />
-                      </div>
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>01 · Registered Users</span>
+                      <Users className="w-4 h-4 text-indigo-600" />
                     </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-indigo-950 mt-2">
-                      {userStats.total}
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
+                      {userStats.total} Accounts
                     </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
-                      <span>{userStats.adminsCount} Admin</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{userStats.membersCount} Members</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="text-emerald-700 font-bold">{userStats.syncedCount} Synced</span>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab('countries')}
-                    className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-orange-50/80 border border-amber-200/80 hover:border-amber-400 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-amber-900">
-                      <span className="text-xs font-bold">Published Havens</span>
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
-                        <Globe className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-amber-950 mt-2">
-                      {countries.length}
-                    </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
-                      <span>Europe</span>
-                      <span aria-hidden="true">·</span>
-                      <span>SE Asia</span>
-                      <span aria-hidden="true">·</span>
-                      <span>Americas</span>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab('users')}
-                    className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/80 border border-emerald-200/80 hover:border-emerald-400 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-emerald-900">
-                      <span className="text-xs font-bold">Avg. User Target Budget</span>
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
-                        <DollarSign className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-emerald-950 mt-2">
-                      ${userStats.avgBudget.toLocaleString()}/mo
-                    </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
-                      <span>Avg. Net Worth: ${(userStats.avgNetWorth / 1000).toFixed(0)}k</span>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab('community')}
-                    className="p-5 rounded-2xl bg-gradient-to-br from-violet-50/90 via-white to-fuchsia-50/80 border border-violet-200/80 hover:border-violet-400 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-violet-900">
-                      <span className="text-xs font-bold">Community &amp; Meetups</span>
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-2xs">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-violet-950 mt-2">
-                      {threads.length} / {meetups.length}
-                    </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
-                      <span>{threads.length} Forum</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{meetups.length} Meetups</span>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab('feedback')}
-                    className="p-5 rounded-2xl bg-gradient-to-br from-rose-50/90 via-white to-orange-50/80 border border-rose-200/80 hover:border-rose-400 transition-all shadow-xs cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-rose-900">
-                      <span className="text-xs font-bold">Feedback &amp; Bugs</span>
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
-                        <MessageSquarePlus className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                    <div className="font-mono tabular-nums text-2xl font-extrabold text-rose-950 mt-2">
-                      {feedbackReports.length}
-                    </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1.5">
-                      <span className="text-rose-700 font-bold">{feedbackReports.filter(r => r.status === 'new').length} New</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{feedbackReports.filter(r => r.type === 'bug').length} Bugs</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="text-emerald-700 font-bold">{feedbackReports.filter(r => r.status === 'resolved' || r.status === 'closed').length} Done</span>
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Registered Users & Basic Information Section (Directly visible on Overview) */}
-                <div className="relative bg-white rounded-2xl border border-indigo-200/80 overflow-hidden shadow-xs">
-                  <div className="h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
-                  <div className="p-5 border-b border-indigo-100 bg-gradient-to-r from-indigo-50/50 via-white to-teal-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-base font-extrabold text-slate-900">
-                        Registered Users &amp; Basic Member Information ({registeredAccounts.length})
-                      </h2>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        Complete roster of registered User IDs, contact emails, origin &amp; residing countries, target retirement havens, budgets, and relocation status.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={handleExportUsersCsv}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Export CSV</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('users')}
-                        className="px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-xs"
-                      >
-                        <span>Full User Directory</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {userStats.membersCount} Members · Avg Budget ${userStats.avgBudget.toLocaleString()}/mo
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs divide-y divide-slate-200">
-                      <thead className="bg-slate-50 text-slate-600 font-semibold">
-                        <tr>
-                          <th className="py-3 px-4">User & Account ID</th>
-                          <th className="py-3 px-4">Email & Role</th>
-                          <th className="py-3 px-4">Origin → Residing</th>
-                          <th className="py-3 px-4">Target Haven & Year</th>
-                          <th className="py-3 px-4">Relocation Stage</th>
-                          <th className="py-3 px-4 text-right">Budget / Portfolio</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {registeredAccounts.map(acc => {
+                  <div
+                    onClick={() => setActiveTab('countries')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>02 · Country CMS Catalog</span>
+                      <Globe className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
+                      {countries.length} Havens
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Across {regionBreakdown.length} global regions · Full visa &amp; cost data
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setActiveTab('accounting')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>03 · Accounting &amp; Expenses</span>
+                      <IndianRupee className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
+                      ₹{Math.round(accountingSnapshot.totalExpenseINR).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {accountingSnapshot.totalTransactions} entries · Rev: ₹{Math.round(accountingSnapshot.totalRevenueINR).toLocaleString('en-IN')} · $1 = ₹{accountingSnapshot.fxRate}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setActiveTab('feedback')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-400 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>04 · Moderation &amp; Support</span>
+                      <MessageSquarePlus className="w-4 h-4 text-rose-600" />
+                    </div>
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
+                      {feedbackReports.filter(r => r.status === 'new').length} Open Reports
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {threads.length} Forum Threads · {meetups.length} Meetups · {dmThreads.length} DMs
+                    </div>
+                  </div>
+                </div>
+
+                {/* =========================================================
+                    ALL 8 ADMIN MODULES — UNIFIED SNAPSHOT GRID
+                ========================================================= */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                  {/* MODULE SNAPSHOT 1: REGISTERED USERS & RELOCATION DEMAND */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-indigo-600">
+                            Module 01 · User Directory &amp; Profiles
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Registered Users ({registeredAccounts.length})
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Member profiles, relocation stages, financial portfolios &amp; direct messaging.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('users')}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Recent 4 Registered Members Preview */}
+                      <div className="divide-y divide-slate-100">
+                        {registeredAccounts.slice(0, 4).map(acc => {
                           const p = acc.profile;
-                          const netWorth = getUserNetWorth(acc);
                           const isCurrent = acc.id === currentUserId;
                           return (
-                            <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-2.5">
-                                  {p?.avatarUrl ? (
-                                    <img
-                                      src={p.avatarUrl}
-                                      alt={acc.name}
-                                      className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                                      {acc.name.charAt(0)}
-                                    </div>
-                                  )}
-                                  <div className="min-w-0">
-                                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                      <button
-                                        onClick={() => openUserInspector(acc, false)}
-                                        className="hover:text-orange-600 hover:underline text-left truncate cursor-pointer"
-                                      >
-                                        {acc.name}
-                                      </button>
-                                      {isCurrent && (
-                                        <span className="text-[10px] font-semibold text-emerald-700">
-                                          · Active
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
-                                      <span>ID: {acc.id}</span>
-                                      <span aria-hidden="true">·</span>
-                                      <span>Joined {acc.createdAt || '2026'}</span>
-                                    </div>
+                            <div key={acc.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {p?.avatarUrl ? (
+                                  <img
+                                    src={p.avatarUrl}
+                                    alt={acc.name}
+                                    className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                    {acc.name.charAt(0)}
                                   </div>
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-4">
-                                <div className="font-medium text-slate-800 truncate max-w-[190px]" title={acc.email}>
-                                  {acc.email}
-                                </div>
-                                <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                  <span
-                                    className={
-                                      p?.role === 'admin'
-                                        ? 'font-bold text-amber-800'
-                                        : 'text-slate-600'
-                                    }
+                                )}
+                                <div className="min-w-0">
+                                  <button
+                                    onClick={() => openUserInspector(acc, false)}
+                                    className="font-bold text-slate-900 hover:text-indigo-600 truncate block text-left cursor-pointer"
                                   >
-                                    {p?.role === 'admin' ? 'Admin' : 'Member'}
+                                    {acc.name} {p?.role === 'admin' ? '(Admin)' : ''}
+                                  </button>
+                                  <span className="text-[11px] text-slate-500 truncate block">
+                                    {getWorldCountryFlag(p?.originCountry)} {p?.originCountry || 'US'} →{' '}
+                                    {getWorldCountryFlag(p?.targetCountry)} {p?.targetCountry || 'Portugal'} ·{' '}
+                                    <span className="font-mono">${(p?.monthlyBudgetUSD || 2200).toLocaleString()}/mo</span>
                                   </span>
-                                  <span aria-hidden="true">·</span>
-                                  <span>{p?.occupationOrBackground || 'Retiree Member'}</span>
                                 </div>
-                              </td>
-
-                              <td className="py-3 px-4 text-slate-700">
-                                <div className="font-medium">
-                                  {getWorldCountryFlag(p?.originCountry)} {p?.originCountry || 'United States'}
-                                  {p?.originCity ? ` (${p.originCity})` : ''}
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                  Residing: {getWorldCountryFlag(p?.residingCountry || p?.originCountry)}{' '}
-                                  {p?.residingCountry || p?.originCountry || 'United States'}
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-4">
-                                <div className="font-bold text-slate-900">
-                                  {getWorldCountryFlag(p?.targetCountry)} {p?.targetCountry || 'Portugal'}
-                                </div>
-                                <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
-                                  Target: {p?.retirementTimelineYear || 2027} · {p?.preferredClimate || 'Any'}
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-4">
-                                <div className="font-semibold text-slate-800">
-                                  {p?.relocationStatus || 'Exploring Options'}
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                  {p?.savedCountryIds?.length || 0} saved · {p?.travelHistory?.length || 0} trips
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-4 text-right font-mono tabular-nums">
-                                <div className="font-bold text-slate-900">
-                                  ${(p?.monthlyBudgetUSD || 0).toLocaleString()}/mo
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                  Net Worth: ${(netWorth / 1000).toFixed(0)}k
-                                </div>
-                              </td>
-
-                              <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 {!isCurrent && p?.role !== 'admin' && (
                                   <button
                                     onClick={() =>
@@ -1067,121 +999,89 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                                         }
                                       )
                                     }
-                                    className="px-2.5 py-1 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 font-semibold text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer"
-                                    title={`Initiate Direct Message with ${acc.name}`}
+                                    className="px-2 py-1 rounded bg-teal-50 hover:bg-teal-100 text-teal-900 font-semibold text-[11px] cursor-pointer"
+                                    title={`Message ${acc.name}`}
                                   >
-                                    <MessageCircle className="w-3 h-3 text-teal-700" />
-                                    <span>Message</span>
+                                    Message
                                   </button>
                                 )}
                                 <button
                                   onClick={() => openUserInspector(acc, false)}
-                                  className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer"
-                                  title="Inspect full user profile and basic details"
+                                  className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] cursor-pointer"
                                 >
-                                  <Eye className="w-3 h-3" />
-                                  <span>Inspect</span>
+                                  Inspect
                                 </button>
-                                <button
-                                  onClick={() => openUserInspector(acc, true)}
-                                  className="p-1.5 rounded-md text-orange-700 hover:bg-orange-50 transition-colors cursor-pointer"
-                                  title="Edit User Account"
-                                >
-                                  <Edit className="w-3.5 h-3.5" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 2-Column Split: User Relocation Analytics + Quick Country CMS Preview */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                  {/* Left: Member Relocation Demand & Stage Breakdown */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between space-y-5">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900">
-                        Registered Member Relocation Demand
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Most requested retirement destinations and active relocation stages among registered users.
-                      </p>
-
-                      <div className="mt-4 space-y-3">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                          Top Target Countries Chosen by Users
-                        </p>
-                        {userStats.topTargets.map(([countryName, count]) => {
-                          const pct = Math.round((count / Math.max(1, userStats.total)) * 100);
-                          return (
-                            <div key={countryName} className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-semibold text-slate-800">
-                                  {getWorldCountryFlag(countryName)} {countryName}
-                                </span>
-                                <span className="font-mono tabular-nums text-slate-600">
-                                  {count} {count === 1 ? 'user' : 'users'} ({pct}%)
-                                </span>
-                              </div>
-                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-orange-500 rounded-full"
-                                  style={{ width: `${Math.max(8, pct)}%` }}
-                                />
                               </div>
                             </div>
                           );
                         })}
                       </div>
+
+                      {/* Top Target Destinations Demand */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="text-[11px] font-semibold text-slate-500 mb-2">
+                          Top Member Target Destinations
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {userStats.topTargets.slice(0, 4).map(([countryName, count]) => (
+                            <span
+                              key={countryName}
+                              className="text-xs text-slate-700 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg font-medium"
+                            >
+                              {getWorldCountryFlag(countryName)} {countryName}{' '}
+                              <span className="font-mono text-slate-500">({count})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-                        Relocation Readiness Breakdown
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                        {Object.entries(userStats.stageCounts).map(([stage, count]) => (
-                          <div key={stage} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80">
-                            <div className="font-mono tabular-nums text-base font-extrabold text-slate-900">
-                              {count}
-                            </div>
-                            <div className="text-[11px] text-slate-600 truncate" title={stage}>
-                              {stage}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <button
+                        onClick={handleExportUsersCsv}
+                        className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export Users CSV</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('users')}
+                        className="font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                      >
+                        View All {registeredAccounts.length} Accounts →
+                      </button>
                     </div>
                   </div>
 
-                  {/* Right: Quick Country Catalog & Governance Actions */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between">
+                  {/* MODULE SNAPSHOT 2: COUNTRY CATALOG CMS */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                         <div>
-                          <h3 className="text-sm font-bold text-slate-900">
-                            Country Catalog Quick Editor
-                          </h3>
+                          <span className="text-[11px] font-semibold text-teal-600">
+                            Module 02 · Destination Dossiers
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Country Catalog CMS ({countries.length})
+                          </h2>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Jump directly to edit visa thresholds and budgets.
+                            Edit monthly budgets, retirement visa income rules, healthcare &amp; city breakdowns.
                           </p>
                         </div>
                         <button
                           onClick={() => setActiveTab('countries')}
-                          className="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                         >
-                          <span>All {countries.length} Havens</span>
+                          <span>Open Module</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      <div className="mt-4 divide-y divide-slate-100">
-                        {countries.slice(0, 5).map(c => (
+                      {/* Spotlight Countries Quick Edit List */}
+                      <div className="divide-y divide-slate-100">
+                        {countries.slice(0, 4).map(c => (
                           <div key={c.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               <CountryFlag
                                 countryCode={c.code}
                                 countryName={c.name}
@@ -1192,46 +1092,535 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                               <div className="min-w-0">
                                 <button
                                   onClick={() => navigateToCountry(c.id)}
-                                  className="font-bold text-slate-900 hover:text-orange-600 truncate block text-left cursor-pointer"
+                                  className="font-bold text-slate-900 hover:text-teal-600 truncate block text-left cursor-pointer"
                                 >
                                   {c.name}
                                 </button>
                                 <span className="text-[11px] text-slate-500 truncate block">
-                                  {c.visa.retirementVisaName}
+                                  {c.region} · {c.visa.retirementVisaName}
                                 </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-2.5 shrink-0">
                               <div className="text-right font-mono tabular-nums">
                                 <div className="font-semibold text-slate-900">
                                   ${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
                                 </div>
                                 <div className="text-[10px] text-slate-500">
-                                  Visa: ${c.visa.minimumIncomeUSD.toLocaleString()}/mo
+                                  Visa: ${c.visa.minimumIncomeUSD.toLocaleString()}
                                 </div>
                               </div>
                               <button
                                 onClick={() => setEditingCountry(JSON.parse(JSON.stringify(c)))}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-orange-700 transition-colors cursor-pointer"
-                                title={`Edit ${c.name}`}
+                                className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] cursor-pointer"
                               >
-                                <Edit className="w-3.5 h-3.5" />
+                                Edit
                               </button>
                             </div>
                           </div>
                         ))}
                       </div>
+
+                      {/* Regional Distribution Summary */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="text-[11px] font-semibold text-slate-500 mb-2">
+                          Regional Catalog Coverage
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {regionBreakdown.map(r => (
+                            <span
+                              key={r.region}
+                              className="text-xs text-slate-700 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg font-medium"
+                            >
+                              {r.region}: <span className="font-mono font-bold">{r.count}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-slate-500">
-                        Need to add a new country dossier to the directory?
-                      </span>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                       <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                        className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 cursor-pointer"
                       >
-                        + New Country
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add New Country</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('countries')}
+                        className="font-bold text-teal-700 hover:text-teal-900 cursor-pointer"
+                      >
+                        Manage All {countries.length} Havens →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 3: ACCOUNTING, EXPENSES & REVENUE LEDGER */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-emerald-600">
+                            Module 03 · Financial Bookkeeping (₹ INR &amp; $ USD)
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Accounting, Expenses &amp; Revenue Ledger
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Track platform expenses, vendors, transaction heads, and monthly charts in ₹ and $.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('accounting')}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* 3-Box Financial Summary */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">Total Spent</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-rose-700 mt-0.5">
+                            ₹{Math.round(accountingSnapshot.totalExpenseINR).toLocaleString('en-IN')}
+                          </div>
+                          <div className="font-mono tabular-nums text-[10px] text-slate-500">
+                            ${accountingSnapshot.totalExpenseUSD.toFixed(2)} ({accountingSnapshot.expenseCount} tx)
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">Total Revenue</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-emerald-700 mt-0.5">
+                            ₹{Math.round(accountingSnapshot.totalRevenueINR).toLocaleString('en-IN')}
+                          </div>
+                          <div className="font-mono tabular-nums text-[10px] text-slate-500">
+                            ${accountingSnapshot.totalRevenueUSD.toFixed(2)} ({accountingSnapshot.revenueCount} tx)
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">FX Conversion</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900 mt-0.5">
+                            ₹{accountingSnapshot.fxRate}
+                          </div>
+                          <div className="text-[10px] text-slate-500">per $1.00 USD</div>
+                        </div>
+                      </div>
+
+                      {/* Recent Transactions or Empty State */}
+                      {accountingSnapshot.recentTransactions.length > 0 ? (
+                        <div className="divide-y divide-slate-100">
+                          {accountingSnapshot.recentTransactions.map(tx => (
+                            <div key={tx.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-900 truncate">
+                                  {tx.vendor} · <span className="text-slate-500 font-normal">{tx.category}</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 truncate">
+                                  {tx.date} {tx.description ? `· ${tx.description}` : ''}
+                                </div>
+                              </div>
+                              <div
+                                className={`font-mono tabular-nums font-bold shrink-0 ${
+                                  tx.type === 'expense' ? 'text-rose-700' : 'text-emerald-700'
+                                }`}
+                              >
+                                {tx.type === 'expense' ? '-' : '+'}₹{Math.round(tx.amountINR).toLocaleString('en-IN')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600 flex items-center justify-between">
+                          <span>No expenses or revenue entries recorded yet. Default currency is ₹ INR.</span>
+                          <button
+                            onClick={() => setActiveTab('accounting')}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold text-[11px] shrink-0 cursor-pointer"
+                          >
+                            + Log Expense
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        Supports custom vendors, categories &amp; CSV export
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('accounting')}
+                        className="font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer"
+                      >
+                        Open Accounting Ledger →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 4: PORTRAIT SOCIAL PROMO STUDIO */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-amber-600">
+                            Module 04 · Promotional Graphics &amp; Brand Assets
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Portrait Social Promo Studio ({promoSnapshot.activeCount} Active)
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            High-resolution 9:16 &amp; 4:5 portrait promotional snapshots with custom charts &amp; country photos.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('social-promo')}
+                          className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Studio</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">Module Cards</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900 mt-0.5">
+                            {promoSnapshot.coreModulesCount} Designs
+                          </div>
+                          <div className="text-[10px] text-slate-500">Distinct chart styles</div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">Country Covers</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900 mt-0.5">
+                            {promoSnapshot.countryCoversCount} Covers
+                          </div>
+                          <div className="text-[10px] text-slate-500">With country photos</div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500 font-medium">Discarded</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900 mt-0.5">
+                            {promoSnapshot.discardedCount} Cards
+                          </div>
+                          <div className="text-[10px] text-slate-500">Restorable anytime</div>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-slate-600 space-y-1.5">
+                        <div className="font-semibold text-slate-800">Included Bespoke Visual Layouts:</div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                          Editorial Destination Bento · FIRE Budget Donut · 3D Interactive Globe · Banking FX Waterfall (₹94.5/$) · Healthcare Gauge · Multi-Country Radar Matrix · Dating &amp; Meetups · Country Magazine Cover with Photo Banner.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      {onOpenBrandKit ? (
+                        <button
+                          onClick={onOpenBrandKit}
+                          className="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>4K Logo &amp; Brand Kit</span>
+                        </button>
+                      ) : (
+                        <span className="text-slate-500">1080×1920 &amp; 1080×1350 PNG export</span>
+                      )}
+                      <button
+                        onClick={() => setActiveTab('social-promo')}
+                        className="font-bold text-amber-700 hover:text-amber-900 cursor-pointer"
+                      >
+                        Generate &amp; Download Promos →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 5: COMMUNITY FORUM & EXPAT MEETUPS MODERATION */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-violet-600">
+                            Module 05 · Discussions &amp; Events
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Forum ({threads.length}) &amp; Meetups ({meetups.length})
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Pin important community threads, remove spam, and moderate scheduled expat meetups.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('community')}
+                          className="px-3 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="divide-y divide-slate-100">
+                        {threads.slice(0, 3).map(t => (
+                          <div key={t.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-900 truncate">
+                                {t.isPinned ? '📌 ' : ''}
+                                {t.title}
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate">
+                                {t.authorName} · {t.countryTag} · {t.comments.length} replies
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => togglePinThread(t.id)}
+                              className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] shrink-0 cursor-pointer"
+                            >
+                              {t.isPinned ? 'Unpin' : 'Pin'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                        <span>Upcoming Expat Meetups Scheduled:</span>
+                        <span className="font-mono font-bold text-slate-900">{meetups.length} Active Events</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        {threads.filter(t => t.isPinned).length} pinned threads
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('community')}
+                        className="font-bold text-violet-700 hover:text-violet-900 cursor-pointer"
+                      >
+                        Moderate Forum &amp; Meetups →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 6: USER FEEDBACK & BUG REPORTS TRIAGE */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-rose-600">
+                            Module 06 · Quality Assurance &amp; Ideas
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            User Feedback &amp; Bug Reports ({feedbackReports.length})
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Review member bug reports, feature requests, priority levels, and resolution notes.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('feedback')}
+                          className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">New / Open</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-rose-700">
+                            {feedbackReports.filter(r => r.status === 'new').length}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Bug Reports</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900">
+                            {feedbackReports.filter(r => r.type === 'bug').length}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Resolved</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-emerald-700">
+                            {feedbackReports.filter(r => r.status === 'resolved' || r.status === 'closed').length}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="divide-y divide-slate-100">
+                        {feedbackReports.slice(0, 3).map(rep => (
+                          <div key={rep.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-900 truncate">{rep.title}</div>
+                              <div className="text-[11px] text-slate-500 truncate">
+                                {rep.userName} · {rep.type.toUpperCase()} · Priority: {rep.priority}
+                              </div>
+                            </div>
+                            <span className="text-[11px] font-semibold text-slate-600 capitalize shrink-0">
+                              {rep.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        {feedbackReports.filter(r => r.type !== 'bug').length} feature ideas &amp; feedback logged
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('feedback')}
+                        className="font-bold text-rose-700 hover:text-rose-900 cursor-pointer"
+                      >
+                        Open Feedback Triage →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 7: ADMIN DIRECT MESSAGES & MEMBER OUTREACH */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-teal-600">
+                            Module 07 · Admin-Initiated Member Outreach
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Direct Messages ({dmThreads.length} Conversations)
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Only Admin can initiate direct conversations with normal members. Members can reply in active threads.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setCurrentView('messages')}
+                          className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Inbox</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {dmThreads.length > 0 ? (
+                        <div className="divide-y divide-slate-100">
+                          {dmThreads.slice(0, 3).map(dm => (
+                            <div key={dm.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <img
+                                  src={dm.peerAvatar}
+                                  alt={dm.peerName}
+                                  className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 truncate">{dm.peerName}</div>
+                                  <div className="text-[11px] text-slate-500 truncate">{dm.lastMessage}</div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setActiveDmThreadId(dm.id);
+                                  setCurrentView('messages');
+                                }}
+                                className="px-2.5 py-1 rounded bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-900 font-semibold text-[11px] shrink-0 cursor-pointer"
+                              >
+                                Open Chat
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600">
+                          No active direct message threads yet. Click "Message" next to any registered member to start a conversation.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        {totalUnreadDms > 0 ? `${totalUnreadDms} unread messages` : 'All member messages read'}
+                      </span>
+                      <button
+                        onClick={() => setCurrentView('messages')}
+                        className="font-bold text-teal-700 hover:text-teal-900 cursor-pointer"
+                      >
+                        Launch Direct Messenger →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 8: CLOUD DATABASE & FIRESTORE SYNC CENTER */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-sky-600">
+                            Module 08 · Persistence &amp; Cloud Infrastructure
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Firebase Cloud Database &amp; Sync Center
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Synchronize registered accounts, country dossiers, community threads &amp; accounting ledgers to Firestore.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('cloud')}
+                          className="px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Connection Mode</div>
+                          <div className="font-bold text-slate-900 mt-0.5">
+                            {firebaseUser ? 'Google Cloud Auth Online' : 'Local Storage Active'}
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                            {firebaseUser ? firebaseUser.email : 'Connect Google Auth to sync'}
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Cloud Synced Accounts</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900 mt-0.5">
+                            {userStats.syncedCount} / {userStats.total}
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">
+                            {lastCloudSyncTime
+                              ? `Last sync: ${new Date(lastCloudSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Ready to sync'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={handleSyncAllCloud}
+                          disabled={isFirebaseSyncing}
+                          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isFirebaseSyncing ? 'animate-spin' : ''}`} />
+                          <span>Sync All to Cloud</span>
+                        </button>
+                        <button
+                          onClick={openFirebaseModal}
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                        >
+                          Connection Settings
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        Collections: users, savedAccounts, countryCatalog, accounting
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('cloud')}
+                        className="font-bold text-sky-700 hover:text-sky-900 cursor-pointer"
+                      >
+                        Open Cloud Center →
                       </button>
                     </div>
                   </div>
