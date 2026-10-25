@@ -8,13 +8,15 @@ import {
   Calendar, CheckCircle, X, Search, LayoutDashboard,
   Database, Download, RefreshCw, Eye, UserCheck, Mail,
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
-  ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus
+  ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus,
+  IndianRupee
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 import { AdminSocialPromoStudio } from './AdminSocialPromoStudio';
+import { AdminAccountingModule } from './AdminAccountingModule';
 
-type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'social-promo' | 'cloud';
+type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'cloud';
 
 interface AdminDashboardProps {
   onOpenBrandKit?: () => void;
@@ -459,6 +461,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
                 {activeTab === 'community' && 'Community & Meetups Moderation'}
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
+                {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger (₹ / $)'}
                 {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots'}
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
@@ -473,6 +476,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
 
           {/* Right Quick Actions */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setActiveTab('accounting')}
+              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              title="Open Admin Accounting, Expenses & Revenue Ledger (₹ INR & $ USD)"
+            >
+              <IndianRupee className="w-3.5 h-3.5 text-amber-200" />
+              <span>Accounting (₹ / $)</span>
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
@@ -659,6 +672,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                   {feedbackReports.length}
                 </span>
               </div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('accounting')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'accounting'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <IndianRupee className={`w-4 h-4 ${activeTab === 'accounting' ? 'text-amber-300' : 'text-emerald-600'}`} />
+                <span>Accounting &amp; Expenses</span>
+              </span>
+              <span
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                  activeTab === 'accounting' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800'
+                }`}
+              >
+                ₹ / $
+              </span>
             </button>
 
             <button
@@ -1734,6 +1768,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             ========================================================= */}
             {activeTab === 'feedback' && (
               <AdminFeedbackManagement />
+            )}
+
+            {/* =========================================================
+                TAB 5.2: ADMIN ACCOUNTING, EXPENSES & REVENUE LEDGER (₹ / $)
+            ========================================================= */}
+            {activeTab === 'accounting' && (
+              <AdminAccountingModule />
             )}
 
             {/* =========================================================

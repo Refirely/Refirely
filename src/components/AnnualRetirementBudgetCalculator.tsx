@@ -38,6 +38,8 @@ export const COUNTRY_EXCHANGE_RATES: Record<string, { rate: number; symbol: stri
   seychelles: { rate: 14.2, symbol: 'SR ', code: 'SCR', name: 'Seychellois Rupee' },
   serbia: { rate: 108.5, symbol: 'дин ', code: 'RSD', name: 'Serbian Dinar' },
   slovakia: { rate: 0.92, symbol: '€', code: 'EUR', name: 'Euro' },
+  india: { rate: 94.5, symbol: '₹', code: 'INR', name: 'Indian Rupee' },
+  nepal: { rate: 151.2, symbol: 'रू', code: 'NPR', name: 'Nepalese Rupee' },
 };
 
 interface AnnualRetirementBudgetCalculatorProps {
