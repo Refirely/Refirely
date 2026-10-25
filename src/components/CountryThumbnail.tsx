@@ -475,6 +475,34 @@ const DEFAULT_PHOTO: CountryPhotoConfig = {
   gradientFallback: 'from-teal-900 via-slate-900 to-slate-950',
 };
 
+export function getCountryPhotoConfig(countryId: string, customImageUrl?: string): {
+  photoUrl: string;
+  fallbackPhotoUrl: string;
+  landmarkLabel: string;
+  gradientFallback: string;
+  candidateUrls: string[];
+} {
+  const config = COUNTRY_PHOTOS[countryId] || DEFAULT_PHOTO;
+  const candidateUrls = Array.from(
+    new Set(
+      [
+        customImageUrl,
+        config.photoUrl,
+        config.fallbackPhotoUrl,
+        DEFAULT_PHOTO.photoUrl,
+        DEFAULT_PHOTO.fallbackPhotoUrl,
+      ].filter((u): u is string => Boolean(u && u.trim()))
+    )
+  );
+  return {
+    photoUrl: candidateUrls[0] || DEFAULT_PHOTO.photoUrl,
+    fallbackPhotoUrl: config.fallbackPhotoUrl,
+    landmarkLabel: config.landmarkLabel,
+    gradientFallback: config.gradientFallback,
+    candidateUrls,
+  };
+}
+
 export const CountryThumbnail: React.FC<CountryThumbnailProps> = ({
   country,
   className = 'h-48',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Country } from '../types';
+import { getCountryPhotoConfig } from './CountryThumbnail';
 import {
   Download,
   Trash2,
@@ -18,402 +19,169 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export type PortraitAspect = '9:16' | '4:5';
 
+export type PromoVisualLayout =
+  | 'bento-destinations'
+  | 'fire-donut-bars'
+  | 'globe-3d-atlas'
+  | 'banking-fx-waterfall'
+  | 'healthcare-gauge-bars'
+  | 'compare-radar-matrix'
+  | 'dating-flags-meetup'
+  | 'country-magazine-cover';
+
 export interface SocialPromoCardSpec {
   id: string;
+  layout: PromoVisualLayout;
   category: 'Core Platform Module' | 'Feature Spotlight' | 'Country Dossier Spotlight';
   title: string;
   badge: string;
   headline: string;
   subheadline: string;
-  accentTheme: 'teal-indigo' | 'indigo-violet' | 'amber-rose' | 'emerald-cyan';
-  moduleTitle: string;
-  moduleSubtitle: string;
-  metrics: { label: string; value: string; sub: string }[];
-  uiRows: { leftTitle: string; leftSub: string; rightBadge: string; rightValue: string }[];
-  footerCallout: string;
   ctaText: string;
+  countryData?: {
+    id: string;
+    code?: string;
+    name: string;
+    flag: string;
+    region: string;
+    capital: string;
+    tagline: string;
+    imageUrl: string;
+    landmarkLabel?: string;
+    singleBudget: number;
+    coupleBudget: number;
+    rentCenter: number;
+    visaName: string;
+    minIncome: number;
+    healthcareScore: number;
+    safetyScore: number;
+    walkabilityScore: number;
+    sunnyDays: number;
+    avgTempC: number;
+    topCities: { name: string; vibe: string; monthlyCostUSD: number }[];
+  };
 }
 
 const DEFAULT_FEATURE_SNAPSHOTS: SocialPromoCardSpec[] = [
   {
     id: 'promo-overview-matchmaker',
+    layout: 'bento-destinations',
     category: 'Core Platform Module',
-    title: '1. AI Haven Matchmaker & 209+ Country Directory',
-    badge: 'GLOBAL RETIREMENT & FIRE INTELLIGENCE',
-    headline: 'Where Your Freedom Goes Further',
+    title: '1. AI Haven Matchmaker — Editorial Destination Bento Grid',
+    badge: 'AI HAVEN MATCHMAKER · 209+ COUNTRIES',
+    headline: 'Find Where Your Freedom Goes Further',
     subheadline:
-      'Compare 209+ verified retirement destinations by monthly budget, visa rules, healthcare, taxes & safety.',
-    accentTheme: 'teal-indigo',
-    moduleTitle: 'Factual Global Relocation Directory',
-    moduleSubtitle: 'Live Filter: Budget ≤ $2,500/mo · High Healthcare · Sunny Climate',
-    metrics: [
-      { label: 'Verified Havens', value: '209+', sub: '6 Continents' },
-      { label: 'Couple Budgets', value: '$1,400+', sub: 'Full Lifestyle' },
-      { label: 'Dossier Depth', value: '29 Pages', sub: 'PDF Export' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '🇵🇹 Portugal (D7 Passive Income)',
-        leftSub: 'Cascais · Lagos · Porto · Safety 92/100',
-        rightBadge: 'Healthcare 89/100',
-        rightValue: '$2,150/mo',
-      },
-      {
-        leftTitle: '🇹🇭 Thailand (O-A / LTR Retirement)',
-        leftSub: 'Chiang Mai · Hua Hin · Phuket',
-        rightBadge: 'Healthcare 86/100',
-        rightValue: '$1,450/mo',
-      },
-      {
-        leftTitle: '🇨🇷 Costa Rica (Pensionado Visa)',
-        leftSub: 'Atenas · Escazú · Tamarindo · Territorial Tax',
-        rightBadge: 'Min Income $1,000',
-        rightValue: '$1,950/mo',
-      },
-      {
-        leftTitle: '🇪🇸 Spain (Non-Lucrative Visa)',
-        leftSub: 'Alicante · Málaga · Valencia · 300+ Sunny Days',
-        rightBadge: 'Healthcare 93/100',
-        rightValue: '$2,350/mo',
-      },
-    ],
-    footerCallout: '100% Free Interactive Country Dossiers, Maps & Calculators',
-    ctaText: 'Explore All 209+ Havens at ReFIREly.com',
+      'Personalized retirement matches ranked by monthly budget, visa rules, healthcare & sunshine.',
+    ctaText: 'Find Your Top Haven Match at ReFIREly.com',
   },
   {
     id: 'promo-fire-budget-calculator',
+    layout: 'fire-donut-bars',
     category: 'Core Platform Module',
-    title: '2. Global FIRE & Annual Retirement Budget Calculator',
-    badge: 'GEOGRAPHIC ARBITRAGE & FIRE SIMULATOR',
-    headline: 'Retire 5 to 10 Years Earlier Abroad',
+    title: '2. FIRE & Cost Arbitrage — Donut & Bar Chart Infographic',
+    badge: 'GLOBAL FIRE & COST OF LIVING SIMULATOR',
+    headline: 'Retire 7 Years Earlier with Geographic Arbitrage',
     subheadline:
-      'Model your exact single or couple lifestyle budget across housing, healthcare, dining, utilities & taxes.',
-    accentTheme: 'emerald-cyan',
-    moduleTitle: 'Interactive Annual Retirement Budget Studio',
-    moduleSubtitle: 'Couple Lifestyle Simulation · City Center vs. Coastal Suburb',
-    metrics: [
-      { label: 'US/UK Avg Spend', value: '$5,600/mo', sub: '$67,200 / yr' },
-      { label: 'Haven Avg Spend', value: '$2,150/mo', sub: '$25,800 / yr' },
-      { label: 'Annual Saved', value: '+$41,400/yr', sub: '61% Lower Cost' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '🏡 1-Bedroom Modern Apartment Lease',
-        leftSub: 'Prime Expat Neighborhood vs. Outside Center',
-        rightBadge: 'Housing',
-        rightValue: '$650 – $950/mo',
-      },
-      {
-        leftTitle: '🩺 Private Expat Health Insurance & Care',
-        leftSub: 'JCI-Accredited Private Hospitals + Dental',
-        rightBadge: 'Healthcare',
-        rightValue: '$140 – $260/mo',
-      },
-      {
-        leftTitle: '🍽️ Fresh Groceries, Cafés & Dining Out',
-        leftSub: 'Mediterranean / Tropical Markets & Bistros',
-        rightBadge: 'Food & Dining',
-        rightValue: '$480 – $650/mo',
-      },
-      {
-        leftTitle: '⚡ High-Speed Fiber, Utilities & Transit',
-        leftSub: 'Electricity, Cooling, Mobile & Local Mobility',
-        rightBadge: 'Utilities',
-        rightValue: '$120 – $190/mo',
-      },
-    ],
-    footerCallout: 'Stretch a $450k–$750k Portfolio Into a Luxury Overseas Retirement',
-    ctaText: 'Calculate Your Custom Budget at ReFIREly.com',
+      'Compare US/UK living costs against 209+ overseas havens with real-time single & couple budgets.',
+    ctaText: 'Run Your Custom Budget at ReFIREly.com',
   },
   {
     id: 'promo-3d-world-atlas',
+    layout: 'globe-3d-atlas',
     category: 'Feature Spotlight',
-    title: '3. Interactive 3D Satellite World Haven Atlas',
-    badge: 'INTERACTIVE 3D GOOGLE EARTH GLOBE',
-    headline: 'Spin, Zoom & Scout Every Retirement Haven on Earth',
+    title: '3. 3D Satellite World Atlas — Orbital Globe & Pin Map',
+    badge: 'INTERACTIVE 3D SATELLITE EARTH ATLAS',
+    headline: 'Explore 209+ Retirement Havens on a 3D Globe',
     subheadline:
-      'Inspect 209+ countries by continent, climate zone, monthly cost & visa threshold on a live 3D globe.',
-    accentTheme: 'indigo-violet',
-    moduleTitle: '3D Satellite Earth & Continent Explorer',
-    moduleSubtitle: 'Color-Coded Cost Markers · Instant Country Preview Drawer',
-    metrics: [
-      { label: 'Under $1,600/mo', value: 'Emerald Pins', sub: 'Ultra-Value Havens' },
-      { label: '$1,600–$2,400/mo', value: 'Amber Pins', sub: 'Balanced Comfort' },
-      { label: '$2,400+/mo', value: 'Rose Pins', sub: 'Premier Luxury' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '🌍 Europe & Mediterranean Havens (47)',
-        leftSub: 'Portugal · Spain · Greece · Italy · Malta · Cyprus · Albania',
-        rightBadge: 'High Safety',
-        rightValue: '$1,450 – $3,200',
-      },
-      {
-        leftTitle: '🌴 Southeast & East Asia Havens (26)',
-        leftSub: 'Thailand · Malaysia · Vietnam · Philippines · Japan · Taiwan',
-        rightBadge: 'Best Value',
-        rightValue: '$1,100 – $2,600',
-      },
-      {
-        leftTitle: '🏖️ Latin America & Caribbean (48)',
-        leftSub: 'Costa Rica · Panama · Mexico · Uruguay · Colombia · Belize',
-        rightBadge: 'Territorial Tax',
-        rightValue: '$1,350 – $2,800',
-      },
-      {
-        leftTitle: '☀️ Island & Coastal Sanctuaries (88)',
-        leftSub: 'Mauritius · Seychelles · Fiji · Canary Islands · Madeira',
-        rightBadge: 'Year-Round Sun',
-        rightValue: '$1,500 – $3,400',
-      },
-    ],
-    footerCallout: 'Filter Instantly by Continent, Budget, Healthcare & Climate',
-    ctaText: 'Launch the 3D Haven Atlas at ReFIREly.com',
+      'Spin, zoom, and filter every country by monthly cost, continent, climate & visa income threshold.',
+    ctaText: 'Launch the 3D Haven Globe at ReFIREly.com',
   },
   {
     id: 'promo-finances-banking-taxes',
+    layout: 'banking-fx-waterfall',
     category: 'Core Platform Module',
-    title: '4. Expat Banking, Remittances & Tax Optimization Module',
-    badge: 'FINANCES, BANKING & EXPAT TAX GUIDE',
-    headline: 'Stop Losing 4% on Transfers & Avoid Double Taxation',
+    title: '4. Banking, FX & Expat Taxes — Waterfall & Tax Regime Diagram',
+    badge: 'EXPAT BANKING, REMITTANCES & TAX GUIDE',
+    headline: 'Slash Wire Fees by 90% & Avoid Double Taxation',
     subheadline:
-      'Every Country Dossier breaks down National & Private Banks, FX transfer fees, 183-day rules & pension taxes.',
-    accentTheme: 'amber-rose',
-    moduleTitle: 'Finances, Banking & Expat Tax Intelligence',
-    moduleSubtitle: '4-Pillar Financial Playbook for Expats & Retirees',
-    metrics: [
-      { label: 'Principals/Savings', value: '0% Tax', sub: 'Capital Remittance' },
-      { label: 'FX Wire Savings', value: '$1,450+/yr', sub: 'Fintech vs. SWIFT' },
-      { label: 'Tax Treaties', value: 'DTA Matrix', sub: '183-Day Rules' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '🏦 Nationalized & Top Private Expat Banks',
-        leftSub: 'State-Backed & Commercial Banks · Deposit Insurance Limits',
-        rightBadge: 'Pillar 1',
-        rightValue: 'Local Tax ID Guide',
-      },
-      {
-        leftTitle: '💱 Interactive Monthly Remittance Simulator',
-        leftSub: 'Compare Wise / Revolut / Schwab ATM vs. Retail Bank SWIFT',
-        rightBadge: 'Pillar 2',
-        rightValue: '0.35% vs 4.2% FX',
-      },
-      {
-        leftTitle: '⚖️ Inbound Funds & Foreign Pension Taxes',
-        leftSub: 'Territorial 0% Havens · Remittance Basis · Social Security',
-        rightBadge: 'Pillar 3',
-        rightValue: 'Treaty Verdicts',
-      },
-      {
-        leftTitle: '🐷 6 Actionable Fee & Tax Saving Strategies',
-        leftSub: 'Decline ATM DCC · Batch Pensions · Pre-Residency Capital Timing',
-        rightBadge: 'Pillar 4',
-        rightValue: 'Save $2k–$5k/yr',
-      },
-    ],
-    footerCallout: 'Know Your Exact Tax & Banking Rules Before Moving Abroad',
-    ctaText: 'Read Country Tax & Bank Guides at ReFIREly.com',
+      'National & private banks, FX transfer simulators, 183-day tax rules & pension treaty verdicts.',
+    ctaText: 'View Expat Tax & Bank Guides at ReFIREly.com',
   },
   {
     id: 'promo-healthcare-insurance',
+    layout: 'healthcare-gauge-bars',
     category: 'Core Platform Module',
-    title: '5. Healthcare Access, Emergency & Expat Insurance Guide',
-    badge: 'HEALTHCARE & MEDICAL INFRASTRUCTURE',
-    headline: 'World-Class Hospital Care at a Fraction of US Costs',
+    title: '5. Healthcare & Insurance — JCI Gauge & Cost Comparison Chart',
+    badge: 'HEALTHCARE ACCESS, ER & NOMAD INSURANCE',
+    headline: 'World-Class Private Healthcare at 80% Lower Cost',
     subheadline:
-      'Compare JCI-accredited private hospitals, public healthcare buy-in rules, emergency numbers & insurance tiers.',
-    accentTheme: 'teal-indigo',
-    moduleTitle: '3-Pillar Healthcare & Insurance Dossier',
-    moduleSubtitle: 'Routine Specialists · Emergency Trauma · Visa Health Insurance',
-    metrics: [
-      { label: 'Specialist Visit', value: '$35 – $65', sub: 'Private English MD' },
-      { label: 'Private Policy', value: '$110 – $240', sub: 'Monthly Age 55–65' },
-      { label: 'Consular Compliance', value: '100% Verified', sub: 'Zero-Deductible Rules' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '🏥 Public vs. Private Hospital Networks',
-        leftSub: 'English-Speaking Doctors · Waiting Times · Pharmacy Rules',
-        rightBadge: 'Routine Care',
-        rightValue: 'Scores up to 95/100',
-      },
-      {
-        leftTitle: '🚑 Emergency Response & Medevac Readiness',
-        leftSub: 'Direct ER Hotlines · ICU Standards · Regional Air Ambulance',
-        rightBadge: 'Emergency',
-        rightValue: '24/7 Protocols',
-      },
-      {
-        leftTitle: '🛡️ Expat Health Insurance Age-Band Matrix',
-        leftSub: 'Local Private Plans vs. International Cigna / Allianz / Bupa',
-        rightBadge: 'Visa Compliant',
-        rightValue: 'Age 55–74 Rates',
-      },
-      {
-        leftTitle: '✈️ Scouting & Transitional Nomad Coverage',
-        leftSub: 'Flexible Month-to-Month Coverage During Exploratory Visits',
-        rightBadge: 'Bridge Option',
-        rightValue: '180+ Countries',
-      },
-    ],
-    footerCallout: 'Never Guess About Medical Care or Visa Insurance Requirements',
+      'Compare hospital quality scores, specialist visit costs, emergency trauma readiness & insurance tiers.',
     ctaText: 'Compare Healthcare Rankings at ReFIREly.com',
   },
   {
     id: 'promo-compare-studio',
+    layout: 'compare-radar-matrix',
     category: 'Feature Spotlight',
-    title: '6. Side-by-Side Country Comparison Studio',
-    badge: 'MULTI-COUNTRY COMPARISON ENGINE',
-    headline: 'Compare Top Retirement Havens Side-by-Side',
+    title: '6. Compare Studio — 6-Axis Radar Chart & 3-Country Matrix',
+    badge: 'SIDE-BY-SIDE COUNTRY COMPARISON STUDIO',
+    headline: 'Benchmark Top Havens Across 25+ Live Metrics',
     subheadline:
-      'Benchmark up to 3 countries simultaneously across 25+ empirical financial, visa, healthcare & lifestyle metrics.',
-    accentTheme: 'indigo-violet',
-    moduleTitle: 'Side-by-Side Comparison Matrix',
-    moduleSubtitle: 'Portugal vs. Spain vs. Thailand · Direct Metric Benchmarking',
-    metrics: [
-      { label: 'Comparison Axes', value: '25+ Metrics', sub: 'Empirical Data' },
-      { label: 'Radar Telemetry', value: '6-Axis Chart', sub: 'Vs. Global Avg' },
-      { label: 'PDF Export', value: '29+ Pages', sub: 'Full Dossier' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '💵 Monthly Budget (Single vs. Couple)',
-        leftSub: 'Rent · Groceries · Utilities · Healthcare Breakdown',
-        rightBadge: 'Cost of Living',
-        rightValue: 'Real-Time Delta',
-      },
-      {
-        leftTitle: '🛂 Retirement Visa Minimum Income & PR Path',
-        leftSub: 'Passive Income Threshold · Processing Months · Citizenship',
-        rightBadge: 'Visas & Rules',
-        rightValue: 'Consular Specs',
-      },
-      {
-        leftTitle: '☀️ Annual Sunshine, Temp & Humidity',
-        leftSub: 'Sunny Days/Year · Peak Weather Months · Rainy Season',
-        rightBadge: 'Climate',
-        rightValue: 'Seasonal Fit',
-      },
-      {
-        leftTitle: '🛡️ Safety, Healthcare & English Proficiency',
-        leftSub: 'Global Peace Index · Hospital Quality · Expat Community Size',
-        rightBadge: 'Quality of Life',
-        rightValue: '0–100 Scores',
-      },
-    ],
-    footerCallout: 'Make Data-Driven Relocation Decisions in Minutes',
-    ctaText: 'Compare Your Shortlist at ReFIREly.com',
+      'Compare up to 3 countries head-to-head on cost of living, visas, taxes, healthcare & climate.',
+    ctaText: 'Compare Countries Side-by-Side at ReFIREly.com',
   },
   {
     id: 'promo-lifestyle-dating-community',
+    layout: 'dating-flags-meetup',
     category: 'Feature Spotlight',
-    title: '7. Expat Cities, Lifestyle, Dating & Scam Protection',
-    badge: 'CULTURE, DATING & EXPAT COMMUNITY',
-    headline: 'Real Cultural Insights, Top Towns & Scam Protection',
+    title: '7. Lifestyle, Dating & Community — Green/Red Flags & Meetups',
+    badge: 'LIFESTYLE, DATING NORMS & EXPAT COMMUNITY',
+    headline: 'Real Cultural Insights, Scam Shield & Expat Meetups',
     subheadline:
-      'Discover the best expat towns, local dating expectations, cultural Dos & Don’ts, and verified expat meetups.',
-    accentTheme: 'amber-rose',
-    moduleTitle: 'Lifestyle, Dating & Expat Community Hub',
-    moduleSubtitle: 'Regional Micro-Markets · Cultural Calibration · Peer Mentors',
-    metrics: [
-      { label: 'Expat Towns', value: '600+ Hubs', sub: 'Cost & Vibe' },
-      { label: 'Dating & Culture', value: 'Normal vs Red Flag', sub: 'Scam Safeguards' },
-      { label: 'Peer Network', value: 'Live Meetups', sub: 'Ask a Local DM' },
-    ],
-    uiRows: [
-      {
-        leftTitle: '📍 Premier Expat Cities & Coastal Towns',
-        leftSub: 'Monthly Cost Benchmarks · Local Vibe · Direct Resident Chat',
-        rightBadge: 'Top Towns',
-        rightValue: '3 Hubs / Country',
-      },
-      {
-        leftTitle: '❤️ Dating Style & Partner Expectations',
-        leftSub: 'Courtship Pace · Bill Etiquette · Age-Gap Reception',
-        rightBadge: 'Dating Guide',
-        rightValue: 'Cultural Norms',
-      },
-      {
-        leftTitle: '✅ What Is Normal vs. NOT Normal (Red Flags)',
-        leftSub: 'Cultural Calibration Matrix · Dos & Don’ts · Asset Protection',
-        rightBadge: 'Safety Shield',
-        rightValue: 'Avoid Scams',
-      },
-      {
-        leftTitle: '🤝 Connect with Verified Expats & Meetups',
-        leftSub: '1-on-1 Peer Mentorship · Local Coffee Meetups · Q&A Boards',
-        rightBadge: 'Community',
-        rightValue: 'Free RSVP',
-      },
-    ],
-    footerCallout: 'Arrive Informed, Connected & Protected in Your New Home',
-    ctaText: 'Join the Expat Community at ReFIREly.com',
+      'Know what is normal vs. a red flag, master local etiquette, and connect with verified expats abroad.',
+    ctaText: 'Join the Expat Network at ReFIREly.com',
   },
 ];
 
 function buildCountryPromoCardSpec(country: Country): SocialPromoCardSpec {
-  const city1 = country.topCities[0];
-  const city2 = country.topCities[1];
+  const photoCfg = getCountryPhotoConfig(country.id, country.imageUrl);
   return {
     id: `promo-country-${country.id}-${Date.now()}`,
+    layout: 'country-magazine-cover',
     category: 'Country Dossier Spotlight',
-    title: `${country.flag} ${country.name} — Retirement & Expat Haven Dossier`,
-    badge: `${country.region.toUpperCase()} · VERIFIED HAVEN DOSSIER`,
-    headline: `Retire in ${country.name}: Freedom & Quality of Life`,
+    title: `${country.flag} ${country.name} — Magazine Cover Dossier Card`,
+    badge: `${country.region.toUpperCase()} · VERIFIED RETIREMENT HAVEN`,
+    headline: `Retire in ${country.name}`,
     subheadline: country.tagline,
-    accentTheme: 'teal-indigo',
-    moduleTitle: `${country.flag} ${country.name} Executive Snapshot`,
-    moduleSubtitle: `Capital: ${country.capital} · Currency: ${country.currency} · English: ${country.lifestyle.englishProficiency}`,
-    metrics: [
-      {
-        label: 'Single Budget',
-        value: `$${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo`,
-        sub: `Couple $${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo`,
-      },
-      {
-        label: 'Healthcare Score',
-        value: `${country.lifestyle.healthcareScore}/100`,
-        sub: `Safety ${country.lifestyle.safetyScore}/100`,
-      },
-      {
-        label: 'Annual Sunshine',
-        value: `${country.climate.annualSunnyDays} days`,
-        sub: `${country.climate.averageTempC}°C Avg Temp`,
-      },
-    ],
-    uiRows: [
-      {
-        leftTitle: `🛂 ${country.visa.retirementVisaName}`,
-        leftSub: `Processing ~${country.visa.processingMonths} mos · ${country.visa.pathwayToPR.slice(0, 52)}...`,
-        rightBadge: 'Min Income',
-        rightValue: `$${country.visa.minimumIncomeUSD.toLocaleString()}/mo`,
-      },
-      {
-        leftTitle: `🏡 1-Bed Apartment & Monthly Utilities`,
-        leftSub: `City Center $${country.costOfLiving.rent1BedCenterUSD}/mo · Outside $${country.costOfLiving.rent1BedOutsideUSD}/mo`,
-        rightBadge: 'Housing',
-        rightValue: `$${country.costOfLiving.rent1BedOutsideUSD}–$${country.costOfLiving.rent1BedCenterUSD}`,
-      },
-      {
-        leftTitle: `📍 Top Hub: ${city1?.name || country.capital}`,
-        leftSub: `${city1?.vibe || 'Premier expat destination'} — ${city1?.highlight?.slice(0, 48) || ''}`,
-        rightBadge: 'Expat Hub #1',
-        rightValue: `~$${city1?.monthlyCostUSD || country.costOfLiving.monthlyBudgetSingleUSD}/mo`,
-      },
-      {
-        leftTitle: `📍 Top Hub: ${city2?.name || country.capital}`,
-        leftSub: `${city2?.vibe || 'Popular coastal & cultural hub'} — ${city2?.highlight?.slice(0, 48) || ''}`,
-        rightBadge: 'Expat Hub #2',
-        rightValue: `~$${city2?.monthlyCostUSD || country.costOfLiving.monthlyBudgetSingleUSD}/mo`,
-      },
-    ],
-    footerCallout: `Download the Full 29-Page ${country.name} Relocation PDF Dossier`,
-    ctaText: `Explore ${country.name} at ReFIREly.com`,
+    ctaText: `Download ${country.name} Dossier at ReFIREly.com`,
+    countryData: {
+      id: country.id,
+      code: country.code,
+      name: country.name,
+      flag: country.flag,
+      region: country.region,
+      capital: country.capital,
+      tagline: country.tagline,
+      imageUrl: photoCfg.photoUrl,
+      landmarkLabel: photoCfg.landmarkLabel,
+      singleBudget: country.costOfLiving.monthlyBudgetSingleUSD,
+      coupleBudget: country.costOfLiving.monthlyBudgetCoupleUSD,
+      rentCenter: country.costOfLiving.rent1BedCenterUSD,
+      visaName: country.visa.retirementVisaName,
+      minIncome: country.visa.minimumIncomeUSD,
+      healthcareScore: country.lifestyle.healthcareScore,
+      safetyScore: country.lifestyle.safetyScore,
+      walkabilityScore: country.lifestyle.walkabilityScore,
+      sunnyDays: country.climate.annualSunnyDays,
+      avgTempC: country.climate.averageTempC,
+      topCities: country.topCities.slice(0, 3).map(c => ({
+        name: c.name,
+        vibe: c.vibe,
+        monthlyCostUSD: c.monthlyCostUSD,
+      })),
+    },
   };
 }
 
-// Helper to draw rounded rectangles on Canvas
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -432,7 +200,6 @@ function roundRect(
   ctx.closePath();
 }
 
-// Helper to wrap text on Canvas
 function drawWrappedText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -487,9 +254,227 @@ function loadEmblemIcon(): Promise<HTMLImageElement | null> {
   });
 }
 
+const cachedExternalImages: Record<string, HTMLImageElement> = {};
+
+function loadExternalImage(url: string): Promise<HTMLImageElement | null> {
+  if (!url) return Promise.resolve(null);
+  if (cachedExternalImages[url] && cachedExternalImages[url].complete) {
+    return Promise.resolve(cachedExternalImages[url]);
+  }
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    const timer = setTimeout(() => resolve(null), 4000);
+    img.onload = () => {
+      clearTimeout(timer);
+      if (img.naturalWidth > 0) {
+        cachedExternalImages[url] = img;
+        resolve(img);
+      } else {
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
+async function loadExternalImageWithFallbacks(
+  urls: (string | undefined)[]
+): Promise<HTMLImageElement | null> {
+  const validUrls = urls.filter((u): u is string => Boolean(u && u.trim()));
+  for (const url of validUrls) {
+    const img = await loadExternalImage(url);
+    if (img) return img;
+  }
+  return null;
+}
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+) {
+  const imgW = img.naturalWidth || img.width;
+  const imgH = img.naturalHeight || img.height;
+  if (!imgW || !imgH) {
+    ctx.drawImage(img, x, y, w, h);
+    return;
+  }
+  const targetRatio = w / h;
+  const imgRatio = imgW / imgH;
+  let sx = 0;
+  let sy = 0;
+  let sw = imgW;
+  let sh = imgH;
+
+  if (imgRatio > targetRatio) {
+    sw = imgH * targetRatio;
+    sx = (imgW - sw) / 2;
+  } else {
+    sh = imgW / targetRatio;
+    sy = (imgH - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+function drawBrandHeader(
+  ctx: CanvasRenderingContext2D,
+  iconImg: HTMLImageElement | null,
+  width: number,
+  padX: number,
+  curY: number,
+  isStory: boolean,
+  isLightBg: boolean
+): number {
+  const boxSize = isStory ? 92 : 78;
+
+  const ribbonGrad = ctx.createLinearGradient(padX, curY, padX + boxSize, curY + boxSize);
+  ribbonGrad.addColorStop(0, '#14b8a6');
+  ribbonGrad.addColorStop(0.5, '#6366f1');
+  ribbonGrad.addColorStop(1, '#f59e0b');
+
+  ctx.save();
+  ctx.shadowColor = isLightBg ? 'rgba(79, 70, 229, 0.18)' : 'rgba(0, 0, 0, 0.35)';
+  ctx.shadowBlur = 18;
+  roundRect(ctx, padX, curY, boxSize, boxSize, 22);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = ribbonGrad;
+  ctx.stroke();
+  ctx.restore();
+
+  if (iconImg) {
+    ctx.drawImage(iconImg, padX + 7, curY + 7, boxSize - 14, boxSize - 14);
+  }
+
+  const wordX = padX + boxSize + 20;
+  const wordY = curY + (isStory ? 52 : 44);
+  ctx.font = `900 ${isStory ? '46px' : '40px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = isLightBg ? '#0f172a' : '#ffffff';
+  ctx.fillText('Re', wordX, wordY);
+  const reW = ctx.measureText('Re').width;
+
+  const fireGrad = ctx.createLinearGradient(wordX + reW, wordY - 36, wordX + reW + 115, wordY);
+  fireGrad.addColorStop(0, '#f43f5e');
+  fireGrad.addColorStop(0.5, '#f97316');
+  fireGrad.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = fireGrad;
+  ctx.fillText('FIRE', wordX + reW, wordY);
+  const fireW = ctx.measureText('FIRE').width;
+
+  ctx.fillStyle = isLightBg ? '#0d9488' : '#2dd4bf';
+  ctx.fillText('ly', wordX + reW + fireW, wordY);
+  const lyW = ctx.measureText('ly').width;
+
+  ctx.font = `800 ${isStory ? '24px' : '20px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = isLightBg ? '#64748b' : '#cbd5e1';
+  ctx.fillText('.com', wordX + reW + fireW + lyW + 3, wordY);
+
+  ctx.font = `700 ${isStory ? '15px' : '13px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = isLightBg ? '#475569' : '#94a3b8';
+  ctx.fillText('WHERE YOUR FREEDOM GOES FURTHER', wordX, wordY + (isStory ? 26 : 22));
+
+  // Website Pill on Right
+  const pillW = 230;
+  const pillH = 44;
+  roundRect(ctx, width - padX - pillW, curY + 16, pillW, pillH, 22);
+  ctx.fillStyle = isLightBg ? '#eef2ff' : 'rgba(255,255,255,0.12)';
+  ctx.fill();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = isLightBg ? '#c7d2fe' : 'rgba(94, 234, 212, 0.45)';
+  ctx.stroke();
+
+  ctx.font = '800 17px Inter, system-ui, sans-serif';
+  ctx.fillStyle = isLightBg ? '#4338ca' : '#5eead4';
+  ctx.textAlign = 'center';
+  ctx.fillText('🌐 refirely.com', width - padX - pillW / 2, curY + 44);
+  ctx.textAlign = 'left';
+
+  return curY + boxSize + (isStory ? 42 : 26);
+}
+
+function drawFooterCta(
+  ctx: CanvasRenderingContext2D,
+  ctaText: string,
+  width: number,
+  height: number,
+  padX: number,
+  isStory: boolean,
+  gradColors: [string, string, string]
+) {
+  const ctaH = isStory ? 86 : 66;
+  const ctaY = height - (isStory ? 132 : 94);
+  const cardW = width - padX * 2;
+
+  const btnGrad = ctx.createLinearGradient(padX, ctaY, padX + cardW, ctaY);
+  btnGrad.addColorStop(0, gradColors[0]);
+  btnGrad.addColorStop(0.5, gradColors[1]);
+  btnGrad.addColorStop(1, gradColors[2]);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.28)';
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 8;
+  roundRect(ctx, padX, ctaY, cardW, ctaH, ctaH / 2);
+  ctx.fillStyle = btnGrad;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.font = `900 ${isStory ? '26px' : '21px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${ctaText}  →`, width / 2, ctaY + (isStory ? 53 : 41));
+  ctx.textAlign = 'left';
+}
+
+function drawCircularGauge(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  score: number,
+  label: string,
+  color: string,
+  trackColor: string,
+  textColor: string,
+  subColor: string
+) {
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = trackColor;
+  ctx.stroke();
+
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + (Math.PI * 2 * Math.min(100, Math.max(0, score))) / 100;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, startAngle, endAngle);
+  ctx.strokeStyle = color;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.font = `900 ${Math.round(radius * 0.56)}px Inter, system-ui, sans-serif`;
+  ctx.fillStyle = textColor;
+  ctx.fillText(`${score}`, cx, cy + Math.round(radius * 0.18));
+
+  ctx.font = '800 15px Inter, system-ui, sans-serif';
+  ctx.fillStyle = subColor;
+  ctx.fillText(label, cx, cy + radius + 30);
+  ctx.textAlign = 'left';
+}
+
 /**
- * Renders a high-resolution Portrait Social Media Promotional Snapshot (1080x1920 or 1080x1350)
- * containing the authentic ReFIREly emblem, ReFIREly.com branding, and UI module snapshot.
+ * Renders 8 visually distinct Portrait Infographics & UI Snapshots on Canvas.
  */
 async function renderPortraitPromoToDataUrl(
   spec: SocialPromoCardSpec,
@@ -498,6 +483,8 @@ async function renderPortraitPromoToDataUrl(
   const width = 1080;
   const height = aspect === '9:16' ? 1920 : 1350;
   const isStory = aspect === '9:16';
+  const padX = 64;
+  const contentW = width - padX * 2;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -507,291 +494,1159 @@ async function renderPortraitPromoToDataUrl(
 
   const iconImg = await loadEmblemIcon();
 
-  // 1. Rich Multi-Colored Luminous Background
-  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-  bgGrad.addColorStop(0, '#0f172a');
-  bgGrad.addColorStop(0.45, '#1e1b4b');
-  bgGrad.addColorStop(1, '#042f2e');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, width, height);
+  // =========================================================================
+  // STYLE 1: WARM EDITORIAL BENTO DESTINATION GRID (LIGHT MAGAZINE THEME)
+  // =========================================================================
+  if (spec.layout === 'bento-destinations') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#fffbeb');
+    bg.addColorStop(0.5, '#f8fafc');
+    bg.addColorStop(1, '#f0fdfa');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
 
-  // Ambient Luminous Glow Orbs
-  const orb1 = ctx.createRadialGradient(200, 220, 20, 200, 220, 480);
-  orb1.addColorStop(0, 'rgba(20, 184, 166, 0.28)');
-  orb1.addColorStop(1, 'rgba(20, 184, 166, 0)');
-  ctx.fillStyle = orb1;
-  ctx.fillRect(0, 0, width, height);
+    // Decorative Top Sunburst Strip
+    const topStrip = ctx.createLinearGradient(0, 0, width, 0);
+    topStrip.addColorStop(0, '#f59e0b');
+    topStrip.addColorStop(0.5, '#ec4899');
+    topStrip.addColorStop(1, '#6366f1');
+    ctx.fillStyle = topStrip;
+    ctx.fillRect(0, 0, width, 14);
 
-  const orb2 = ctx.createRadialGradient(880, height - 300, 20, 880, height - 300, 520);
-  orb2.addColorStop(0, 'rgba(245, 158, 11, 0.24)');
-  orb2.addColorStop(1, 'rgba(245, 158, 11, 0)');
-  ctx.fillStyle = orb2;
-  ctx.fillRect(0, 0, width, height);
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, true);
 
-  // Top Multi-Color Signature Ribbon
-  const ribbonGrad = ctx.createLinearGradient(0, 0, width, 0);
-  ribbonGrad.addColorStop(0, '#14b8a6');
-  ribbonGrad.addColorStop(0.5, '#6366f1');
-  ribbonGrad.addColorStop(1, '#f59e0b');
-  ctx.fillStyle = ribbonGrad;
-  ctx.fillRect(0, 0, width, 14);
+    // Badge
+    roundRect(ctx, padX, curY, 440, 40, 20);
+    ctx.fillStyle = '#fef3c7';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#b45309';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 76 : 58;
 
-  const padX = 68;
-  let curY = isStory ? 86 : 54;
+    // Headline
+    ctx.font = `900 ${isStory ? '54px' : '42px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 62 : 48, 2);
+    curY += 8;
 
-  // 2. Top Brand Header Bar (Authentic Favicon Emblem + ReFIREly.com + URL Pill)
-  // Squircle Emblem Box
-  const boxSize = isStory ? 96 : 82;
-  roundRect(ctx, padX, curY, boxSize, boxSize, 24);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = ribbonGrad;
-  ctx.stroke();
+    ctx.font = `600 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#475569';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 34 : 26, 2);
+    curY += isStory ? 28 : 16;
 
-  if (iconImg) {
-    ctx.drawImage(iconImg, padX + 8, curY + 8, boxSize - 16, boxSize - 16);
+    // AI Filter Bar Pill
+    const filterH = isStory ? 76 : 60;
+    roundRect(ctx, padX, curY, contentW, filterH, 22);
+    ctx.fillStyle = '#1e1b4b';
+    ctx.fill();
+    ctx.font = `800 ${isStory ? '20px' : '17px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#fde68a';
+    ctx.fillText('✨ AI Match Filter: Couple ≤ $2,400/mo  ·  300+ Sunny Days  ·  High Healthcare', padX + 28, curY + (isStory ? 45 : 37));
+    curY += filterH + (isStory ? 28 : 18);
+
+    // 2x2 Bento Destination Cards with Real Country Photos & Match Gauges
+    const cards = [
+      {
+        id: 'portugal',
+        flag: '🇵🇹',
+        name: 'Portugal',
+        town: 'Cascais & Lagos',
+        visa: 'D7 Passive Income',
+        budget: '$2,150/mo',
+        match: 97,
+        grad: ['#0284c7', '#0d9488'],
+        tag: 'EU Safety #1',
+      },
+      {
+        id: 'thailand',
+        flag: '🇹🇭',
+        name: 'Thailand',
+        town: 'Hua Hin & Chiang Mai',
+        visa: 'O-A / LTR Visa',
+        budget: '$1,450/mo',
+        match: 95,
+        grad: ['#f97316', '#e11d48'],
+        tag: 'Best Value',
+      },
+      {
+        id: 'costa-rica',
+        flag: '🇨🇷',
+        name: 'Costa Rica',
+        town: 'Atenas & Escazú',
+        visa: 'Pensionado ($1k)',
+        budget: '$1,950/mo',
+        match: 94,
+        grad: ['#059669', '#0284c7'],
+        tag: '0% Foreign Tax',
+      },
+      {
+        id: 'spain',
+        flag: '🇪🇸',
+        name: 'Spain',
+        town: 'Alicante & Málaga',
+        visa: 'Non-Lucrative NLV',
+        budget: '$2,350/mo',
+        match: 93,
+        grad: ['#7c3aed', '#db2777'],
+        tag: '320 Sunny Days',
+      },
+    ];
+
+    const bentoImages = await Promise.all(
+      cards.map(c => loadExternalImageWithFallbacks(getCountryPhotoConfig(c.id).candidateUrls))
+    );
+
+    const gap = 24;
+    const cardW = (contentW - gap) / 2;
+    const cardH = isStory ? 440 : 285;
+
+    cards.forEach((c, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const cx = padX + col * (cardW + gap);
+      const cy = curY + row * (cardH + gap);
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(15, 23, 42, 0.1)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 8;
+      roundRect(ctx, cx, cy, cardW, cardH, 28);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+
+      // Top Scenic Banner inside Bento Card
+      ctx.save();
+      roundRect(ctx, cx, cy, cardW, cardH, 28);
+      ctx.clip();
+      const bannerH = isStory ? 170 : 108;
+      const cardPhoto = bentoImages[idx];
+      if (cardPhoto) {
+        drawCoverImage(ctx, cardPhoto, cx, cy, cardW, bannerH);
+        const scrim = ctx.createLinearGradient(cx, cy, cx, cy + bannerH);
+        scrim.addColorStop(0, 'rgba(15, 23, 42, 0.25)');
+        scrim.addColorStop(1, 'rgba(15, 23, 42, 0.55)');
+        ctx.fillStyle = scrim;
+        ctx.fillRect(cx, cy, cardW, bannerH);
+      } else {
+        const cg = ctx.createLinearGradient(cx, cy, cx + cardW, cy + bannerH);
+        cg.addColorStop(0, c.grad[0]);
+        cg.addColorStop(1, c.grad[1]);
+        ctx.fillStyle = cg;
+        ctx.fillRect(cx, cy, cardW, bannerH);
+
+        ctx.beginPath();
+        ctx.arc(cx + cardW - 65, cy + 50, 36, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.fill();
+      }
+
+      // Match Pill in Banner
+      roundRect(ctx, cx + 22, cy + 20, 148, 38, 19);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.fill();
+      ctx.font = '900 17px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText(`★ ${c.match}% Match`, cx + 40, cy + 45);
+
+      // Country Title & Details
+      const bodyY = cy + bannerH + (isStory ? 48 : 34);
+      ctx.font = `900 ${isStory ? '34px' : '26px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(`${c.flag} ${c.name}`, cx + 24, bodyY);
+
+      ctx.font = `600 ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#475569';
+      ctx.fillText(`📍 ${c.town}`, cx + 24, bodyY + (isStory ? 38 : 26));
+
+      ctx.font = `700 ${isStory ? '18px' : '15px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#4f46e5';
+      ctx.fillText(`🛂 ${c.visa}`, cx + 24, bodyY + (isStory ? 74 : 50));
+
+      // Bottom Price Strip
+      const priceY = cy + cardH - (isStory ? 76 : 54);
+      roundRect(ctx, cx + 20, priceY, cardW - 40, isStory ? 56 : 40, 14);
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fill();
+      ctx.font = `900 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(c.budget, cx + 36, priceY + (isStory ? 36 : 27));
+
+      ctx.textAlign = 'right';
+      ctx.font = `800 ${isStory ? '16px' : '13px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#0d9488';
+      ctx.fillText(c.tag, cx + cardW - 36, priceY + (isStory ? 34 : 26));
+      ctx.textAlign = 'left';
+      ctx.restore();
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#f59e0b', '#ec4899', '#4f46e5']);
+    return canvas.toDataURL('image/png', 1.0);
   }
 
-  // Wordmark: ReFIREly.com
-  const wordX = padX + boxSize + 22;
-  const wordY = curY + (isStory ? 54 : 46);
-  ctx.font = `900 ${isStory ? '48px' : '42px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText('Re', wordX, wordY);
-  const reW = ctx.measureText('Re').width;
+  // =========================================================================
+  // STYLE 2: EMERALD WEALTH & FIRE CALCULATOR (BAR CHART + DONUT CHART)
+  // =========================================================================
+  if (spec.layout === 'fire-donut-bars') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#022c22');
+    bg.addColorStop(0.55, '#064e3b');
+    bg.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
 
-  const fireGrad = ctx.createLinearGradient(wordX + reW, wordY - 36, wordX + reW + 115, wordY);
-  fireGrad.addColorStop(0, '#fb7185');
-  fireGrad.addColorStop(0.5, '#f97316');
-  fireGrad.addColorStop(1, '#fbbf24');
-  ctx.fillStyle = fireGrad;
-  ctx.fillText('FIRE', wordX + reW, wordY);
-  const fireW = ctx.measureText('FIRE').width;
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, false);
 
-  ctx.fillStyle = '#2dd4bf';
-  ctx.fillText('ly', wordX + reW + fireW, wordY);
-  const lyW = ctx.measureText('ly').width;
-
-  ctx.font = `800 ${isStory ? '26px' : '22px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText('.com', wordX + reW + fireW + lyW + 3, wordY);
-
-  // Tagline under wordmark
-  ctx.font = `700 ${isStory ? '17px' : '15px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('WHERE YOUR FREEDOM GOES FURTHER', wordX, wordY + (isStory ? 28 : 24));
-
-  // Right Top Website Pill
-  const pillW = 240;
-  const pillH = 46;
-  roundRect(ctx, width - padX - pillW, curY + 18, pillW, pillH, 23);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.fill();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = 'rgba(45, 212, 191, 0.5)';
-  ctx.stroke();
-
-  ctx.font = '800 18px Inter, system-ui, sans-serif';
-  ctx.fillStyle = '#5eead4';
-  ctx.textAlign = 'center';
-  ctx.fillText('🌐 refirely.com', width - padX - pillW / 2, curY + 47);
-  ctx.textAlign = 'left';
-
-  curY += boxSize + (isStory ? 54 : 32);
-
-  // 3. Category Badge Pill
-  ctx.font = '800 18px Inter, system-ui, sans-serif';
-  const badgeTextW = ctx.measureText(spec.badge).width + 44;
-  roundRect(ctx, padX, curY, badgeTextW, 42, 21);
-  ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
-  ctx.fill();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = 'rgba(129, 140, 248, 0.6)';
-  ctx.stroke();
-
-  ctx.fillStyle = '#fde68a';
-  ctx.fillText(spec.badge, padX + 22, curY + 27);
-
-  curY += isStory ? 84 : 66;
-
-  // 4. Main Promotional Headline & Subheadline
-  ctx.font = `900 ${isStory ? '54px' : '44px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  curY = drawWrappedText(
-    ctx,
-    spec.headline,
-    padX,
-    curY,
-    width - padX * 2,
-    isStory ? 64 : 52,
-    2
-  );
-
-  curY += isStory ? 12 : 6;
-  ctx.font = `500 ${isStory ? '25px' : '21px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#cbd5e1';
-  curY = drawWrappedText(
-    ctx,
-    spec.subheadline,
-    padX,
-    curY,
-    width - padX * 2,
-    isStory ? 36 : 30,
-    2
-  );
-
-  curY += isStory ? 34 : 20;
-
-  // 5. Realistic Website UI Module Snapshot Card (White/Luminous App Window)
-  const cardX = padX;
-  const cardW = width - padX * 2;
-  const cardH = isStory ? 1050 : 730;
-
-  // Outer Window Shadow
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 18;
-  roundRect(ctx, cardX, curY, cardW, cardH, 34);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.restore();
-
-  // Top Gradient Bar on UI Card
-  ctx.save();
-  roundRect(ctx, cardX, curY, cardW, cardH, 34);
-  ctx.clip();
-  ctx.fillStyle = ribbonGrad;
-  ctx.fillRect(cardX, curY, cardW, 12);
-
-  // Browser / Module Top Bar inside UI Card
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(cardX, curY + 12, cardW, isStory ? 96 : 78);
-
-  // Traffic Light Dots
-  const dotY = curY + (isStory ? 42 : 34);
-  ['#f43f5e', '#f59e0b', '#10b981'].forEach((col, i) => {
-    ctx.beginPath();
-    ctx.arc(cardX + 34 + i * 22, dotY, 6.5, 0, Math.PI * 2);
-    ctx.fillStyle = col;
+    roundRect(ctx, padX, curY, 460, 40, 20);
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
     ctx.fill();
-  });
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#6ee7b7';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
 
-  // Module Header Title & Subtitle
-  ctx.font = `800 ${isStory ? '26px' : '22px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#0f172a';
-  ctx.fillText(spec.moduleTitle, cardX + 115, curY + (isStory ? 49 : 41));
+    ctx.font = `900 ${isStory ? '52px' : '40px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 60 : 46, 2);
+    curY += 6;
 
-  ctx.font = `600 ${isStory ? '18px' : '15px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#4f46e5';
-  ctx.fillText(spec.moduleSubtitle, cardX + 34, curY + (isStory ? 86 : 68));
+    ctx.font = `500 ${isStory ? '23px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#a7f3d0';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+    curY += isStory ? 28 : 16;
 
-  let innerY = curY + (isStory ? 132 : 104);
+    // CHART CARD 1: Horizontal Cost Comparison Bar Chart
+    const box1H = isStory ? 440 : 300;
+    roundRect(ctx, padX, curY, contentW, box1H, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
 
-  // 3 KPI Metric Boxes inside UI Snapshot
-  const kpiGap = 20;
-  const kpiW = (cardW - 68 - kpiGap * 2) / 3;
-  const kpiH = isStory ? 142 : 106;
-  const kpiColors = [
-    { bg: '#f0fdfa', border: '#99f6e4', label: '#0f766e', val: '#134e4a' },
-    { bg: '#eef2ff', border: '#c7d2fe', label: '#4338ca', val: '#1e1b4b' },
-    { bg: '#fffbeb', border: '#fde68a', label: '#b45309', val: '#78350f' },
-  ];
+    ctx.font = `900 ${isStory ? '26px' : '21px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText('📊 Annual Couple Retirement Spend Comparison', padX + 36, curY + (isStory ? 52 : 40));
 
-  spec.metrics.forEach((m, idx) => {
-    const kx = cardX + 34 + idx * (kpiW + kpiGap);
-    const theme = kpiColors[idx % kpiColors.length];
-    roundRect(ctx, kx, innerY, kpiW, kpiH, 20);
-    ctx.fillStyle = theme.bg;
+    // US/UK Bar
+    const bar1Y = curY + (isStory ? 95 : 68);
+    ctx.font = `800 ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText('🇺🇸 🇬🇧 US / UK Average Retirement ($5,600/mo)', padX + 36, bar1Y);
+
+    roundRect(ctx, padX + 36, bar1Y + 14, contentW - 72, isStory ? 54 : 38, 14);
+    ctx.fillStyle = '#f43f5e';
+    ctx.fill();
+    ctx.font = `900 ${isStory ? '24px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('$67,200 / year', padX + 56, bar1Y + (isStory ? 50 : 39));
+
+    // Overseas Haven Bar
+    const bar2Y = bar1Y + (isStory ? 115 : 80);
+    ctx.font = `800 ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#065f46';
+    ctx.fillText('🇵🇹 🇹🇭 🇨🇷 Overseas Haven Average ($2,150/mo)', padX + 36, bar2Y);
+
+    roundRect(ctx, padX + 36, bar2Y + 14, (contentW - 72) * 0.42, isStory ? 54 : 38, 14);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.font = `900 ${isStory ? '24px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('$25,800 / yr', padX + 56, bar2Y + (isStory ? 50 : 39));
+
+    // Giant Savings Callout Pill
+    const saveY = bar2Y + (isStory ? 92 : 66);
+    roundRect(ctx, padX + 36, saveY, contentW - 72, isStory ? 68 : 48, 18);
+    ctx.fillStyle = '#ecfdf5';
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = theme.border;
+    ctx.strokeStyle = '#34d399';
     ctx.stroke();
+    ctx.font = `900 ${isStory ? '25px' : '19px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#065f46';
+    ctx.textAlign = 'center';
+    ctx.fillText('💰 YOU KEEP +$41,400 / YEAR (+$828,000 OVER 20 YEARS)', width / 2, saveY + (isStory ? 43 : 31));
+    ctx.textAlign = 'left';
 
-    ctx.font = `800 ${isStory ? '15px' : '13px'} Inter, system-ui, sans-serif`;
-    ctx.fillStyle = theme.label;
-    ctx.fillText(m.label.toUpperCase(), kx + 20, innerY + (isStory ? 34 : 26));
+    curY += box1H + (isStory ? 32 : 20);
 
-    ctx.font = `900 ${isStory ? '32px' : '25px'} Inter, system-ui, sans-serif`;
-    ctx.fillStyle = theme.val;
-    ctx.fillText(m.value, kx + 20, innerY + (isStory ? 80 : 60));
-
-    ctx.font = `600 ${isStory ? '16px' : '13px'} Inter, system-ui, sans-serif`;
-    ctx.fillStyle = '#64748b';
-    ctx.fillText(m.sub, kx + 20, innerY + (isStory ? 114 : 86));
-  });
-
-  innerY += kpiH + (isStory ? 32 : 20);
-
-  // 4 Structured Feature/Data Rows inside UI Snapshot
-  const rowH = isStory ? 156 : 104;
-  const rowGap = isStory ? 20 : 12;
-
-  spec.uiRows.forEach((row, idx) => {
-    const ry = innerY + idx * (rowH + rowGap);
-    roundRect(ctx, cardX + 34, ry, cardW - 68, rowH, 20);
-    ctx.fillStyle = idx % 2 === 0 ? '#f8fafc' : '#f0fdfa';
-    ctx.fill();
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = idx % 2 === 0 ? '#e2e8f0' : '#ccfbf1';
-    ctx.stroke();
-
-    // Left Accent Bar
-    roundRect(ctx, cardX + 34, ry, 8, rowH, 4);
-    ctx.fillStyle = idx % 2 === 0 ? '#6366f1' : '#14b8a6';
+    // CHART CARD 2: Multi-Segment Donut Chart of Monthly Couple Budget ($2,150/mo)
+    const box2H = isStory ? 530 : 370;
+    roundRect(ctx, padX, curY, contentW, box2H, 30);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    // Left Title & Subtitle
-    ctx.font = `800 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+    ctx.font = `900 ${isStory ? '26px' : '21px'} Inter, system-ui, sans-serif`;
     ctx.fillStyle = '#0f172a';
-    ctx.fillText(row.leftTitle, cardX + 62, ry + (isStory ? 56 : 40));
+    ctx.fillText('🍩 Where Your $2,150/mo Couple Budget Goes', padX + 36, curY + (isStory ? 52 : 40));
 
-    ctx.font = `500 ${isStory ? '19px' : '15px'} Inter, system-ui, sans-serif`;
-    ctx.fillStyle = '#475569';
-    ctx.fillText(row.leftSub, cardX + 62, ry + (isStory ? 104 : 74));
+    const slices = [
+      { label: '1-Bed Prime Apartment', amount: '$820/mo', pct: 0.38, color: '#6366f1' },
+      { label: 'Fresh Markets & Dining Out', amount: '$540/mo', pct: 0.25, color: '#14b8a6' },
+      { label: 'Travel, Leisure & Clubs', amount: '$320/mo', pct: 0.15, color: '#f59e0b' },
+      { label: 'Private Health Insurance', amount: '$260/mo', pct: 0.12, color: '#ec4899' },
+      { label: 'Fiber, Utilities & Transit', amount: '$210/mo', pct: 0.1, color: '#0ea5e9' },
+    ];
 
-    // Right Badge & Value
-    ctx.textAlign = 'right';
-    ctx.font = `800 ${isStory ? '16px' : '13px'} Inter, system-ui, sans-serif`;
-    ctx.fillStyle = '#0d9488';
-    ctx.fillText(row.rightBadge.toUpperCase(), cardX + cardW - 58, ry + (isStory ? 52 : 38));
+    const donutCx = padX + (isStory ? 225 : 185);
+    const donutCy = curY + (isStory ? 295 : 210);
+    const donutR = isStory ? 145 : 105;
+
+    let angle = -Math.PI / 2;
+    slices.forEach(s => {
+      const sweep = s.pct * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(donutCx, donutCy, donutR, angle, angle + sweep);
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = isStory ? 44 : 34;
+      ctx.stroke();
+      angle += sweep;
+    });
+
+    ctx.textAlign = 'center';
+    ctx.font = `900 ${isStory ? '34px' : '26px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText('$2,150', donutCx, donutCy + 6);
+    ctx.font = `700 ${isStory ? '16px' : '13px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('PER MONTH', donutCx, donutCy + 32);
+    ctx.textAlign = 'left';
+
+    // Legend Rows on Right of Donut
+    const legX = padX + (isStory ? 425 : 340);
+    let legY = curY + (isStory ? 120 : 88);
+    slices.forEach(s => {
+      roundRect(ctx, legX, legY - 18, 22, 22, 6);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+
+      ctx.font = `800 ${isStory ? '21px' : '17px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(s.label, legX + 34, legY);
+
+      ctx.textAlign = 'right';
+      ctx.font = `900 ${isStory ? '21px' : '17px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#0f766e';
+      ctx.fillText(s.amount, padX + contentW - 36, legY);
+      ctx.textAlign = 'left';
+
+      legY += isStory ? 76 : 52;
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#10b981', '#0d9488', '#f59e0b']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 3: 3D SATELLITE GLOBE & ORBITAL WORLD ATLAS (SPACE CYAN/VIOLET)
+  // =========================================================================
+  if (spec.layout === 'globe-3d-atlas') {
+    const bg = ctx.createRadialGradient(width / 2, height * 0.45, 50, width / 2, height * 0.45, 950);
+    bg.addColorStop(0, '#1e1b4b');
+    bg.addColorStop(0.55, '#090d16');
+    bg.addColorStop(1, '#020617');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, false);
+
+    roundRect(ctx, padX, curY, 460, 40, 20);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
+
+    ctx.font = `900 ${isStory ? '52px' : '40px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 60 : 46, 2);
+    curY += 6;
+
+    ctx.font = `500 ${isStory ? '23px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#94a3b8';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+
+    // Draw Giant 3D Wireframe Globe in Center
+    const globeCx = width / 2;
+    const globeCy = curY + (isStory ? 360 : 240);
+    const globeR = isStory ? 275 : 185;
+
+    const globeGrad = ctx.createRadialGradient(
+      globeCx - globeR * 0.3,
+      globeCy - globeR * 0.3,
+      20,
+      globeCx,
+      globeCy,
+      globeR
+    );
+    globeGrad.addColorStop(0, '#2563eb');
+    globeGrad.addColorStop(0.55, '#1e1b4b');
+    globeGrad.addColorStop(1, '#020617');
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(56, 189, 248, 0.45)';
+    ctx.shadowBlur = 55;
+    ctx.beginPath();
+    ctx.arc(globeCx, globeCy, globeR, 0, Math.PI * 2);
+    ctx.fillStyle = globeGrad;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.stroke();
+    ctx.restore();
+
+    // Latitude & Longitude Ellipses on Globe
+    ctx.strokeStyle = 'rgba(125, 211, 252, 0.28)';
+    ctx.lineWidth = 1.5;
+    [0.35, 0.7].forEach(scale => {
+      ctx.beginPath();
+      ctx.ellipse(globeCx, globeCy, globeR, globeR * scale, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(globeCx, globeCy, globeR * scale, globeR, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // Floating Pin Callouts around the 3D Globe
+    const pins = [
+      { x: globeCx - globeR - 140, y: globeCy - 140, text: '🇵🇹 Portugal · $2,150/mo', col: '#10b981' },
+      { x: globeCx + globeR - 110, y: globeCy - 150, text: '🇹🇭 Thailand · $1,450/mo', col: '#10b981' },
+      { x: globeCx - globeR - 150, y: globeCy + 70, text: '🇨🇷 Costa Rica · $1,950/mo', col: '#f59e0b' },
+      { x: globeCx + globeR - 120, y: globeCy + 85, text: '🇲🇾 Malaysia · $1,550/mo', col: '#38bdf8' },
+    ];
+
+    pins.forEach(p => {
+      roundRect(ctx, p.x, p.y, 280, 52, 26);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = p.col;
+      ctx.stroke();
+      ctx.font = '800 18px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(p.text, p.x + 20, p.y + 32);
+    });
+
+    // Bottom Continent Breakdown Cards
+    const gridY = globeCy + globeR + (isStory ? 60 : 34);
+    const regions = [
+      { name: 'Europe & Med', count: '47 Havens', range: 'From $1,400/mo', color: '#818cf8' },
+      { name: 'Asia & Pacific', count: '42 Havens', range: 'From $1,150/mo', color: '#2dd4bf' },
+      { name: 'Americas & Carib', count: '52 Havens', range: 'From $1,350/mo', color: '#fbbf24' },
+      { name: 'Middle East & Africa', count: '68 Havens', range: 'From $1,250/mo', color: '#f472b6' },
+    ];
+
+    const rW = (contentW - 24) / 2;
+    const rH = isStory ? 128 : 88;
+    regions.forEach((r, i) => {
+      const rx = padX + (i % 2) * (rW + 24);
+      const ry = gridY + Math.floor(i / 2) * (rH + 18);
+      roundRect(ctx, rx, ry, rW, rH, 20);
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = r.color;
+      ctx.stroke();
+
+      ctx.font = `800 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(r.name, rx + 24, ry + (isStory ? 48 : 36));
+
+      ctx.font = `700 ${isStory ? '18px' : '15px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = r.color;
+      ctx.fillText(`${r.count}  ·  ${r.range}`, rx + 24, ry + (isStory ? 88 : 66));
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#0284c7', '#6366f1', '#a855f7']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 4: SWISS GOLD & ROYAL SLATE — BANKING, FX WATERFALL & TAX DIAGRAM
+  // =========================================================================
+  if (spec.layout === 'banking-fx-waterfall') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#1e293b');
+    bg.addColorStop(0.5, '#0f172a');
+    bg.addColorStop(1, '#1c1917');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, false);
+
+    roundRect(ctx, padX, curY, 470, 40, 20);
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#fcd34d';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
+
+    ctx.font = `900 ${isStory ? '52px' : '40px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 60 : 46, 2);
+    curY += 6;
+
+    ctx.font = `500 ${isStory ? '23px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#fde68a';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+    curY += isStory ? 28 : 16;
+
+    // Visual FX Transfer Comparison Card ($3,000 Monthly Pension Transfer)
+    const fxH = isStory ? 470 : 320;
+    roundRect(ctx, padX, curY, contentW, fxH, 28);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
 
     ctx.font = `900 ${isStory ? '26px' : '20px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText('💱 Monthly $3,000 Pension Transfer Fee Comparison', padX + 34, curY + (isStory ? 52 : 38));
+
+    const colW = (contentW - 92) / 2;
+    const colH = isStory ? 360 : 240;
+    const colY = curY + (isStory ? 80 : 56);
+
+    // Left: Retail Bank SWIFT
+    roundRect(ctx, padX + 34, colY, colW, colH, 22);
+    ctx.fillStyle = '#fff1f2';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#fecdd3';
+    ctx.stroke();
+
+    ctx.font = `800 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#9f1239';
+    ctx.fillText('❌ High-Street Bank SWIFT', padX + 58, colY + (isStory ? 48 : 36));
+    ctx.font = `600 ${isStory ? '19px' : '15px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText('• Wire Fee: -$35 / transfer', padX + 58, colY + (isStory ? 96 : 70));
+    ctx.fillText('• Hidden FX Spread (3.2%): -$96', padX + 58, colY + (isStory ? 136 : 98));
+    ctx.fillText('• Receiving Bank Cut: -$15', padX + 58, colY + (isStory ? 176 : 126));
+
+    ctx.font = `900 ${isStory ? '30px' : '23px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#e11d48';
+    ctx.fillText('Lost: -$1,752 / yr', padX + 58, colY + colH - (isStory ? 42 : 28));
+
+    // Right: Smart Multi-Currency Route
+    const rx = padX + 34 + colW + 24;
+    roundRect(ctx, rx, colY, colW, colH, 22);
+    ctx.fillStyle = '#ecfdf5';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#6ee7b7';
+    ctx.stroke();
+
+    ctx.font = `800 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#065f46';
+    ctx.fillText('✅ Wise / Revolut + Local IBAN', rx + 24, colY + (isStory ? 48 : 36));
+    ctx.font = `600 ${isStory ? '19px' : '15px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText('• Mid-Market Interbank FX Rate', rx + 24, colY + (isStory ? 96 : 70));
+    ctx.fillText('• Transparent Fee (~0.38%): -$11', rx + 24, colY + (isStory ? 136 : 98));
+    ctx.fillText('• Fee-Free Charles Schwab ATM', rx + 24, colY + (isStory ? 176 : 126));
+
+    ctx.font = `900 ${isStory ? '30px' : '23px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#059669';
+    ctx.fillText('You Save +$1,620 / yr', rx + 24, colY + colH - (isStory ? 42 : 28));
+
+    curY += fxH + (isStory ? 32 : 20);
+
+    // 3 Tax Pillar Cards Below
+    const taxPillars = [
+      {
+        badge: '0% CAPITAL TRANSFER TAX',
+        title: 'Savings & Home Sale Proceeds Are Tax-Free',
+        desc: 'Moving already-taxed principal savings into your local bank is a capital transfer—not taxable income.',
+        col: '#f59e0b',
+      },
+      {
+        badge: 'TERRITORIAL & TREATY HAVENS',
+        title: 'Countries That Exempt Foreign Pensions',
+        desc: 'Compare 0% Territorial Tax havens (Costa Rica, Panama, Malaysia, Thailand LTR) vs. DTA treaty countries.',
+        col: '#2dd4bf',
+      },
+      {
+        badge: 'NATIONAL & PRIVATE BANKS',
+        title: 'Step-by-Step Expat Account Opening Checklist',
+        desc: 'Local Tax IDs (NIF/RFC/TIN), deposit insurance limits, and English digital banking apps.',
+        col: '#818cf8',
+      },
+    ];
+
+    const pH = isStory ? 152 : 108;
+    taxPillars.forEach((tp, idx) => {
+      const py = curY + idx * (pH + (isStory ? 18 : 12));
+      roundRect(ctx, padX, py, contentW, pH, 22);
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.92)';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = tp.col;
+      ctx.stroke();
+
+      ctx.font = `800 ${isStory ? '15px' : '12px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = tp.col;
+      ctx.fillText(tp.badge, padX + 28, py + (isStory ? 36 : 26));
+
+      ctx.font = `900 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(tp.title, padX + 28, py + (isStory ? 72 : 54));
+
+      ctx.font = `500 ${isStory ? '18px' : '14px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText(tp.desc, padX + 28, py + (isStory ? 112 : 82));
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#f59e0b', '#ea580c', '#6366f1']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 5: CLEAN MEDICAL TEAL — HEALTHCARE GAUGES & PROCEDURE COST BARS
+  // =========================================================================
+  if (spec.layout === 'healthcare-gauge-bars') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#f0fdfa');
+    bg.addColorStop(0.5, '#e0f2fe');
+    bg.addColorStop(1, '#eef2ff');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, true);
+
+    roundRect(ctx, padX, curY, 470, 40, 20);
+    ctx.fillStyle = '#ccfbf1';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#0f766e';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
+
+    ctx.font = `900 ${isStory ? '52px' : '40px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 60 : 46, 2);
+    curY += 6;
+
+    ctx.font = `600 ${isStory ? '23px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#334155';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+    curY += isStory ? 28 : 16;
+
+    // 3 Circular Quality Gauges Card
+    const gBoxH = isStory ? 290 : 210;
+    roundRect(ctx, padX, curY, contentW, gBoxH, 28);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    const gR = isStory ? 72 : 52;
+    const gCy = curY + (isStory ? 125 : 90);
+    drawCircularGauge(ctx, padX + contentW * 0.2, gCy, gR, 92, 'Hospital Quality', '#0d9488', '#ccfbf1', '#0f172a', '#0f766e');
+    drawCircularGauge(ctx, padX + contentW * 0.5, gCy, gR, 95, 'English Doctors', '#4f46e5', '#e0e7ff', '#0f172a', '#4338ca');
+    drawCircularGauge(ctx, padX + contentW * 0.8, gCy, gR, 84, 'Cost Savings %', '#f59e0b', '#fef3c7', '#0f172a', '#b45309');
+
+    curY += gBoxH + (isStory ? 28 : 18);
+
+    // Out-of-Pocket Medical Procedure Cost Comparison Bars
+    const mBoxH = isStory ? 670 : 460;
+    roundRect(ctx, padX, curY, contentW, mBoxH, 28);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+
+    ctx.font = `900 ${isStory ? '26px' : '20px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('🩺 Private Medical & Insurance Costs: US vs. Top Havens', padX + 36, curY + (isStory ? 54 : 40));
+
+    const procedures = [
+      { name: 'Private Specialist Consultation', us: '$280', haven: '$45', pct: 0.18 },
+      { name: 'Full MRI Diagnostic Scan', us: '$2,400', haven: '$290', pct: 0.15 },
+      { name: 'Porcelain Dental Crown', us: '$1,650', haven: '$320', pct: 0.22 },
+      { name: 'Comprehensive Expat Health Policy (Age 60)', us: '$920/mo', haven: '$185/mo', pct: 0.24 },
+    ];
+
+    let py = curY + (isStory ? 110 : 80);
+    procedures.forEach(p => {
+      ctx.font = `800 ${isStory ? '21px' : '16px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText(p.name, padX + 36, py);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fda4af';
+      ctx.fillText(`US: ${p.us}`, padX + contentW - 230, py);
+      ctx.fillStyle = '#5eead4';
+      ctx.fillText(`Haven: ${p.haven}`, padX + contentW - 36, py);
+      ctx.textAlign = 'left';
+
+      // Dual Bar Track
+      roundRect(ctx, padX + 36, py + 14, contentW - 72, isStory ? 26 : 18, 10);
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
+      ctx.fill();
+
+      roundRect(ctx, padX + 36, py + 14, (contentW - 72) * p.pct, isStory ? 26 : 18, 10);
+      ctx.fillStyle = '#14b8a6';
+      ctx.fill();
+
+      py += isStory ? 132 : 90;
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#0d9488', '#0284c7', '#4f46e5']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 6: COMPARE STUDIO — 6-AXIS SPIDER RADAR CHART & 3-COUNTRY MATRIX
+  // =========================================================================
+  if (spec.layout === 'compare-radar-matrix') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#2e1065');
+    bg.addColorStop(0.5, '#1e1b4b');
+    bg.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, false);
+
+    roundRect(ctx, padX, curY, 470, 40, 20);
+    ctx.fillStyle = 'rgba(192, 132, 252, 0.22)';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#e9d5ff';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
+
+    ctx.font = `900 ${isStory ? '52px' : '40px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 60 : 46, 2);
+    curY += 6;
+
+    ctx.font = `500 ${isStory ? '23px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ddd6fe';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+    curY += isStory ? 22 : 12;
+
+    // 6-Axis Radar Chart Box
+    const radarBoxH = isStory ? 520 : 350;
+    roundRect(ctx, padX, curY, contentW, radarBoxH, 28);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.4)';
+    ctx.stroke();
+
+    const rCx = width / 2;
+    const rCy = curY + radarBoxH / 2 + 12;
+    const rMax = isStory ? 175 : 118;
+    const axes = ['Affordability', 'Healthcare', 'Safety', 'Visa Ease', 'Sunshine', 'English'];
+
+    // Concentric Hexagons
+    [0.35, 0.68, 1].forEach(level => {
+      ctx.beginPath();
+      axes.forEach((_, idx) => {
+        const ang = -Math.PI / 2 + (idx * Math.PI * 2) / 6;
+        const px = rCx + Math.cos(ang) * rMax * level;
+        const py = rCy + Math.sin(ang) * rMax * level;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // Axis Labels
+    axes.forEach((label, idx) => {
+      const ang = -Math.PI / 2 + (idx * Math.PI * 2) / 6;
+      const lx = rCx + Math.cos(ang) * (rMax + 46);
+      const ly = rCy + Math.sin(ang) * (rMax + 30);
+      ctx.textAlign = 'center';
+      ctx.font = `800 ${isStory ? '18px' : '14px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText(label, lx, ly + 6);
+    });
+    ctx.textAlign = 'left';
+
+    // Draw 2 Overlapping Country Polygons (Portugal vs Thailand)
+    const poly1 = [0.78, 0.92, 0.94, 0.86, 0.88, 0.85]; // Portugal
+    const poly2 = [0.96, 0.86, 0.82, 0.9, 0.92, 0.72]; // Thailand
+
+    const drawPoly = (vals: number[], stroke: string, fill: string) => {
+      ctx.beginPath();
+      vals.forEach((v, idx) => {
+        const ang = -Math.PI / 2 + (idx * Math.PI * 2) / 6;
+        const px = rCx + Math.cos(ang) * rMax * v;
+        const py = rCy + Math.sin(ang) * rMax * v;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    };
+
+    drawPoly(poly1, '#38bdf8', 'rgba(56, 189, 248, 0.28)');
+    drawPoly(poly2, '#fbbf24', 'rgba(251, 191, 36, 0.25)');
+
+    curY += radarBoxH + (isStory ? 28 : 16);
+
+    // 3-Column Comparison Matrix Table Below Radar
+    const tableH = isStory ? 440 : 310;
+    roundRect(ctx, padX, curY, contentW, tableH, 28);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    const cols = ['Metric', '🇵🇹 Portugal', '🇪🇸 Spain', '🇹🇭 Thailand'];
+    const colOffsets = [padX + 34, padX + 330, padX + 560, padX + 770];
+
+    ctx.font = `900 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+    cols.forEach((c, i) => {
+      ctx.fillStyle = i === 0 ? '#64748b' : '#0f172a';
+      ctx.fillText(c, colOffsets[i], curY + (isStory ? 54 : 40));
+    });
+
+    const matrixRows = [
+      ['Couple Budget', '$2,150/mo', '$2,350/mo', '$1,450/mo'],
+      ['Min Visa Income', '$1,050/mo', '$2,600/mo', '$1,850/mo'],
+      ['Healthcare Score', '89 / 100', '93 / 100', '86 / 100'],
+      ['Safety Index', '92 / 100', '89 / 100', '82 / 100'],
+      ['Foreign Tax', '10–28% DTA', 'Beckham / DTA', '0% LTR / Remit'],
+    ];
+
+    matrixRows.forEach((r, rIdx) => {
+      const ry = curY + (isStory ? 115 : 82) + rIdx * (isStory ? 66 : 46);
+      if (rIdx % 2 === 0) {
+        roundRect(ctx, padX + 20, ry - (isStory ? 34 : 24), contentW - 40, isStory ? 52 : 36, 12);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+      }
+      r.forEach((cell, cIdx) => {
+        ctx.font = `${cIdx === 0 ? '700' : '800'} ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
+        ctx.fillStyle = cIdx === 0 ? '#475569' : '#1e1b4b';
+        ctx.fillText(cell, colOffsets[cIdx], ry);
+      });
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#ec4899', '#8b5cf6', '#06b6d4']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 7: LIFESTYLE, DATING & COMMUNITY — GREEN VS RED FLAGS + MEETUP PASS
+  // =========================================================================
+  if (spec.layout === 'dating-flags-meetup') {
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#fff1f2');
+    bg.addColorStop(0.5, '#f8fafc');
+    bg.addColorStop(1, '#eef2ff');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 72 : 44, isStory, true);
+
+    roundRect(ctx, padX, curY, 480, 40, 20);
+    ctx.fillStyle = '#ffe4e6';
+    ctx.fill();
+    ctx.font = '800 16px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#be123c';
+    ctx.fillText(spec.badge, padX + 20, curY + 26);
+    curY += isStory ? 74 : 56;
+
+    ctx.font = `900 ${isStory ? '50px' : '38px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#0f172a';
+    curY = drawWrappedText(ctx, spec.headline, padX, curY, contentW, isStory ? 58 : 44, 2);
+    curY += 6;
+
+    ctx.font = `600 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#475569';
+    curY = drawWrappedText(ctx, spec.subheadline, padX, curY, contentW, isStory ? 32 : 25, 2);
+    curY += isStory ? 26 : 16;
+
+    // Two-Column Visual Split: GREEN FLAGS (Normal Culture) vs RED FLAGS (Scams to Avoid)
+    const splitW = (contentW - 24) / 2;
+    const splitH = isStory ? 620 : 420;
+
+    // Left: Emerald Green Flags
+    roundRect(ctx, padX, curY, splitW, splitH, 28);
+    ctx.fillStyle = '#ecfdf5';
+    ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#34d399';
+    ctx.stroke();
+
+    ctx.font = `900 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#065f46';
+    ctx.fillText('✅ Completely Normal Culture', padX + 26, curY + (isStory ? 50 : 38));
+
+    const greenItems = [
+      '• Covering the restaurant bill when you invite a date out',
+      '• Daily check-in messages & warm family closeness',
+      '• Daytime coffee, beach walks, padel & language clubs',
+      '• Dressing smart-casual & keeping calm ("saving face")',
+    ];
+    let gy = curY + (isStory ? 105 : 76);
+    ctx.font = `600 ${isStory ? '20px' : '15px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#064e3b';
+    greenItems.forEach(item => {
+      gy = drawWrappedText(ctx, item, padX + 26, gy, splitW - 52, isStory ? 30 : 22, 3) + (isStory ? 24 : 14);
+    });
+
+    // Right: Crimson Red Flags
+    const rx = padX + splitW + 24;
+    roundRect(ctx, rx, curY, splitW, splitH, 28);
+    ctx.fillStyle = '#fff1f2';
+    ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#fb7185';
+    ctx.stroke();
+
+    ctx.font = `900 ${isStory ? '24px' : '19px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#9f1239';
+    ctx.fillText('🚩 Red Flags (Walk Away!)', rx + 26, curY + (isStory ? 50 : 38));
+
+    const redItems = [
+      '• Asking for cash for a "sick relative" or emergency bill',
+      '• Pressure to buy property or a car in a new partner’s name',
+      '• Insisting on an unknown bar with padded bottle bills',
+      '• Online matches pitching crypto or forex investments',
+    ];
+    let ry = curY + (isStory ? 105 : 76);
+    ctx.font = `600 ${isStory ? '20px' : '15px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#881337';
+    redItems.forEach(item => {
+      ry = drawWrappedText(ctx, item, rx + 26, ry, splitW - 52, isStory ? 30 : 22, 3) + (isStory ? 24 : 14);
+    });
+
+    curY += splitH + (isStory ? 32 : 20);
+
+    // Bottom Expat Community & Live Meetup Pass Card
+    const passH = isStory ? 310 : 210;
+    roundRect(ctx, padX, curY, contentW, passH, 28);
     ctx.fillStyle = '#1e1b4b';
-    ctx.fillText(row.rightValue, cardX + cardW - 58, ry + (isStory ? 104 : 74));
+    ctx.fill();
+
+    ctx.font = `800 ${isStory ? '17px' : '14px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#2dd4bf';
+    ctx.fillText('🤝 VERIFIED EXPAT CITIES, PEER MENTORS & LOCAL MEETUPS', padX + 34, curY + (isStory ? 48 : 36));
+
+    ctx.font = `900 ${isStory ? '30px' : '22px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('Connect 1-on-1 with Retirees Already Living Abroad', padX + 34, curY + (isStory ? 96 : 70));
+
+    const pills = ['💬 Direct Expat Chat', '☕ Monthly City Meetups', '📍 600+ Expat Town Guides'];
+    pills.forEach((p, idx) => {
+      const px = padX + 34 + idx * 305;
+      const py = curY + (isStory ? 140 : 96);
+      roundRect(ctx, px, py, 285, isStory ? 56 : 42, 16);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fill();
+      ctx.font = `800 ${isStory ? '18px' : '15px'} Inter, system-ui, sans-serif`;
+      ctx.fillStyle = '#fde68a';
+      ctx.fillText(p, px + 20, py + (isStory ? 35 : 27));
+    });
+
+    drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#e11d48', '#f97316', '#4f46e5']);
+    return canvas.toDataURL('image/png', 1.0);
+  }
+
+  // =========================================================================
+  // STYLE 8: CUSTOM COUNTRY DOSSIER MAGAZINE COVER (WITH PHOTO & GAUGES)
+  // =========================================================================
+  const cd = spec.countryData;
+  const photoCfg = getCountryPhotoConfig(cd?.id || 'portugal', cd?.imageUrl);
+  const [heroImg, flagImg] = await Promise.all([
+    loadExternalImageWithFallbacks(photoCfg.candidateUrls),
+    cd?.code
+      ? loadExternalImage(`https://flagcdn.com/w160/${cd.code.toLowerCase()}.png`)
+      : Promise.resolve(null),
+  ]);
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#0f172a');
+  bg.addColorStop(1, '#1e1b4b');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  let curY = drawBrandHeader(ctx, iconImg, width, padX, isStory ? 68 : 40, isStory, false);
+
+  // Hero Photo Banner Card
+  const photoH = isStory ? 460 : 295;
+  ctx.save();
+  roundRect(ctx, padX, curY, contentW, photoH, 32);
+  ctx.clip();
+
+  if (heroImg) {
+    drawCoverImage(ctx, heroImg, padX, curY, contentW, photoH);
+  } else {
+    // Rich Illustrated Coastal & Mountain Panorama Fallback if Offline
+    const fallbackG = ctx.createLinearGradient(padX, curY, padX + contentW, curY + photoH);
+    fallbackG.addColorStop(0, '#0284c7');
+    fallbackG.addColorStop(0.5, '#0d9488');
+    fallbackG.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = fallbackG;
+    ctx.fillRect(padX, curY, contentW, photoH);
+
+    // Golden Sun & Mountain Horizon
+    ctx.beginPath();
+    ctx.arc(padX + contentW - 170, curY + 110, 68, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.35)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(padX, curY + photoH);
+    ctx.lineTo(padX + 240, curY + photoH - 180);
+    ctx.lineTo(padX + 520, curY + photoH - 95);
+    ctx.lineTo(padX + 760, curY + photoH - 210);
+    ctx.lineTo(padX + contentW, curY + photoH - 110);
+    ctx.lineTo(padX + contentW, curY + photoH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+    ctx.fill();
+  }
+
+  // Smooth Editorial Gradient Scrim for Text Contrast while keeping Country Photo vibrant
+  const darkOverlay = ctx.createLinearGradient(padX, curY, padX, curY + photoH);
+  darkOverlay.addColorStop(0, 'rgba(15, 23, 42, 0.12)');
+  darkOverlay.addColorStop(0.45, 'rgba(15, 23, 42, 0.18)');
+  darkOverlay.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+  ctx.fillStyle = darkOverlay;
+  ctx.fillRect(padX, curY, contentW, photoH);
+
+  // Top-Left Region Badge Pill over Country Photo
+  roundRect(ctx, padX + 28, curY + 26, 370, 42, 21);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+  ctx.fill();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(94, 234, 212, 0.55)';
+  ctx.stroke();
+  ctx.font = '800 15px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#5eead4';
+  ctx.fillText(spec.badge, padX + 48, curY + 52);
+
+  // Top-Right Landmark Location Caption Pill over Country Photo
+  const landmarkText = `📸 ${cd?.landmarkLabel || photoCfg.landmarkLabel}`;
+  ctx.font = '700 15px Inter, system-ui, sans-serif';
+  const lmW = Math.min(380, ctx.measureText(landmarkText).width + 40);
+  roundRect(ctx, padX + contentW - lmW - 28, curY + 26, lmW, 42, 21);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+  ctx.fill();
+  ctx.fillStyle = '#fde68a';
+  ctx.textAlign = 'right';
+  ctx.fillText(landmarkText, padX + contentW - 48, curY + 52);
+  ctx.textAlign = 'left';
+
+  // Country Flag + Headline + Tagline over Bottom of Country Photo
+  const titleY = curY + photoH - (isStory ? 84 : 66);
+  let textStartX = padX + 34;
+  if (flagImg) {
+    const fw = isStory ? 68 : 54;
+    const fh = isStory ? 46 : 36;
+    const fy = titleY - (isStory ? 42 : 32);
+    ctx.save();
+    roundRect(ctx, textStartX, fy, fw, fh, 8);
+    ctx.clip();
+    ctx.drawImage(flagImg, textStartX, fy, fw, fh);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, textStartX, fy, fw, fh, 8);
+    ctx.stroke();
+    textStartX += fw + 18;
+  }
+
+  ctx.font = `900 ${isStory ? '54px' : '40px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(
+    flagImg ? `${cd?.name || spec.title} Dossier` : `${cd?.flag || '🌍'} ${cd?.name || spec.title}`,
+    textStartX,
+    titleY
+  );
+
+  ctx.font = `500 ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#e2e8f0';
+  drawWrappedText(
+    ctx,
+    cd?.tagline || spec.subheadline,
+    padX + 34,
+    titleY + (isStory ? 34 : 26),
+    contentW - 68,
+    isStory ? 26 : 20,
+    1
+  );
+
+  // Subtle Inner Photo Frame Border
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+  roundRect(ctx, padX, curY, contentW, photoH, 32);
+  ctx.stroke();
+  ctx.restore();
+
+  curY += photoH + (isStory ? 24 : 16);
+
+  // 3 Circular Score Gauges + Cost Box
+  const midH = isStory ? 260 : 185;
+  roundRect(ctx, padX, curY, contentW, midH, 28);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  const gR = isStory ? 62 : 44;
+  const gCy = curY + (isStory ? 110 : 78);
+  drawCircularGauge(ctx, padX + contentW * 0.18, gCy, gR, cd?.healthcareScore || 88, 'Healthcare', '#0d9488', '#ccfbf1', '#0f172a', '#0f766e');
+  drawCircularGauge(ctx, padX + contentW * 0.45, gCy, gR, cd?.safetyScore || 90, 'Safety Index', '#4f46e5', '#e0e7ff', '#0f172a', '#4338ca');
+
+  // Right Cost Callout Box inside White Card
+  const costX = padX + contentW * 0.65;
+  roundRect(ctx, costX, curY + 24, contentW * 0.32, midH - 48, 20);
+  ctx.fillStyle = '#f0fdfa';
+  ctx.fill();
+  ctx.font = `800 ${isStory ? '16px' : '13px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#0f766e';
+  ctx.fillText('MONTHLY BUDGET', costX + 22, curY + (isStory ? 66 : 52));
+  ctx.font = `900 ${isStory ? '36px' : '26px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillText(`$${(cd?.singleBudget || 1850).toLocaleString()}/mo`, costX + 22, curY + (isStory ? 120 : 90));
+  ctx.font = `700 ${isStory ? '18px' : '14px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#475569';
+  ctx.fillText(`Couple: $${(cd?.coupleBudget || 2550).toLocaleString()}/mo`, costX + 22, curY + (isStory ? 162 : 120));
+
+  curY += midH + (isStory ? 28 : 18);
+
+  // Visa & Top Expat Cities Cards
+  const botH = isStory ? 540 : 360;
+  roundRect(ctx, padX, curY, contentW, botH, 28);
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+  ctx.fill();
+
+  ctx.font = `800 ${isStory ? '22px' : '18px'} Inter, system-ui, sans-serif`;
+  ctx.fillStyle = '#fde68a';
+  ctx.fillText(`🛂 ${cd?.visaName || 'Retirement Visa'} · Min Income $${(cd?.minIncome || 1500).toLocaleString()}/mo · ☀️ ${cd?.sunnyDays || 290} Sunny Days`, padX + 32, curY + (isStory ? 52 : 38));
+
+  (cd?.topCities || []).forEach((city, idx) => {
+    const ry = curY + (isStory ? 84 : 58) + idx * (isStory ? 140 : 94);
+    roundRect(ctx, padX + 28, ry, contentW - 56, isStory ? 120 : 80, 18);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fill();
+
+    ctx.font = `900 ${isStory ? '26px' : '20px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`📍 ${city.name}`, padX + 52, ry + (isStory ? 50 : 34));
+
+    ctx.font = `500 ${isStory ? '19px' : '15px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText(city.vibe, padX + 52, ry + (isStory ? 88 : 62));
+
+    ctx.textAlign = 'right';
+    ctx.font = `900 ${isStory ? '26px' : '20px'} Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#5eead4';
+    ctx.fillText(`~$${city.monthlyCostUSD}/mo`, padX + contentW - 52, ry + (isStory ? 68 : 48));
     ctx.textAlign = 'left';
   });
 
-  // Bottom strip inside UI card
-  const stripY = curY + cardH - (isStory ? 74 : 54);
-  ctx.fillStyle = '#eef2ff';
-  ctx.fillRect(cardX, stripY, cardW, isStory ? 74 : 54);
-  ctx.font = `800 ${isStory ? '20px' : '16px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#312e81';
-  ctx.textAlign = 'center';
-  ctx.fillText(`✨ ${spec.footerCallout}`, width / 2, stripY + (isStory ? 44 : 33));
-  ctx.textAlign = 'left';
-  ctx.restore();
-
-  // 6. Bottom Promotional Call-To-Action Button Banner
-  const ctaY = curY + cardH + (isStory ? 44 : 24);
-  const ctaH = isStory ? 88 : 66;
-  roundRect(ctx, padX, ctaY, cardW, ctaH, ctaH / 2);
-  ctx.fillStyle = ribbonGrad;
-  ctx.fill();
-
-  ctx.font = `900 ${isStory ? '28px' : '22px'} Inter, system-ui, sans-serif`;
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${spec.ctaText}  →`, width / 2, ctaY + (isStory ? 54 : 41));
-  ctx.textAlign = 'left';
-
+  drawFooterCta(ctx, spec.ctaText, width, height, padX, isStory, ['#14b8a6', '#6366f1', '#f59e0b']);
   return canvas.toDataURL('image/png', 1.0);
 }
 
-const DISCARDED_STORAGE_KEY = 'refirely_admin_discarded_snapshots_v1';
-const CUSTOM_COUNTRY_STORAGE_KEY = 'refirely_admin_custom_country_snapshots_v1';
+const DISCARDED_STORAGE_KEY = 'refirely_admin_discarded_snapshots_v2';
+const CUSTOM_COUNTRY_STORAGE_KEY = 'refirely_admin_custom_country_snapshots_v2';
 
 interface AdminSocialPromoStudioProps {
   countries: Country[];
@@ -898,7 +1753,7 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
     const key = `${newSpec.id}_${aspect}`;
     const url = await renderPortraitPromoToDataUrl(newSpec, aspect);
     setRenderedUrls(prev => ({ ...prev, [key]: url }));
-    showToast(`Generated Portrait Social Snapshot for ${target.name}!`);
+    showToast(`Generated Magazine Cover Snapshot for ${target.name}!`);
   };
 
   const handleDownloadSnapshot = async (spec: SocialPromoCardSpec) => {
@@ -935,16 +1790,15 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-teal-50 text-teal-900 border border-teal-200">
                 <ImageIcon className="w-3.5 h-3.5 text-teal-600" />
-                {activeSpecs.length} Active Snapshots Ready
+                {activeSpecs.length} Unique Infographic Designs Ready
               </span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent">
-              Portrait Website &amp; Feature Snapshots for Social Media
+              Portrait Social Media Infographics &amp; Feature Snapshots
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-              Download high-resolution portrait promotional snapshots featuring the authentic{' '}
-              <strong>ReFIREly.com</strong> logo, website URL, and top platform modules for Instagram Stories/Reels, WhatsApp Status, Facebook, and LinkedIn. Discard any image you don’t want with one click.
+              Every card below features its own distinct visual style, color theme, and data visualization (Bento Destination Grid, Donut &amp; Bar Charts, 3D Orbital Globe, FX Waterfall, JCI Gauges, 6-Axis Radar Chart, Green/Red Flag Split, and Country Photo Magazine Covers).
             </p>
           </div>
 
@@ -993,10 +1847,10 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
           <div>
             <span className="text-xs font-extrabold text-indigo-950 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-teal-600" />
-              Generate Custom Country Dossier Portrait Snapshot
+              Generate Country Magazine-Cover Portrait Card (With Country Photo &amp; Score Gauges)
             </span>
             <p className="text-[11px] text-slate-600 mt-0.5">
-              Pick any of the {countries.length} countries to generate a branded portrait card with its real budget, visa, healthcare score, and top towns.
+              Pick any of the {countries.length} countries to generate a travel-magazine style portrait card with its hero photography, circular gauges, and top 3 towns.
             </p>
           </div>
 
@@ -1019,7 +1873,7 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white text-xs font-extrabold shadow-xs hover:opacity-95 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              <span>Generate Country Card</span>
+              <span>Generate Country Cover</span>
             </button>
           </div>
         </div>
@@ -1100,7 +1954,7 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
                       />
                     ) : (
                       <div className="aspect-[9/16] flex items-center justify-center text-xs text-slate-400 font-bold">
-                        {isRendering ? 'Rendering HD Snapshot...' : 'Preparing Preview...'}
+                        {isRendering ? 'Rendering HD Infographic...' : 'Preparing Preview...'}
                       </div>
                     )}
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
