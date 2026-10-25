@@ -689,6 +689,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const activeDmThreadIdRef = React.useRef<string | null>(activeDmThreadId);
   const enablePeerAutoRepliesRef = React.useRef<boolean>(enablePeerAutoReplies);
   const notificationSoundEnabledRef = React.useRef<boolean>(notificationSoundEnabled);
+  const logoutEpochRef = React.useRef<number>(0);
 
   useEffect(() => { registeredAccountsRef.current = registeredAccounts; }, [registeredAccounts]);
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
@@ -1254,8 +1255,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sync with Firebase Authentication & Firestore WITHOUT overwriting custom created User IDs!
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
       if (user) {
+        // If user explicitly logged out, do not auto-restore session from cached Firebase IndexedDB state
+        try {
+          if (localStorage.getItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`) === 'true') {
+            setFirebaseUser(null);
+            setIsAuthenticated(false);
+            isAuthenticatedRef.current = false;
+            await signOut(auth).catch(() => {});
+            return;
+          }
+        } catch {}
+
+        const syncEpoch = logoutEpochRef.current;
+        setFirebaseUser(user);
         setIsFirebaseSyncing(true);
 
         // Immediately resolve and activate the Google user's account BEFORE any Firestore network calls
@@ -1269,8 +1282,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUserProfile(immediateGoogleAcc.profile);
         userProfileRef.current = immediateGoogleAcc.profile;
         setIsAuthenticated(true);
-        if (isAdminUser || immediateGoogleAcc.id === 'usr-ganesh' || immediateGoogleAcc.profile.role === 'admin') {
+        isAuthenticatedRef.current = true;
+        if (
+          (isAdminUser || immediateGoogleAcc.id === 'usr-ganesh' || immediateGoogleAcc.profile.role === 'admin') &&
+          (currentViewRef.current === 'landing' || currentViewRef.current === 'dashboard')
+        ) {
           setCurrentView('admin');
+          currentViewRef.current = 'admin';
         }
         try {
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, immediateGoogleAcc.id);
@@ -1436,6 +1454,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
 
+          if (logoutEpochRef.current !== syncEpoch || !isAuthenticatedRef.current) {
+            return;
+          }
+
           const mergedAccountsList = Array.from(mergedMap.values());
           setRegisteredAccounts(mergedAccountsList);
           registeredAccountsRef.current = mergedAccountsList;
@@ -1535,6 +1557,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             dmThreads: nextDmThreads,
           });
 
+          if (logoutEpochRef.current !== syncEpoch || !isAuthenticatedRef.current) {
+            return;
+          }
+
           recordSyncTimestamp();
           setIsFirebaseConnected(true);
           setIsAuthenticated(true);
@@ -1546,6 +1572,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } finally {
           setIsFirebaseSyncing(false);
         }
+      } else {
+        setFirebaseUser(null);
       }
     });
 
@@ -1713,14 +1741,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setCurrentUserId(account.id);
+    currentUserIdRef.current = account.id;
     setUserProfile(restoredProfile);
+    userProfileRef.current = restoredProfile;
     setIsAuthenticated(true);
+    isAuthenticatedRef.current = true;
     if (isAccountOwnerAdmin) {
       setCurrentView('admin');
+      currentViewRef.current = 'admin';
     }
 
     // Restore per-account checklist & journal if stored
     try {
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`);
       const savedChecklist = localStorage.getItem(`${LOCAL_STORAGE_KEY}_checklist_${account.id}`);
       if (savedChecklist) {
         setChecklist(JSON.parse(savedChecklist));
@@ -1870,6 +1903,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthenticated(true);
 
     try {
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`);
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccounts));
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, newId);
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(newProfile));
@@ -1929,6 +1963,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } catch {}
     }
+    // Increment logout epoch so any in-flight Firestore sync immediately aborts
+    logoutEpochRef.current += 1;
+
+    // Immediately clear local storage auth state & active session refs before async Firebase signOut
+    setIsAuthenticated(false);
+    isAuthenticatedRef.current = false;
+    setFirebaseUser(null);
+    setCurrentUserId('guest');
+    currentUserIdRef.current = 'guest';
+    setUserProfile(GUEST_PROFILE);
+    userProfileRef.current = GUEST_PROFILE;
+    setDmThreads([]);
+    dmThreadsRef.current = [];
+    setActiveDmThreadId(null);
+    activeDmThreadIdRef.current = null;
+    setIncomingNotification(null);
+    setCurrentView('landing');
+    currentViewRef.current = 'landing';
+    setAuthModalTab('login');
+    setIsAuthModalOpen(true);
+
+    try {
+      window.history.pushState({ view: 'landing' }, '', '/');
+    } catch {}
+
+    try {
+      // IMPORTANT: Never delete _registered_accounts or per-user snapshots on logout!
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`, 'true');
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, 'guest');
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(GUEST_PROFILE));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'false');
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'false');
+    } catch {}
+
     try {
       if (auth.currentUser) {
         await signOut(auth);
@@ -1936,26 +2004,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.warn('Firebase sign-out notice:', e);
     }
-    setIsAuthenticated(false);
-    setFirebaseUser(null);
-    setCurrentUserId('guest');
-    setUserProfile(GUEST_PROFILE);
-    setDmThreads([]);
-    setActiveDmThreadId(null);
-    setIncomingNotification(null);
-    if (currentViewRef.current === 'messages') {
-      setCurrentView('landing');
-    }
-    try {
-      // IMPORTANT: Never delete _registered_accounts or per-user snapshots on logout!
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, 'guest');
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'false');
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'false');
-    } catch {}
   };
 
   const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
     try {
+      try {
+        localStorage.removeItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`);
+      } catch {}
       setIsFirebaseSyncing(true);
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -3360,9 +3415,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         firebaseUser?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com')
   );
 
-  // Enforce Admin-only views: Admin always loads Admin Dashboard by default and only accesses Admin modules ('admin' or 'messages')
+  // Enforce role-based view guards:
+  // 1. If not Admin (or after logout), never stay on 'admin' view.
+  // 2. If Admin tries to open normal user's 'dashboard', route to 'admin' instead.
   useEffect(() => {
-    if (isOwnerAdmin && currentView !== 'admin' && currentView !== 'messages') {
+    if (!isOwnerAdmin && currentView === 'admin') {
+      setCurrentView('landing');
+    } else if (isOwnerAdmin && currentView === 'dashboard') {
       setCurrentView('admin');
     }
   }, [isOwnerAdmin, currentView]);

@@ -70,19 +70,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     }
   };
 
-  const navItems: { view: typeof currentView; label: string; isActive: boolean }[] = canAccessAdmin
-    ? [
-        { view: 'admin', label: 'Admin CMS Console', isActive: currentView === 'admin' },
-        { view: 'messages', label: 'Direct Messages', isActive: currentView === 'messages' },
-      ]
-    : [
-        { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
-        { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
-        { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
-        { view: 'community', label: 'Community', isActive: currentView === 'community' },
-        { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
-        { view: 'dashboard', label: 'My Dashboard', isActive: currentView === 'dashboard' },
-      ];
+  const navItems: { view: typeof currentView; label: string; isActive: boolean }[] = [
+    { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
+    { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
+    { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
+    { view: 'community', label: 'Community', isActive: currentView === 'community' },
+    { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
+    ...(!canAccessAdmin
+      ? [{ view: 'dashboard' as typeof currentView, label: 'My Dashboard', isActive: currentView === 'dashboard' }]
+      : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl border-b border-indigo-100/90 text-slate-800 shadow-xs">
@@ -457,15 +454,78 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
         </div>
       </div>
 
+      {/* Dedicated Admin Command Sub-Bar (Below Main Top Menu Bar so Top Menu Bar stays intact) */}
+      {canAccessAdmin && (
+        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white border-t border-indigo-800/60">
+          <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-1.5 flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-[11px] font-semibold text-indigo-200">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold uppercase tracking-wider text-[10px]">
+                <Shield className="w-3 h-3 text-amber-400" />
+                <span>Admin Workspace</span>
+              </span>
+              <span className="hidden sm:inline text-slate-300">
+                Top menu bar active for site preview • Use quick-access modules on the right
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={() => handleNav('admin')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  currentView === 'admin'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs'
+                    : 'bg-white/10 hover:bg-white/20 text-amber-200 border border-white/15'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Admin CMS Console</span>
+              </button>
+
+              <button
+                onClick={() => handleNav('messages')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  currentView === 'messages'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-xs'
+                    : 'bg-white/10 hover:bg-white/20 text-teal-200 border border-white/15'
+                }`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Direct Messages</span>
+                {totalUnreadDms > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-orange-500 text-white text-[10px] font-extrabold">
+                    {totalUnreadDms}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  logout();
+                  setUserMenuOpen(false);
+                }}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 border border-rose-400/30 flex items-center gap-1 transition-colors cursor-pointer"
+                title="End Admin Session and return to Sign In"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-300" />
+                <span>Log Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden px-4 pt-2 pb-6 bg-white border-b border-slate-200 shadow-xl space-y-3">
           <div className="flex flex-col space-y-1">
-            {canAccessAdmin ? (
-              <>
+            {canAccessAdmin && (
+              <div className="mb-2 pb-2 border-b border-amber-100 space-y-1.5">
+                <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
+                  Admin Quick Modules
+                </p>
                 <button
                   onClick={() => handleNav('admin')}
-                  className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold flex items-center justify-between ${
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold flex items-center justify-between ${
                     currentView === 'admin'
                       ? 'bg-amber-500 text-white'
                       : 'bg-amber-50 text-amber-900 border border-amber-200'
@@ -479,12 +539,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 </button>
                 <button
                   onClick={() => handleNav('messages')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between cursor-pointer ${
-                    currentView === 'messages' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold flex items-center justify-between cursor-pointer ${
+                    currentView === 'messages'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-teal-50 text-teal-900 border border-teal-200'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-orange-600" />
+                    <MessageCircle className="w-4 h-4" />
                     <span>Direct Messages</span>
                   </span>
                   {totalUnreadDms > 0 && (
@@ -493,49 +555,51 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                     </span>
                   )}
                 </button>
-              </>
-            ) : (
+              </div>
+            )}
+
+            <button
+              onClick={() => handleNav('landing')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'landing' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => handleNav('explore')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'explore' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Explore Havens
+            </button>
+            <button
+              onClick={() => handleNav('compare')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'compare' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Compare Matrix ({comparedCountryIds.length})
+            </button>
+            <button
+              onClick={() => handleNav('community')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'community' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Community Hub
+            </button>
+            <button
+              onClick={() => handleNav('meetups')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'meetups' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Expat Meetups
+            </button>
+            {!canAccessAdmin && (
               <>
-                <button
-                  onClick={() => handleNav('landing')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'landing' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Home
-                </button>
-                <button
-                  onClick={() => handleNav('explore')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'explore' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Explore Havens
-                </button>
-                <button
-                  onClick={() => handleNav('compare')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'compare' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Compare Matrix ({comparedCountryIds.length})
-                </button>
-                <button
-                  onClick={() => handleNav('community')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'community' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Community Hub
-                </button>
-                <button
-                  onClick={() => handleNav('meetups')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'meetups' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Expat Meetups
-                </button>
                 <button
                   onClick={() => {
                     if (!isAuthenticated) {

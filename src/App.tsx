@@ -81,30 +81,32 @@ const MainContent: React.FC = () => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
-            {isOwnerAdmin ? (
-              currentView === 'messages' ? (
+            {currentView === 'landing' && <LandingPage />}
+            {currentView === 'explore' && <DirectoryExplorer />}
+            {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
+            {currentView === 'compare' && <CompareStudio />}
+            {currentView === 'community' && <CommunityHub />}
+            {currentView === 'meetups' && <MeetupsView />}
+            {currentView === 'messages' && (
+              isAuthenticated && currentUserId !== 'guest' ? (
                 <DirectMessenger />
               ) : (
-                <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />
+                <DirectMessagesAuthGate />
               )
-            ) : (
-              <>
-                {currentView === 'landing' && <LandingPage />}
-                {currentView === 'explore' && <DirectoryExplorer />}
-                {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
-                {currentView === 'compare' && <CompareStudio />}
-                {currentView === 'community' && <CommunityHub />}
-                {currentView === 'meetups' && <MeetupsView />}
-                {currentView === 'messages' && (
-                  isAuthenticated && currentUserId !== 'guest' ? (
-                    <DirectMessenger />
-                  ) : (
-                    <DirectMessagesAuthGate />
-                  )
-                )}
-                {currentView === 'dashboard' && <UserDashboard />}
-                {currentView === 'admin' && <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />}
-              </>
+            )}
+            {currentView === 'dashboard' && (
+              isOwnerAdmin ? (
+                <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />
+              ) : (
+                <UserDashboard />
+              )
+            )}
+            {currentView === 'admin' && (
+              isOwnerAdmin ? (
+                <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />
+              ) : (
+                <LandingPage />
+              )
             )}
           </motion.div>
         </AnimatePresence>
