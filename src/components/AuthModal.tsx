@@ -287,11 +287,17 @@ export const AuthModal: React.FC = () => {
             {/* Quick account switcher strip for fast testing and role verification */}
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Quick Select Registered User:
+                Quick Select Demo Member:
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {registeredAccounts
-                  .filter(acc => acc.id !== 'guest')
+                  .filter(
+                    acc =>
+                      acc.id !== 'guest' &&
+                      acc.id !== 'usr-ganesh' &&
+                      acc.profile?.role !== 'admin' &&
+                      acc.email?.toLowerCase() !== 'ganesh.indireddy@gmail.com'
+                  )
                   .slice(0, 5)
                   .map(acc => {
                     const isSelected = loginIdentifier.toLowerCase() === acc.id.toLowerCase();
@@ -333,7 +339,7 @@ export const AuthModal: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. usr-ganesh, usr-elena, or email"
+                    placeholder="e.g. usr-elena, usr-arthur, or email"
                     value={loginIdentifier}
                     onChange={e => setLoginIdentifier(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"

@@ -302,7 +302,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const initialRoute = React.useMemo(() => parseUrlToRoute(countries), []);
-  const [currentView, setCurrentView] = useState<AppView>(initialRoute.view);
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    try {
+      const explicitAuth = localStorage.getItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`);
+      const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`);
+      if (explicitAuth === 'true' && savedUserId === 'usr-ganesh') {
+        return 'admin';
+      }
+    } catch {}
+    return initialRoute.view;
+  });
   const [activeCountryId, setActiveCountryId] = useState<string>(initialRoute.countryId || 'portugal');
   const isPopStateNavigationRef = React.useRef<boolean>(false);
 
@@ -456,8 +465,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const parsedAccounts: UserAccount[] = JSON.parse(savedAccountsRaw);
         const matchedAcc = parsedAccounts.find(a => a.id === savedUserId);
         if (matchedAcc && matchedAcc.profile) {
+          const isAdminAcc =
+            matchedAcc.id === 'usr-ganesh' ||
+            matchedAcc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+            matchedAcc.profile.role === 'admin';
           return {
             ...matchedAcc.profile,
+            role: isAdminAcc ? 'admin' : matchedAcc.profile.role || 'member',
             finances: matchedAcc.profile.finances ? {
               ...DEFAULT_FINANCIAL_PORTFOLIO,
               ...matchedAcc.profile.finances,
@@ -511,13 +525,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  // Helper to strip any Admin-authored threads or comments from public community state
+  const sanitizePublicThreads = (list: CommunityThread[]): CommunityThread[] => {
+    return list
+      .filter(t => !(t.authorName || '').toLowerCase().includes('ganesh'))
+      .map(t => ({
+        ...t,
+        comments: (t.comments || []).filter(c => !(c.authorName || '').toLowerCase().includes('ganesh')),
+      }));
+  };
+
   // Threads
   const [threads, setThreads] = useState<CommunityThread[]>(() => {
     try {
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_threads`) || localStorage.getItem('havenroute_app_state_v1_threads');
-      return saved ? JSON.parse(saved) : INITIAL_THREADS;
+      return saved ? sanitizePublicThreads(JSON.parse(saved)) : sanitizePublicThreads(INITIAL_THREADS);
     } catch {
-      return INITIAL_THREADS;
+      return sanitizePublicThreads(INITIAL_THREADS);
     }
   });
 
@@ -1245,6 +1269,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUserProfile(immediateGoogleAcc.profile);
         userProfileRef.current = immediateGoogleAcc.profile;
         setIsAuthenticated(true);
+        if (isAdminUser || immediateGoogleAcc.id === 'usr-ganesh' || immediateGoogleAcc.profile.role === 'admin') {
+          setCurrentView('admin');
+        }
         try {
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, immediateGoogleAcc.id);
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(immediateGoogleAcc.profile));
@@ -1486,7 +1513,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (commSnap.exists()) {
             const commData = commSnap.data() as any;
             if (Array.isArray(commData.threads) && commData.threads.length > 0) {
-              nextThreads = commData.threads;
+              nextThreads = sanitizePublicThreads(commData.threads);
               setThreads(nextThreads);
             }
             if (Array.isArray(commData.meetups) && commData.meetups.length > 0) {
@@ -1688,6 +1715,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUserId(account.id);
     setUserProfile(restoredProfile);
     setIsAuthenticated(true);
+    if (isAccountOwnerAdmin) {
+      setCurrentView('admin');
+    }
 
     // Restore per-account checklist & journal if stored
     try {
@@ -1954,6 +1984,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUserProfile(googleAcc.profile);
       userProfileRef.current = googleAcc.profile;
       setIsAuthenticated(true);
+      if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
+        setCurrentView('admin');
+      }
 
       try {
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccounts));
@@ -2187,11 +2220,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const switchAccount = (userId: string) => {
+    // Admin user cannot switch into a normal/retiree user view
+    const isCurrentlyAdmin =
+      currentUserIdRef.current === 'usr-ganesh' ||
+      userProfileRef.current.role === 'admin' ||
+      userProfileRef.current.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+    if (isCurrentlyAdmin && userId !== 'usr-ganesh') {
+      return;
+    }
+
     const acc = registeredAccounts.find(a => a.id === userId);
     if (acc) {
+      const isAccAdmin =
+        acc.id === 'usr-ganesh' ||
+        acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+        acc.profile.role === 'admin';
       const restoredProfile: UserProfile = {
         ...acc.profile,
         id: acc.id,
+        role: isAccAdmin ? 'admin' : acc.profile.role || 'member',
         finances: acc.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
       };
       setCurrentUserId(acc.id);
@@ -2199,6 +2246,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUserProfile(restoredProfile);
       userProfileRef.current = restoredProfile;
       setIsAuthenticated(true);
+      if (isAccAdmin) {
+        setCurrentView('admin');
+      }
 
       try {
         const savedChecklist = localStorage.getItem(`${LOCAL_STORAGE_KEY}_checklist_${acc.id}`);
@@ -2404,9 +2454,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleRole = () => {
-    updateUserProfile({
-      role: userProfile.role === 'admin' ? 'member' : 'admin',
-    });
+    // Admin user is permanently locked to Admin modules and cannot switch to normal/retiree user
+    return;
   };
 
   const updateUserProfile = (updates: Partial<UserProfile>) => {
@@ -3063,6 +3112,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     const targetPeerId = peerOptions?.peerUserId || matchedMember?.id;
+
+    // Enforce DM initiation rule: Only Admin can initiate a direct message with a normal user, and NOT vice versa.
+    const isCurrentUserAdmin =
+      currentUserIdRef.current === 'usr-ganesh' ||
+      userProfileRef.current.role === 'admin' ||
+      userProfileRef.current.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+    const isTargetPeerAdmin =
+      targetPeerId === 'usr-ganesh' ||
+      matchedMember?.id === 'usr-ganesh' ||
+      matchedMember?.profile.role === 'admin' ||
+      matchedMember?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+      cleanPeerName.toLowerCase().includes('ganesh');
+
+    if (!isCurrentUserAdmin && isTargetPeerAdmin) {
+      console.warn('Blocked: Normal users cannot initiate a direct message with an Administrator.');
+      return '';
+    }
+
     const resolvedPeerName = matchedMember?.profile.name || matchedMember?.name || cleanPeerName;
     const resolvedAvatar =
       peerOptions?.peerAvatar ||
@@ -3292,6 +3359,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userProfile.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
         firebaseUser?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com')
   );
+
+  // Enforce Admin-only views: Admin always loads Admin Dashboard by default and only accesses Admin modules ('admin' or 'messages')
+  useEffect(() => {
+    if (isOwnerAdmin && currentView !== 'admin' && currentView !== 'messages') {
+      setCurrentView('admin');
+    }
+  }, [isOwnerAdmin, currentView]);
 
   return (
     <AppContext.Provider

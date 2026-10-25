@@ -81,21 +81,31 @@ const MainContent: React.FC = () => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
-            {currentView === 'landing' && <LandingPage />}
-            {currentView === 'explore' && <DirectoryExplorer />}
-            {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
-            {currentView === 'compare' && <CompareStudio />}
-            {currentView === 'community' && <CommunityHub />}
-            {currentView === 'meetups' && <MeetupsView />}
-            {currentView === 'messages' && (
-              isAuthenticated && currentUserId !== 'guest' ? (
+            {isOwnerAdmin ? (
+              currentView === 'messages' ? (
                 <DirectMessenger />
               ) : (
-                <DirectMessagesAuthGate />
+                <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />
               )
+            ) : (
+              <>
+                {currentView === 'landing' && <LandingPage />}
+                {currentView === 'explore' && <DirectoryExplorer />}
+                {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
+                {currentView === 'compare' && <CompareStudio />}
+                {currentView === 'community' && <CommunityHub />}
+                {currentView === 'meetups' && <MeetupsView />}
+                {currentView === 'messages' && (
+                  isAuthenticated && currentUserId !== 'guest' ? (
+                    <DirectMessenger />
+                  ) : (
+                    <DirectMessagesAuthGate />
+                  )
+                )}
+                {currentView === 'dashboard' && <UserDashboard />}
+                {currentView === 'admin' && <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />}
+              </>
             )}
-            {currentView === 'dashboard' && <UserDashboard />}
-            {currentView === 'admin' && <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -120,8 +130,8 @@ const MainContent: React.FC = () => {
             {/* Col 1: Wordmark & Purpose */}
             <div className="space-y-3">
               <a
-                href={getViewUrl('landing')}
-                onClick={(e) => handleSpaViewClick(e, 'landing')}
+                href={getViewUrl(isOwnerAdmin ? 'admin' : 'landing')}
+                onClick={(e) => handleSpaViewClick(e, isOwnerAdmin ? 'admin' : 'landing')}
                 className="inline-flex items-center focus:outline-none group"
                 aria-label="ReFIREly Home"
               >
@@ -173,23 +183,17 @@ const MainContent: React.FC = () => {
               {isOwnerAdmin && (
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Owner Perspective:</span>
-                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-[11px] ${
-                      userProfile.role === 'admin' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-orange-50 text-orange-800 border border-orange-200'
-                    }`}>{userProfile.role} Mode</span>
+                    <span className="text-slate-500">Active Role:</span>
+                    <span className="font-bold px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-900 border border-amber-300">
+                      Platform Admin
+                    </span>
                   </div>
-                  <button
-                    onClick={toggleRole}
-                    className="w-full py-1.5 text-center text-xs font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-900 transition-colors shadow-2xs cursor-pointer"
-                  >
-                    Switch to {userProfile.role === 'admin' ? 'Member Mode' : 'Admin Mode'}
-                  </button>
                   <button
                     onClick={() => setBrandKitOpen(true)}
                     className="w-full py-1.5 px-2.5 text-center text-xs font-bold rounded-lg bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white hover:from-indigo-700 hover:to-teal-700 transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>4K Brand &amp; Logo Kit (Owner Only)</span>
+                    <span>4K Brand &amp; Logo Kit (Admin Only)</span>
                   </button>
                 </div>
               )}

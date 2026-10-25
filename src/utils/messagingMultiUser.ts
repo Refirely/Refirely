@@ -17,13 +17,11 @@ export const getPendingNotifsKey = (userId: string): string => {
 export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]): DirectMessageThread[] => {
   const getAcc = (accId: string) => accounts.find(a => a.id === accId);
 
-  const ganeshAcc = getAcc('usr-ganesh');
   const elenaAcc = getAcc('usr-elena');
   const marcusAcc = getAcc('usr-marcus');
   const arthurAcc = getAcc('usr-arthur');
   const margaretAcc = getAcc('usr-margaret');
 
-  const ganeshAvatar = ganeshAcc?.profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80';
   const elenaAvatar = elenaAcc?.profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
   const marcusAvatar = marcusAcc?.profile.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80';
   const arthurAvatar = arthurAcc?.profile.avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80';
@@ -35,50 +33,6 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
 
   if (userId === 'usr-elena') {
     return [
-      {
-        id: 'dm-ganesh',
-        peerUserId: 'usr-ganesh',
-        peerName: 'Ganesh Reddy',
-        peerAvatar: ganeshAvatar,
-        peerCountry: 'Portugal',
-        peerCity: 'Austin & Porto',
-        peerStatus: 'Scouting In-Person',
-        lastMessage: 'Happy to share my experience with the Spanish Non-Lucrative Visa paperwork and health insurance!',
-        lastMessageTime: '3 days ago',
-        unreadCount: 0,
-        messages: [
-          {
-            id: 'm-e1',
-            sender: 'user',
-            senderUserId: 'usr-elena',
-            senderName: 'Elena Rostova',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Hi Ganesh! I saw you are looking at Spain alongside Portugal. Valencia has been wonderful for walking and cultural arts.',
-            timestamp: '3 days ago',
-          },
-          {
-            id: 'm-e2',
-            sender: 'peer',
-            senderUserId: 'usr-ganesh',
-            senderName: 'Ganesh Reddy',
-            recipientUserId: 'usr-elena',
-            recipientName: 'Elena Rostova',
-            text: 'Thanks Elena! How are you finding the Non-Lucrative Visa income threshold requirements?',
-            timestamp: '3 days ago',
-          },
-          {
-            id: 'm-e3',
-            sender: 'user',
-            senderUserId: 'usr-elena',
-            senderName: 'Elena Rostova',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Happy to share my experience with the Spanish Non-Lucrative Visa paperwork and health insurance!',
-            timestamp: '3 days ago',
-          },
-        ],
-      },
       {
         id: 'dm-marcus',
         peerUserId: 'usr-marcus',
@@ -143,60 +97,6 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
   if (userId === 'usr-marcus') {
     return [
       {
-        id: 'dm-ganesh',
-        peerUserId: 'usr-ganesh',
-        peerName: 'Ganesh Reddy',
-        peerAvatar: ganeshAvatar,
-        peerCountry: 'Portugal',
-        peerCity: 'Austin & Porto',
-        peerStatus: 'Scouting In-Person',
-        lastMessage: 'If you plan a scouting trip to Chiang Mai, I can show you the best neighborhood streets to rent in.',
-        lastMessageTime: '2 days ago',
-        unreadCount: 0,
-        messages: [
-          {
-            id: 'm-m1',
-            sender: 'user',
-            senderUserId: 'usr-marcus',
-            senderName: 'Marcus Vance',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Saw your interest in Thailand! The weather in Chiang Mai right now is 78°F and breezy. Great time to visit.',
-            timestamp: '2 days ago',
-          },
-          {
-            id: 'm-m2',
-            sender: 'peer',
-            senderUserId: 'usr-ganesh',
-            senderName: 'Ganesh Reddy',
-            recipientUserId: 'usr-marcus',
-            recipientName: 'Marcus Vance',
-            text: 'Hi Marcus! How difficult was opening the Thai bank account for the 800k THB requirement?',
-            timestamp: '2 days ago',
-          },
-          {
-            id: 'm-m3',
-            sender: 'user',
-            senderUserId: 'usr-marcus',
-            senderName: 'Marcus Vance',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Quite straightforward with Bangkok Bank in Chiang Mai. Bring your passport and condominium rental contract. Takes about 45 minutes.',
-            timestamp: '2 days ago',
-          },
-          {
-            id: 'm-m4',
-            sender: 'user',
-            senderUserId: 'usr-marcus',
-            senderName: 'Marcus Vance',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'If you plan a scouting trip to Chiang Mai, I can show you the best neighborhood streets to rent in.',
-            timestamp: '2 days ago',
-          },
-        ],
-      },
-      {
         id: 'dm-elena',
         peerUserId: 'usr-elena',
         peerName: 'Elena Rostova',
@@ -236,60 +136,6 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
   if (userId === 'usr-arthur') {
     return [
       {
-        id: 'dm-ganesh',
-        peerUserId: 'usr-ganesh',
-        peerName: 'Ganesh Reddy',
-        peerAvatar: ganeshAvatar,
-        peerCountry: 'Portugal',
-        peerCity: 'Austin & Porto',
-        peerStatus: 'Scouting In-Person',
-        lastMessage: 'Let me know if you want the contact for our English-speaking lawyer in Porto. She saved us weeks.',
-        lastMessageTime: '10:45 AM',
-        unreadCount: 0,
-        messages: [
-          {
-            id: 'm-a1',
-            sender: 'user',
-            senderUserId: 'usr-arthur',
-            senderName: 'Arthur Sterling',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Hi there! I saw you are shortlisting Portugal for your retirement. My wife Helen and I made the move 5 years ago from New Jersey.',
-            timestamp: '10:30 AM',
-          },
-          {
-            id: 'm-a2',
-            sender: 'peer',
-            senderUserId: 'usr-ganesh',
-            senderName: 'Ganesh Reddy',
-            recipientUserId: 'usr-arthur',
-            recipientName: 'Arthur Sterling',
-            text: 'Hello Arthur! Yes, we are debating between Cascais and Porto. How are you finding the healthcare system up in Porto?',
-            timestamp: '10:38 AM',
-          },
-          {
-            id: 'm-a3',
-            sender: 'user',
-            senderUserId: 'usr-arthur',
-            senderName: 'Arthur Sterling',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'The healthcare is world-class. We use Hospital CUF Porto for private care. Out of pocket checkups are €70 without insurance, and our private policy is under €90/month each. Very stress-free.',
-            timestamp: '10:42 AM',
-          },
-          {
-            id: 'm-a4',
-            sender: 'user',
-            senderUserId: 'usr-arthur',
-            senderName: 'Arthur Sterling',
-            recipientUserId: 'usr-ganesh',
-            recipientName: 'Ganesh Reddy',
-            text: 'Let me know if you want the contact for our English-speaking lawyer in Porto. She saved us weeks.',
-            timestamp: '10:45 AM',
-          },
-        ],
-      },
-      {
         id: 'dm-margaret',
         peerUserId: 'usr-margaret',
         peerName: 'Margaret O’Connor',
@@ -316,13 +162,12 @@ export const getInitialThreadsForUser = (userId: string, accounts: UserAccount[]
     ];
   }
 
-  // Default fallback for Margaret or any other custom/new user
+  // Default fallback for Margaret or any other custom/new non-admin user (never include Admin usr-ganesh)
   const peerList = [
-    { acc: ganeshAcc, defaultCity: 'Porto', defaultCountry: 'Portugal', defaultStatus: 'Scouting In-Person' },
     { acc: elenaAcc, defaultCity: 'Valencia', defaultCountry: 'Spain', defaultStatus: 'Visa In-Progress' },
     { acc: arthurAcc, defaultCity: 'Matosinhos, Porto', defaultCountry: 'Portugal', defaultStatus: 'Relocated & Settled (5 yrs)' },
     { acc: marcusAcc, defaultCity: 'Chiang Mai', defaultCountry: 'Thailand', defaultStatus: 'Relocated & Settled (3 yrs)' },
-  ].filter(p => p.acc && p.acc.id !== userId);
+  ].filter(p => p.acc && p.acc.id !== userId && p.acc.id !== 'usr-ganesh' && p.acc.profile?.role !== 'admin');
 
   return peerList.map(item => {
     const acc = item.acc!;
@@ -399,6 +244,12 @@ export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): Dire
     return [];
   }
 
+  const currentAccount = accounts.find(a => a.id === userId);
+  const isCurrentUserAdmin =
+    userId === 'usr-ganesh' ||
+    currentAccount?.profile?.role === 'admin' ||
+    currentAccount?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+
   let threads: DirectMessageThread[] = [];
   try {
     const saved = localStorage.getItem(getUserDmThreadsKey(userId));
@@ -411,7 +262,7 @@ export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): Dire
   } catch {}
 
   // If no user-specific threads, check if userId is usr-ganesh and general key exists
-  if (threads.length === 0 && userId === 'usr-ganesh') {
+  if (threads.length === 0 && isCurrentUserAdmin) {
     try {
       const generalSaved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dmThreads`);
       if (generalSaved) {
@@ -421,6 +272,38 @@ export const loadUserDmThreads = (userId: string, accounts: UserAccount[]): Dire
         }
       }
     } catch {}
+  }
+
+  // For normal (non-admin) users, filter out any thread with an Admin user UNLESS the Admin user explicitly initiated it
+  if (!isCurrentUserAdmin && threads.length > 0) {
+    threads = threads.filter(t => {
+      const matchedPeer = accounts.find(
+        a =>
+          (t.peerUserId && a.id === t.peerUserId) ||
+          a.profile.name.toLowerCase() === (t.peerName || '').toLowerCase() ||
+          a.name.toLowerCase() === (t.peerName || '').toLowerCase()
+      );
+      const isPeerAdmin =
+        t.peerUserId === 'usr-ganesh' ||
+        t.id === 'dm-ganesh' ||
+        t.id === 'dm-usr-ganesh' ||
+        (t.peerName || '').toLowerCase().includes('ganesh') ||
+        matchedPeer?.id === 'usr-ganesh' ||
+        matchedPeer?.profile?.role === 'admin' ||
+        matchedPeer?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+
+      if (!isPeerAdmin) return true;
+
+      // Only keep an Admin thread in a normal user's inbox if the very first message was explicitly sent by the Admin
+      const firstMsg = t.messages?.[0];
+      const wasInitiatedByAdmin =
+        Boolean(firstMsg) &&
+        (firstMsg.senderUserId === 'usr-ganesh' ||
+          firstMsg.senderUserId === matchedPeer?.id ||
+          firstMsg.sender === 'peer') &&
+        !['m-e1', 'm-m1', 'm-a1'].includes(firstMsg.id);
+      return wasInitiatedByAdmin;
+    });
   }
 
   // If still empty, generate initial tailored threads
@@ -510,6 +393,17 @@ export const dispatchMessageToRecipient = (
     return;
   }
 
+  const senderAcc = accounts.find(a => a.id === senderId);
+  const recipientAcc = accounts.find(a => a.id === recipientId);
+  const isSenderAdmin =
+    senderId === 'usr-ganesh' ||
+    senderAcc?.profile?.role === 'admin' ||
+    senderAcc?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+  const isRecipientAdmin =
+    recipientId === 'usr-ganesh' ||
+    recipientAcc?.profile?.role === 'admin' ||
+    recipientAcc?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com';
+
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const msgId = `m-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
@@ -517,8 +411,15 @@ export const dispatchMessageToRecipient = (
   // Load recipient's threads
   const recipientThreads = loadUserDmThreads(recipientId, accounts);
 
-  // Find or create thread with sender
-  let recipientThread = recipientThreads.find(t => t.peerUserId === senderId);
+  // Find existing thread with sender
+  let recipientThread = recipientThreads.find(
+    t => t.peerUserId === senderId || t.peerName.toLowerCase() === senderName.toLowerCase()
+  );
+
+  // Enforce rule: Normal users cannot initiate a new conversation with Admin (they can only reply if Admin already has an active thread with them)
+  if (!isSenderAdmin && isRecipientAdmin && !recipientThread) {
+    return;
+  }
 
   const peerMsg: DirectMessage = {
     id: msgId,
@@ -536,6 +437,7 @@ export const dispatchMessageToRecipient = (
   if (recipientThread) {
     recipientThread = {
       ...recipientThread,
+      peerUserId: senderId,
       peerName: senderName,
       peerAvatar: senderAvatar,
       peerCountry: senderCountry,
@@ -556,7 +458,7 @@ export const dispatchMessageToRecipient = (
       peerAvatar: senderAvatar,
       peerCountry: senderCountry,
       peerCity: senderCity,
-      peerStatus: 'Community Member',
+      peerStatus: isSenderAdmin ? 'Platform Administrator' : 'Community Member',
       lastMessage: text.trim(),
       lastMessageTime: timeStr,
       lastActivityAt: now.toISOString(),

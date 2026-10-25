@@ -21,6 +21,7 @@ import {
   Check,
   ShieldCheck,
   Clock,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const DirectMessenger: React.FC = () => {
@@ -44,7 +45,12 @@ export const DirectMessenger: React.FC = () => {
     notificationSoundEnabled,
     setNotificationSoundEnabled,
     simulateIncomingPeerMessage,
+    isOwnerAdmin,
+    userProfile,
+    setCurrentView,
   } = useApp();
+
+  const isAdminUser = isOwnerAdmin || userProfile.role === 'admin' || currentUserId === 'usr-ganesh';
 
   const [messageInput, setMessageInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,10 +143,13 @@ export const DirectMessenger: React.FC = () => {
     );
   }, [dmThreads]);
 
-  // Remove members with whom there is an active chat already from the suggested directory
+  // Remove members with whom there is an active chat already from the suggested directory (and never include Admin)
   const connectableMembers = React.useMemo(() => {
     return publicMemberAccounts.filter(acc => {
       if (acc.id === currentUserId) return false;
+      if (acc.id === 'usr-ganesh' || acc.profile.role === 'admin' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
+        return false;
+      }
       if (existingChatPeerIds.has(acc.id)) return false;
       const accProfileName = (acc.profile.name || '').trim().toLowerCase();
       const accName = (acc.name || '').trim().toLowerCase();
@@ -155,14 +164,26 @@ export const DirectMessenger: React.FC = () => {
       {/* Title & Member Directory Toggle */}
       <div className="pb-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAdminUser && (
+              <button
+                type="button"
+                onClick={() => setCurrentView('admin')}
+                className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer mr-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-700" />
+                <span>Back to Admin Console</span>
+              </button>
+            )}
             <MessageCircle className="w-6 h-6 text-teal-700" />
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              Expat Peer Messaging &amp; Member Connections
+              {isAdminUser ? 'Admin Direct Messaging Console' : 'Expat Peer Messaging & Member Connections'}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Connect authentically with registered expats worldwide. Real-time notification badges update whenever new messages arrive.
+            {isAdminUser
+              ? 'Initiate direct messages with any registered member. Note: Only Admin can initiate conversations with members (not vice versa).'
+              : 'Connect authentically with registered expats worldwide. Real-time notification badges update whenever new messages arrive.'}
           </p>
         </div>
 
@@ -184,8 +205,8 @@ export const DirectMessenger: React.FC = () => {
             <Users className="w-4 h-4 text-teal-700" />
             <span>
               {showMemberDirectoryStrip
-                ? 'Hide Suggested Members'
-                : `Suggested Expat Members (${connectableMembers.length})`}
+                ? 'Hide Member Directory'
+                : `${isAdminUser ? 'Initiate Chat with Member' : 'Suggested Expat Members'} (${connectableMembers.length})`}
             </span>
           </button>
         </div>
@@ -483,29 +504,31 @@ export const DirectMessenger: React.FC = () => {
                     <span>Simulate Reply</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openPublicProfile(activePeerMember?.id || activeThread.peerUserId || activeThread.peerName)
-                    }
-                    className="text-xs text-slate-700 hover:text-slate-900 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                  >
-                    <User className="w-3.5 h-3.5 text-teal-700" />
-                    <span>View Profile</span>
-                  </button>
+                  {activePeerMember && (
+                    <button
+                      type="button"
+                      onClick={() => openPublicProfile(activePeerMember.id)}
+                      className="text-xs text-slate-700 hover:text-slate-900 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                    >
+                      <User className="w-3.5 h-3.5 text-teal-700" />
+                      <span>View Profile</span>
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const matched = countries.find(
-                        c => c.name.toLowerCase() === activeThread.peerCountry.toLowerCase()
-                      );
-                      if (matched) navigateToCountry(matched.id);
-                    }}
-                    className="text-xs text-teal-700 hover:text-teal-900 font-semibold px-2.5 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-50 cursor-pointer whitespace-nowrap"
-                  >
-                    Country Guide
-                  </button>
+                  {!isAdminUser && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const matched = countries.find(
+                          c => c.name.toLowerCase() === activeThread.peerCountry.toLowerCase()
+                        );
+                        if (matched) navigateToCountry(matched.id);
+                      }}
+                      className="text-xs text-teal-700 hover:text-teal-900 font-semibold px-2.5 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-50 cursor-pointer whitespace-nowrap"
+                    >
+                      Country Guide
+                    </button>
+                  )}
                 </div>
               </div>
 
