@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
+import { AdminSocialPromoStudio } from './AdminSocialPromoStudio';
 
-type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'cloud';
+type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'social-promo' | 'cloud';
 
 interface AdminDashboardProps {
   onOpenBrandKit?: () => void;
@@ -458,6 +459,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
                 {activeTab === 'community' && 'Community & Meetups Moderation'}
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
+                {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots'}
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
             </div>
@@ -471,6 +473,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
 
           {/* Right Quick Actions */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setActiveTab('social-promo')}
+              className="px-3.5 py-2 bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:to-violet-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              title="Generate, Download & Discard Portrait Social Media Snapshots (Admin Only)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Portrait Social Snapshots</span>
+            </motion.button>
             {onOpenBrandKit && (
               <motion.button
                 whileHover={{ scale: 1.03, y: -1 }}
@@ -647,6 +659,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                   {feedbackReports.length}
                 </span>
               </div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('social-promo')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'social-promo'
+                  ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-700 hover:bg-indigo-50/70 hover:text-indigo-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Sparkles className={`w-4 h-4 ${activeTab === 'social-promo' ? 'text-amber-300' : 'text-teal-600'}`} />
+                <span>Social Promo Snapshots</span>
+              </span>
+              <span
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                  activeTab === 'social-promo' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-800'
+                }`}
+              >
+                9:16
+              </span>
             </button>
 
             <button
@@ -1701,6 +1734,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             ========================================================= */}
             {activeTab === 'feedback' && (
               <AdminFeedbackManagement />
+            )}
+
+            {/* =========================================================
+                TAB 5.5: PORTRAIT SOCIAL MEDIA SNAPSHOTS STUDIO (Admin Only)
+            ========================================================= */}
+            {activeTab === 'social-promo' && (
+              <AdminSocialPromoStudio countries={countries} />
             )}
 
             {/* =========================================================
