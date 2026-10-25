@@ -4,7 +4,7 @@ import { AppView } from '../context/AppContext';
 const DEFAULT_TITLE =
   'ReFirely - Where Your Freedom Goes Further | AI Haven Retirement Guide & FIRE Calculator';
 const DEFAULT_DESCRIPTION =
-  'AI Haven retirement guide and FIRE calculator to compare 140+ global retirement countries by visa rules, cost of living, healthcare, taxes, and expat community.';
+  'AI Haven retirement guide and FIRE calculator to compare 200+ global retirement countries by visa rules, cost of living, healthcare, banking, taxes, and expat community.';
 const DEFAULT_KEYWORDS =
   'ReFirely, ReFIREly, AI Haven retirement guide, FIRE calculator, retire abroad, global retirement guide, financial independence retire early, retirement visa requirements, cost of living comparison, expat community, overseas retirement planning';
 
@@ -374,54 +374,16 @@ const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {
   admin: ['#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'],
 };
 
-function updateMultiColoredFavicon(view: AppView) {
+function updateMultiColoredFavicon(_view: AppView) {
   if (typeof document === 'undefined') return;
-  const [c1, c2, c3, c4] = VIEW_RING_PALETTES[view] || VIEW_RING_PALETTES.landing;
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-    <defs>
-      <linearGradient id="r" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${c1}" />
-        <stop offset="35%" stop-color="${c2}" />
-        <stop offset="70%" stop-color="${c3}" />
-        <stop offset="100%" stop-color="${c4}" />
-      </linearGradient>
-      <radialGradient id="b" cx="30%" cy="25%" r="85%">
-        <stop offset="0%" stop-color="#1e1b4b" />
-        <stop offset="55%" stop-color="#0f172a" />
-        <stop offset="100%" stop-color="#042f2e" />
-      </radialGradient>
-      <linearGradient id="f" x1="20%" y1="95%" x2="65%" y2="5%">
-        <stop offset="0%" stop-color="#f43f5e" />
-        <stop offset="48%" stop-color="#f97316" />
-        <stop offset="100%" stop-color="#fbbf24" />
-      </linearGradient>
-      <linearGradient id="p" x1="25%" y1="90%" x2="95%" y2="20%">
-        <stop offset="0%" stop-color="#10b981" />
-        <stop offset="55%" stop-color="#14b8a6" />
-        <stop offset="100%" stop-color="#22d3ee" />
-      </linearGradient>
-      <linearGradient id="o" x1="10%" y1="85%" x2="95%" y2="65%">
-        <stop offset="0%" stop-color="#38bdf8" />
-        <stop offset="50%" stop-color="#818cf8" />
-        <stop offset="100%" stop-color="#c084fc" />
-      </linearGradient>
-    </defs>
-    <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#b)" stroke="url(#r)" stroke-width="6" />
-    <path d="M32 94C21 81 19 61 29 45C31 53 36 56 39 51C36 37 44 21 56 12C54 25 63 34 68 46C72 56 69 68 62 77C58 62 50 56 44 65C39 73 41 85 32 94Z" fill="url(#f)" />
-    <path d="M47 98C45 76 55 55 77 42C89 35 99 30 106 23C104 33 98 41 89 46C96 45 103 42 108 38C103 46 95 52 84 55C92 55 99 54 105 51C99 58 90 62 79 63C86 64 93 64 98 62C91 68 81 71 71 70C77 72 83 73 88 72C80 77 69 78 60 76C54 83 52 91 52 98H47Z" fill="url(#p)" />
-    <path d="M18 89C24 105 56 109 86 92L82 87L97 85L91 99L88 95C56 115 21 111 18 89Z" fill="url(#o)" />
-    <path d="M96 76L113 68L115 70L106 81L111 91L108 93L100 84L93 88L92 93L89 94L90 86L83 83L85 80L90 83L97 78L90 68L93 66L102 74L96 76Z" fill="#ffffff" />
-  </svg>`;
-
   let linkEl = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
   if (!linkEl) {
     linkEl = document.createElement('link');
     linkEl.id = 'dynamic-favicon';
     linkEl.rel = 'icon';
-    linkEl.type = 'image/svg+xml';
     document.head.appendChild(linkEl);
   }
-  linkEl.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  linkEl.type = 'image/png';
+  linkEl.href = '/favicon.png';
 }
 
