@@ -44,10 +44,10 @@ export const HavenMatcherPromoCard: React.FC<HavenMatcherPromoCardProps> = ({
   const isDossier = variant === 'dossier';
   const isCompare = variant === 'compare';
 
-  // Format compare countries string if provided
+  // Format compare countries string if provided (displaying all compared countries including 4 countries)
   const compareHeadlineNames =
     comparedCountryNames.length > 0
-      ? comparedCountryNames.slice(0, 3).join(' vs ')
+      ? comparedCountryNames.join(' vs ')
       : null;
 
   return (
@@ -88,7 +88,7 @@ export const HavenMatcherPromoCard: React.FC<HavenMatcherPromoCardProps> = ({
             </div>
 
             {/* Main Catchy Heading */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight break-words">
               {isDossier ? (
                 <>
                   Still wondering if{' '}
