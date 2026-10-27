@@ -2,11 +2,11 @@ import { Country } from '../types';
 import { AppView } from '../context/AppContext';
 
 const DEFAULT_TITLE =
-  'ReFirely - Where Your Freedom Goes Further | AI Haven Retirement Guide & FIRE Calculator';
+  'ReFIREly – Global Retirement Haven Guide & FIRE Calculator';
 const DEFAULT_DESCRIPTION =
-  'AI Haven retirement guide and FIRE calculator to compare 200+ global retirement countries by visa rules, cost of living, healthcare, banking, taxes, and expat community.';
+  'Compare 200+ global retirement havens by visa rules, cost of living, healthcare, and expat life. Plan your overseas retirement with ReFIREly.';
 const DEFAULT_KEYWORDS =
-  'ReFirely, ReFIREly, AI Haven retirement guide, FIRE calculator, retire abroad, global retirement guide, financial independence retire early, retirement visa requirements, cost of living comparison, expat community, overseas retirement planning';
+  'best countries to retire, global retirement havens, retire abroad guide, FIRE calculator, early retirement overseas, retirement visa requirements, cost of living for retirees, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat community, geographic arbitrage, financial independence retire early';
 
 const VALID_VIEWS: AppView[] = [
   'landing',
@@ -294,35 +294,35 @@ export function updatePageSeo(
     const visaName = selectedCountry.visa.retirementVisaName;
     const healthScore = selectedCountry.lifestyle.healthcareScore;
 
-    title = `${selectedCountry.name} Retirement Guide, Visa Rules & Cost of Living | ReFirely`;
-    description = `Retire in ${selectedCountry.name} (${selectedCountry.region}): $${singleBudget}/mo single or $${coupleBudget}/mo couple, ${visaName} visa rules, healthcare score ${healthScore}/100, and FIRE calculator.`;
-    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ReFirely AI Haven retirement guide, FIRE calculator ${selectedCountry.name}`;
+    title = `${selectedCountry.name} Retirement Guide: Visas, Cost & Healthcare | ReFIREly`;
+    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, ${visaName} rules, ${healthScore}/100 healthcare score, and FIRE calculator on ReFIREly.`;
+    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} expat healthcare, ReFIREly ${selectedCountry.name}`;
     canonicalUrl = `${origin}/?country=${encodeURIComponent(selectedCountry.id)}`;
   } else if (currentView === 'explore') {
-    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '140+';
-    title = `Explore ${countLabel} Global Retirement Havens | ReFirely AI Haven Guide & FIRE Calculator`;
+    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '200+';
+    title = `Explore ${countLabel} Global Retirement Havens | ReFIREly`;
     description =
-      `Filter and compare ${countLabel} verified retirement havens worldwide with AI Haven match suggestions, visa financial thresholds, monthly cost of living, healthcare rankings, and climate profiles.`;
+      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living costs, healthcare ratings, and find your perfect overseas retirement.`;
     canonicalUrl = `${origin}/?view=explore`;
   } else if (currentView === 'compare') {
-    title = 'Side-by-Side Country Comparison Matrix | ReFirely Retirement Guide & FIRE Calculator';
+    title = 'Compare Global Retirement Havens Side-by-Side | ReFIREly';
     description =
-      'Compare retirement countries side-by-side across visa income requirements, couple and single monthly budgets, tax rules, healthcare quality, and safety indexes.';
+      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, tax treaties, healthcare quality, and safety ratings.';
     canonicalUrl = `${origin}/?view=compare`;
   } else if (currentView === 'dashboard') {
-    title = 'Global FIRE Calculator & Relocation Checklist | ReFirely Retirement Planner';
+    title = 'Global FIRE Calculator & Overseas Relocation Plan | ReFIREly';
     description =
-      'Calculate your Financial Independence Retire Early (FIRE) target across 140+ countries, model geographic arbitrage savings, and track your overseas retirement checklist.';
+      'Calculate your FIRE number across 200+ countries. Simulate geographic arbitrage savings, model currency expenses, and track your relocation checklist.';
     canonicalUrl = `${origin}/?view=dashboard`;
   } else if (currentView === 'community') {
-    title = 'Verified Expat Community Boards & Q&A | ReFirely Global Retirement Network';
+    title = 'Expat Retirement Community & Global Q&A Forum | ReFIREly';
     description =
-      'Connect with real expats and retirees worldwide. Discuss visa renewals, local healthcare, housing costs, and international relocation experiences on ReFirely.';
+      'Connect with verified expats living abroad. Ask questions about retirement visas, healthcare registration, rental markets, and social integration.';
     canonicalUrl = `${origin}/?view=community`;
   } else if (currentView === 'meetups') {
-    title = 'Expat Meetups & Local Retirement Events | ReFirely Community';
+    title = 'Expat Meetups & Retirement Gatherings Worldwide | ReFIREly';
     description =
-      'Discover and RSVP to in-person and virtual expat meetups in top retirement havens including Portugal, Spain, Thailand, Costa Rica, and Panama.';
+      'Join in-person and online meetups in Portugal, Spain, Thailand, Costa Rica, and other top havens. RSVP to connect with fellow prospective retirees.';
     canonicalUrl = `${origin}/?view=meetups`;
   }
 

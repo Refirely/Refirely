@@ -1,6 +1,6 @@
 {
   "name": "ReFirely - Where Your Freedom Goes Further",
-  "description": "AI Haven retirement guide and FIRE calculator to compare 200+ global retirement countries by visa rules, cost of living, healthcare, banking, taxes, and expat community.",
+  "description": "Compare 200+ global retirement countries with ReFIREly: explore visa rules, cost of living, healthcare rankings, and personalized FIRE calculators.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
