@@ -17,7 +17,7 @@ import { CountryFlag } from './CountryFlag';
 import {
   X, User, Image, Globe, Languages, Heart, Plus, Trash2,
   Check, Star, Sparkles, Upload, AlertCircle, Save, MapPin,
-  DollarSign, Landmark, Coins, TrendingUp, ShieldCheck
+  DollarSign, Landmark, Coins, TrendingUp, ShieldCheck, Pencil
 } from 'lucide-react';
 
 export const EditProfileModal: React.FC = () => {
@@ -89,37 +89,57 @@ export const EditProfileModal: React.FC = () => {
   const [newLangName, setNewLangName] = useState('Spanish');
   const [newLangProficiency, setNewLangProficiency] = useState<KnownLanguage['proficiency']>('Conversational');
 
-  // New Custom Interest
+  // New Custom Interest & Inline Editing
   const [customInterestInput, setCustomInterestInput] = useState('');
+  const [editingInterest, setEditingInterest] = useState<string | null>(null);
+  const [editingInterestValue, setEditingInterestValue] = useState('');
+  const [interestNotice, setInterestNotice] = useState<string | null>(null);
 
   // Success indicator
   const [savedNotice, setSavedNotice] = useState(false);
 
+  // Track modal open transition so internal userProfile updates don't reset activeTab or formData
+  const wasModalOpenRef = React.useRef(false);
+  const lastInitialTabRef = React.useRef(editProfileInitialTab);
+
   // Sync state when modal opens or initialTab changes
   useEffect(() => {
     if (isEditProfileOpen) {
-      setActiveTab(editProfileInitialTab || 'about');
-      setFormData({
-        name: userProfile.name,
-        email: userProfile.email,
-        avatarUrl: userProfile.avatarUrl || '',
-        originCountry: userProfile.originCountry || 'United States',
-        residingCountry: userProfile.residingCountry || userProfile.originCountry || 'United States',
-        originCity: userProfile.originCity || '',
-        targetCountry: userProfile.targetCountry || 'Portugal',
-        retirementTimelineYear: userProfile.retirementTimelineYear || 2027,
-        monthlyBudgetUSD: userProfile.monthlyBudgetUSD || 2500,
-        preferredClimate: userProfile.preferredClimate || 'Mediterranean',
-        relocationStatus: userProfile.relocationStatus || 'Scouting In-Person',
-        occupationOrBackground: userProfile.occupationOrBackground || '',
-        bio: userProfile.bio || '',
-        aboutMe: userProfile.aboutMe || '',
-      });
-      setFinancesForm(userProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO);
-      const nextResiding = userProfile.residingCountry || userProfile.originCountry || 'United States';
-      const macro = getCountryCurrencyMacro(nextResiding);
-      setInputCurrencyMode(macro.currencyCode !== 'USD' ? 'LOCAL' : 'USD');
-      setSavedNotice(false);
+      const justOpened = !wasModalOpenRef.current;
+      const tabChanged = lastInitialTabRef.current !== editProfileInitialTab;
+
+      if (justOpened || tabChanged) {
+        setActiveTab(editProfileInitialTab || 'about');
+        setFormData({
+          name: userProfile.name,
+          email: userProfile.email,
+          avatarUrl: userProfile.avatarUrl || '',
+          originCountry: userProfile.originCountry || 'United States',
+          residingCountry: userProfile.residingCountry || userProfile.originCountry || 'United States',
+          originCity: userProfile.originCity || '',
+          targetCountry: userProfile.targetCountry || 'Portugal',
+          retirementTimelineYear: userProfile.retirementTimelineYear || 2027,
+          monthlyBudgetUSD: userProfile.monthlyBudgetUSD || 2500,
+          preferredClimate: userProfile.preferredClimate || 'Mediterranean',
+          relocationStatus: userProfile.relocationStatus || 'Scouting In-Person',
+          occupationOrBackground: userProfile.occupationOrBackground || '',
+          bio: userProfile.bio || '',
+          aboutMe: userProfile.aboutMe || '',
+        });
+        setFinancesForm(userProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO);
+        const nextResiding = userProfile.residingCountry || userProfile.originCountry || 'United States';
+        const macro = getCountryCurrencyMacro(nextResiding);
+        setInputCurrencyMode(macro.currencyCode !== 'USD' ? 'LOCAL' : 'USD');
+        setSavedNotice(false);
+        setEditingInterest(null);
+        setEditingInterestValue('');
+        setInterestNotice(null);
+      }
+
+      wasModalOpenRef.current = true;
+      lastInitialTabRef.current = editProfileInitialTab;
+    } else {
+      wasModalOpenRef.current = false;
     }
   }, [isEditProfileOpen, editProfileInitialTab, userProfile]);
 
@@ -177,11 +197,90 @@ export const EditProfileModal: React.FC = () => {
     setTimeout(() => setSavedNotice(false), 3000);
   };
 
+  const showTemporaryInterestNotice = (message: string) => {
+    setInterestNotice(message);
+    setTimeout(() => {
+      setInterestNotice(prev => (prev === message ? null : prev));
+    }, 3500);
+  };
+
   const handleAddCustomInterest = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customInterestInput.trim()) return;
-    toggleInterest(customInterestInput.trim());
+    const trimmed = customInterestInput.trim();
+    if (!trimmed) return;
+
+    const currentInterests = userProfile.interests || [];
+    const existingExactOrCase = currentInterests.find(
+      item => item.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existingExactOrCase) {
+      setCustomInterestInput('');
+      showTemporaryInterestNotice(`"${existingExactOrCase}" is already in your selected interests.`);
+      return;
+    }
+
+    // Check if it matches a predefined suggestion case-insensitively
+    const matchedPreset = ALL_INTEREST_SUGGESTIONS.find(
+      preset => preset.toLowerCase() === trimmed.toLowerCase()
+    );
+    const interestToAdd = matchedPreset || trimmed;
+
+    updateUserProfile({
+      interests: [...currentInterests, interestToAdd],
+    });
     setCustomInterestInput('');
+    showTemporaryInterestNotice(`Added "${interestToAdd}" to your interests!`);
+  };
+
+  const handleStartEditInterest = (interest: string) => {
+    setEditingInterest(interest);
+    setEditingInterestValue(interest);
+  };
+
+  const handleCancelEditInterest = () => {
+    setEditingInterest(null);
+    setEditingInterestValue('');
+  };
+
+  const handleSaveEditedInterest = (oldInterest: string) => {
+    const trimmedNew = editingInterestValue.trim();
+    if (!trimmedNew || trimmedNew === oldInterest) {
+      setEditingInterest(null);
+      setEditingInterestValue('');
+      return;
+    }
+
+    const currentInterests = userProfile.interests || [];
+    const duplicate = currentInterests.find(
+      item => item !== oldInterest && item.toLowerCase() === trimmedNew.toLowerCase()
+    );
+
+    let updatedInterests: string[];
+    if (duplicate) {
+      // Remove the old one since the renamed target already exists
+      updatedInterests = currentInterests.filter(item => item !== oldInterest);
+      showTemporaryInterestNotice(`Merged with existing interest "${duplicate}".`);
+    } else {
+      updatedInterests = currentInterests.map(item => (item === oldInterest ? trimmedNew : item));
+      showTemporaryInterestNotice(`Updated interest to "${trimmedNew}".`);
+    }
+
+    updateUserProfile({ interests: updatedInterests });
+    setEditingInterest(null);
+    setEditingInterestValue('');
+  };
+
+  const handleRemoveInterest = (interestToRemove: string) => {
+    const currentInterests = userProfile.interests || [];
+    updateUserProfile({
+      interests: currentInterests.filter(item => item !== interestToRemove),
+    });
+    if (editingInterest === interestToRemove) {
+      setEditingInterest(null);
+      setEditingInterestValue('');
+    }
+    showTemporaryInterestNotice(`Removed "${interestToRemove}" from your interests.`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1548,62 +1647,225 @@ export const EditProfileModal: React.FC = () => {
           )}
 
           {/* TAB 5: INTERESTS & HOBBIES */}
-          {activeTab === 'interests' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">
-                  Lifestyle & Retirement Interests ({userProfile.interests?.length || 0})
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Select your core priorities and hobbies to connect with expats with similar lifestyles.
-                </p>
-              </div>
+          {activeTab === 'interests' && (() => {
+            const currentInterests = userProfile.interests || [];
+            const customInterests = currentInterests.filter(
+              interest => !ALL_INTEREST_SUGGESTIONS.includes(interest)
+            );
 
-              {/* Tag Cloud */}
-              <div className="flex flex-wrap gap-2">
-                {ALL_INTEREST_SUGGESTIONS.map(interest => {
-                  const isSelected = userProfile.interests?.includes(interest);
-                  return (
-                    <button
-                      key={interest}
-                      type="button"
-                      onClick={() => toggleInterest(interest)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-teal-800 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                      }`}
-                    >
-                      {isSelected ? <Check className="w-3.5 h-3.5 text-teal-300" /> : <Plus className="w-3.5 h-3.5 text-slate-400" />}
-                      <span>{interest}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Add Custom Interest */}
-              <form onSubmit={handleAddCustomInterest} className="pt-4 border-t border-slate-200">
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  Add a Custom Interest / Hobby
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. Scuba diving, Woodworking, Classical piano, Pickleball..."
-                    value={customInterestInput}
-                    onChange={e => setCustomInterestInput(e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors"
-                  >
-                    Add Tag
-                  </button>
+            return (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Lifestyle &amp; Retirement Interests ({currentInterests.length})
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Select curated priorities or add, modify, and manage your own custom hobbies.
+                    </p>
+                  </div>
+                  {customInterests.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800 self-start sm:self-auto">
+                      <Sparkles className="w-3 h-3 text-rose-600" />
+                      <span>{customInterests.length} Custom {customInterests.length === 1 ? 'Hobby' : 'Hobbies'}</span>
+                    </span>
+                  )}
                 </div>
-              </form>
-            </div>
-          )}
+
+                {/* Feedback Notice */}
+                {interestNotice && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-2.5 px-3.5 rounded-xl bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-900 flex items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>{interestNotice}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInterestNotice(null)}
+                      className="text-teal-600 hover:text-teal-900 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Add Custom Interest Form */}
+                <form
+                  onSubmit={handleAddCustomInterest}
+                  className="p-4 rounded-2xl bg-gradient-to-r from-teal-50/70 via-indigo-50/40 to-rose-50/50 border border-teal-200/80 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Add a Custom Interest / Hobby</span>
+                    </label>
+                    <span className="text-[11px] text-slate-500">Press Enter or click Add Tag</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Scuba diving, Woodworking, Classical piano, Pickleball..."
+                      value={customInterestInput}
+                      onChange={e => setCustomInterestInput(e.target.value)}
+                      className="flex-1 px-3.5 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!customInterestInput.trim()}
+                      className="px-4 py-2 rounded-xl bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Tag</span>
+                    </button>
+                  </div>
+                </form>
+
+                {/* Live Preview & Manager of All Selected Interests (Custom + Curated) */}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                        Your Active Interests Preview ({currentInterests.length})
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Click <Pencil className="w-3 h-3 inline text-slate-600" /> to modify or <Trash2 className="w-3 h-3 inline text-rose-600" /> to delete
+                    </span>
+                  </div>
+
+                  {currentInterests.length === 0 ? (
+                    <div className="p-4 rounded-xl border border-dashed border-slate-300 bg-white text-center">
+                      <p className="text-xs text-slate-500">
+                        No interests selected yet. Add a custom hobby above or select from the suggestions below.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {currentInterests.map(interest => {
+                        const isCustom = !ALL_INTEREST_SUGGESTIONS.includes(interest);
+                        const isEditingThis = editingInterest === interest;
+
+                        if (isEditingThis) {
+                          return (
+                            <div
+                              key={`edit-${interest}`}
+                              className="flex items-center gap-1.5 p-1 pl-2.5 rounded-xl border-2 border-teal-600 bg-white shadow-sm"
+                            >
+                              <input
+                                type="text"
+                                autoFocus
+                                value={editingInterestValue}
+                                onChange={e => setEditingInterestValue(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveEditedInterest(interest);
+                                  } else if (e.key === 'Escape') {
+                                    handleCancelEditInterest();
+                                  }
+                                }}
+                                className="text-xs font-semibold text-slate-900 bg-transparent focus:outline-none min-w-[140px]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditedInterest(interest)}
+                                className="px-2 py-1 rounded-lg bg-teal-700 text-white text-[11px] font-bold hover:bg-teal-800 transition-colors flex items-center gap-1 cursor-pointer"
+                                title="Save modified interest"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>Save</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelEditInterest}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                title="Cancel editing"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={`active-${interest}`}
+                            className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-2xs ${
+                              isCustom
+                                ? 'bg-gradient-to-r from-indigo-50 to-teal-50 text-slate-900 border border-teal-300'
+                                : 'bg-white text-slate-800 border border-slate-200'
+                            }`}
+                          >
+                            {isCustom && (
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-700 text-white uppercase tracking-wider">
+                                Custom
+                              </span>
+                            )}
+                            <span>{interest}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditInterest(interest)}
+                              className="p-1 rounded-md text-slate-400 hover:text-teal-700 hover:bg-teal-100/70 transition-colors cursor-pointer"
+                              title={`Edit "${interest}"`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInterest(interest)}
+                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title={`Delete "${interest}"`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Curated Tag Cloud */}
+                <div className="space-y-2.5 pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Popular Expat &amp; Retirement Lifestyle Suggestions
+                    </span>
+                    <span className="text-[11px] text-slate-500">Click to select or deselect</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_INTEREST_SUGGESTIONS.map(interest => {
+                      const isSelected = currentInterests.includes(interest);
+                      return (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => toggleInterest(interest)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-teal-800 text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-3.5 h-3.5 text-teal-300" />
+                          ) : (
+                            <Plus className="w-3.5 h-3.5 text-slate-400" />
+                          )}
+                          <span>{interest}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
 

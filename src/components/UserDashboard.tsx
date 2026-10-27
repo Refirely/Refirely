@@ -4,7 +4,7 @@ import { HavenMatcherWidget } from './HavenMatcherWidget';
 import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
 import { FireCalculatorTracker } from './FireCalculatorTracker';
-import { WORLD_COUNTRIES, getWorldCountryFlag } from '../data/userAccounts';
+import { WORLD_COUNTRIES, getWorldCountryFlag, ALL_INTEREST_SUGGESTIONS } from '../data/userAccounts';
 import { CountryFlag } from './CountryFlag';
 import {
   User, CheckSquare, Calendar, Compass,
@@ -37,6 +37,7 @@ export const UserDashboard: React.FC = () => {
     loginWithGoogle,
     publicMemberAccounts,
     openPublicProfile,
+    toggleInterest,
   } = useApp();
 
   // New task modal
@@ -648,27 +649,52 @@ export const UserDashboard: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                   <Heart className="w-4 h-4 text-rose-600" />
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Interests & Priorities ({userProfile.interests?.length || 0})
+                    Interests &amp; Priorities ({userProfile.interests?.length || 0})
                   </span>
                 </div>
                 <button
                   onClick={() => openEditProfile('interests')}
-                  className="text-[11px] font-semibold text-teal-700 hover:underline"
+                  className="text-[11px] font-semibold text-teal-700 hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  Edit
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit Interests</span>
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                {userProfile.interests?.map((interest, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
+              {(!userProfile.interests || userProfile.interests.length === 0) ? (
+                <p className="text-xs text-slate-400 py-2">
+                  No interests added yet. Click "Edit Interests" to add your hobbies and retirement priorities.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {userProfile.interests.map((interest, idx) => {
+                    const isCustom = !ALL_INTEREST_SUGGESTIONS.includes(interest);
+                    return (
+                      <span
+                        key={`${interest}-${idx}`}
+                        className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium shadow-2xs transition-colors ${
+                          isCustom
+                            ? 'bg-gradient-to-r from-indigo-50 to-teal-50 text-teal-950 border border-teal-200'
+                            : 'bg-white text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {isCustom && (
+                          <Sparkles className="w-2.5 h-2.5 text-teal-600 shrink-0" />
+                        )}
+                        <span>{interest}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleInterest(interest)}
+                          className="opacity-60 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition-opacity cursor-pointer"
+                          title={`Remove "${interest}"`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Detailed About User & Retirement Vision Card with Origin Country/Nationality & Residing Country Dropdowns */}

@@ -215,18 +215,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 className="flex items-center gap-1.5 p-1 pl-1.5 pr-2.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs cursor-pointer"
               >
                 <div className="relative">
-                  {userProfile.avatarUrl ? (
-                    <img
-                      src={userProfile.avatarUrl}
-                      alt={userProfile.name}
-                      className="w-7 h-7 rounded-full object-cover ring-2 ring-orange-500/30"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-orange-500/30">
-                      {userProfile.name.charAt(0)}
-                    </div>
-                  )}
+                  {(() => {
+                    const rawAvatar = userProfile.avatarUrl || '';
+                    const isSample = !rawAvatar || rawAvatar.includes('images.unsplash.com');
+                    const effectiveAvatar =
+                      isSample && firebaseUser?.photoURL ? firebaseUser.photoURL : rawAvatar;
+
+                    return effectiveAvatar ? (
+                      <img
+                        src={effectiveAvatar}
+                        alt={userProfile.name}
+                        className="w-7 h-7 rounded-full object-cover ring-2 ring-orange-500/30"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-orange-500/30">
+                        {userProfile.name.charAt(0)}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <span className="hidden sm:inline text-xs font-semibold text-slate-800 max-w-[85px] truncate">
                   {userProfile.name.split(' ')[0]}

@@ -205,12 +205,10 @@ export const AdminFeedbackManagement: React.FC = () => {
     setTimeout(() => setCopiedEmailId(null), 2500);
   };
 
-  // Delete Report Handler
+  // Delete Report Handler (no window.confirm so iframe sandbox never blocks deletion)
   const handleDelete = async (reportId: string) => {
-    if (window.confirm(`Are you sure you want to delete ticket #${reportId}? This action cannot be undone.`)) {
-      await deleteFeedbackReport(reportId);
-      showNotice(`Deleted ticket #${reportId}.`);
-    }
+    await deleteFeedbackReport(reportId);
+    showNotice(`Permanently deleted ticket #${reportId}.`);
   };
 
   // Export to CSV

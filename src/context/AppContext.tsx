@@ -363,19 +363,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return cleaned || `usr-${Date.now()}`;
   };
 
+  // Helper to detect preloaded sample Unsplash stock avatars so they never override a user's real Gmail photoURL
+  const isSampleStockAvatar = (url?: string | null): boolean => {
+    if (!url) return true;
+    const clean = url.trim();
+    if (!clean) return true;
+    return clean.includes('images.unsplash.com');
+  };
+
   // Registered accounts in local storage (merging DEFAULT_ACCOUNTS with any user-created accounts so custom User IDs are never lost)
   const [registeredAccounts, setRegisteredAccounts] = useState<UserAccount[]>(() => {
     try {
+      const savedGooglePhoto =
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_ganesh.indireddy@gmail.com`) ||
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_usr-ganesh`) ||
+        '';
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
       if (saved) {
         const parsed: UserAccount[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const repaired = parsed.map(acc => {
             if (acc.id === 'usr-ganesh' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
+              const currentAvatar = acc.profile?.avatarUrl || '';
+              const cleanedAvatar = isSampleStockAvatar(currentAvatar) ? savedGooglePhoto : currentAvatar;
               return {
                 ...acc,
                 profile: {
                   ...acc.profile,
+                  avatarUrl: cleanedAvatar,
                   role: 'admin' as const,
                 },
               };
@@ -462,6 +477,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (explicitAuth !== 'true') {
         return GUEST_PROFILE;
       }
+      const savedAdminGooglePhoto =
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_ganesh.indireddy@gmail.com`) ||
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_usr-ganesh`) ||
+        '';
+
       // First check if the active User ID exists in registeredAccounts
       const savedAccountsRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
       const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`);
@@ -473,8 +493,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             matchedAcc.id === 'usr-ganesh' ||
             matchedAcc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
             matchedAcc.profile.role === 'admin';
+          const rawAvatar = matchedAcc.profile.avatarUrl || '';
+          const cleanedAvatar =
+            isAdminAcc && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
           return {
             ...matchedAcc.profile,
+            avatarUrl: cleanedAvatar,
             role: isAdminAcc ? 'admin' : matchedAcc.profile.role || 'member',
             finances: matchedAcc.profile.finances ? {
               ...DEFAULT_FINANCIAL_PORTFOLIO,
@@ -490,8 +514,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile`) || localStorage.getItem('havenroute_app_state_v1_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
+        const isAdminProf =
+          parsed.id === 'usr-ganesh' ||
+          parsed.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+          parsed.role === 'admin';
+        const rawAvatar = parsed.avatarUrl || '';
+        const cleanedAvatar =
+          isAdminProf && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
         return {
           ...parsed,
+          avatarUrl: cleanedAvatar,
           finances: parsed.finances ? {
             ...DEFAULT_FINANCIAL_PORTFOLIO,
             ...parsed.finances,
@@ -632,19 +664,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_JOURNAL_ENTRIES;
   });
 
-  // Feedback & Bug Reports state with local storage fallback
+  // Persistent tombstone set of deleted feedback report IDs so deleted sample/testing tickets never reload
+  const getDeletedFeedbackIds = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_deleted_feedback_ids`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch {}
+    return new Set();
+  };
+
+  const markFeedbackIdsDeleted = (ids: string[]) => {
+    try {
+      const current = getDeletedFeedbackIds();
+      ids.forEach(id => current.add(id));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_feedback_ids`, JSON.stringify(Array.from(current)));
+    } catch {}
+  };
+
+  // Feedback & Bug Reports state with local storage fallback (respects empty array [] and deleted IDs!)
   const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>(() => {
+    const deletedIds = getDeletedFeedbackIds();
     try {
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feedback_reports`);
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(r => r && r.id && !deletedIds.has(r.id));
         }
       }
-      return INITIAL_FEEDBACK_REPORTS;
+      return INITIAL_FEEDBACK_REPORTS.filter(r => !deletedIds.has(r.id));
     } catch {
-      return INITIAL_FEEDBACK_REPORTS;
+      return INITIAL_FEEDBACK_REPORTS.filter(r => !deletedIds.has(r.id));
     }
   });
 
@@ -963,29 +1016,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (!isGuestPlaceholder(firestoreRootData?.email) ? firestoreRootData!.email!.trim() : '')
     ).slice(0, 150);
 
-    // 3b. Resolve avatar prioritizing user's explicitly saved/updated avatar in localStorage & Firestore
+    // 3b. Resolve avatar prioritizing the user's real Google Auth photoURL over any preloaded sample Unsplash images!
+    const googlePhotoUrl = user.photoURL?.trim() || '';
+    if (googlePhotoUrl) {
+      try {
+        if (googleEmail) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_google_photo_${googleEmail}`, googlePhotoUrl);
+        }
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_google_photo_${candidateId}`, googlePhotoUrl);
+      } catch {}
+    }
+
     let localSavedAvatar: string | null = null;
+    let savedGooglePhoto: string | null = googlePhotoUrl || null;
     try {
-      localSavedAvatar =
+      if (!savedGooglePhoto) {
+        savedGooglePhoto =
+          (googleEmail ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_${googleEmail}`) : null) ||
+          localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_${candidateId}`);
+      }
+
+      const candidateLocalAvatar =
         (googleEmail ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${googleEmail}`) : null) ||
         localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${candidateId}`) ||
         (user.uid ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_avatar_${user.uid}`) : null);
+
+      if (candidateLocalAvatar && !isSampleStockAvatar(candidateLocalAvatar)) {
+        localSavedAvatar = candidateLocalAvatar;
+      }
 
       if (!localSavedAvatar) {
         const savedProfStr = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${candidateId}`);
         if (savedProfStr) {
           const parsed = JSON.parse(savedProfStr);
-          if (parsed?.avatarUrl) localSavedAvatar = parsed.avatarUrl;
+          if (parsed?.avatarUrl && !isSampleStockAvatar(parsed.avatarUrl)) {
+            localSavedAvatar = parsed.avatarUrl;
+          }
         }
       }
     } catch {}
 
+    const nonSampleExistingAvatar =
+      existingByEmail?.profile?.avatarUrl && !isSampleStockAvatar(existingByEmail.profile.avatarUrl)
+        ? existingByEmail.profile.avatarUrl
+        : null;
+
+    const nonSampleFirestoreAvatar =
+      firestoreRootData?.avatarUrl && !isSampleStockAvatar(firestoreRootData.avatarUrl)
+        ? firestoreRootData.avatarUrl
+        : null;
+
     const resolvedAvatar =
+      savedGooglePhoto ||
       localSavedAvatar ||
+      nonSampleExistingAvatar ||
+      nonSampleFirestoreAvatar ||
       existingByEmail?.profile?.avatarUrl ||
       firestoreRootData?.avatarUrl ||
-      user.photoURL ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
+      '';
+
+    // Heal any cached Unsplash sample avatar keys in localStorage with the resolved Gmail photo
+    if (resolvedAvatar && !isSampleStockAvatar(resolvedAvatar)) {
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${candidateId}`, resolvedAvatar);
+        if (googleEmail) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${googleEmail}`, resolvedAvatar);
+        }
+        if (user.uid) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${user.uid}`, resolvedAvatar);
+        }
+      } catch {}
+    }
 
     // Use a clean member base profile (never GUEST_PROFILE)
     const cleanBaseProfile: UserProfile =
@@ -1737,9 +1838,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       account.email.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
       account.profile.role === 'admin';
 
+    // If logging in as Admin or a Google-linked account, prefer any saved Google photo or live auth.currentUser.photoURL over sample Unsplash photos
+    let effectiveAvatar = account.profile.avatarUrl || '';
+    if (isSampleStockAvatar(effectiveAvatar)) {
+      try {
+        const storedGooglePhoto =
+          localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_${account.email.toLowerCase()}`) ||
+          localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_${account.id}`) ||
+          (auth.currentUser?.email?.toLowerCase() === account.email.toLowerCase() ? auth.currentUser?.photoURL : '') ||
+          '';
+        if (storedGooglePhoto) {
+          effectiveAvatar = storedGooglePhoto;
+        } else if (isAccountOwnerAdmin) {
+          effectiveAvatar = '';
+        }
+      } catch {}
+    }
+
     const restoredProfile: UserProfile = {
       ...account.profile,
       id: account.id,
+      avatarUrl: effectiveAvatar,
       role: isAccountOwnerAdmin ? 'admin' : account.profile.role || 'member',
       finances: account.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
     };
@@ -2263,7 +2382,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteFeedbackReport = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      setFeedbackReports(prev => prev.filter(r => r.id !== id));
+      markFeedbackIdsDeleted([id]);
+      setFeedbackReports(prev => {
+        const next = prev.filter(r => r.id !== id);
+        try {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
       try {
         if (db) {
           const docRef = doc(db, 'feedbackReports', id);

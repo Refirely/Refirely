@@ -614,7 +614,7 @@ export const DEFAULT_ACCOUNTS: UserAccount[] = [
       id: 'usr-ganesh',
       name: 'Ganesh Reddy',
       email: 'ganesh.indireddy@gmail.com',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+      avatarUrl: '',
       originCountry: 'India',
       residingCountry: 'United States',
       originCity: 'Austin, TX',
