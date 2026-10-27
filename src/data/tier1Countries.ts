@@ -1222,7 +1222,6 @@ export const TIER_1_COUNTRIES: Country[] = [
     name: 'Senegal',
     code: 'SN',
     flag: '🇸🇳',
-    flag: '🇸🇳',
     region: 'Europe',
     capital: 'Dakar',
     currency: 'West African CFA Franc (XOF - Pegged to Euro)',

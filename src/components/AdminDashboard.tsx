@@ -9,7 +9,7 @@ import {
   Database, Download, RefreshCw, Eye, UserCheck, Mail,
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
   ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus,
-  IndianRupee, MessageCircle, LogOut
+  IndianRupee, MessageCircle, LogOut, Copy, Check, FlaskConical
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
@@ -72,6 +72,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
   const [editUserDraft, setEditUserDraft] = useState<UserAccount | null>(null);
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
   const [statusBanner, setStatusBanner] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
+  const [copiedCredentialId, setCopiedCredentialId] = useState<string | null>(null);
+
+  // Demo Member Accounts for Admin Sandbox Testing & Verification
+  const demoTestAccounts = useMemo(() => {
+    return registeredAccounts.filter(
+      acc =>
+        acc.id !== 'guest' &&
+        acc.id !== 'usr-ganesh' &&
+        acc.profile?.role !== 'admin' &&
+        acc.email?.toLowerCase() !== 'ganesh.indireddy@gmail.com'
+    );
+  }, [registeredAccounts]);
+
+  const handleCopyCredentials = (acc: UserAccount) => {
+    const text = `User ID: ${acc.id}\nEmail: ${acc.email}\nPassword: ${acc.password || 'password123'}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      setCopiedCredentialId(acc.id);
+      setTimeout(() => setCopiedCredentialId(null), 2500);
+    }
+  };
 
   // Create New User Form State
   const [newUserForm, setNewUserForm] = useState({
@@ -1034,6 +1055,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                           ))}
                         </div>
                       </div>
+
+                      {/* Demo Sandbox Quick Personas Callout */}
+                      <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FlaskConical className="w-3.5 h-3.5 text-indigo-700 shrink-0" />
+                          <span className="text-slate-700 truncate">
+                            <strong>Demo QA Testing Personas:</strong> usr-elena, usr-marcus, usr-arthur, usr-margaret (Password: <code className="font-mono text-indigo-900 font-bold">password123</code>)
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('users')}
+                          className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 underline cursor-pointer shrink-0"
+                        >
+                          View Credentials in Users Directory →
+                        </button>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -1668,6 +1705,134 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                         <UserPlus className="w-3.5 h-3.5" />
                         <span>Register User</span>
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Demo Member Accounts & QA Testing Credentials Panel */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-amber-50/70 border border-indigo-200/90 shadow-2xs space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
+                          <FlaskConical className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                            <span>Demo Member Sandbox &amp; Testing Personas</span>
+                            <span className="text-[10px] bg-indigo-100 text-indigo-800 font-extrabold px-2 py-0.5 rounded-full">
+                              {demoTestAccounts.length} Test Accounts
+                            </span>
+                          </h3>
+                          <p className="text-[11px] text-slate-500">
+                            Pre-configured test personas for QA, authentication checks, and direct messaging testing.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200/90 shadow-2xs shrink-0 flex items-center gap-1.5 self-start sm:self-auto">
+                        <span className="text-slate-400">Default Password:</span>
+                        <code className="font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          password123
+                        </code>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {demoTestAccounts.slice(0, 4).map(acc => {
+                        const isCopied = copiedCredentialId === acc.id;
+                        return (
+                          <div
+                            key={acc.id}
+                            className="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-2.5"
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <img
+                                src={acc.profile.avatarUrl}
+                                alt={acc.name}
+                                className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-xs text-slate-900 truncate">{acc.name}</div>
+                                <div className="text-[11px] text-slate-500 truncate">
+                                  {acc.profile.occupationOrBackground || 'Retiree'}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono truncate">
+                                  {getWorldCountryFlag(acc.profile.originCountry)} {acc.profile.originCountry} →{' '}
+                                  {getWorldCountryFlag(acc.profile.targetCountry)} {acc.profile.targetCountry}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70 space-y-1 text-[11px] font-mono">
+                              <div className="flex items-center justify-between text-slate-600">
+                                <span className="text-slate-400 font-sans text-[10px]">User ID:</span>
+                                <span className="font-bold text-slate-900">{acc.id}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-600 truncate">
+                                <span className="text-slate-400 font-sans text-[10px]">Email:</span>
+                                <span className="truncate max-w-[130px] text-slate-700" title={acc.email}>
+                                  {acc.email}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-600">
+                                <span className="text-slate-400 font-sans text-[10px]">Password:</span>
+                                <span className="font-bold text-emerald-700">{acc.password || 'password123'}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCredentials(acc)}
+                                className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer border ${
+                                  isCopied
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                {isCopied ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-600" />
+                                    <span>Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-slate-500" />
+                                    <span>Copy Login</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openUserInspector(acc, false)}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                title="Inspect Member Profile"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  startDmWithPeer(
+                                    acc.name,
+                                    acc.profile.residingCountry || acc.profile.targetCountry || 'Portugal',
+                                    acc.profile.originCity || 'Expat Hub',
+                                    undefined,
+                                    {
+                                      peerAvatar: acc.profile.avatarUrl,
+                                      peerStatus: acc.profile.relocationStatus || 'Registered Member',
+                                      peerUserId: acc.id,
+                                    }
+                                  )
+                                }
+                                className="p-1.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors cursor-pointer"
+                                title="Test Direct Message"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

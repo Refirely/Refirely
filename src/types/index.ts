@@ -1,4 +1,23 @@
-export type Region = 'Europe' | 'Southeast Asia' | 'Americas';
+export type Region =
+  | 'Europe'
+  | 'Southeast Asia'
+  | 'Americas'
+  | 'North & Central America'
+  | 'South America'
+  | 'Asia & Middle East'
+  | 'Africa'
+  | 'Oceania';
+
+export type ViewState =
+  | 'landing'
+  | 'explore'
+  | 'country-detail'
+  | 'compare'
+  | 'community'
+  | 'meetups'
+  | 'messages'
+  | 'dashboard'
+  | 'admin';
 
 export type ClimateCategory = 'Mediterranean' | 'Tropical' | 'Subtropical' | 'Temperate' | 'Highlands / Mild';
 
@@ -126,7 +145,13 @@ export interface Country {
   // Nightlife & Adult Entertainment
   adultEntertainment: {
     nightlifeScore: number; // 1 to 5
-    nightlifeVibrancy: 'Quiet & Wine Lounges' | 'Balanced Coastal Social' | 'Vibrant & Diverse' | 'World-Famous Nightlife';
+    nightlifeVibrancy:
+      | 'Quiet & Wine Lounges'
+      | 'Balanced Coastal Social'
+      | 'Vibrant & Diverse'
+      | 'World-Famous Nightlife'
+      | 'Social & Lounge Scene'
+      | 'Vibrant & Cosmopolitan';
     adultEntertainmentScore: number; // 1 to 5
     legalStatus: string;
     overview: string;
@@ -315,6 +340,7 @@ export interface CommunityThread {
   hasUpvoted?: boolean;
   comments: Comment[];
   isPinned?: boolean;
+  countryTag?: string;
 }
 
 export interface ExpatMeetup {

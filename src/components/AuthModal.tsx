@@ -284,51 +284,6 @@ export const AuthModal: React.FC = () => {
               </span>
             </div>
 
-            {/* Quick account switcher strip for fast testing and role verification */}
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Quick Select Demo Member:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {registeredAccounts
-                  .filter(
-                    acc =>
-                      acc.id !== 'guest' &&
-                      acc.id !== 'usr-ganesh' &&
-                      acc.profile?.role !== 'admin' &&
-                      acc.email?.toLowerCase() !== 'ganesh.indireddy@gmail.com'
-                  )
-                  .slice(0, 5)
-                  .map(acc => {
-                    const isSelected = loginIdentifier.toLowerCase() === acc.id.toLowerCase();
-                    return (
-                      <button
-                        key={acc.id}
-                        type="button"
-                        onClick={() => {
-                          setLoginIdentifier(acc.id);
-                          setLoginPassword(acc.password || 'password123');
-                          setLoginError(null);
-                        }}
-                        className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
-                          isSelected
-                            ? 'bg-orange-600 text-white border-orange-600 shadow-2xs font-bold'
-                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/70'
-                        }`}
-                      >
-                        <img
-                          src={acc.profile.avatarUrl}
-                          alt={acc.name}
-                          className="w-3.5 h-3.5 rounded-full object-cover shrink-0"
-                        />
-                        <span>{acc.name.split(' ')[0]}</span>
-                        <span className="text-[9px] opacity-70 font-mono">({acc.id})</span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">

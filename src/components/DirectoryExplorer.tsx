@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { CountryCard } from './CountryCard';
 import { WorldHavenMap } from './WorldHavenMap';
+import { HavenMatcherPromoCard } from './HavenMatcherPromoCard';
 import {
   Search, SlidersHorizontal, Compass, RotateCcw,
   Sun, Shield, DollarSign, Scale, ArrowRight, Map, X,
-  Sparkles, Globe2, HeartHandshake
+  Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp
 } from 'lucide-react';
 
 export const DirectoryExplorer: React.FC = () => {
@@ -35,6 +36,24 @@ export const DirectoryExplorer: React.FC = () => {
   } = useApp();
 
   const [showMap, setShowMap] = useState(false);
+
+  // Progressive 24-country pagination
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+
+  // Reset pagination to 24 whenever active filters or search change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedRegion, budgetMax, selectedClimate, visaDifficultyMax, visaIncomeMax, sortBy]);
+
+  const displayedCountries = filteredCountries.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredCountries.length;
+  const remainingCount = Math.max(0, filteredCountries.length - visibleCount);
+  const nextBatchCount = Math.min(PAGE_SIZE, remainingCount);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + PAGE_SIZE);
+  };
 
   const regions = [
     'All',
@@ -605,16 +624,76 @@ export const DirectoryExplorer: React.FC = () => {
               </button>
             </motion.div>
           ) : (
-            <motion.div
-              layout
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredCountries.map((country, idx) => (
-                  <CountryCard key={country.id} country={country} index={idx} />
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            <div className="space-y-8">
+              <motion.div
+                layout
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                <AnimatePresence mode="popLayout">
+                  {displayedCountries.map((country, idx) => (
+                    <CountryCard key={country.id} country={country} index={idx} />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Progressive Pagination Controls & Catchy Haven Matcher Signup Section */}
+              <div className="space-y-8 pt-4">
+                
+                {/* 24 More Havens Action Toolbar */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                    <span className="font-extrabold text-slate-900">
+                      Showing {displayedCountries.length} of {filteredCountries.length} havens
+                    </span>
+                    <div className="w-28 sm:w-40 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                      <div
+                        className="h-full bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500 transition-all duration-300 rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.round((displayedCountries.length / filteredCountries.length) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-slate-400 font-mono text-[11px]">
+                      ({Math.round((displayedCountries.length / filteredCountries.length) * 100)}% visible)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    {hasMore ? (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleLoadMore}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-700 hover:from-teal-700 hover:via-indigo-700 hover:to-teal-800 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+                      >
+                        <ChevronDown className="w-4 h-4 animate-bounce" />
+                        <span>Load 24 More Havens</span>
+                        <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md font-mono">
+                          +{nextBatchCount} ({remainingCount} left)
+                        </span>
+                      </motion.button>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>All {filteredCountries.length} destinations displayed</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                      title="Back to Top"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Catchy Matcher Signup Promotion Card: "Still confused? Sign up here and let us do the work for you..." */}
+                <HavenMatcherPromoCard variant="explore" />
+
+              </div>
+            </div>
           )}
         </div>
 

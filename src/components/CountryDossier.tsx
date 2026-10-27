@@ -12,6 +12,7 @@ import { CountryFinancesAndTaxesTab } from './CountryFinancesAndTaxesTab';
 import { CountryLifestyleAndDatingSection } from './CountryLifestyleAndDatingSection';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
+import { HavenMatcherPromoCard } from './HavenMatcherPromoCard';
 import { getFullCountryUrl } from '../utils/seo';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import {
@@ -358,6 +359,11 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Under Country Description & Above Tabs: Catchy Haven Matcher Signup Card */}
+          <div className="pt-6">
+            <HavenMatcherPromoCard variant="dossier" countryName={country.name} />
           </div>
 
           {/* Section Navigation Tabs (Animated Segmented Controls — Full Visibility & Responsive Wrap) */}
