@@ -103,6 +103,16 @@ export const FireCalculatorTracker: React.FC = () => {
   );
   const [monthlySipUSD, setMonthlySipUSD] = useState<number>(finances.monthlySipUSD ?? 2800);
   const [sipStepUpPct, setSipStepUpPct] = useState<number>(finances.annualSipStepUpPercent ?? 8);
+  const [sipContinuityMode, setSipContinuityMode] = useState<'until-fire' | 'custom-years' | 'paused'>(
+    finances.sipContinuityMode || 'until-fire'
+  );
+  const [sipDurationYears, setSipDurationYears] = useState<number>(
+    finances.sipDurationYears || 7
+  );
+  const [stopSipAtFire, setStopSipAtFire] = useState<boolean>(
+    finances.stopSipAtFire ?? true
+  );
+  const [selectedSipReturnsHorizon, setSelectedSipReturnsHorizon] = useState<'fire' | '3' | '5' | '10' | 'custom'>('fire');
   const [inflationPct, setInflationPct] = useState<number>(
     finances.inflationRatePercent ?? countryMacro.defaultInflationPercent
   );
@@ -143,6 +153,9 @@ export const FireCalculatorTracker: React.FC = () => {
     }
     setMonthlySipUSD(finances.monthlySipUSD ?? 2800);
     setSipStepUpPct(finances.annualSipStepUpPercent ?? 8);
+    setSipContinuityMode(finances.sipContinuityMode || 'until-fire');
+    setSipDurationYears(finances.sipDurationYears || 7);
+    setStopSipAtFire(finances.stopSipAtFire ?? true);
     setSwrPct(finances.safeWithdrawalRatePercent || 4.0);
     setInvestmentsDraft({
       savingsUSD: finances.investments.savingsUSD || 0,
@@ -159,6 +172,9 @@ export const FireCalculatorTracker: React.FC = () => {
     finances.monthlyCurrentExpensesUSD,
     finances.monthlySipUSD,
     finances.annualSipStepUpPercent,
+    finances.sipContinuityMode,
+    finances.sipDurationYears,
+    finances.stopSipAtFire,
     finances.safeWithdrawalRatePercent,
     finances.investments.savingsUSD,
     finances.investments.stocksMutualFundsUSD,
@@ -279,6 +295,9 @@ export const FireCalculatorTracker: React.FC = () => {
         monthlyCurrentExpensesUSD: cleanCurrentExpenses,
         monthlySipUSD: Math.round(monthlySipUSD || 0),
         annualSipStepUpPercent: Number(sipStepUpPct) || 0,
+        sipContinuityMode,
+        sipDurationYears: Number(sipDurationYears) || 7,
+        stopSipAtFire,
         inflationRatePercent: Number(inflationPct) || countryMacro.defaultInflationPercent,
         expectedReturnRatePercent: Number(expectedReturnPct) || countryMacro.defaultReturnPercent,
         safeWithdrawalRatePercent: Number(swrPct) || 4.0,
@@ -484,12 +503,72 @@ export const FireCalculatorTracker: React.FC = () => {
       Math.max(0, Math.round((startingCorpusTodayUSD / Math.max(1, comprehensiveFireNumberTodayUSD)) * 100))
     );
 
-    // 2. Year-by-Year Nominal & Real Wealth Trajectory Simulation (25-Year Horizon)
+    // 2. Systematic SIP Compounding Returns Mathematical Engine
+    const calculateSipReturns = (
+      monthlyAmountUSD: number,
+      annualStepUpRate: number,
+      annualReturnRate: number,
+      durationYears: number
+    ) => {
+      const cleanDuration = Math.max(0, Math.round(durationYears * 10) / 10);
+      if (cleanDuration <= 0 || monthlyAmountUSD <= 0) {
+        return {
+          totalPrincipalUSD: 0,
+          finalMaturityUSD: 0,
+          wealthGainedUSD: 0,
+          returnPercent: 0,
+          multiplier: 1.0,
+          durationYears: 0,
+        };
+      }
+
+      let currentMonthly = monthlyAmountUSD;
+      let cumulativePrincipal = 0;
+      let corpus = 0;
+      const r = annualReturnRate / 100;
+      const stepUp = annualStepUpRate / 100;
+
+      const fullYears = Math.floor(cleanDuration);
+      const partialYear = cleanDuration - fullYears;
+
+      for (let y = 1; y <= fullYears; y++) {
+        const annualInvested = currentMonthly * 12;
+        cumulativePrincipal += annualInvested;
+        // Mid-year compounding approximation for systematic monthly flows
+        corpus = corpus * (1 + r) + annualInvested * (1 + r / 2);
+        currentMonthly = currentMonthly * (1 + stepUp);
+      }
+
+      if (partialYear > 0) {
+        const partialInvested = currentMonthly * 12 * partialYear;
+        cumulativePrincipal += partialInvested;
+        corpus = corpus * (1 + r * partialYear) + partialInvested * (1 + (r * partialYear) / 2);
+      }
+
+      const finalMaturityUSD = Math.round(corpus);
+      const totalPrincipalUSD = Math.round(cumulativePrincipal);
+      const wealthGainedUSD = Math.max(0, finalMaturityUSD - totalPrincipalUSD);
+      const returnPercent = totalPrincipalUSD > 0 ? (wealthGainedUSD / totalPrincipalUSD) * 100 : 0;
+      const multiplier = totalPrincipalUSD > 0 ? +(finalMaturityUSD / totalPrincipalUSD).toFixed(2) : 1.0;
+
+      return {
+        totalPrincipalUSD,
+        finalMaturityUSD,
+        wealthGainedUSD,
+        returnPercent,
+        multiplier,
+        durationYears: cleanDuration,
+      };
+    };
+
+    // 3. Year-by-Year Nominal & Real Wealth Trajectory Simulation (25-Year Horizon)
     const trajectory: FireTrajectoryPoint[] = [];
 
     let simCorpusNominal = startingCorpusTodayUSD;
     let simCumulativeContributions = startingCorpusTodayUSD;
     let simMonthlySip = monthlySipUSD;
+    let simCumulativeSipPrincipal = 0;
+    let simSipOnlyValue = 0;
     let crossoverYear: number | null =
       startingCorpusTodayUSD >= comprehensiveFireNumberTodayUSD ? currentYear : null;
     let crossoverAge: number | null =
@@ -534,17 +613,40 @@ export const FireCalculatorTracker: React.FC = () => {
         .filter(l => yrOffset >= l.remainingYears)
         .reduce((s, l) => s + (l.monthlyEmiUSD || 0), 0);
 
-      const annualSipContribution = Math.round((simMonthlySip + freedMonthlyEmiUSD) * 12);
+      // Determine if SIP is active for this year based on user's continuity mode and earning status
+      const alreadyFiredPriorYear = stopSipAtFire && crossoverYear !== null && yr > crossoverYear;
+      let isSipActiveThisYear = false;
+
+      if (sipContinuityMode === 'paused') {
+        isSipActiveThisYear = false;
+      } else if (sipContinuityMode === 'custom-years') {
+        const withinCommittedYears = yrOffset <= sipDurationYears;
+        isSipActiveThisYear = withinCommittedYears && !alreadyFiredPriorYear;
+      } else {
+        // 'until-fire': Active while in active earning phase, ceases once FIRE is achieved
+        isSipActiveThisYear = !alreadyFiredPriorYear;
+      }
+
+      const activeMonthlySip = isSipActiveThisYear ? simMonthlySip : 0;
+      const annualSipOnlyInvested = Math.round(activeMonthlySip * 12);
+      const annualTotalInjected = Math.round((activeMonthlySip + freedMonthlyEmiUSD) * 12);
 
       if (yrOffset > 0) {
         const prevCorpus = simCorpusNominal;
+        const inRetirementWithdrawal = crossoverYear !== null && yr > crossoverYear;
+        const livingWithdrawalUSD = inRetirementWithdrawal ? inflatedAnnualLivingNeed : 0;
+
         simCorpusNominal = Math.max(
           0,
           Math.round(
-            prevCorpus * (1 + nominalReturnDec) + annualSipContribution - yearMilestonesUSD
+            prevCorpus * (1 + nominalReturnDec) + annualTotalInjected - livingWithdrawalUSD - yearMilestonesUSD
           )
         );
-        simCumulativeContributions += annualSipContribution;
+        simCumulativeContributions += annualTotalInjected;
+
+        // Cumulative SIP standalone tracking
+        simCumulativeSipPrincipal += annualSipOnlyInvested;
+        simSipOnlyValue = simSipOnlyValue * (1 + nominalReturnDec) + annualSipOnlyInvested * (1 + nominalReturnDec / 2);
 
         // Check if FIRE crossover happened during this year
         if (crossoverYear === null && simCorpusNominal >= dynamicFireTargetNominal) {
@@ -556,11 +658,15 @@ export const FireCalculatorTracker: React.FC = () => {
           yearsToFireExact = Math.round(((yrOffset - 1 + fraction) * 10)) / 10;
         }
 
-        // Step up monthly SIP for next year
-        simMonthlySip = simMonthlySip * (1 + sipStepUpPct / 100);
+        // Step up monthly SIP for next year if SIP was active
+        if (isSipActiveThisYear) {
+          simMonthlySip = simMonthlySip * (1 + sipStepUpPct / 100);
+        }
       } else {
         // Deduct any current-year milestone if applicable
         simCorpusNominal = Math.max(0, simCorpusNominal - yearMilestonesUSD);
+        simCumulativeSipPrincipal = 0;
+        simSipOnlyValue = 0;
         if (simCorpusNominal >= dynamicFireTargetNominal) {
           crossoverYear = yr;
           crossoverAge = age;
@@ -573,6 +679,7 @@ export const FireCalculatorTracker: React.FC = () => {
         dynamicFireTargetNominal > 0
           ? Math.min(250, Math.round((simCorpusNominal / dynamicFireTargetNominal) * 100))
           : 100;
+      const sipReturnsUSD = Math.max(0, Math.round(simSipOnlyValue - simCumulativeSipPrincipal));
 
       trajectory.push({
         year: yr,
@@ -583,9 +690,13 @@ export const FireCalculatorTracker: React.FC = () => {
         fireTargetUSD: dynamicFireTargetNominal,
         targetHavenCorpusUSD: targetHavenCorpusNominal,
         milestonesDeductedUSD: yearMilestonesUSD,
-        annualSipInvestedUSD: yrOffset === 0 ? monthlySipUSD * 12 : annualSipContribution,
+        annualSipInvestedUSD: annualSipOnlyInvested,
         freedEmiBonusUSD: freedMonthlyEmiUSD * 12,
         fundingRatioPct,
+        cumulativeSipPrincipalUSD: simCumulativeSipPrincipal,
+        sipPortfolioValueUSD: Math.round(simSipOnlyValue),
+        sipReturnsUSD,
+        isSipActiveInYear: isSipActiveThisYear,
       });
     }
 
@@ -593,13 +704,58 @@ export const FireCalculatorTracker: React.FC = () => {
       yearsToFireExact = 25.5;
     }
 
-    // 3. Helper to quickly simulate years-to-FIRE for "What-If" Accelerator Levers
+    // Pre-calculate SIP Compounding Returns across key horizons
+    const sipDurationForFire =
+      sipContinuityMode === 'paused'
+        ? 0
+        : sipContinuityMode === 'custom-years'
+        ? Math.min(sipDurationYears, Math.max(0.5, yearsToFireExact))
+        : Math.max(0.5, Math.min(25, yearsToFireExact));
+
+    const sipReturnsAtFire = calculateSipReturns(
+      monthlySipUSD,
+      sipStepUpPct,
+      expectedReturnPct,
+      sipDurationForFire
+    );
+
+    const sipReturns3Yr = calculateSipReturns(
+      monthlySipUSD,
+      sipStepUpPct,
+      expectedReturnPct,
+      sipContinuityMode === 'paused' ? 0 : Math.min(3, sipContinuityMode === 'custom-years' ? sipDurationYears : 3)
+    );
+
+    const sipReturns5Yr = calculateSipReturns(
+      monthlySipUSD,
+      sipStepUpPct,
+      expectedReturnPct,
+      sipContinuityMode === 'paused' ? 0 : Math.min(5, sipContinuityMode === 'custom-years' ? sipDurationYears : 5)
+    );
+
+    const sipReturns10Yr = calculateSipReturns(
+      monthlySipUSD,
+      sipStepUpPct,
+      expectedReturnPct,
+      sipContinuityMode === 'paused' ? 0 : Math.min(10, sipContinuityMode === 'custom-years' ? sipDurationYears : 10)
+    );
+
+    const sipReturnsCustom = calculateSipReturns(
+      monthlySipUSD,
+      sipStepUpPct,
+      expectedReturnPct,
+      sipContinuityMode === 'paused' ? 0 : sipDurationYears
+    );
+
+    // 4. Helper to quickly simulate years-to-FIRE for "What-If" Accelerator Levers
     const simulateYearsForScenario = (
       customSipUSD: number,
       customStepUpPct: number,
       customBaseExpenseUSD: number,
       customReturnPct: number,
-      prepayHighInterestLoanUSD = 0
+      prepayHighInterestLoanUSD = 0,
+      customContinuityMode = sipContinuityMode,
+      customDuration = sipDurationYears
     ): number => {
       let c = Math.max(0, startingCorpusTodayUSD);
       let sip = customSipUSD;
@@ -622,11 +778,24 @@ export const FireCalculatorTracker: React.FC = () => {
           loansList
             .filter(l => y >= l.remainingYears)
             .reduce((s, l) => s + (l.monthlyEmiUSD || 0), 0) + prepayHighInterestLoanUSD;
+
+        let isSipActive = false;
+        if (customContinuityMode === 'paused') {
+          isSipActive = false;
+        } else if (customContinuityMode === 'custom-years') {
+          isSipActive = y <= customDuration;
+        } else {
+          isSipActive = true;
+        }
+
+        const activeSipAmount = isSipActive ? sip : 0;
         c = Math.max(
           0,
-          c * (1 + customReturnPct / 100) + (sip + freedEmi) * 12 - milestones
+          c * (1 + customReturnPct / 100) + (activeSipAmount + freedEmi) * 12 - milestones
         );
-        sip = sip * (1 + customStepUpPct / 100);
+        if (isSipActive) {
+          sip = sip * (1 + customStepUpPct / 100);
+        }
       }
       return 30;
     };
@@ -711,10 +880,17 @@ export const FireCalculatorTracker: React.FC = () => {
       });
     }
 
-    if (savingsRatePct >= 25) {
+    if (sipContinuityMode === 'paused') {
+      weaknesses.push({
+        title: `SIP Currently Paused (Coast FIRE Mode Active)`,
+        detail: `You have paused monthly salary SIPs. Achieving FIRE depends entirely on your current nest egg (${formatDualCurrency(startingCorpusTodayUSD, countryMacro)}) compounding at ${expectedReturnPct}% without new savings.`,
+      });
+    } else if (savingsRatePct >= 25) {
       strengths.push({
         title: `Strong Monthly SIP Rate (${savingsRatePct}% of Inflow)`,
-        detail: `You are systematically investing ${formatDualCurrency(monthlySipUSD, countryMacro)} every month with a ${sipStepUpPct}% annual step-up.`,
+        detail: `You are systematically investing ${formatDualCurrency(monthlySipUSD, countryMacro)} every month with a ${sipStepUpPct}% annual step-up ${
+          sipContinuityMode === 'custom-years' ? `for the next ${sipDurationYears} years` : 'during your active earning phase'
+        }.`,
       });
     } else {
       weaknesses.push({
@@ -881,6 +1057,14 @@ export const FireCalculatorTracker: React.FC = () => {
             ]
           : []),
       ],
+      sipContinuityMode,
+      sipDurationYears,
+      stopSipAtFire,
+      sipReturnsAtFire,
+      sipReturns3Yr,
+      sipReturns5Yr,
+      sipReturns10Yr,
+      sipReturnsCustom,
     };
   }, [
     finances,
@@ -891,6 +1075,9 @@ export const FireCalculatorTracker: React.FC = () => {
     targetFireAge,
     monthlySipUSD,
     sipStepUpPct,
+    sipContinuityMode,
+    sipDurationYears,
+    stopSipAtFire,
     inflationPct,
     expectedReturnPct,
     swrPct,
@@ -1063,18 +1250,28 @@ export const FireCalculatorTracker: React.FC = () => {
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               3. Monthly SIP &amp; Expenses
             </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-              {fireAnalysis.savingsRatePct}% SIP Rate
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+              sipContinuityMode === 'paused'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {sipContinuityMode === 'paused' ? 'SIP Paused (Coast)' : `${fireAnalysis.savingsRatePct}% SIP Rate`}
             </span>
           </div>
           <div>
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-800 tabular-nums">
-              {countryMacro.currencyCode !== 'USD'
+              {sipContinuityMode === 'paused'
+                ? '$0 / mo (Coast Mode)'
+                : countryMacro.currencyCode !== 'USD'
                 ? `${formatLocalCurrency(monthlySipUSD, countryMacro, false)}/mo`
                 : `$${monthlySipUSD.toLocaleString()}/mo`}
             </div>
             <div className="text-xs font-mono text-slate-600 font-semibold mt-0.5">
-              SIP: ${monthlySipUSD.toLocaleString()}/mo · +{sipStepUpPct}%/yr step-up
+              {sipContinuityMode === 'paused'
+                ? '0 fresh contributions (compounding current assets)'
+                : sipContinuityMode === 'custom-years'
+                ? `Commitment: next ${sipDurationYears} yrs · +${sipStepUpPct}%/yr step-up`
+                : `Active while earning · +${sipStepUpPct}%/yr step-up`}
             </div>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between">
@@ -1382,10 +1579,18 @@ export const FireCalculatorTracker: React.FC = () => {
             />
           </div>
 
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="font-semibold text-slate-700">
-                Monthly SIP ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-teal-50/30 to-white border border-emerald-200/90 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
+                <PiggyBank className="w-4 h-4 text-emerald-600" />
+                <span>Monthly SIP ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})</span>
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                sipContinuityMode === 'paused'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                  : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+              }`}>
+                {sipContinuityMode === 'paused' ? 'Paused (Coast Mode)' : `Active Earning · +${sipStepUpPct}%/yr`}
               </span>
             </div>
             <CurrencyAmountInput
@@ -1403,8 +1608,13 @@ export const FireCalculatorTracker: React.FC = () => {
               step={50}
               value={Math.min(25000, Math.round(monthlySipUSD))}
               onChange={e => setMonthlySipUSD(Number(e.target.value))}
-              className="w-full accent-emerald-600 cursor-pointer mt-1.5"
+              className="w-full accent-emerald-600 cursor-pointer mt-1"
             />
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+              <span>$0 (Coast)</span>
+              <span>${Math.round(monthlySipUSD).toLocaleString()}/mo</span>
+              <span>$25k/mo</span>
+            </div>
           </div>
 
           <div>
@@ -1440,6 +1650,290 @@ export const FireCalculatorTracker: React.FC = () => {
               onChange={e => setBaseMonthlyExpenseTodayUSD(Number(e.target.value))}
               className="w-full accent-orange-600 cursor-pointer mt-1.5"
             />
+          </div>
+        </div>
+
+        {/* SIP EARNING CONTINUITY SWITCH & RETURN ON SIP INTELLIGENCE DECK */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-white via-emerald-50/40 to-teal-50/50 border border-emerald-200/90 shadow-sm space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span>SIP Earning Continuity Switch &amp; Returns on Investment</span>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Calculated at {expectedReturnPct}% Return · +{sipStepUpPct}% Step-Up
+                  </span>
+                </h4>
+              </div>
+              <p className="text-xs text-slate-600 mt-1">
+                Your monthly SIP represents active capital invested from your salary while earning. Confirm whether you can sustain this SIP until FIRE, commit for a set number of years, or test coasting with zero new savings.
+              </p>
+            </div>
+
+            {/* Switch / Mode Selector Bar */}
+            <div className="inline-flex rounded-xl p-1 bg-slate-100/90 border border-slate-200 text-xs font-bold gap-1 self-start lg:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setSipContinuityMode('until-fire')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sipContinuityMode === 'until-fire'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Until FIRE Reached</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSipContinuityMode('custom-years')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sipContinuityMode === 'custom-years'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Commit {sipDurationYears} Years</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSipContinuityMode('paused')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sipContinuityMode === 'paused'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Pause SIP (Coast FIRE)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Custom Duration Slider (if custom-years selected) */}
+          {sipContinuityMode === 'custom-years' && (
+            <div className="p-3 rounded-xl bg-white border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>How many years will you continue this SIP out of current earnings?</span>
+                  <span className="font-mono font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {sipDurationYears} {sipDurationYears === 1 ? 'Year' : 'Years'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  After year {currentYear + sipDurationYears} (Age {currentAge + sipDurationYears}), fresh salary contributions will halt ($0/mo), and your accumulated corpus will compound on its own toward retirement.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-64 shrink-0">
+                <input
+                  type="range"
+                  min={1}
+                  max={15}
+                  step={1}
+                  value={sipDurationYears}
+                  onChange={e => setSipDurationYears(Number(e.target.value))}
+                  className="w-full accent-emerald-600 cursor-pointer"
+                />
+                <span className="font-mono font-bold text-xs text-slate-700 w-12 text-right">
+                  {sipDurationYears} yrs
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Toggle Checkbox: Stop fresh SIP once FIRE is achieved */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-emerald-100 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-slate-700 font-semibold">
+              <input
+                type="checkbox"
+                checked={stopSipAtFire}
+                onChange={e => setStopSipAtFire(e.target.checked)}
+                className="rounded accent-emerald-600 cursor-pointer w-4 h-4"
+              />
+              <span>
+                Stop fresh salary SIP once FIRE is achieved (since active earning ceases and living withdrawals begin)
+              </span>
+            </label>
+            <span className="text-[11px] text-slate-500">
+              {stopSipAtFire
+                ? 'Realistic: Salary injections cease upon retirement'
+                : 'Pumping salary SIP indefinitely post-retirement'}
+            </span>
+          </div>
+
+          {/* RETURNS ON SIP: HORIZON CALCULATOR & 4 KEY VALUE METRICS */}
+          <div className="pt-2 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Returns on Your SIP Contributions (Compounding Breakdown)</span>
+              </span>
+
+              {/* Horizon Tabs */}
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-semibold gap-1">
+                {[
+                  { id: 'fire', label: `At FIRE Goal (${fireAnalysis.yearsToFireExact <= 0 ? 'Now' : `${fireAnalysis.yearsToFireExact} yrs`})` },
+                  { id: '3', label: '3 Years' },
+                  { id: '5', label: '5 Years' },
+                  { id: '10', label: '10 Years' },
+                  ...(sipContinuityMode === 'custom-years'
+                    ? [{ id: 'custom', label: `Committed (${sipDurationYears} yrs)` }]
+                    : []),
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSelectedSipReturnsHorizon(tab.id as any)}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
+                      selectedSipReturnsHorizon === tab.id
+                        ? 'bg-white text-emerald-950 font-bold shadow-2xs border border-emerald-200'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 4 Return on SIP Tiles */}
+            {(() => {
+              const activeReturns =
+                selectedSipReturnsHorizon === '3'
+                  ? fireAnalysis.sipReturns3Yr
+                  : selectedSipReturnsHorizon === '5'
+                  ? fireAnalysis.sipReturns5Yr
+                  : selectedSipReturnsHorizon === '10'
+                  ? fireAnalysis.sipReturns10Yr
+                  : selectedSipReturnsHorizon === 'custom'
+                  ? fireAnalysis.sipReturnsCustom
+                  : fireAnalysis.sipReturnsAtFire;
+
+              const percentPrincipal =
+                activeReturns.finalMaturityUSD > 0
+                  ? Math.round((activeReturns.totalPrincipalUSD / activeReturns.finalMaturityUSD) * 100)
+                  : 100;
+              const percentGain =
+                activeReturns.finalMaturityUSD > 0
+                  ? Math.round((activeReturns.wealthGainedUSD / activeReturns.finalMaturityUSD) * 100)
+                  : 0;
+
+              return (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    
+                    {/* Metric 1: Total Out-of-Pocket Invested via SIP */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                        1. Out-of-Pocket Invested (Principal)
+                      </span>
+                      <div className="text-lg font-extrabold font-mono text-slate-900 tabular-nums">
+                        {formatDualCurrency(activeReturns.totalPrincipalUSD, countryMacro, true)}
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Total saved from your salary over {activeReturns.durationYears} {activeReturns.durationYears === 1 ? 'year' : 'years'}
+                      </p>
+                    </div>
+
+                    {/* Metric 2: Returns on SIP (Pure Compounded Profit) */}
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white border border-emerald-300 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                        2. Compounded Returns on SIP
+                      </span>
+                      <div className="text-lg font-extrabold font-mono text-emerald-700 tabular-nums">
+                        +{formatDualCurrency(activeReturns.wealthGainedUSD, countryMacro, true)}
+                      </div>
+                      <p className="text-[11px] text-emerald-900/80 font-medium">
+                        Pure wealth generated by {expectedReturnPct}% annual return
+                      </p>
+                    </div>
+
+                    {/* Metric 3: Total Accumulated SIP Value */}
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                        3. Total SIP Maturity Value
+                      </span>
+                      <div className="text-lg font-extrabold font-mono text-purple-950 tabular-nums">
+                        {formatDualCurrency(activeReturns.finalMaturityUSD, countryMacro, true)}
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Principal + compounding gains created by SIP
+                      </p>
+                    </div>
+
+                    {/* Metric 4: Wealth Multiplier & Gain % */}
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-50 via-indigo-50/40 to-white border border-purple-200 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider block">
+                        4. Wealth Multiplier &amp; Gain
+                      </span>
+                      <div className="text-lg font-extrabold font-mono text-purple-900 tabular-nums flex items-baseline gap-1.5">
+                        <span>{activeReturns.multiplier}x</span>
+                        <span className="text-xs font-sans font-bold text-emerald-700">
+                          (+{activeReturns.returnPercent.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-purple-950/75">
+                        {activeReturns.wealthGainedUSD >= activeReturns.totalPrincipalUSD
+                          ? 'Returns exceed your entire invested principal!'
+                          : `${percentGain}% of maturity is pure compounding growth`}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {/* Compounding Proportional Ratio Bar */}
+                  {activeReturns.finalMaturityUSD > 0 && (
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-sky-600 inline-block" />
+                          <span>Principal Invested: {percentPrincipal}% ({formatDualCurrency(activeReturns.totalPrincipalUSD, countryMacro, true)})</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-emerald-600 inline-block" />
+                          <span className="text-emerald-800 font-bold">Market Returns Gained: {percentGain}% (+{formatDualCurrency(activeReturns.wealthGainedUSD, countryMacro, true)})</span>
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 rounded-full bg-slate-200 overflow-hidden flex">
+                        <div
+                          style={{ width: `${percentPrincipal}%` }}
+                          className="h-full bg-sky-600 transition-all duration-300"
+                          title="Principal Invested"
+                        />
+                        <div
+                          style={{ width: `${percentGain}%` }}
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
+                          title="Compounded Returns"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plain-English Takeaway */}
+                  <div className="text-[11px] text-slate-600 leading-relaxed bg-white/80 p-2.5 rounded-xl border border-emerald-100 flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      {sipContinuityMode === 'paused' ? (
+                        <span>
+                          <strong>Coast Mode Active:</strong> You are testing zero fresh monthly contributions. Your current net corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) compounds without salary deductions.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>How your SIP is treated:</strong> You invest {formatDualCurrency(monthlySipUSD, countryMacro, false)}/mo out of active salary with a {sipStepUpPct}%/yr step-up. Over {activeReturns.durationYears} {activeReturns.durationYears === 1 ? 'year' : 'years'}, your personal investment of {formatDualCurrency(activeReturns.totalPrincipalUSD, countryMacro, true)} produces <strong>+{formatDualCurrency(activeReturns.wealthGainedUSD, countryMacro, true)}</strong> in compounded returns at {expectedReturnPct}% annual return. {stopSipAtFire ? 'Upon reaching FIRE, fresh salary injections halt and your accumulated investments support your lifestyle.' : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

@@ -152,10 +152,14 @@ interface AppContextType {
   resetFilters: () => void;
   filteredCountries: Country[];
 
-  // Saved / Compare
+  // Saved / Compare / Ignore
   savedCountryIds: string[];
   toggleSaveCountry: (id: string) => void;
   isCountrySaved: (id: string) => boolean;
+  ignoredCountryIds: string[];
+  toggleIgnoreCountry: (id: string) => void;
+  isCountryIgnored: (id: string) => boolean;
+  restoreCountry: (id: string) => void;
   comparedCountryIds: string[];
   toggleCompareCountry: (id: string) => void;
   replaceCompareCountry: (oldId: string, newId: string) => void;
@@ -2696,6 +2700,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isCountrySaved = (id: string) => userProfile.savedCountryIds.includes(id);
 
+  const ignoredCountryIds = userProfile.ignoredCountryIds || [];
+
+  const toggleIgnoreCountry = (id: string) => {
+    const current = userProfile.ignoredCountryIds || [];
+    const exists = current.includes(id);
+    const nextIgnored = exists
+      ? current.filter(cid => cid !== id)
+      : [...current, id];
+    updateUserProfile({ ignoredCountryIds: nextIgnored });
+  };
+
+  const isCountryIgnored = (id: string) => (userProfile.ignoredCountryIds || []).includes(id);
+
+  const restoreCountry = (id: string) => {
+    const current = userProfile.ignoredCountryIds || [];
+    const nextIgnored = current.filter(cid => cid !== id);
+    updateUserProfile({ ignoredCountryIds: nextIgnored });
+  };
+
   const toggleCompareCountry = (id: string) => {
     setComparedCountryIds(prev => {
       if (prev.includes(id)) {
@@ -3499,6 +3522,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         savedCountryIds: userProfile.savedCountryIds,
         toggleSaveCountry,
         isCountrySaved,
+        ignoredCountryIds,
+        toggleIgnoreCountry,
+        isCountryIgnored,
+        restoreCountry,
         comparedCountryIds,
         toggleCompareCountry,
         replaceCompareCountry,

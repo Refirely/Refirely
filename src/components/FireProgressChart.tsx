@@ -36,6 +36,10 @@ export interface FireTrajectoryPoint {
   annualSipInvestedUSD: number;
   freedEmiBonusUSD: number;
   fundingRatioPct: number;
+  cumulativeSipPrincipalUSD?: number;
+  sipPortfolioValueUSD?: number;
+  sipReturnsUSD?: number;
+  isSipActiveInYear?: boolean;
 }
 
 export interface FireProgressChartProps {
@@ -565,7 +569,7 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
             {/* Interactive Year Inspection Bar */}
             {activeInspectionNode && (
               <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Award className="w-4 h-4 text-teal-600 shrink-0" />
                   <span className="font-bold text-slate-800">
                     Snapshot {activeInspectionNode.year} (Age {activeInspectionNode.age}):
@@ -580,14 +584,34 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                       {formatDualCurrency(activeInspectionNode.fireTargetUSD, countryMacro, true)}
                     </strong>
                   </span>
+                  {activeInspectionNode.isSipActiveInYear !== undefined && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        activeInspectionNode.isSipActiveInYear
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {activeInspectionNode.isSipActiveInYear
+                        ? `SIP Active: ${formatDualCurrency(Math.round(activeInspectionNode.annualSipInvestedUSD / 12), countryMacro, false)}/mo`
+                        : 'SIP Ceased (Retired / Post-Earning)'}
+                    </span>
+                  )}
                 </div>
-                <span className="font-mono font-bold text-slate-700">
-                  Compounding Gains:{' '}
-                  <span className="text-emerald-700">
-                    +{formatDualCurrency(activeInspectionNode.compoundingGainsUSD, countryMacro, true)}
-                  </span>{' '}
-                  · {activeInspectionNode.fundingRatioPct}% Funded
-                </span>
+                <div className="flex items-center gap-3 text-slate-700 font-mono font-bold flex-wrap">
+                  {activeInspectionNode.sipReturnsUSD !== undefined && activeInspectionNode.sipReturnsUSD > 0 && (
+                    <span className="text-purple-800 text-[11px]">
+                      SIP Gains: +{formatDualCurrency(activeInspectionNode.sipReturnsUSD, countryMacro, true)}
+                    </span>
+                  )}
+                  <span>
+                    Compounding Gains:{' '}
+                    <span className="text-emerald-700">
+                      +{formatDualCurrency(activeInspectionNode.compoundingGainsUSD, countryMacro, true)}
+                    </span>{' '}
+                    · {activeInspectionNode.fundingRatioPct}% Funded
+                  </span>
+                </div>
               </div>
             )}
           </div>

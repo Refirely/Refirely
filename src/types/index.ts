@@ -280,6 +280,9 @@ export interface UserFinancialPortfolio {
   monthlyCurrentExpensesUSD?: number; // Current monthly household & living expenses (excluding loan EMIs & SIP)
   monthlySipUSD?: number; // Monthly Systematic Investment Plan (SIP) contribution
   annualSipStepUpPercent?: number; // Annual % increase in SIP (e.g. 5% - 10%)
+  sipContinuityMode?: 'until-fire' | 'custom-years' | 'paused'; // SIP continuation strategy while earning
+  sipDurationYears?: number; // How many years user can commit to continuing this SIP (e.g. 5)
+  stopSipAtFire?: boolean; // Automatically stop salary SIP once FIRE target is achieved (since active earning ceases)
   expectedReturnRatePercent?: number; // Expected annual portfolio return %
   inflationRatePercent?: number; // Residing country annual inflation %
   includePrimaryHomeInFire?: boolean; // Whether real estate equity is counted toward liquid FIRE
@@ -303,6 +306,7 @@ export interface UserProfile {
   monthlyBudgetUSD: number;
   preferredClimate: ClimateCategory | 'Any';
   savedCountryIds: string[];
+  ignoredCountryIds?: string[];
   rsvpMeetupIds: string[];
   appliedVisas: { countryId: string; visaName: string; status: 'In Review' | 'Submitted' | 'Approved' }[];
   bio: string;

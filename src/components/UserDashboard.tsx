@@ -7,7 +7,7 @@ import { FireCalculatorTracker } from './FireCalculatorTracker';
 import { WORLD_COUNTRIES, getWorldCountryFlag } from '../data/userAccounts';
 import { CountryFlag } from './CountryFlag';
 import {
-  User, Bookmark, CheckSquare, Calendar, Compass,
+  User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
   Globe, Languages, Star, MapPin, Camera, Check, Trash2, ExternalLink, BookOpen,
   TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins
@@ -231,8 +231,6 @@ export const UserDashboard: React.FC = () => {
     );
   }
 
-  // Saved countries list
-  const savedCountries = countries.filter(c => userProfile.savedCountryIds.includes(c.id));
 
   // My RSVP'd meetups
   const rsvpedMeetups = meetups.filter(m => userProfile.rsvpMeetupIds.includes(m.id));
@@ -888,122 +886,6 @@ export const UserDashboard: React.FC = () => {
             </motion.div>
           ))}
         </div>
-      </motion.div>
-
-      {/* Saved Country Shortlist */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-        className="relative overflow-hidden bg-gradient-to-br from-indigo-50/75 via-white to-emerald-50/75 rounded-3xl border border-indigo-200/80 p-6 sm:p-8 shadow-md"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-500" />
-        <div className="flex items-center justify-between pb-4 border-b border-indigo-100/80 mb-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-xs">
-              <Bookmark className="w-4 h-4" />
-            </div>
-            <h2 className="text-lg font-extrabold text-slate-900">
-              Saved Country Shortlist ({savedCountries.length})
-            </h2>
-          </div>
-          <button
-            onClick={() => setCurrentView('explore')}
-            className="text-xs font-bold text-indigo-700 hover:text-indigo-950 hover:underline cursor-pointer"
-          >
-            Browse More Countries →
-          </button>
-        </div>
-
-        {savedCountries.length === 0 ? (
-          <div className="text-center py-10">
-            <Heart className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-xs text-slate-500">You haven't saved any countries yet.</p>
-            <button
-              onClick={() => setCurrentView('explore')}
-              className="mt-3 px-3.5 py-1.5 rounded-lg bg-teal-800 text-white text-xs font-semibold"
-            >
-              Explore Top 15 Destinations
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {savedCountries.map(country => {
-              const journal = journalEntries[country.id];
-              return (
-                <div
-                  key={country.id}
-                  className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between hover:border-slate-300 transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <CountryFlag
-                        countryCode={country.code}
-                        countryName={country.name}
-                        fallbackEmoji={country.flag}
-                        size="xl"
-                        className="w-9 h-6 rounded-xs"
-                      />
-                      <div className="flex items-center gap-1.5">
-                        {journal && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                            {journal.interestLevel}
-                          </span>
-                        )}
-                        <span className="font-mono tabular-nums text-xs font-bold text-teal-800 bg-white px-2 py-0.5 rounded border border-slate-200">
-                          ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">{country.name}</h3>
-                    <p className="text-xs text-slate-600 line-clamp-2 mt-1 mb-3">
-                      {country.tagline}
-                    </p>
-                    <div className="space-y-1 text-xs text-slate-500 mb-2">
-                      <div>Visa: {country.visa.retirementVisaName}</div>
-                      <div>Healthcare: {country.lifestyle.healthcareScore}/100</div>
-                      <div>Sunny Days: {country.climate.annualSunnyDays} d/yr</div>
-                    </div>
-
-                    {/* Financial Potential Badge for Saved Country */}
-                    <div className="mb-3 p-2 rounded-lg bg-teal-50/80 border border-teal-200/80 flex items-center justify-between text-[11px]">
-                      <span className="text-teal-900 font-semibold flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-teal-700" />
-                        <span>Runway ({userMonthlySalaryUSD >= country.visa.minimumIncomeUSD ? 'Visa Ready' : 'Income Check'}):</span>
-                      </span>
-                      <span className="font-mono font-bold text-teal-950">
-                        {Math.round((userNetWorthUSD / (country.costOfLiving.monthlyBudgetSingleUSD * 12)) * 10) / 10} yrs
-                      </span>
-                    </div>
-
-                    {journal?.privateNotes && (
-                      <div className="p-2.5 rounded-lg bg-white border border-slate-200/80 text-[11px] text-slate-700 italic line-clamp-2 flex items-start gap-1.5">
-                        <BookOpen className="w-3 h-3 text-teal-700 shrink-0 mt-0.5 not-italic" />
-                        <span>"{journal.privateNotes}"</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                    <button
-                      onClick={() => navigateToCountry(country.id)}
-                      className="text-xs font-bold text-teal-800 hover:underline flex items-center gap-1"
-                    >
-                      <span>Open Dossier</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                    {journal?.scoutingTimeline && (
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        Trip: {journal.scoutingTimeline}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </motion.div>
 
       {/* RSVP'd Meetups */}

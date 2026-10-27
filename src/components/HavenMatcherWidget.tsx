@@ -6,8 +6,10 @@ import { CountryFlag } from './CountryFlag';
 import {
   Sparkles, ArrowRight, Heart, Check, Scale, Sun, DollarSign, Shield,
   SlidersHorizontal, Award, Globe, Languages, TrendingUp, CheckCircle2,
-  AlertTriangle, Search, Sliders, Users, Landmark, Coins, Info
+  AlertTriangle, Search, Sliders, Users, Landmark, Coins, Info,
+  EyeOff, RotateCcw, X
 } from 'lucide-react';
+import { CONTINENT_FILTER_OPTIONS, matchesContinentFilter } from '../utils/continents';
 
 // European Union / EEA / Swiss nationality set for automatic freedom-of-movement visa grading
 const EU_EEA_SWISS_COUNTRIES = new Set([
@@ -58,6 +60,10 @@ export const HavenMatcherWidget: React.FC = () => {
     isCountryCompared,
     toggleCompareCountry,
     openEditProfile,
+    ignoredCountryIds,
+    toggleIgnoreCountry,
+    isCountryIgnored,
+    restoreCountry,
   } = useApp();
 
   // Active user finances
@@ -66,7 +72,8 @@ export const HavenMatcherWidget: React.FC = () => {
   }, [userProfile.finances]);
 
   // Interactive Filters & Simulation Controls (synced with userProfile defaults)
-  const [scopeTab, setScopeTab] = useState<'top' | 'shortlist' | 'target' | 'all'>('top');
+  const [scopeTab, setScopeTab] = useState<'top' | 'shortlist' | 'target' | 'all' | 'ignored'>('top');
+  const [recentlyDiscardedCountry, setRecentlyDiscardedCountry] = useState<{ id: string; name: string } | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [interactiveBudget, setInteractiveBudget] = useState<number>(userProfile.monthlyBudgetUSD || 2500);
@@ -507,25 +514,33 @@ export const HavenMatcherWidget: React.FC = () => {
     liquidInvestableAssets,
   ]);
 
-  // Apply scope, region, and search filters while preserving global rank index
+  // Apply scope, continent, ignore, and search filters while preserving global rank index
   const displayedAnalyses = useMemo(() => {
     let list = allRankedAnalyses.map((item, idx) => ({
       ...item,
       globalRank: idx + 1,
     }));
 
-    if (scopeTab === 'shortlist') {
-      const saved = list.filter(item => userProfile.savedCountryIds.includes(item.country.id));
-      list = saved.length > 0 ? saved : list.slice(0, 6);
-    } else if (scopeTab === 'target') {
-      const target = list.filter(
-        item => item.country.name.toLowerCase() === userProfile.targetCountry.toLowerCase()
-      );
-      list = target.length > 0 ? target : list.slice(0, 1);
+    if (scopeTab === 'ignored') {
+      // Specifically show countries the user has ignored/discarded
+      list = list.filter(item => ignoredCountryIds.includes(item.country.id));
+    } else {
+      // Exclude discarded countries from active recommendation views
+      list = list.filter(item => !ignoredCountryIds.includes(item.country.id));
+
+      if (scopeTab === 'shortlist') {
+        const saved = list.filter(item => userProfile.savedCountryIds.includes(item.country.id));
+        list = saved.length > 0 ? saved : list.slice(0, 6);
+      } else if (scopeTab === 'target') {
+        const target = list.filter(
+          item => item.country.name.toLowerCase() === userProfile.targetCountry.toLowerCase()
+        );
+        list = target.length > 0 ? target : list.slice(0, 1);
+      }
     }
 
     if (selectedRegion !== 'All') {
-      list = list.filter(item => item.country.region === selectedRegion);
+      list = list.filter(item => matchesContinentFilter(item.country, selectedRegion));
     }
 
     if (searchQuery.trim()) {
@@ -544,7 +559,15 @@ export const HavenMatcherWidget: React.FC = () => {
     }
 
     return list;
-  }, [allRankedAnalyses, scopeTab, selectedRegion, searchQuery, userProfile.savedCountryIds, userProfile.targetCountry]);
+  }, [
+    allRankedAnalyses,
+    scopeTab,
+    selectedRegion,
+    searchQuery,
+    userProfile.savedCountryIds,
+    userProfile.targetCountry,
+    ignoredCountryIds,
+  ]);
 
   const handleSavePreferencesToProfile = () => {
     updateUserProfile({
@@ -816,7 +839,7 @@ export const HavenMatcherWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* Scope Tabs, Region Filter & Search Bar */}
+      {/* Scope Tabs, Continent Filter & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         <div className="inline-flex flex-wrap rounded-xl border border-slate-200 p-1 bg-slate-50 text-xs font-semibold gap-1">
           <button
@@ -824,7 +847,7 @@ export const HavenMatcherWidget: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg transition-all ${
               scopeTab === 'top'
                 ? 'bg-gradient-to-r from-orange-600 to-purple-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-600 hover:text-slate-900 cursor-pointer'
             }`}
           >
             Top 6 AI Matches
@@ -834,7 +857,7 @@ export const HavenMatcherWidget: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg transition-all ${
               scopeTab === 'shortlist'
                 ? 'bg-gradient-to-r from-orange-600 to-purple-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-600 hover:text-slate-900 cursor-pointer'
             }`}
           >
             My Shortlist ({userProfile.savedCountryIds.length})
@@ -844,7 +867,7 @@ export const HavenMatcherWidget: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg transition-all ${
               scopeTab === 'target'
                 ? 'bg-gradient-to-r from-orange-600 to-purple-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-600 hover:text-slate-900 cursor-pointer'
             }`}
           >
             Target Haven ({userProfile.targetCountry})
@@ -854,23 +877,38 @@ export const HavenMatcherWidget: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg transition-all ${
               scopeTab === 'all'
                 ? 'bg-gradient-to-r from-orange-600 to-purple-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-600 hover:text-slate-900 cursor-pointer'
             }`}
           >
-            All {countries.length} Havens Ranked
+            All {Math.max(0, countries.length - ignoredCountryIds.length)} Havens Ranked
+          </button>
+          <button
+            onClick={() => setScopeTab('ignored')}
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              scopeTab === 'ignored'
+                ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-rose-700 text-white shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-amber-800 cursor-pointer'
+            }`}
+            title="View discarded or ignored havens"
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+            <span>Ignored / Discarded ({ignoredCountryIds.length})</span>
           </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Continent / Region Selector */}
           <select
             value={selectedRegion}
             onChange={e => setSelectedRegion(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium cursor-pointer"
+            aria-label="Filter by continent"
           >
-            <option value="All">All Regions</option>
-            <option value="Europe">Europe</option>
-            <option value="Southeast Asia">Southeast Asia</option>
-            <option value="Americas">Americas</option>
+            {CONTINENT_FILTER_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.value === 'All' ? '🌍 All Continents / Any' : opt.label}
+              </option>
+            ))}
           </select>
 
           <div className="relative">
@@ -885,6 +923,43 @@ export const HavenMatcherWidget: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Undo / Ignored Toast Alert */}
+      {recentlyDiscardedCountry && (
+        <div className="p-3 sm:p-4 rounded-2xl bg-amber-50/95 border border-amber-300 text-amber-950 text-xs flex items-center justify-between shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-xl bg-amber-200 text-amber-900 shadow-2xs">
+              <EyeOff className="w-4 h-4" />
+            </div>
+            <span>
+              <strong>{recentlyDiscardedCountry.name}</strong> has been discarded and hidden from AI recommendations. The next best matching haven has moved up!
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              restoreCountry(recentlyDiscardedCountry.id);
+              setRecentlyDiscardedCountry(null);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-bold text-xs cursor-pointer flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+            <span>Undo</span>
+          </button>
+        </div>
+      )}
+
+      {/* Empty State when in Ignored / Discarded Tab and list is empty */}
+      {displayedAnalyses.length === 0 && scopeTab === 'ignored' && (
+        <div className="text-center py-12 px-6 bg-slate-50/90 rounded-3xl border-2 border-dashed border-slate-300">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3 shadow-2xs">
+            <EyeOff className="w-7 h-7" />
+          </div>
+          <h4 className="text-base font-extrabold text-slate-800">No Discarded or Ignored Havens</h4>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1.5 leading-relaxed">
+            You haven't discarded any countries yet. While browsing the Top AI Matches or All Ranked Havens, click the "Discard" button on any country that doesn't fit your personal preferences to filter it out and promote alternative havens.
+          </p>
+        </div>
+      )}
 
       {/* Ranked Country Recommendations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -945,6 +1020,12 @@ export const HavenMatcherWidget: React.FC = () => {
                         {saved && !isTarget && (
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                             Shortlisted
+                          </span>
+                        )}
+                        {isCountryIgnored(country.id) && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                            <EyeOff className="w-2.5 h-2.5 text-amber-700" />
+                            <span>Discarded</span>
                           </span>
                         )}
                       </div>
@@ -1132,7 +1213,32 @@ export const HavenMatcherWidget: React.FC = () => {
                     <span>{compared ? 'Compared' : 'Compare'}</span>
                   </button>
 
-                  <span className="text-[11px] text-slate-400 hidden sm:inline ml-1">
+                  {/* Discard / Ignore or Restore Haven Button */}
+                  {scopeTab === 'ignored' || isCountryIgnored(country.id) ? (
+                    <button
+                      onClick={() => restoreCountry(country.id)}
+                      className="px-2.5 py-1 rounded-lg border text-xs font-bold bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title={`Restore ${country.name} back to active recommendations`}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Restore Haven</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        toggleIgnoreCountry(country.id);
+                        setRecentlyDiscardedCountry({ id: country.id, name: country.name });
+                        setTimeout(() => setRecentlyDiscardedCountry(null), 5000);
+                      }}
+                      className="px-2 py-1 rounded-lg border text-xs bg-white text-slate-500 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 transition-colors flex items-center gap-1 cursor-pointer"
+                      title={`Ignore / Discard ${country.name} from recommendations`}
+                    >
+                      <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-[11px] font-medium hidden sm:inline">Discard</span>
+                    </button>
+                  )}
+
+                  <span className="text-[11px] text-slate-400 hidden lg:inline ml-1">
                     Tax: {country.visa.taxStatus.split('.')[0]}
                   </span>
                 </div>

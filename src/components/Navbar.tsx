@@ -196,7 +196,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             <button
               onClick={() => handleNav('dashboard')}
               className="relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer"
-              title="Saved Country Shortlist"
+              title="My Saved Havens & Tracker"
             >
               <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
               {savedCountryIds.length > 0 && (
