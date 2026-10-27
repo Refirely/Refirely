@@ -24,6 +24,7 @@ export const LandingPage: React.FC = () => {
     setCurrentView,
     openAuthModal,
     isAuthenticated,
+    currentUserId,
     isCountrySaved,
     toggleSaveCountry,
     isCountryCompared,
@@ -1023,65 +1024,137 @@ export const LandingPage: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Multi-Colored Explore Havens Destination Portal Banner (Replaces Load 12 More) */}
+            {/* Lighter Themed Matching Havens & Sign Up Conversion Portal */}
             {sortedMatchedCountries.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-white p-6 sm:p-8 shadow-xl border border-indigo-500/30 mt-6"
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-indigo-50/50 to-teal-50/60 text-slate-900 p-6 sm:p-8 shadow-xl shadow-indigo-950/5 border border-indigo-200/90 mt-6"
               >
-                {/* Decorative Glows */}
-                <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-teal-400/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-20 left-1/4 w-72 h-72 rounded-full bg-indigo-500/25 blur-3xl" />
+                {/* Decorative Top Accent Ribbon & Ambient Glows */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
+                <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-teal-400/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-indigo-500/15 blur-3xl" />
 
-                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  <div className="space-y-3 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-amber-300 text-xs font-bold">
-                      <Layers className="w-3.5 h-3.5 text-amber-400" />
-                      <span>
-                        {remainingCountriesCount > 0
-                          ? `+${remainingCountriesCount} More Matching Havens Waiting in Full Directory`
-                          : `Unlock Full 55+ Parameter Intelligence Across All ${countries.length} Havens`}
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
+                  <div className="space-y-3.5 max-w-2xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100/90 border border-indigo-200/90 text-indigo-950 text-xs font-bold shadow-2xs">
+                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>
+                          {remainingCountriesCount > 0
+                            ? `+${remainingCountriesCount} More Matching Havens Waiting in Full Directory`
+                            : `Unlock Full 55+ Parameter Intelligence Across All ${countries.length} Havens`}
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100/80 border border-emerald-200/80 text-emerald-900 text-[11px] font-bold">
+                        <Sparkles className="w-3 h-3 text-emerald-600" />
+                        100% Free · No Card Required
                       </span>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                      Ready for Climate Filtering, Multi-Metric Sorting &amp; Deep Search?
+
+                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                      Still Confused?{' '}
+                      <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                        Let Us Do the Hard Work for You.
+                      </span>
                     </h3>
-                    <p className="text-xs sm:text-sm text-indigo-100/85 leading-relaxed">
-                      You are viewing your top {displayedCountries.length} live matches on the home preview. Head to the dedicated{' '}
-                      <strong className="text-white font-bold">Explore Havens</strong> workspace to filter by Mediterranean, Tropical, or Eternal Spring climates, sort by 10+ empirical indices, and inspect all {countries.length} countries side by side.
+
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                      Creating an international relocation plan shouldn&apos;t require dozens of messy spreadsheets. Create your free account in seconds and our Algorithmic Retirement Haven Matcher will automatically find your ideal destinations based on your citizenship, personal financial status, and lifestyle preferences — completely 100% FREE. Or browse our complete directory with custom filters.
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-[11px] font-semibold">
-                        ✓ Climate &amp; Sunshine Filters
+
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-indigo-200/70 text-indigo-900 text-[11px] font-semibold shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        Custom Financial Analysis
                       </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[11px] font-semibold">
-                        ✓ 10+ Custom Ranking Sorts
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-teal-200/70 text-teal-900 text-[11px] font-semibold shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        Visa Feasibility by Nationality
                       </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 text-[11px] font-semibold">
-                        ✓ Instant Keyword &amp; Tag Search
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-amber-200/70 text-amber-900 text-[11px] font-semibold shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        Climate, Safety &amp; Healthcare Fit
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.03, y: -2 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={handleOpenAdvancedExplorer}
-                      className="px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 transition-all cursor-pointer flex items-center justify-center gap-2.5"
-                    >
-                      <Compass className="w-4 h-4 text-slate-950" />
-                      <span>
-                        Launch Explore Havens ({countries.length} Countries)
-                      </span>
-                      <ArrowRight className="w-4 h-4 text-slate-950" />
-                    </motion.button>
-                    <span className="text-[11px] text-indigo-200/80 text-center lg:text-right font-medium">
-                      Transfers your active region filter ({previewContinent}) automatically
+                  {/* Actions Column with Signup CTA and Explore All Havens */}
+                  <div className="flex flex-col items-stretch lg:items-end gap-3 shrink-0 lg:min-w-[290px]">
+                    {(!isAuthenticated || currentUserId === 'guest') ? (
+                      <>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => openAuthModal('signup')}
+                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <UserPlus className="w-4 h-4 text-slate-950" />
+                          <span>Sign Up Free — Get Matched</span>
+                          <ArrowRight className="w-4 h-4 text-slate-950" />
+                        </motion.button>
+
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleOpenAdvancedExplorer}
+                          className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-800"
+                        >
+                          <Compass className="w-4 h-4 text-teal-300" />
+                          <span>Explore All {countries.length} Havens</span>
+                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        </motion.button>
+
+                        <div className="flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <span>Already a member?</span>
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal('login')}
+                            className="font-extrabold text-indigo-700 hover:text-indigo-950 underline cursor-pointer"
+                          >
+                            Sign In
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleOpenAdvancedExplorer}
+                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2.5"
+                        >
+                          <Compass className="w-4 h-4 text-slate-950" />
+                          <span>
+                            Explore All {countries.length} Havens in Directory
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-slate-950" />
+                        </motion.button>
+
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setCurrentView('dashboard');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-white hover:bg-indigo-50/80 text-indigo-900 text-xs font-bold border border-indigo-200 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Go to Member Dashboard</span>
+                        </motion.button>
+                      </>
+                    )}
+
+                    <span className="text-[11px] text-slate-500 text-center lg:text-right font-medium">
+                      Auto-transfers your active filters ({previewContinent})
                     </span>
                   </div>
                 </div>
@@ -1543,42 +1616,124 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Catchy Signup & Advanced FIRE Tracking Call-to-Action Banner */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-white border border-indigo-500/30 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xl">
-              <div className="space-y-1.5 max-w-2xl">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Turn Your Numbers Into a Freedom Countdown</span>
+            {/* Lighter Themed Freedom Countdown & Advanced FIRE Conversion Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-amber-50/50 to-orange-50/60 text-slate-900 p-6 sm:p-8 shadow-xl shadow-amber-950/5 border border-amber-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
+              {/* Decorative Top Accent Ribbon & Ambient Glows */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 via-50% to-emerald-500" />
+              <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-amber-400/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl" />
+
+              <div className="relative z-10 space-y-3.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/90 border border-amber-300/80 text-amber-950 text-xs font-bold shadow-2xs">
+                    <Flame className="w-3.5 h-3.5 text-orange-600 animate-pulse" />
+                    <span>Turn Your Numbers Into a Freedom Countdown</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100/80 border border-emerald-200/80 text-emerald-900 text-[11px] font-bold">
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    100% Free · No Credit Card Required
+                  </span>
                 </div>
-                <h4 className="text-base sm:text-xl font-extrabold text-white">
-                  Don&rsquo;t Just Guess Your Retirement Date—Lock In Your Exact Overseas Freedom Blueprint.
+
+                <h4 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                  Don&rsquo;t Just Guess Your Retirement Date—
+                  <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 bg-clip-text text-transparent">
+                    Lock In Your Exact Overseas Freedom Blueprint.
+                  </span>
                 </h4>
-                <p className="text-xs sm:text-sm text-indigo-100/85 leading-relaxed">
-                  Sign up free to track your live FIRE portfolio with advanced parameters: multi-asset allocation (stocks, real estate, gold, cash), loan &amp; EMI paydown timelines, real inflation stress-testing, and visa solvency grades across all {countries.length} countries.
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                  Still wondering how many years or months away you truly are from financial independence? Sign up free to save your portfolio numbers and let our algorithmic engine model your live FIRE trajectory across all {countries.length} destinations. We calculate your exact safe withdrawal rate, multi-asset portfolio runway, and inflation impact in your local currency — completely FREE.
                 </p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-amber-200/70 text-amber-950 text-[11px] font-semibold shadow-2xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                    Multi-Asset Runway Modeling
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-emerald-200/70 text-emerald-950 text-[11px] font-semibold shadow-2xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    Universal Local Currency Support
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-indigo-200/70 text-indigo-950 text-[11px] font-semibold shadow-2xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    Visa Solvency &amp; SWR Stress Testing
+                  </span>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => openAuthModal('signup')}
-                  className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  <UserPlus className="w-4 h-4 text-slate-950" />
-                  <span>Sign Up &amp; Track Your FIRE Free</span>
-                  <ArrowRight className="w-4 h-4 text-slate-950" />
-                </motion.button>
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setCurrentView('dashboard')}
-                  className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs sm:text-sm transition-colors cursor-pointer"
-                >
-                  Advanced FIRE Dashboard
-                </motion.button>
+              {/* Actions Column with Signup CTA and Explore All Havens */}
+              <div className="relative z-10 flex flex-col items-stretch lg:items-end gap-3 shrink-0 lg:min-w-[290px]">
+                {(!isAuthenticated || currentUserId === 'guest') ? (
+                  <>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => openAuthModal('signup')}
+                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <UserPlus className="w-4 h-4 text-slate-950" />
+                      <span>Sign Up Free — Track Your FIRE</span>
+                      <ArrowRight className="w-4 h-4 text-slate-950" />
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleOpenAdvancedExplorer}
+                      className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-800"
+                    >
+                      <Compass className="w-4 h-4 text-teal-300" />
+                      <span>Explore All {countries.length} Havens</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </motion.button>
+
+                    <div className="flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
+                      <span>Already a member?</span>
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal('login')}
+                        className="font-extrabold text-orange-700 hover:text-orange-950 underline cursor-pointer"
+                      >
+                        Sign In
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setCurrentView('dashboard');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Flame className="w-4 h-4 text-slate-950" />
+                      <span>Open Member FIRE Dashboard</span>
+                      <ArrowRight className="w-4 h-4 text-slate-950" />
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleOpenAdvancedExplorer}
+                      className="px-5 py-3 rounded-2xl bg-white hover:bg-amber-50/80 text-amber-950 text-xs sm:text-sm font-bold border border-amber-200 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+                    >
+                      <Compass className="w-4 h-4 text-orange-600" />
+                      <span>Explore All {countries.length} Havens</span>
+                    </motion.button>
+                  </>
+                )}
+
+                <span className="text-[11px] text-slate-500 text-center lg:text-right font-medium">
+                  Instant portfolio simulation · 100% Free
+                </span>
               </div>
             </div>
           </div>
