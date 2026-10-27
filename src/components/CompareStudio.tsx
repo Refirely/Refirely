@@ -4,6 +4,7 @@ import { Country } from '../types';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
 import { CountryFlag } from './CountryFlag';
 import { CountryRadarChart, SLOT_THEMES } from './CountryRadarChart';
+import { HavenMatcherPromoCard } from './HavenMatcherPromoCard';
 import { Plus, X, ArrowRight, Check, Sun, Shield, HeartHandshake, FileCheck, SlidersHorizontal, Scale, Search, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -637,6 +638,13 @@ export const CompareStudio: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Algorithmic Haven Matcher Comparison Sign-Up Promo Card (Hidden if logged in) */}
+      <HavenMatcherPromoCard
+        variant="compare"
+        comparedCountryNames={comparedCountries.map(c => c.name)}
+        className="mt-8"
+      />
 
     </div>
   );
