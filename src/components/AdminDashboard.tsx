@@ -1783,22 +1783,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                         <div className="text-[11px] font-semibold text-slate-500 mb-2">
                           Top Havens in Demand
                         </div>
-                        <div className="divide-y divide-slate-100">
-                          {downloadStats.topHavens.map((h, idx) => (
-                            <div key={h.countryId} className="py-2 flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-[11px] font-bold text-slate-600">
-                                  #{idx + 1}
+                        {downloadStats.topHavens.length === 0 ? (
+                          <div className="py-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
+                            No downloads recorded yet. Ready to capture live exports.
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-100">
+                            {downloadStats.topHavens.map((h, idx) => (
+                              <div key={h.countryId} className="py-2 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[11px] font-bold text-slate-600">
+                                    #{idx + 1}
+                                  </span>
+                                  <span className="text-sm">{h.flag}</span>
+                                  <span className="font-semibold text-slate-900">{h.name}</span>
+                                </div>
+                                <span className="font-mono font-bold text-slate-700">
+                                  {h.count} downloads
                                 </span>
-                                <span className="text-sm">{h.flag}</span>
-                                <span className="font-semibold text-slate-900">{h.name}</span>
                               </div>
-                              <span className="font-mono font-bold text-slate-700">
-                                {h.count} downloads
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

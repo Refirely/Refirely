@@ -808,16 +808,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Dossier Downloads Tracking State with localStorage & Firestore persistence
   const [dossierDownloads, setDossierDownloads] = useState<DossierDownloadRecord[]>(() => {
     try {
+      const isExplicitlyCleared = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`) === 'true';
+      if (isExplicitlyCleared) {
+        const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        }
+        return [];
+      }
+
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
       if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
       return INITIAL_DOSSIER_DOWNLOADS;
     } catch {
-      return INITIAL_DOSSIER_DOWNLOADS;
+      return [];
     }
   });
 
@@ -861,7 +873,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : 'Desktop Browser',
       };
 
-      setDossierDownloads(prev => [newRecord, ...prev]);
+      setDossierDownloads(prev => {
+        const updated = [newRecord, ...prev];
+        try {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify(updated));
+          // If the log was previously reset, keep cleared flag active so it never reverts to seed data!
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`, 'true');
+        } catch {}
+        return updated;
+      });
 
       // Sync record to Firestore if database is available
       try {
@@ -888,6 +908,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDossierDownloads([]);
     try {
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify([]));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`, 'true');
     } catch {}
   }, []);
 

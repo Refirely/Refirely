@@ -43,6 +43,7 @@ export const AdminDossierDownloadsModule: React.FC = () => {
   const [timeRangeFilter, setTimeRangeFilter] = useState<'all' | 'today' | '7days' | '30days'>('all');
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'countries' | 'logs'>('overview');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [resetSuccessBanner, setResetSuccessBanner] = useState<string | null>(null);
 
   // Filtered downloads log
   const filteredDownloads = useMemo(() => {
@@ -143,6 +144,7 @@ export const AdminDossierDownloadsModule: React.FC = () => {
       registered,
       guests,
       memberRatio: total > 0 ? Math.round((registered / total) * 100) : 0,
+      guestRatio: total > 0 ? Math.round((guests / total) * 100) : 0,
       last7Days,
       last24h,
       uniqueCountriesCount: countryAggregates.length,
@@ -282,8 +284,10 @@ export const AdminDossierDownloadsModule: React.FC = () => {
                   onClick={() => {
                     clearAllDossierDownloads();
                     setShowClearConfirm(false);
+                    setResetSuccessBanner('Log has been successfully reset! All future dossier downloads will be captured in real-time from now onwards.');
+                    setTimeout(() => setResetSuccessBanner(null), 6000);
                   }}
-                  className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-bold cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold cursor-pointer transition-colors"
                 >
                   Yes
                 </button>
@@ -306,6 +310,29 @@ export const AdminDossierDownloadsModule: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* RESET CONFIRMATION SUCCESS BANNER */}
+        <AnimatePresence>
+          {resetSuccessBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3 shadow-2xs"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{resetSuccessBanner}</span>
+              </div>
+              <button
+                onClick={() => setResetSuccessBanner(null)}
+                className="text-emerald-700 hover:text-emerald-950 font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* 4 CORE KPI STAT CARDS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
@@ -593,21 +620,21 @@ export const AdminDossierDownloadsModule: React.FC = () => {
                     <span className="font-semibold text-slate-700">Anonymous Guests:</span>
                   </div>
                   <strong className="font-mono font-extrabold text-slate-800">
-                    {stats.guests} ({100 - stats.memberRatio}%)
+                    {stats.guests} ({stats.guestRatio}%)
                   </strong>
                 </div>
 
                 {/* Compound Progress bar */}
                 <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden flex">
                   <div
-                    className="h-full bg-violet-600"
+                    className="h-full bg-violet-600 transition-all duration-300"
                     style={{ width: `${stats.memberRatio}%` }}
                     title={`Verified Members: ${stats.memberRatio}%`}
                   />
                   <div
-                    className="h-full bg-slate-400"
-                    style={{ width: `${100 - stats.memberRatio}%` }}
-                    title={`Anonymous Guests: ${100 - stats.memberRatio}%`}
+                    className="h-full bg-slate-400 transition-all duration-300"
+                    style={{ width: `${stats.guestRatio}%` }}
+                    title={`Anonymous Guests: ${stats.guestRatio}%`}
                   />
                 </div>
               </div>
@@ -659,7 +686,14 @@ export const AdminDossierDownloadsModule: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {countryAggregates
+                {countryAggregates.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                      No dossier downloads recorded yet. As visitors or members export PDF dossiers, real-time country statistics will appear here.
+                    </td>
+                  </tr>
+                ) : (
+                  countryAggregates
                   .filter(c => !searchTerm || c.countryName.toLowerCase().includes(searchTerm.toLowerCase()))
                   .map((agg, idx) => (
                     <tr key={agg.countryId} className="hover:bg-indigo-50/30 transition-colors">
@@ -706,7 +740,8 @@ export const AdminDossierDownloadsModule: React.FC = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
