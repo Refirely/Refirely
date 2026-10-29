@@ -12,6 +12,8 @@ import { getFaqsForCountry } from '../data/countryFaqs';
 import { SHORT_TERM_VISA_DATABASE } from '../data/shortTermVisas';
 import { getCountryTravelMobility } from '../data/countryTravelMobility';
 import { getCountryHealthcareProfile } from '../data/countryHealthcare';
+import { getCountryHousingProfile } from '../data/countryHousingAndRentals';
+import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
 import { COUNTRY_EXCHANGE_RATES } from '../components/AnnualRetirementBudgetCalculator';
 import { generateBrandSvgString } from './exportBrandLogo';
 
@@ -23,6 +25,8 @@ export interface DossierExportOptions {
   includeHealthcareAndInsurance?: boolean;
   includeCostAndBudget: boolean;
   includeHousingAndRentals?: boolean;
+  includeFIREModeling?: boolean;
+  includeFoodAndGastronomy?: boolean;
   includeTravelAndMobility: boolean;
   includeClimateAndTowns: boolean;
   includeDemographicsAndLifestyle: boolean;
@@ -390,7 +394,7 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     currentY = 24;
   };
 
-  // Chapter Header Banner with Multi-Colored Theme Accents
+  // Chapter Header Banner with Multi-Colored Theme Accents (Zero Sharp-Corner Leakage)
   const drawChapterHeader = (
     chapterNum: string,
     title: string,
@@ -398,33 +402,36 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     accentColor: [number, number, number] = INDIGO_600,
     bgColor: [number, number, number] = INDIGO_LIGHT
   ) => {
-    const bannerH = subtitle ? 15.5 : 10.5;
-    // Soft luminous banner fill
+    const bannerH = subtitle ? 16.0 : 11.2;
+    // 1. Soft luminous banner background fill
     doc.setFillColor(...bgColor);
-    doc.setDrawColor(...SLATE_200);
-    doc.setLineWidth(0.25);
-    doc.roundedRect(margin, currentY, contentWidth, bannerH, 2, 2, 'FD');
+    doc.roundedRect(margin, currentY, contentWidth, bannerH, 3, 3, 'F');
 
-    // Top 4-color gradient micro-ribbon along chapter header
-    drawMultiColorRibbon(margin, currentY, contentWidth, 1.3);
+    // 2. Top 4-color gradient micro-ribbon inset safely from corner arcs
+    drawMultiColorRibbon(margin + 6, currentY + 0.9, contentWidth - 12, 1.1);
 
-    // Left vertical accent bar
+    // 3. Left vertical rounded accent pill indicator (no sharp rect overflow)
     doc.setFillColor(...accentColor);
-    doc.rect(margin, currentY + 1.3, 3.8, bannerH - 1.3, 'F');
+    doc.roundedRect(margin + 3.2, currentY + 3.2, 2.4, bannerH - 6.4, 1.2, 1.2, 'F');
+
+    // 4. Clean outer rounded border drawn on top to seal corners
+    doc.setDrawColor(...SLATE_300);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(margin, currentY, contentWidth, bannerH, 3, 3, 'D');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
+    doc.setFontSize(11.2);
     doc.setTextColor(...SLATE_900);
-    doc.text(sanitizePdfText(`${chapterNum}. ${title.toUpperCase()}`), margin + 7.5, currentY + 7);
+    doc.text(sanitizePdfText(`${chapterNum}. ${title.toUpperCase()}`), margin + 8.5, currentY + 7.2);
 
     if (subtitle) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.2);
+      doc.setFontSize(8.0);
       doc.setTextColor(...SLATE_600);
-      doc.text(sanitizePdfText(subtitle), margin + 7.5, currentY + 12.5);
-      currentY += 19.5;
+      doc.text(sanitizePdfText(subtitle), margin + 8.5, currentY + 12.8);
+      currentY += 20.0;
     } else {
-      currentY += 14.5;
+      currentY += 15.2;
     }
   };
 
@@ -445,7 +452,7 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     currentY += lines.length * lineHeight + 3.5;
   };
 
-  // Helper to draw structured callout cards with top multi-color or themed bar
+  // Helper to draw structured callout cards with inset rounded accents
   const drawCalloutBox = (
     title: string,
     bodyText: string,
@@ -455,27 +462,31 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.3);
     const lines = doc.splitTextToSize(sanitizePdfText(bodyText), contentWidth - 14);
-    const boxHeight = lines.length * 3.9 + 14;
+    const boxHeight = lines.length * 3.9 + 14.5;
     ensureSpace(boxHeight + 4);
 
+    // 1. Rounded fill
     doc.setFillColor(...bgColor);
+    doc.roundedRect(margin, currentY, contentWidth, boxHeight, 3, 3, 'F');
+
+    // 2. Inset top accent strip (rounded, safely inside the 3mm corner radius)
+    doc.setFillColor(...borderColor);
+    doc.roundedRect(margin + 6, currentY + 1.2, contentWidth - 12, 1.2, 0.6, 0.6, 'F');
+
+    // 3. Clean outer stroke drawn on top
     doc.setDrawColor(...borderColor);
     doc.setLineWidth(0.35);
-    doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2.5, 2.5, 'FD');
-
-    // Top accent strip
-    doc.setFillColor(...borderColor);
-    doc.rect(margin + 0.5, currentY + 0.5, contentWidth - 1, 1.5, 'F');
+    doc.roundedRect(margin, currentY, contentWidth, boxHeight, 3, 3, 'D');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.2);
+    doc.setFontSize(9.0);
     doc.setTextColor(...SLATE_900);
-    doc.text(sanitizePdfText(title), margin + 6, currentY + 7);
+    doc.text(sanitizePdfText(title), margin + 6, currentY + 7.4);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.3);
+    doc.setFontSize(8.2);
     doc.setTextColor(...SLATE_700);
-    doc.text(lines, margin + 6, currentY + 11.8);
+    doc.text(lines, margin + 6, currentY + 12.2);
 
     currentY += boxHeight + 4.5;
   };
@@ -485,6 +496,8 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   const mobility = getCountryTravelMobility(country);
   const faqs = getFaqsForCountry(country);
   const shortVisas = getShortTermVisasForCountry(country);
+  const housing = getCountryHousingProfile(country);
+  const food = getCountryGastronomyProfile(country);
   const currencyInfo = COUNTRY_EXCHANGE_RATES[country.id] || {
     rate: 1.0,
     symbol: country.currencySymbol || '$',
@@ -505,8 +518,9 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   doc.setLineWidth(0.45);
   doc.roundedRect(margin, 11, contentWidth, 272, 4, 4, 'D');
 
-  // Top inner multi-color ribbon inside cover frame
-  drawMultiColorRibbon(margin + 0.5, 11.5, contentWidth - 1, 2);
+  // Inner multi-color ribbons inset safely from corner arcs (zero sharp rect leakage)
+  drawMultiColorRibbon(margin + 8, 14, contentWidth - 16, 1.8);
+  drawMultiColorRibbon(margin + 8, 279, contentWidth - 16, 1.8);
 
   // --- SECTION A: OFFICIAL WEBSITE LOGO & BRAND IDENTITY (y = 18mm to 55mm) ---
   if (logoDataUrl) {
@@ -633,14 +647,18 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
 
   coverKpis.forEach((kpi, idx) => {
     const cardX = kpiStartX + idx * (kpiCardW + kpiGap);
+    // 1. Soft background fill
     doc.setFillColor(...kpi.bg);
+    doc.roundedRect(cardX, kpiCardsY, kpiCardW, kpiCardH, 2.5, 2.5, 'F');
+
+    // 2. Inset top colored ribbon (rounded, safely inside the 2.5mm corner radius)
+    doc.setFillColor(...kpi.accent);
+    doc.roundedRect(cardX + 4, kpiCardsY + 1.2, kpiCardW - 8, 1.3, 0.65, 0.65, 'F');
+
+    // 3. Clean outer rounded stroke drawn on top
     doc.setDrawColor(...kpi.accent);
     doc.setLineWidth(0.3);
-    doc.roundedRect(cardX, kpiCardsY, kpiCardW, kpiCardH, 2.5, 2.5, 'FD');
-
-    // Colored top bar inside card
-    doc.setFillColor(...kpi.accent);
-    doc.rect(cardX + 0.5, kpiCardsY + 0.5, kpiCardW - 1, 2.2, 'F');
+    doc.roundedRect(cardX, kpiCardsY, kpiCardW, kpiCardH, 2.5, 2.5, 'D');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
@@ -662,14 +680,16 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   const specCardY = 146;
   const specCardHeight = 52;
   doc.setFillColor(255, 255, 255);
+  doc.roundedRect(kpiStartX, specCardY, kpiTotalW, specCardHeight, 3, 3, 'F');
+
+  // Header band inside specification card - inset safely from corners
+  doc.setFillColor(...INDIGO_LIGHT);
+  doc.roundedRect(kpiStartX + 1.5, specCardY + 1.5, kpiTotalW - 3, 7.5, 2, 2, 'F');
+  drawMultiColorRibbon(kpiStartX + 6, specCardY + 2.0, kpiTotalW - 12, 1.1);
+
   doc.setDrawColor(...INDIGO_600);
   doc.setLineWidth(0.35);
-  doc.roundedRect(kpiStartX, specCardY, kpiTotalW, specCardHeight, 3, 3, 'FD');
-
-  // Header band inside specification card
-  doc.setFillColor(...INDIGO_LIGHT);
-  doc.rect(kpiStartX + 0.5, specCardY + 0.5, kpiTotalW - 1, 8.5, 'F');
-  drawMultiColorRibbon(kpiStartX + 0.5, specCardY + 0.5, kpiTotalW - 1, 1.4);
+  doc.roundedRect(kpiStartX, specCardY, kpiTotalW, specCardHeight, 3, 3, 'D');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.8);
@@ -728,9 +748,12 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   const metaCardY = 204;
   const metaCardHeight = 47;
   doc.setFillColor(...TEAL_LIGHT);
+  doc.roundedRect(kpiStartX, metaCardY, kpiTotalW, metaCardHeight, 3, 3, 'F');
+  drawMultiColorRibbon(kpiStartX + 6, metaCardY + 1.2, kpiTotalW - 12, 1.1);
+
   doc.setDrawColor(...TEAL_600);
   doc.setLineWidth(0.35);
-  doc.roundedRect(kpiStartX, metaCardY, kpiTotalW, metaCardHeight, 3, 3, 'FD');
+  doc.roundedRect(kpiStartX, metaCardY, kpiTotalW, metaCardHeight, 3, 3, 'D');
 
   if (iconDataUrl) {
     doc.addImage(iconDataUrl, 'PNG', kpiStartX + 6, metaCardY + 3, 5.5, 5.5);
@@ -835,23 +858,28 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     { num: '02B', title: '10-Point Consular Eligibility & In-Country Settlement Matrix', p: '6', desc: 'Minimum age, single/couple income, bank buffers, stay mandates, work rights, and apostille rules.' },
     { num: '03', title: 'Short-Stay, Trial Scouting & Digital Nomad Visa Pathways', p: '7', desc: `All ${shortVisas.length} short-term/trial visa options, 3-step decision framework, and 90-day scouting protocol.` },
     { num: '04', title: 'Healthcare System Architecture, Routine Care & Pharmacy Rules', p: '8', desc: 'Public vs. private care, GP/specialist wait times, English-speaking staff, hospital networks & prescriptions.' },
-    { num: '05', title: 'Emergency Medical Services, ER Triage Protocols & Medevac Readiness', p: '9', desc: `Dial ${hc.emergencyServices.emergencyNumberPrimary} dispatch, ambulance guidance, ER deposits/GOP, and trauma/medevac readiness.` },
-    { num: '06', title: 'Expat Health Insurance Tiers, Consular Mandates & Pre-Existing Strategy', p: '10', desc: 'Consular policy compliance, Medicare portability, pre-existing conditions, and 3-tier age-banded premiums.' },
+    { num: '05', title: 'Emergency Medical Services, ER Triage Protocols & Medevac Readiness', p: '9', desc: `Dial ${hc.emergencyServices.emergencyNumberPrimary} dispatch, ambulance guidance, ER deposits/GOP, and trauma readiness.` },
+    { num: '06', title: 'Expat Health Insurance Tiers, Consular Mandates & Pre-Existing Strategy', p: '10', desc: 'Consular policy compliance, Medicare portability, pre-existing conditions, and 3-tier premiums.' },
     { num: '06B', title: 'Out-of-Pocket Private Medical Cash Tariffs & Regional City Medical Hubs', p: '11', desc: 'Cash prices for GP, specialist, MRI/CT, labs, dental & hospital suites + city-by-city medical tiering.' },
-    { num: '07', title: 'Cost of Living Telemetry, Dual-Currency Benchmarks & Itemized Expenses', p: '12', desc: `Monthly & annual costs in USD and ${currencyInfo.code}, rent tiers, groceries, dining, utilities, and healthcare.` },
-    { num: '07B', title: 'Annual Retirement Budget Calculator Matrix & One-Time Overheads', p: '13', desc: 'Coastal, City Center & Villa household configurations + flights, visa renewals, furnishing & medical reserves.' },
-    { num: '08', title: 'Real Estate Market Architecture, Rental Lease Protocols & Tenant Rights', p: '14', desc: 'Lease durations, security deposits, guarantor rules, inflation caps, and foreign freehold ownership.' },
-    { num: '09', title: 'FIRE Financial Modeling, SWR Sensitivity & Geo-Arbitrage Economics', p: '15', desc: 'Lean, Standard & Luxury 4% and 3.5% SWR nest egg targets + US/UK metro geo-arbitrage savings.' },
-    { num: '10', title: 'Travel, Famous Retirement Activities & Senior Leisure Pursuits', p: '16-17', desc: `Full catalogue of ${mobility.retireeActivities.length} signature retiree hobbies, locations, intensity & weekly expat schedule.` },
-    { num: '11', title: 'Domestic Transit Infrastructure & Inter-City Mobility Network', p: '18', desc: 'High-speed & regional trains, express buses, highways, ride-hailing apps, and domestic flights/ferries.' },
-    { num: '12', title: 'Traveler Persona Safety & Mobility: Couples, Solo & Solo Female Profiles', p: '19-20', desc: 'Dedicated safety scores, romantic escapes, solo dining, street harassment levels & female expat networks.' },
-    { num: '13', title: 'Climate Meteorology, Weather Cycles & 3-Season Breakdown', p: '21', desc: 'Sunny days, average temperatures, humidity, best months, and Summer/Winter/Monsoon seasonal guide.' },
-    { num: '14', title: 'Premier Expat Towns & Regional Micro-Market Hub Directory', p: '22', desc: `Deep-dive comparison of ${country.topCities.map(c => c.name).join(', ')} with monthly costs and local vibe.` },
-    { num: '15', title: 'Demographics, Gender Ratios, Dating Culture & Nightlife Regulation', p: '23', desc: 'Median age, F:M ratio, youth share, dating openness, social integration, and nightlife districts.' },
-    { num: '16', title: 'Pre-Departure Readiness Checklist & Relocation Hurdles FAQ Knowledge Base', p: '24-26', desc: `4-pillar readiness checklist + ${faqs.length} complete step-by-step legal, banking, tax & lease guides.` },
-    { num: '17', title: 'Expat Community Network, Resident Mentors, Meetups & Forum Insights', p: '27', desc: 'Direct mentor profiles, scheduled expat social gatherings, and verified community forum discussions.' },
-    { num: '18', title: '12-Month Master Relocation Execution Roadmap & Action Checklist', p: '28', desc: 'Chronological phase-by-phase execution checklist from T-12 months pre-departure to Year 1 renewal.' },
-    { num: '19', title: 'Document Governance, Legal Disclaimer, Copyright & Verification Seal', p: '29', desc: 'Empirical legal/tax disclaimers, intellectual property protection, and cryptographic audit record.' },
+    { num: '07', title: 'Cost of Living Telemetry, Dual-Currency Benchmarks & Itemized Expenses', p: '12', desc: `Monthly & annual costs in USD and ${currencyInfo.code}, rent tiers, groceries, utilities, and healthcare.` },
+    { num: '07B', title: 'Annual Retirement Budget Calculator Matrix & One-Time Overheads', p: '13', desc: 'Coastal, City Center & Villa household configurations + flights, visa renewals, and medical reserves.' },
+    { num: '08', title: 'Housing & Rental Market Velocity, Capital Neighborhood Tiers & Expat Enclaves', p: '14', desc: '1-bed & 2-bed neighborhood rents, safety & walkability ratings, transit, market velocity & YoY trends.' },
+    { num: '08B', title: 'Rental Legal Framework, Broker Fees, Must-Check Clauses & Caution Zones', p: '15', desc: 'Broker fees (0% for tenant), statutory tenant protections, 6 must-check clauses & caution districts.' },
+    { num: '09', title: 'FIRE Financial Modeling, SWR Sensitivity & Geo-Arbitrage Economics', p: '16', desc: 'Lean, Standard & Luxury 4% and 3.5% SWR nest egg targets + US/UK metro geo-arbitrage savings.' },
+    { num: '10', title: 'Food & Gastronomy Heritage, Daily Routine Meals & Sacred Culinary Traditions', p: '17', desc: 'Culinary history, breakfast, morning coffee, lunch special, afternoon merienda & dinner routines.' },
+    { num: '10B', title: 'Signature National Dishes, Authentic Tasting Guide & Where to Eat', p: '18', desc: 'Curated national dishes with local names, flavor profiles, vegetarian options, prices & authentic eateries.' },
+    { num: '10C', title: 'Expat Dining Hurdles, Vegetarian/Vegan Friendliness, Dining Costs & Water Hygiene', p: '19', desc: 'Ordering & tipping hurdles, plant-based dining ease, local phrases, street vs sit-down costs & water safety.' },
+    { num: '11', title: 'Travel, Famous Retirement Activities & Senior Leisure Pursuits (Part 1)', p: '20', desc: `Signature retiree hobbies, locations, intensity levels, and outdoor recreation in ${country.name}.` },
+    { num: '11B', title: 'Senior Leisure Pursuits (Part 2) & Typical Weekly Expat Rhythm', p: '21', desc: 'Continuing activity catalogue and day-by-day weekly active schedules for retiree lifestyle.' },
+    { num: '12', title: 'Domestic Transit Infrastructure & Inter-City Mobility Network', p: '22', desc: 'High-speed & regional trains, express buses, highways, ride-hailing apps, and domestic flights/ferries.' },
+    { num: '13', title: 'Traveler Persona Safety & Mobility: Couples, Solo & Solo Female Profiles', p: '23-24', desc: 'Dedicated safety scores, romantic escapes, solo dining, street harassment levels & female expat networks.' },
+    { num: '14', title: 'Climate Meteorology, Weather Cycles & 3-Season Breakdown', p: '25', desc: 'Sunny days, average temperatures, humidity, best months, and Summer/Winter/Monsoon seasonal guide.' },
+    { num: '15', title: 'Premier Expat Towns & Regional Micro-Market Hub Directory', p: '26', desc: `Deep-dive comparison of ${country.topCities.map(c => c.name).join(', ')} with monthly costs and local vibe.` },
+    { num: '16', title: 'Demographics, Gender Ratios, Dating Culture & Nightlife Regulation', p: '27-28', desc: 'Median age, F:M ratio, dating openness, social integration, and senior nightlife regulation.' },
+    { num: '17', title: 'Pre-Departure Readiness Checklist & Relocation Hurdles FAQ Knowledge Base', p: '29-31', desc: `4-pillar readiness checklist + ${faqs.length} complete step-by-step legal, banking, tax & lease guides.` },
+    { num: '18', title: 'Expat Community Network, Resident Mentors, Meetups & Forum Insights', p: '32', desc: 'Direct mentor profiles, scheduled expat social gatherings, and verified community forum discussions.' },
+    { num: '19', title: '12-Month Master Relocation Execution Roadmap & Action Checklist', p: '33-34', desc: 'Chronological phase-by-phase execution checklist from T-12 months pre-departure to Year 1 renewal.' },
+    { num: '20', title: 'Document Governance, Legal Disclaimer, Copyright & Verification Seal', p: '35', desc: 'Empirical legal/tax disclaimers, intellectual property protection, and cryptographic audit record.' },
   ];
 
   autoTable(doc, {
@@ -863,23 +891,23 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     headStyles: {
       fillColor: INDIGO_900,
       textColor: [255, 255, 255],
-      fontSize: 7.8,
+      fontSize: 7.2,
       fontStyle: 'bold',
     },
     columnStyles: {
-      0: { cellWidth: 12, halign: 'center', fontStyle: 'bold', textColor: TEAL_600 },
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold', textColor: TEAL_600 },
       1: { cellWidth: 68, fontStyle: 'bold', textColor: SLATE_900 },
       2: { cellWidth: 14, halign: 'center', fontStyle: 'bold', textColor: VIOLET_600 },
-      3: { cellWidth: contentWidth - 94, textColor: SLATE_600 },
+      3: { cellWidth: contentWidth - 92, textColor: SLATE_600 },
     },
-    bodyStyles: { fontSize: 7.1, cellPadding: 1.75 },
+    bodyStyles: { fontSize: 6.3, cellPadding: 1.15 },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 4.5;
+  currentY = (doc as any).lastAutoTable.finalY + 3.5;
 
   drawCalloutBox(
     'EMPIRICAL METHODOLOGY & MULTI-DIMENSIONAL DATA PROVENANCE',
-    'This Master Country Dossier synthesizes all 10 intelligence tabs from the ReFIREly platform into a single archival reference. Datasets are cross-verified against national immigration ministries, World Health Organization (WHO) & Joint Commission International (JCI) hospital registries, Numbeo cost-of-living telemetry, and verified resident expat surveys.',
+    'This Master Country Dossier synthesizes all 12 intelligence tabs from the ReFIREly platform into a single archival reference. Datasets are cross-verified against national immigration ministries, World Health Organization (WHO) & Joint Commission International (JCI) hospital registries, Numbeo cost-of-living telemetry, and verified resident expat surveys.',
     TEAL_600,
     TEAL_LIGHT
   );
@@ -1877,197 +1905,598 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       bodyStyles: { fontSize: 7.5, cellPadding: 2 },
     });
 
-    // PAGE 14: CHAPTER 08 - REAL ESTATE MARKET, LEASES & TENANT RIGHTS
-    startNewChapterPage();
+    // PAGE 14: CHAPTER 08 - HOUSING & RENTAL MARKET, NEIGHBORHOOD TIERS & EXPAT ENCLAVES
+    if (options.includeHousingAndRentals !== false) {
+      startNewChapterPage();
 
-    drawChapterHeader(
-      '08',
-      'Real Estate Market Architecture, Leases & Tenant Rights',
-      `Securing long-term housing, lease contracts, deposit protection, and property purchasing in ${country.name}`,
-      VIOLET_600,
-      VIOLET_LIGHT
-    );
+      drawChapterHeader(
+        '08',
+        'Housing & Rental Market, Neighborhood Tiers & Expat Enclaves',
+        `1-bed and 2-bed neighborhood rents, safety, walkability, transit access, and market velocity in ${country.name}`,
+        VIOLET_600,
+        VIOLET_LIGHT
+      );
 
-    const realEstateRows = [
-      [
-        'Standard Lease Duration',
-        'Typically 12-month renewable contracts; 3-to-5 year long-term residential leases common in Europe and Latin America.',
-        'Always register your signed lease contract officially with municipal/tax authorities for consular proof of address.',
-      ],
-      [
-        'Security Deposits & Guarantor (Fiador)',
-        '1 to 2 months rent standard security deposit. Landlords may request 2-4 months advance rent if applicant lacks local credit.',
-        'Include a diplomatic/break clause allowing termination with 60-90 days notice after the first 6 months.',
-      ],
-      [
-        'Statutory Tenant Protections',
-        'Strong civil-code protections against arbitrary eviction; landlords must provide statutory notice prior to non-renewal.',
-        'Annual rent adjustments on existing leases are typically capped or indexed to official consumer inflation.',
-      ],
-      [
-        'Furnished vs. Unfurnished Rentals',
-        'Both widely available. Furnished (equipado) apartments allow immediate turn-key living during Year 1.',
-        'Renting furnished for Year 1 avoids $8,000-$15,000 in international shipping container costs.',
-      ],
-      [
-        'Foreign Freehold Property Ownership',
-        `Foreign retirees enjoy strong property rights in ${country.name} (note: some Asian jurisdictions restrict land freehold to condos/leases).`,
-        'Rent for at least 12 months before buying real estate; always hire an independent conveyancing attorney.',
-      ],
-    ];
-
-    autoTable(doc, {
-      startY: currentY,
-      margin: { left: margin, right: margin },
-      head: [['Rental / Property Dimension', 'Market Norm & Legal Standard', 'Retiree Protection Protocol']],
-      body: realEstateRows.map(r => r.map(c => sanitizePdfText(c))),
-      theme: 'grid',
-      headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 8 },
-      columnStyles: {
-        0: { cellWidth: 46, fontStyle: 'bold', textColor: SLATE_900 },
-        1: { cellWidth: 70, textColor: SLATE_700 },
-        2: { cellWidth: contentWidth - 116, textColor: SLATE_600 },
-      },
-      bodyStyles: { fontSize: 7.8, cellPadding: 2.4 },
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 5;
-
-    drawCalloutBox(
-      'AVOIDING EXPAT RENTAL SURCHARGES & WINTER INSULATION TRAPS',
-      `Never sign a 12-month lease sight-unseen from overseas or pay tourist-portal rates for long-term stays. Book a 30-day short-term apartment upon arrival, walk target neighborhoods in person, and negotiate directly with local licensed agencies. Always inspect double-glazed windows, heating/AC split units, and afternoon sun exposure.`,
-      VIOLET_600,
-      VIOLET_LIGHT
-    );
-
-    // PAGE 15: CHAPTER 09 - FIRE MODELING, SWR SENSITIVITY & GEO-ARBITRAGE
-    startNewChapterPage();
-
-    drawChapterHeader(
-      '09',
-      'FIRE Financial Modeling, SWR Sensitivity & Geo-Arbitrage',
-      `Safe Withdrawal Rate (4.0% Standard vs. 3.5% Conservative) nest egg targets and US/UK domestic arbitrage savings`,
-      EMERALD_700,
-      TEAL_LIGHT
-    );
-
-    const leanSingle = Math.round(singleMo * 0.8);
-    const luxSingle = Math.round(singleMo * 1.5);
-    const leanCouple = Math.round(coupleMo * 0.8);
-    const luxCouple = Math.round(coupleMo * 1.5);
-
-    autoTable(doc, {
-      startY: currentY,
-      margin: { left: margin, right: margin },
-      head: [[
-        'Lifestyle Tier Mode',
-        'Single Monthly / Annual',
-        'Single 4% SWR / 3.5% SWR',
-        'Couple Monthly / Annual',
-        'Couple 4% SWR / 3.5% SWR',
-      ]],
-      body: [
-        [
-          'Lean FIRE (Frugal / Provincial 0.8x)',
-          `$${leanSingle.toLocaleString()}/mo ($${(leanSingle * 12).toLocaleString()}/yr)`,
-          `4%: $${(leanSingle * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((leanSingle * 12) / 0.035).toLocaleString()}`,
-          `$${leanCouple.toLocaleString()}/mo ($${(leanCouple * 12).toLocaleString()}/yr)`,
-          `4%: $${(leanCouple * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((leanCouple * 12) / 0.035).toLocaleString()}`,
+      // Market Velocity & Metrics Overview Table
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Rental Market Parameter', 'Market Empirical Data', 'Retiree Budget & Search Impact']],
+        body: [
+          [
+            'Market Velocity & Competition',
+            sanitizePdfText(housing.marketTrends.marketVelocity),
+            'Indicates how rapidly quality expat apartments lease; prepare initial deposits early.',
+          ],
+          [
+            'Inventory & Turnover Speed',
+            sanitizePdfText(housing.marketTrends.inventoryAvailability),
+            'Window available to inspect, conduct due diligence, and submit lease offer.',
+          ],
+          [
+            'Annual Rental Price Trajectory',
+            sanitizePdfText(housing.marketTrends.yearOverYearRentChange),
+            'Benchmark for statutory lease renewal caps and multi-year budget planning.',
+          ],
+          [
+            'Expat Lease Turnover Pressure',
+            sanitizePdfText(housing.marketTrends.keyNomadOrTourismPressure),
+            'Cyclical availability patterns driven by digital nomads, retirees, and local students.',
+          ],
+          [
+            'National Capital 1-Bed Center Rent',
+            `$${housing.avgNationalRent1BedCenterUSD.toLocaleString()} USD / month`,
+            `Baseline for central urban living in ${country.capital} near premier metro and dining.`,
+          ],
+          [
+            'National Capital 1-Bed Outside Rent',
+            `$${housing.avgNationalRent1BedOutsideUSD.toLocaleString()} USD / month`,
+            `Provincial and suburban baseline offering tranquil walkability and lower overhead.`,
+          ],
         ],
-        [
-          'Comfortable Expat Baseline (1.0x)',
-          `$${singleMo.toLocaleString()}/mo ($${(singleMo * 12).toLocaleString()}/yr)`,
-          `4%: $${(singleMo * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((singleMo * 12) / 0.035).toLocaleString()}`,
-          `$${coupleMo.toLocaleString()}/mo ($${(coupleMo * 12).toLocaleString()}/yr)`,
-          `4%: $${(coupleMo * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((coupleMo * 12) / 0.035).toLocaleString()}`,
-        ],
-        [
-          'Luxury / Fat FIRE Tier (1.50x)',
-          `$${luxSingle.toLocaleString()}/mo ($${(luxSingle * 12).toLocaleString()}/yr)`,
-          `4%: $${(luxSingle * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((luxSingle * 12) / 0.035).toLocaleString()}`,
-          `$${luxCouple.toLocaleString()}/mo ($${(luxCouple * 12).toLocaleString()}/yr)`,
-          `4%: $${(luxCouple * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((luxCouple * 12) / 0.035).toLocaleString()}`,
-        ],
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.6 },
-      columnStyles: {
-        0: { cellWidth: 38, fontStyle: 'bold', textColor: SLATE_900 },
-        1: { cellWidth: 34, textColor: SLATE_700 },
-        2: { cellWidth: 38, fontStyle: 'bold', textColor: TEAL_600 },
-        3: { cellWidth: 34, textColor: SLATE_700 },
-        4: { cellWidth: contentWidth - 144, fontStyle: 'bold', textColor: INDIGO_600 },
-      },
-      bodyStyles: { fontSize: 7.4, cellPadding: 2.2 },
-    });
+        theme: 'grid',
+        headStyles: { fillColor: VIOLET_600, textColor: [255, 255, 255], fontSize: 7.8 },
+        columnStyles: {
+          0: { cellWidth: 46, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 44, fontStyle: 'bold', textColor: TEAL_600 },
+          2: { cellWidth: contentWidth - 90, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.4, cellPadding: 2.1 },
+      });
 
-    currentY = (doc as any).lastAutoTable.finalY + 5;
+      currentY = (doc as any).lastAutoTable.finalY + 4.5;
 
-    const domesticUSCouple = 5400;
-    const domesticUSNestEgg = domesticUSCouple * 12 * 25;
-    const havenCoupleNestEgg = coupleMo * 12 * 25;
-    const nestEggDifference = domesticUSNestEgg - havenCoupleNestEgg;
-    const percentSaved = Math.round((nestEggDifference / domesticUSNestEgg) * 100);
+      // Safe Expat Neighborhoods Deep-Dive Matrix
+      const safeNeighs = housing.safeExpatNeighborhoods.slice(0, 5);
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [[
+          'Neighborhood & Hub',
+          'District Character',
+          '1-Bed / 2-Bed Rent',
+          'Safety & Walk',
+          'Vibe, Transit & Target Persona',
+        ]],
+        body: safeNeighs.map((n: any) => [
+          sanitizePdfText(`${n.name}\n[${n.city}]`),
+          sanitizePdfText(n.districtType),
+          `1-Bed: $${n.avgRent1BedUSD.toLocaleString()}\n2-Bed: $${n.avgRent2BedUSD.toLocaleString()}`,
+          `Safety: ${n.safetyRating}/100\nWalk: ${n.walkabilityScore}/100`,
+          sanitizePdfText(`${n.vibeAndHighlights}\nTransit: ${n.transitAccess}\nBest For: ${n.bestFor}`),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 32, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 30, textColor: INDIGO_600, fontStyle: 'bold' },
+          2: { cellWidth: 30, textColor: TEAL_600, fontStyle: 'bold' },
+          3: { cellWidth: 26, textColor: SLATE_700 },
+          4: { cellWidth: contentWidth - 118, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.1, cellPadding: 2.0 },
+      });
 
-    autoTable(doc, {
-      startY: currentY,
-      margin: { left: margin, right: margin },
-      head: [[
-        'Comparison Benchmark',
-        'US / UK Domestic Metro',
-        `${country.name} Haven Advantage`,
-        'Net Geo-Arbitrage Savings',
-      ]],
-      body: [
-        [
-          'Monthly Couple Living Outlay',
-          `$${domesticUSCouple.toLocaleString()} USD / month`,
-          `$${coupleMo.toLocaleString()} USD / month`,
-          `Save $${(domesticUSCouple - coupleMo).toLocaleString()}/mo (-${Math.round(
-            ((domesticUSCouple - coupleMo) / domesticUSCouple) * 100
-          )}%)`,
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      drawCalloutBox(
+        'EXPAT NEIGHBORHOOD SELECTION PROTOCOL',
+        sanitizePdfText(housing.marketTrends.outlookSummary),
+        VIOLET_600,
+        VIOLET_LIGHT
+      );
+
+      // PAGE 15: CHAPTER 08B - RENTAL LEGAL FRAMEWORK, BROKER FEES, MUST-CHECK CLAUSES & CAUTION ZONES
+      startNewChapterPage();
+
+      drawChapterHeader(
+        '08B',
+        'Rental Legal Framework, Broker Fees, Must-Check Clauses & Caution Zones',
+        `Statutory tenant rights, deposit caps, broker commissions, and areas to exercise caution in ${country.name}`,
+        INDIGO_600,
+        INDIGO_LIGHT
+      );
+
+      // Broker Commissions & Statutory Legal Framework
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Legal / Regulatory Dimension', 'Statutory Mandate & Market Practice in ' + country.name]],
+        body: [
+          [
+            'Broker Fee Responsibility',
+            `${sanitizePdfText(housing.brokerAndFees.whoPaysBrokerFee)} | Standard: ${sanitizePdfText(
+              housing.brokerAndFees.typicalBrokerCommission
+            )}`,
+          ],
+          ['Guarantor & Tenant Requirements', sanitizePdfText(housing.brokerAndFees.guarantorRequirements)],
+          ['Statutory Tenant Protections', sanitizePdfText(housing.legalRules.tenantProtectionsAndRentCaps)],
+          [
+            'Security Deposit Requirement',
+            sanitizePdfText(housing.brokerAndFees.securityDepositRequirement),
+          ],
+          ['Deposit Return & Inventory Check', sanitizePdfText(housing.legalRules.inventoryAndDepositReturn)],
+          ['Tax Registration Mandate', sanitizePdfText(housing.legalRules.registrationRequirement)],
+          ['Lease Duration & Early Termination', sanitizePdfText(housing.legalRules.earlyTerminationNotice)],
         ],
-        [
-          '4% Rule Target FIRE Nest Egg',
-          `$${domesticUSNestEgg.toLocaleString()} USD`,
-          `$${havenCoupleNestEgg.toLocaleString()} USD`,
-          `Save $${nestEggDifference.toLocaleString()} USD (${percentSaved}% Less Capital Needed)`,
-        ],
-        [
-          'Years to Financial Independence',
-          'Working until age 65-67',
-          'Achievable 7 to 14 years earlier',
-          'Immediate sequence-of-returns protection via lower fixed overhead',
-        ],
-      ],
-      theme: 'striped',
-      headStyles: { fillColor: EMERALD_700, textColor: [255, 255, 255], fontSize: 8 },
-      columnStyles: {
-        0: { fontStyle: 'bold', textColor: SLATE_900 },
-        3: { fontStyle: 'bold', textColor: EMERALD_700 },
-      },
-      bodyStyles: { fontSize: 7.8, cellPadding: 2.2 },
-    });
+        theme: 'grid',
+        headStyles: { fillColor: INDIGO_600, textColor: [255, 255, 255], fontSize: 7.8 },
+        columnStyles: {
+          0: { cellWidth: 48, fontStyle: 'bold', fillColor: INDIGO_LIGHT, textColor: INDIGO_900 },
+          1: { cellWidth: contentWidth - 48, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.3, cellPadding: 1.85 },
+      });
 
-    currentY = (doc as any).lastAutoTable.finalY + 5;
+      currentY = (doc as any).lastAutoTable.finalY + 4;
 
-    drawCalloutBox(
-      'PORTFOLIO LONGEVITY & SEQUENCE-OF-RETURNS SHIELD',
-      `By relocating to ${country.name}, a couple with a $1,000,000 USD portfolio only needs to withdraw ${((coupleMo * 12) / 10000).toFixed(2)}% annually ($${(coupleMo * 12).toLocaleString()}/yr) rather than 6.48% ($64,800/yr) in a typical US metro. Even before Social Security or state pensions begin, this low withdrawal rate virtually eliminates sequence-of-returns risk.`,
-      EMERALD_700,
-      TEAL_LIGHT
-    );
+      // 6 Must-Check Lease Clauses
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['#', 'Must-Check Lease Clause / Contract Safeguard']],
+        body: housing.mustCheckClausesChecklist.slice(0, 6).map((clause: string, idx: number) => [
+          `0${idx + 1}`,
+          sanitizePdfText(clause),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: TEAL_600, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center', fontStyle: 'bold', textColor: TEAL_600 },
+          1: { cellWidth: contentWidth - 10, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.1, cellPadding: 1.7 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      // Caution Zones / Districts to Avoid
+      const cautionDistricts = housing.areasToAvoidOrCaution.slice(0, 3);
+      if (cautionDistricts.length > 0) {
+        autoTable(doc, {
+          startY: currentY,
+          margin: { left: margin, right: margin },
+          head: [['Caution District & City', 'Risk Category & Severity', 'Field Assessment & Retiree Precautions']],
+          body: cautionDistricts.map((c: any) => [
+            sanitizePdfText(`${c.districtName}\n[${c.city}]`),
+            sanitizePdfText(`${c.riskCategory}\n[${c.severity}]`),
+            sanitizePdfText(`${c.reason}\nAdvice: ${c.actionableSafetyAdvice}`),
+          ]),
+          theme: 'grid',
+          headStyles: { fillColor: ROSE_600, textColor: [255, 255, 255], fontSize: 7.6 },
+          columnStyles: {
+            0: { cellWidth: 34, fontStyle: 'bold', textColor: SLATE_900 },
+            1: { cellWidth: 40, fontStyle: 'bold', textColor: ROSE_600 },
+            2: { cellWidth: contentWidth - 74, textColor: SLATE_700 },
+          },
+          bodyStyles: { fontSize: 7.1, cellPadding: 1.7 },
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 4;
+      }
+
+      drawCalloutBox(
+        'CRITICAL LEASE REGISTRATION FOR RESIDENCY & IMMIGRATION',
+        `Always ensure your lease is registered with the tax authority (${housing.legalRules.registrationRequirement}). In most European and Latin American jurisdictions, an unregistered private contract cannot be used as proof of accommodation at your consular or in-country immigration appointment.`,
+        INDIGO_600,
+        INDIGO_LIGHT
+      );
+    }
+
+    // PAGE 16: CHAPTER 09 - FIRE FINANCIAL MODELING, SWR SENSITIVITY & GEO-ARBITRAGE
+    if (options.includeFIREModeling !== false) {
+      startNewChapterPage();
+
+      drawChapterHeader(
+        '09',
+        'FIRE Financial Modeling, SWR Sensitivity & Geo-Arbitrage Economics',
+        `Safe Withdrawal Rate (4.0% Standard vs. 3.5% Conservative) nest egg targets and US/UK domestic arbitrage savings`,
+        EMERALD_700,
+        TEAL_LIGHT
+      );
+
+      const leanSingle = Math.round(singleMo * 0.8);
+      const luxSingle = Math.round(singleMo * 1.5);
+      const leanCouple = Math.round(coupleMo * 0.8);
+      const luxCouple = Math.round(coupleMo * 1.5);
+
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [[
+          'Lifestyle Tier Mode',
+          'Single Monthly / Annual',
+          'Single 4% SWR / 3.5% SWR',
+          'Couple Monthly / Annual',
+          'Couple 4% SWR / 3.5% SWR',
+        ]],
+        body: [
+          [
+            'Lean FIRE (Frugal / Provincial 0.8x)',
+            `$${leanSingle.toLocaleString()}/mo ($${(leanSingle * 12).toLocaleString()}/yr)`,
+            `4%: $${(leanSingle * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((leanSingle * 12) / 0.035).toLocaleString()}`,
+            `$${leanCouple.toLocaleString()}/mo ($${(leanCouple * 12).toLocaleString()}/yr)`,
+            `4%: $${(leanCouple * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((leanCouple * 12) / 0.035).toLocaleString()}`,
+          ],
+          [
+            'Comfortable Expat Baseline (1.0x)',
+            `$${singleMo.toLocaleString()}/mo ($${(singleMo * 12).toLocaleString()}/yr)`,
+            `4%: $${(singleMo * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((singleMo * 12) / 0.035).toLocaleString()}`,
+            `$${coupleMo.toLocaleString()}/mo ($${(coupleMo * 12).toLocaleString()}/yr)`,
+            `4%: $${(coupleMo * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((coupleMo * 12) / 0.035).toLocaleString()}`,
+          ],
+          [
+            'Luxury / Fat FIRE Tier (1.50x)',
+            `$${luxSingle.toLocaleString()}/mo ($${(luxSingle * 12).toLocaleString()}/yr)`,
+            `4%: $${(luxSingle * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((luxSingle * 12) / 0.035).toLocaleString()}`,
+            `$${luxCouple.toLocaleString()}/mo ($${(luxCouple * 12).toLocaleString()}/yr)`,
+            `4%: $${(luxCouple * 12 * 25).toLocaleString()}\n3.5%: $${Math.round((luxCouple * 12) / 0.035).toLocaleString()}`,
+          ],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 34, textColor: SLATE_700 },
+          2: { cellWidth: 38, fontStyle: 'bold', textColor: TEAL_600 },
+          3: { cellWidth: 34, textColor: SLATE_700 },
+          4: { cellWidth: contentWidth - 144, fontStyle: 'bold', textColor: INDIGO_600 },
+        },
+        bodyStyles: { fontSize: 7.4, cellPadding: 2.2 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 5;
+
+      const domesticUSCouple = 5400;
+      const domesticUSNestEgg = domesticUSCouple * 12 * 25;
+      const havenCoupleNestEgg = coupleMo * 12 * 25;
+      const nestEggDifference = domesticUSNestEgg - havenCoupleNestEgg;
+      const percentSaved = Math.round((nestEggDifference / domesticUSNestEgg) * 100);
+
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [[
+          'Comparison Benchmark',
+          'US / UK Domestic Metro',
+          `${country.name} Haven Advantage`,
+          'Net Geo-Arbitrage Savings',
+        ]],
+        body: [
+          [
+            'Monthly Couple Living Outlay',
+            `$${domesticUSCouple.toLocaleString()} USD / month`,
+            `$${coupleMo.toLocaleString()} USD / month`,
+            `Save $${(domesticUSCouple - coupleMo).toLocaleString()}/mo (-${Math.round(
+              ((domesticUSCouple - coupleMo) / domesticUSCouple) * 100
+            )}%)`,
+          ],
+          [
+            '4% Rule Target FIRE Nest Egg',
+            `$${domesticUSNestEgg.toLocaleString()} USD`,
+            `$${havenCoupleNestEgg.toLocaleString()} USD`,
+            `Save $${nestEggDifference.toLocaleString()} USD (${percentSaved}% Less Capital Needed)`,
+          ],
+          [
+            'Years to Financial Independence',
+            'Working until age 65-67',
+            'Achievable 7 to 14 years earlier',
+            'Immediate sequence-of-returns protection via lower fixed overhead',
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: EMERALD_700, textColor: [255, 255, 255], fontSize: 8 },
+        columnStyles: {
+          0: { fontStyle: 'bold', textColor: SLATE_900 },
+          3: { fontStyle: 'bold', textColor: EMERALD_700 },
+        },
+        bodyStyles: { fontSize: 7.8, cellPadding: 2.2 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 5;
+
+      drawCalloutBox(
+        'PORTFOLIO LONGEVITY & SEQUENCE-OF-RETURNS SHIELD',
+        `By relocating to ${country.name}, a couple with a $1,000,000 USD portfolio only needs to withdraw ${((coupleMo * 12) / 10000).toFixed(2)}% annually ($${(coupleMo * 12).toLocaleString()}/yr) rather than 6.48% ($64,800/yr) in a typical US metro. Even before Social Security or state pensions begin, this low withdrawal rate virtually eliminates sequence-of-returns risk.`,
+        EMERALD_700,
+        TEAL_LIGHT
+      );
+    }
+
+    // =========================================================================
+    // PAGES 17, 18 & 19: CHAPTERS 10, 10B & 10C - FOOD & GASTRONOMY
+    // =========================================================================
+    if (options.includeFoodAndGastronomy !== false) {
+      // PAGE 17: CHAPTER 10 - GASTRONOMY HERITAGE & DAILY ROUTINE MEALS
+      startNewChapterPage();
+
+      drawChapterHeader(
+        '10',
+        'Food & Gastronomy Heritage: Daily Routine Meals & Dining Rhythms',
+        `Cuisine philosophy, routine daily meal schedules, and market grocery culture in ${country.name}`,
+        AMBER_600,
+        AMBER_LIGHT
+      );
+
+      drawParagraph(
+        `${food.cuisineHeadline}. ${food.culinaryTraditionsOverview}`,
+        8.8,
+        SLATE_900
+      );
+
+      // Daily Meal Routines Table
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Daily Meal & Typical Window', 'Authentic Local Foods & Beverages', 'Cultural Significance & Expat Notes']],
+        body: food.routines.map(r => [
+          sanitizePdfText(`${r.mealName}\n[${r.timing}]`),
+          sanitizePdfText(r.typicalFoods.map(f => `- ${f}`).join('\n')),
+          sanitizePdfText(r.culturalImportance),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: AMBER_600, textColor: [255, 255, 255], fontSize: 7.8 },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 54, textColor: SLATE_700 },
+          2: { cellWidth: contentWidth - 92, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.2, cellPadding: 2.1 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4.5;
+
+      // Market & Grocery Infrastructure Table
+      const mg = food.marketAndGroceryCulture;
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Grocery & Market Dimension', 'Local Reality & Expat Grocery Guidance']],
+        body: [
+          ['Open-Air Fresh Produce Markets', sanitizePdfText(mg.freshMarketsOverview)],
+          ['Primary Supermarket Chains', sanitizePdfText(mg.supermarketChains.join('   |   '))],
+          ['Imported Western Goods Availability', sanitizePdfText(mg.importedWesternGoodsAvailability)],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.8 },
+        columnStyles: {
+          0: { cellWidth: 48, fontStyle: 'bold', fillColor: INDIGO_LIGHT, textColor: INDIGO_900 },
+          1: { cellWidth: contentWidth - 48, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.4, cellPadding: 2.1 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      drawCalloutBox(
+        'SACRED DAILY MEAL PROTOCOL & LOCAL DINING CULTURE',
+        `Meals in ${country.name} are deeply social. Lunch is typically the primary warm meal, while dinner is enjoyed later in the evening. Taking time for a proper sit-down lunch is one of the quickest ways to build relationships with local merchants and neighbors.`,
+        AMBER_600,
+        AMBER_LIGHT
+      );
+
+      // PAGE 18: CHAPTER 10B - SIGNATURE NATIONAL DISHES & AUTHENTIC TASTING GUIDE
+      startNewChapterPage();
+
+      drawChapterHeader(
+        '10B',
+        'Signature National Dishes & Authentic Regional Tasting Guide',
+        `Iconic dishes, local names, flavor profiles, vegetarian adaptations, and where to order in ${country.name}`,
+        ROSE_600,
+        ROSE_LIGHT
+      );
+
+      // National Dishes Catalog
+      const dishes = food.nationalDishes.slice(0, 5);
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [[
+          'Dish & Local Name',
+          'Category & Description',
+          'Flavor & History',
+          'Veg Alternative & Price',
+          'Where to Taste',
+        ]],
+        body: dishes.map(d => [
+          sanitizePdfText(`${d.name}\n("${d.localName}")`),
+          sanitizePdfText(`${d.category}\n\n${d.description}`),
+          sanitizePdfText(`${d.flavorProfile}\n\nTradition: ${d.traditionOrHistory}`),
+          sanitizePdfText(
+            `Veg Friendly: ${d.vegetarianFriendly ? 'Yes' : 'No'}${
+              d.vegetarianAlternative ? `\nAlt: ${d.vegetarianAlternative}` : ''
+            }\n\nCost: ~$${d.typicalCostUSD} USD (${d.typicalCostLocalCurrency})`
+          ),
+          sanitizePdfText(d.bestAuthenticPlaces.map(p => `- ${p}`).join('\n')),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: ROSE_600, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 32, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 40, textColor: SLATE_700 },
+          2: { cellWidth: 42, textColor: SLATE_700 },
+          3: { cellWidth: 30, textColor: TEAL_600, fontStyle: 'bold' },
+          4: { cellWidth: contentWidth - 144, textColor: SLATE_600 },
+        },
+        bodyStyles: { fontSize: 6.9, cellPadding: 2.0 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4.5;
+
+      drawCalloutBox(
+        'RECOGNIZING AUTHENTIC FAMILY-RUN DINERS VS. TOURIST TRAPS',
+        `To experience authentic ${country.name} gastronomy, look for bistros with short chalkboard menus handwritten in the local language, filled with locals at 1:30 PM (lunch) or 9:00 PM (dinner). Avoid establishments with multi-language laminated picture menus stationed outside historic monuments.`,
+        ROSE_600,
+        ROSE_LIGHT
+      );
+
+      // PAGE 19: CHAPTER 10C - EXPAT DINING HURDLES, DIETARY NEEDS, COSTS & WATER HYGIENE
+      startNewChapterPage();
+
+      drawChapterHeader(
+        '10C',
+        'Expat Dining Hurdles, Dietary Needs, Dining Costs & Water Hygiene',
+        `Overcoming ordering barriers, vegan friendliness ratings, eating out price tiers, and water safety in ${country.name}`,
+        TEAL_600,
+        TEAL_LIGHT
+      );
+
+      // Expat Dining Hurdles
+      const hurdles = food.expatHurdles.slice(0, 3);
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Dining Hurdle & Category', 'What Confuses Expats', 'Local Etiquette & Workaround Solution']],
+        body: hurdles.map(h => [
+          sanitizePdfText(`${h.title}\n[${h.category}]`),
+          sanitizePdfText(h.description),
+          sanitizePdfText(h.workaroundTip),
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 54, textColor: SLATE_700 },
+          2: { cellWidth: contentWidth - 92, textColor: TEAL_600 },
+        },
+        bodyStyles: { fontSize: 7.2, cellPadding: 2.0 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      // Dietary Restrictions & Vegetarian Friendliness
+      const diet = food.dietaryRestrictions;
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Dietary Dimension', 'Score / Status', 'Actionable Dining Guidance for Expats']],
+        body: [
+          [
+            'Vegetarian Friendliness Index',
+            `${diet.vegetarianRating}`,
+            sanitizePdfText(diet.summary),
+          ],
+          [
+            'Vegan Friendliness Index',
+            `${diet.veganRating}`,
+            `Vegan options are widely available in ${country.capital} and university towns; provincial menus require clarifying phrases.`,
+          ],
+          [
+            'Essential Local Dietary Phrases',
+            'Card / App Backup',
+            sanitizePdfText(diet.helpfulLocalPhrases.map((p: any) => `${p.phrase} ("${p.english}")`).join('   |   ')),
+          ],
+          [
+            'Staple Naturally Vegetarian Dishes',
+            'Readily Available',
+            sanitizePdfText(diet.stapleVegDishes.join(', ')),
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: TEAL_600, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 44, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 32, fontStyle: 'bold', textColor: TEAL_600 },
+          2: { cellWidth: contentWidth - 76, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.1, cellPadding: 1.85 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      // Dining Costs & Tap Water / Inspection Hygiene Matrix
+      const cnH = food.costsAndHygiene;
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        head: [['Expense Tier / Hygiene Factor', 'Cost (USD) / Rating', 'Benchmark Details & Safety Telemetry']],
+        body: [
+          [
+            'Street Food / Local Market Bite',
+            `~$${cnH.streetFoodOrMarketMealUSD.toFixed(2)} USD`,
+            'Freshly made local on-the-go specialty from bakeries or market stands.',
+          ],
+          [
+            'Casual Neighborhood Bistro / Lunch Special',
+            `~$${cnH.casualRestaurantMealUSD.toFixed(2)} USD`,
+            'Complete sit-down daily lunch special with beverage and coffee.',
+          ],
+          [
+            'Mid-Range Dinner for Two (with Wine)',
+            `~$${cnH.midRangeDinnerForTwoUSD.toFixed(2)} USD`,
+            '3-course evening meal at reputable neighborhood restaurant.',
+          ],
+          [
+            'Local Draft Beer or Glass of Regional Wine',
+            `~$${cnH.localBeerOrWineGlassUSD.toFixed(2)} USD`,
+            'Locally produced draft lager, craft beer, or regional house wine.',
+          ],
+          [
+            'Espresso / Specialty Cafe Coffee',
+            `~$${cnH.specialtyCoffeeUSD.toFixed(2)} USD`,
+            'Traditional espresso at standing counter or sit-down cafe.',
+          ],
+          [
+            'Tap Water Safety & Drinking Recommendation',
+            sanitizePdfText(cnH.waterSafety),
+            sanitizePdfText(cnH.waterDetails),
+          ],
+          [
+            'Restaurant & Market Hygiene Inspection Score',
+            `${cnH.eatingOutHygieneScore} / 100 Quality Score`,
+            sanitizePdfText(cnH.hygieneGuidance),
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.6 },
+        columnStyles: {
+          0: { cellWidth: 54, fontStyle: 'bold', textColor: SLATE_900 },
+          1: { cellWidth: 34, fontStyle: 'bold', textColor: TEAL_600 },
+          2: { cellWidth: contentWidth - 88, textColor: SLATE_700 },
+        },
+        bodyStyles: { fontSize: 7.1, cellPadding: 1.8 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 4;
+
+      drawCalloutBox(
+        'GROCERIES VS. DINING OUT & EXPAT WATER PROTOCOL',
+        `${cnH.groceriesVsDiningOutVerdict} Produce Advice: ${cnH.produceWashingAdvice}`,
+        TEAL_600,
+        TEAL_LIGHT
+      );
+    }
   }
 
   // =========================================================================
-  // PAGES 16, 17, 18, 19 & 20: CHAPTERS 10, 10B, 11, 12 & 12B - TRAVEL, ACTIVITIES, TRANSIT & SAFETY PERSONAS
+  // PAGES 20, 21, 22, 23 & 24: CHAPTERS 11, 11B, 12, 13 & 13B - TRAVEL, ACTIVITIES, TRANSIT & SAFETY PERSONAS
   // =========================================================================
   if (options.includeTravelAndMobility) {
-    // PAGE 16: CHAPTER 10 - FAMOUS RETIREMENT ACTIVITIES & LEISURE (PART 1)
+    // PAGE 20: CHAPTER 11 - FAMOUS RETIREMENT ACTIVITIES & LEISURE (PART 1)
     startNewChapterPage();
 
     drawChapterHeader(
-      '10',
+      '11',
       'Travel, Famous Leisure Pursuits & Senior Activities (Part 1)',
       `Signature hobbies, outdoor recreation, and how retirees spend their days in ${country.name}`,
       AMBER_600,
@@ -2110,11 +2539,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       bodyStyles: { fontSize: 7.5, cellPadding: 2.2 },
     });
 
-    // PAGE 17: CHAPTER 10B - FAMOUS RETIREMENT ACTIVITIES (PART 2) & WEEKLY RHYTHM
+    // PAGE 21: CHAPTER 11B - FAMOUS RETIREMENT ACTIVITIES (PART 2) & WEEKLY RHYTHM
     startNewChapterPage();
 
     drawChapterHeader(
-      '10B',
+      '11B',
       'Leisure Pursuits (Part 2) & Typical Weekly Expat Rhythm',
       `Continuing activity catalogue and regular weekly recreational schedules in ${country.name}`,
       TEAL_600,
@@ -2178,11 +2607,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       bodyStyles: { fontSize: 7.6, cellPadding: 2.1 },
     });
 
-    // PAGE 18: CHAPTER 11 - DOMESTIC TRANSIT INFRASTRUCTURE & INTER-CITY MOBILITY
+    // PAGE 22: CHAPTER 12 - DOMESTIC TRANSIT INFRASTRUCTURE & INTER-CITY MOBILITY
     startNewChapterPage();
 
     drawChapterHeader(
-      '11',
+      '12',
       'Domestic Transit Infrastructure & Inter-City Mobility',
       `Trains, intercity coaches, highway driving, ride-hailing apps, and domestic flights/ferries in ${country.name}`,
       INDIGO_600,
@@ -2225,11 +2654,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       INDIGO_LIGHT
     );
 
-    // PAGE 19: CHAPTER 12 - TRAVELER PERSONA PROFILES: COUPLES & SOLO TRAVELERS
+    // PAGE 23: CHAPTER 13 - TRAVELER PERSONA PROFILES: COUPLES & SOLO TRAVELERS
     startNewChapterPage();
 
     drawChapterHeader(
-      '12',
+      '13',
       'Traveler Persona Profiles: Couples & Solo Retirees',
       `Dedicated safety ratings, romantic escapes, solo dining culture, and social integration in ${country.name}`,
       VIOLET_600,
@@ -2289,11 +2718,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       bodyStyles: { fontSize: 7.4, cellPadding: 1.9 },
     });
 
-    // PAGE 20: CHAPTER 12B - SOLO FEMALE RETIREE & TRAVELER PROFILE
+    // PAGE 24: CHAPTER 13B - SOLO FEMALE RETIREE & TRAVELER PROFILE
     startNewChapterPage();
 
     drawChapterHeader(
-      '12B',
+      '13B',
       'Solo Female Retiree & Traveler Safety & Integration Profile',
       `Dedicated female safety telemetry, street harassment levels, cultural etiquette, and women's networks in ${country.name}`,
       ROSE_600,
@@ -2358,14 +2787,14 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   }
 
   // =========================================================================
-  // PAGES 21 & 22: CHAPTERS 13 & 14 - CLIMATE METEOROLOGY & PREMIER EXPAT TOWNS
+  // PAGES 25 & 26: CHAPTERS 14 & 15 - CLIMATE METEOROLOGY & PREMIER EXPAT TOWNS
   // =========================================================================
   if (options.includeClimateAndTowns) {
-    // PAGE 21: CHAPTER 13 - CLIMATE METEOROLOGY & 3-SEASON BREAKDOWN
+    // PAGE 25: CHAPTER 14 - CLIMATE METEOROLOGY & 3-SEASON BREAKDOWN
     startNewChapterPage();
 
     drawChapterHeader(
-      '13',
+      '14',
       'Climate Meteorology, Weather Cycles & Seasonal Breakdown',
       `Annual sunshine telemetry, humidity, temperature rhythms, and 3-season living guide for ${country.name}`,
       AMBER_600,
@@ -2436,11 +2865,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       bodyStyles: { fontSize: 7.6, cellPadding: 2.2 },
     });
 
-    // PAGE 22: CHAPTER 14 - PREMIER EXPAT TOWNS & REGIONAL MICRO-MARKETS
+    // PAGE 26: CHAPTER 15 - PREMIER EXPAT TOWNS & REGIONAL MICRO-MARKETS
     startNewChapterPage();
 
     drawChapterHeader(
-      '14',
+      '15',
       `Premier Expat Towns & Retirement Hubs in ${country.name}`,
       `In-depth comparison of the top ${country.topCities.length} retirement micro-markets, monthly costs, and local atmosphere`,
       INDIGO_600,
@@ -2483,15 +2912,16 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   }
 
   // =========================================================================
-  // PAGE 23: CHAPTER 15 - DEMOGRAPHICS, SOCIAL DYNAMICS & NIGHTLIFE
+  // PAGES 27 & 28: CHAPTERS 16 & 16B - DEMOGRAPHICS & NIGHTLIFE (ALWAYS DISPLAYED)
   // =========================================================================
   if (options.includeDemographicsAndLifestyle) {
+    // PAGE 27: CHAPTER 16 - DEMOGRAPHICS, SOCIAL DYNAMICS & DATING CULTURE
     startNewChapterPage();
 
     drawChapterHeader(
-      '15',
-      'Demographics, Social Integration & Nightlife Atmosphere',
-      `Population metrics, gender ratios, dating culture, and evening entertainment in ${country.name}`,
+      '16',
+      'Demographics, Social Integration & Dating Culture',
+      `Population metrics, gender ratios, dating culture, and social atmosphere in ${country.name}`,
       VIOLET_600,
       VIOLET_LIGHT
     );
@@ -2515,7 +2945,7 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     currentY = (doc as any).lastAutoTable.finalY + 5;
 
     const socialRows: string[][] = [
-      ['Dating Culture & Relationship Dynamics', sanitizePdfText(demo.datingCultureSummary)],
+      ['Dating Culture & Romantic Dynamics', sanitizePdfText(demo.datingCultureSummary)],
       ['Everyday Social Integration & Community', sanitizePdfText(demo.socialAtmosphere)],
       [
         'Language & Expat Network Density',
@@ -2523,45 +2953,93 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
           country.lifestyle.englishProficiency
         } | Expat Network: ${country.lifestyle.expatCommunitySize}`,
       ],
+      [
+        'Friendship Building & Senior Circles',
+        `Retirees integrate most naturally through morning cafe routines, municipal walking groups, tennis/padel clubs, and volunteer organizations in ${country.name}.`,
+      ],
+      [
+        'Cross-Cultural Etiquette Protocols',
+        `Punctuality is relaxed for social gatherings. Greeting with double cheek-kisses or formal handshakes varies regionally; warm respect is reciprocated.`,
+      ],
     ];
-
-    if (options.includeDiscreetNightlife) {
-      const ae = country.adultEntertainment;
-      socialRows.push(
-        [
-          'Nightlife Vibrancy & Venue Scores',
-          sanitizePdfText(
-            `${ae.nightlifeVibrancy} (Nightlife Score: ${ae.nightlifeScore}/5 | Adult Venue Score: ${ae.adultEntertainmentScore}/5)`
-          ),
-        ],
-        ['Regulatory Framework & Overview', sanitizePdfText(`${ae.legalStatus} - ${ae.overview}`)],
-        ['Primary Entertainment Districts', sanitizePdfText(ae.topVenuesOrDistricts.join('   |   '))],
-        ['Evening & Nightlife Safety Guidance', sanitizePdfText(ae.safetyGuidance)]
-      );
-    }
 
     autoTable(doc, {
       startY: currentY,
       margin: { left: margin, right: margin },
+      head: [['Social & Demographic Dimension', 'In-Depth Societal Telemetry & Expat Guidance']],
       body: socialRows,
       theme: 'grid',
+      headStyles: { fillColor: INDIGO_900, textColor: [255, 255, 255], fontSize: 7.8 },
       columnStyles: {
         0: { cellWidth: 50, fontStyle: 'bold', fillColor: VIOLET_LIGHT, textColor: SLATE_900 },
         1: { cellWidth: contentWidth - 50, textColor: SLATE_700 },
       },
       bodyStyles: { fontSize: 7.8, cellPadding: 2.3 },
     });
-  }
 
-  // =========================================================================
-  // PAGES 24, 25 & 26: CHAPTERS 16, 16B & 16C - PRE-RETIREMENT HURDLES & COMPLETE FAQ KNOWLEDGE BASE
-  // =========================================================================
-  if (options.includeRelocationFaqs) {
-    // PAGE 24: CHAPTER 16 - 4-PILLAR PRE-DEPARTURE READINESS CHECKLIST & FAQS (PART 1)
+    currentY = (doc as any).lastAutoTable.finalY + 5;
+
+    drawCalloutBox(
+      'EXPAT SOCIAL INTEGRATION & LANGUAGE IMMERSION',
+      `While English is spoken in tourist hubs and private medical clinics (${country.lifestyle.englishProficiency} proficiency rating), investing in 60 hours of local language classes during your first 6 months opens doors to deep neighborly friendships, fair contractor pricing, and seamless civic settlement.`,
+      VIOLET_600,
+      VIOLET_LIGHT
+    );
+
+    // PAGE 28: CHAPTER 16B - SENIOR NIGHTLIFE VIBRANCY, ENTERTAINMENT DISTRICTS & SAFETY RULES
     startNewChapterPage();
 
     drawChapterHeader(
-      '16',
+      '16B',
+      'Senior Nightlife Vibrancy, Entertainment Districts & Safety Rules',
+      `Evening entertainment, rooftop lounges, cultural venues, licensing laws, and nighttime safety in ${country.name}`,
+      ROSE_600,
+      ROSE_LIGHT
+    );
+
+    const ae = country.adultEntertainment;
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin, right: margin },
+      head: [['Nightlife Dimension', 'Empirical Telemetry & Government Regulatory Standard']],
+      body: [
+        [
+          'Nightlife Vibrancy & Venue Scores',
+          `${sanitizePdfText(ae.nightlifeVibrancy)} (Overall Nightlife Score: ${ae.nightlifeScore}/5 | Adult Venue Score: ${ae.adultEntertainmentScore}/5)`,
+        ],
+        ['Regulatory Framework & Legal Status', sanitizePdfText(`${ae.legalStatus} - ${ae.overview}`)],
+        ['Primary Entertainment & Cultural Districts', sanitizePdfText(ae.topVenuesOrDistricts.join('   |   '))],
+        ['Evening Transit & Safe Movement', 'Licensed radio/app taxis (Uber/Bolt/FreeNow) are recommended after midnight.'],
+        ['Evening Scams & Nighttime Safety Guidance', sanitizePdfText(ae.safetyGuidance)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: ROSE_600, textColor: [255, 255, 255], fontSize: 7.8 },
+      columnStyles: {
+        0: { cellWidth: 50, fontStyle: 'bold', fillColor: ROSE_LIGHT, textColor: SLATE_900 },
+        1: { cellWidth: contentWidth - 50, textColor: SLATE_700 },
+      },
+      bodyStyles: { fontSize: 7.7, cellPadding: 2.3 },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 5;
+
+    drawCalloutBox(
+      'RESPECTFUL & LAWFUL EVENING CONDUCT ABROAD',
+      `Establishments in ${country.name} operate under strict statutory age and licensing controls. Expat retirees enjoy a welcoming, dignified nightlife culture centered on outdoor tapas plazas, live jazz clubs, classical concert halls, and waterfront promenade lounges. Always avoid unregulated street venues.`,
+      ROSE_600,
+      ROSE_LIGHT
+    );
+  }
+
+  // =========================================================================
+  // PAGES 29, 30 & 31: CHAPTERS 17, 17B & 17C - PRE-RETIREMENT HURDLES & COMPLETE FAQ KNOWLEDGE BASE
+  // =========================================================================
+  if (options.includeRelocationFaqs) {
+    // PAGE 29: CHAPTER 17 - 4-PILLAR PRE-DEPARTURE READINESS CHECKLIST & FAQS (PART 1)
+    startNewChapterPage();
+
+    drawChapterHeader(
+      '17',
       'Pre-Departure Readiness & Relocation Hurdles FAQ (Part 1)',
       `4-Pillar Pre-Departure Checklist plus step-by-step banking and tax residency guides for ${country.name}`,
       TEAL_600,
@@ -2650,11 +3128,11 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
 
     renderFaqTables(faqsGroup1, 0);
 
-    // PAGE 25: CHAPTER 16B - RELOCATION HURDLES & FAQ KNOWLEDGE BASE (PART 2)
+    // PAGE 30: CHAPTER 17B - RELOCATION HURDLES & FAQ KNOWLEDGE BASE (PART 2)
     startNewChapterPage();
 
     drawChapterHeader(
-      '16B',
+      '17B',
       'Relocation Hurdles & FAQ Knowledge Base (Part 2)',
       `Continuing step-by-step guidance on healthcare transitions, insurance, and consular compliance in ${country.name}`,
       INDIGO_600,
@@ -2663,12 +3141,12 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
 
     renderFaqTables(faqsGroup2, 2);
 
-    // PAGE 26: CHAPTER 16C - RELOCATION HURDLES & FAQ KNOWLEDGE BASE (PART 3)
+    // PAGE 31: CHAPTER 17C - RELOCATION HURDLES & FAQ KNOWLEDGE BASE (PART 3)
     if (faqsGroup3.length > 0) {
       startNewChapterPage();
 
       drawChapterHeader(
-        '16C',
+        '17C',
         'Relocation Hurdles & FAQ Knowledge Base (Part 3)',
         `Continuing resolutions for rental leases, language bureaucracy, and daily settlement in ${country.name}`,
         VIOLET_600,
@@ -2680,13 +3158,13 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   }
 
   // =========================================================================
-  // PAGE 27: CHAPTER 17 - COMMUNITY INSIGHTS, MENTORS & MEETUPS
+  // PAGE 32: CHAPTER 18 - COMMUNITY INSIGHTS, MENTORS & MEETUPS
   // =========================================================================
   if (options.includeCommunityAndMeetups) {
     startNewChapterPage();
 
     drawChapterHeader(
-      '17',
+      '18',
       'Expat Community Network, Resident Mentors & Meetup Circles',
       `Connecting with verified expat mentors, scheduled social gatherings, and peer forum threads in ${country.name}`,
       AMBER_600,
@@ -2788,60 +3266,36 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
   }
 
   // =========================================================================
-  // PAGE 28: CHAPTER 18 - 12-MONTH MASTER RELOCATION ROADMAP
+  // PAGES 33 & 34: CHAPTERS 19 & 19B - 12-MONTH MASTER RELOCATION ROADMAP (PARTS 1 & 2)
   // =========================================================================
+  // PAGE 33: CHAPTER 19 - PRE-DEPARTURE ROADMAP (T-12 TO T-6 MONTHS)
   startNewChapterPage();
 
   drawChapterHeader(
-    '18',
-    '12-Month Master Relocation Execution Roadmap & Checklist',
-    `Chronological milestone timeline from T-12 months pre-departure planning to full Year 1 settlement in ${country.name}`,
+    '19',
+    '12-Month Master Relocation Execution Roadmap (Part 1: Pre-Departure)',
+    `Chronological milestone timeline from T-12 to T-6 months pre-departure planning for ${country.name}`,
     TEAL_600,
     TEAL_LIGHT
   );
 
-  const roadmapSteps = [
+  const roadmapStepsPart1 = [
     [
       'T-12 to T-9 Months',
       'Initial Scouting & Financial Audit',
       `Complete 30-to-60 day in-person scouting trip across ${
         country.topCities[0]?.name || country.capital
-      } and secondary hubs. Consult cross-border CPA on 183-day tax residency and pension treaties.`,
+      } and secondary hubs. Consult cross-border CPA on 183-day tax residency, foreign assets, and pension treaties.`,
     ],
     [
-      'T-8 to T-6 Months',
-      'Vital Records & Tax ID Setup',
-      `Order certified birth/marriage certificates. Apply remotely or via legal representative for local tax ID (NIF/NIE/RFC) and open local bank account in ${country.currency}.`,
+      'T-8 to T-7 Months',
+      'Vital Records & Document Procurement',
+      `Order certified long-form birth and marriage certificates. Verify passport has at least 24 months validity remaining beyond planned move date.`,
     ],
     [
-      'T-5 to T-4 Months',
-      'Police Clearance, Apostilles & Insurance',
-      `Order FBI/federal criminal background check (valid 90-180 days) and obtain Hague Apostilles. Purchase consular-compliant health policy (${hc.insurance.visaRequirementHeadline}).`,
-    ],
-    [
-      'T-3 to T-2 Months',
-      'Consular Submission & Lease Registration',
-      `Engage sworn translator for apostilled documents. Submit formal ${country.visa.retirementVisaName} package at regional consulate. Secure registered residential lease or accommodation proof.`,
-    ],
-    [
-      'T-1 Month to Departure',
-      'Visa Stamp, Medical & Logistics',
-      `Collect passport with visa stamp. Convert prescriptions to generic chemical names (INN) and pack 90-day supply. Set up 2FA hardware keys for home-country banking.`,
-    ],
-    [
-      'Month 1 In-Country',
-      'Biometrics & Municipal Registration',
-      `Attend in-country immigration appointment for residency card issuance. Register local address at town hall (Empadronamiento / Junta de Freguesia). Get local SIM/fiber.`,
-    ],
-    [
-      'Months 2 to 3 In-Country',
-      'Healthcare Enrollment & Community',
-      `Enroll in ${hc.routineCare.publicSystemName} or activate local private hospital app. Establish relationship with English-speaking GP. Join local expat meetups and language courses.`,
-    ],
-    [
-      'Months 6 to 12 In-Country',
-      'Driver License Exchange & Renewal Prep',
-      `Complete statutory driver's license exchange before foreign permit window expires. Prepare annual tax return with bilingual CPA and verify Year 1 residency renewal documents.`,
+      'T-6 Months',
+      'Tax ID Setup & Banking Architecture',
+      `Apply remotely or via legal power of attorney for local tax ID (NIF/NIE/RFC) and open an in-country bank account in ${country.currency} with initial seed deposit.`,
     ],
   ];
 
@@ -2849,7 +3303,7 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
     startY: currentY,
     margin: { left: margin, right: margin },
     head: [['Timeline Phase', 'Strategic Milestone', 'Concrete Actionable Steps']],
-    body: roadmapSteps.map(r => r.map(c => sanitizePdfText(c))),
+    body: roadmapStepsPart1.map(r => r.map(c => sanitizePdfText(c))),
     theme: 'striped',
     headStyles: { fillColor: INDIGO_600, textColor: [255, 255, 255], fontSize: 8 },
     columnStyles: {
@@ -2857,25 +3311,93 @@ export async function generateCountryDossierPdf(ctx: DossierExportContext): Prom
       1: { cellWidth: 48, fontStyle: 'bold', textColor: SLATE_900 },
       2: { cellWidth: contentWidth - 82, textColor: SLATE_700 },
     },
-    bodyStyles: { fontSize: 7.6, cellPadding: 2.2 },
+    bodyStyles: { fontSize: 7.8, cellPadding: 2.8 },
   });
 
   currentY = (doc as any).lastAutoTable.finalY + 5;
 
   drawCalloutBox(
-    'CRITICAL TIMING RULE: DOCUMENT EXPIRATION WINDOWS',
-    'Criminal background checks and medical certificates carry strict 90-to-180 day validity windows at most consulates. Never order your FBI/national police check more than 120 days prior to your confirmed consular appointment date.',
+    'PRE-DEPARTURE CRITICAL PATH: DOCUMENT VALIDITY CYCLES',
+    'Vital records and FBI background checks carry strictly regulated expiration dates (usually 90 to 180 days from issuance). Map backward from your targeted consular appointment date before ordering criminal record clearances.',
     AMBER_600,
     AMBER_LIGHT
   );
 
+  // PAGE 34: CHAPTER 19B - CONSULAR FILING & IN-COUNTRY SETTLEMENT (T-5 TO YEAR 1)
+  startNewChapterPage();
+
+  drawChapterHeader(
+    '19B',
+    '12-Month Master Relocation Execution Roadmap (Part 2: Settlement)',
+    `Consular filing, travel logistics, biometric appointments, and Year 1 settlement in ${country.name}`,
+    INDIGO_600,
+    INDIGO_LIGHT
+  );
+
+  const roadmapStepsPart2 = [
+    [
+      'T-5 to T-4 Months',
+      'Police Clearance, Apostilles & Insurance',
+      `Order FBI/federal criminal background check and obtain Hague Apostilles. Purchase consular-compliant health policy (${hc.insurance.visaRequirementHeadline}).`,
+    ],
+    [
+      'T-3 to T-2 Months',
+      'Consular Submission & Lease Registration',
+      `Engage sworn certified translator for all documents. Submit formal ${country.visa.retirementVisaName} dossier at regional consulate. Secure registered residential lease.`,
+    ],
+    [
+      'T-1 Month to Departure',
+      'Visa Stamp, Medical & Logistics',
+      `Collect passport with visa entry vignette. Convert prescriptions to generic chemical names (INN) and pack 90-day supply. Set up 2FA hardware keys for banking.`,
+    ],
+    [
+      'Month 1 In-Country',
+      'Biometrics & Municipal Registration',
+      `Attend in-country immigration appointment for residence card (TIE/CR/TIT). Register address at town hall (Empadronamiento / Junta de Freguesia). Get local fiber/SIM.`,
+    ],
+    [
+      'Months 2 to 3 In-Country',
+      'Healthcare Enrollment & Community',
+      `Enroll in ${hc.routineCare.publicSystemName} or activate local private hospital app. Establish relationship with English-speaking GP. Join local expat meetups.`,
+    ],
+    [
+      'Months 6 to 12 In-Country',
+      'Driver License Exchange & Renewal Prep',
+      `Complete statutory driver's license exchange before foreign permit window closes. File first annual tax return with bilingual CPA and verify Year 1 residency renewal rules.`,
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: currentY,
+    margin: { left: margin, right: margin },
+    head: [['Timeline Phase', 'Strategic Milestone', 'Concrete Actionable Steps']],
+    body: roadmapStepsPart2.map(r => r.map(c => sanitizePdfText(c))),
+    theme: 'striped',
+    headStyles: { fillColor: TEAL_600, textColor: [255, 255, 255], fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 34, fontStyle: 'bold', textColor: TEAL_600 },
+      1: { cellWidth: 48, fontStyle: 'bold', textColor: SLATE_900 },
+      2: { cellWidth: contentWidth - 82, textColor: SLATE_700 },
+    },
+    bodyStyles: { fontSize: 7.5, cellPadding: 2.2 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 5;
+
+  drawCalloutBox(
+    'YEAR 1 STATUTORY IN-COUNTRY MANDATES',
+    `Mark your calendar for the driver's license exchange deadline (typically 90-180 days after residency issuance). Missing this deadline often forces applicants to pass the host country driving theory and practical exams from scratch in the local language.`,
+    TEAL_600,
+    TEAL_LIGHT
+  );
+
   // =========================================================================
-  // PAGE 29: CHAPTER 19 - DOCUMENT GOVERNANCE, LEGAL DISCLAIMER & COPYRIGHT
+  // PAGE 35: CHAPTER 20 - DOCUMENT GOVERNANCE, LEGAL DISCLAIMER & COPYRIGHT
   // =========================================================================
   startNewChapterPage();
 
   drawChapterHeader(
-    '19',
+    '20',
     'Document Governance, Legal Disclaimer & Exclusive Copyright',
     `Official terms of use, legal notices, intellectual property protection, and cryptographic verification seal`,
     INDIGO_900,
@@ -2895,7 +3417,7 @@ Immigration legislation, visa income thresholds, double taxation treaties, and h
     'PROPRIETARY INTELLECTUAL PROPERTY & COPYRIGHT NOTICE',
     `(c) 2026 ReFIREly Global Relocation Intelligence (ReFIREly.com). All Rights Reserved.
 
-This document, including its compilation, tabular schemas, 6-axis radar telemetry, healthcare evaluations, travel mobility assessments, and formatting architecture, constitutes the proprietary intellectual property of ReFIREly.
+This document, including its compilation, tabular schemas, 6-axis radar telemetry, healthcare evaluations, travel mobility assessments, housing analytics, gastronomy guides, and formatting architecture, constitutes the proprietary intellectual property of ReFIREly.
 
 STRICT PROHIBITION ON COMMERCIAL RESALE AND REDISTRIBUTION:
 This dossier is licensed exclusively to the individual member who downloaded it for personal, non-commercial relocation evaluation. Any unauthorized reproduction, resale, syndication, commercial redistribution, or public web hosting without prior written consent from ReFIREly is strictly prohibited.`,
@@ -2912,7 +3434,7 @@ This dossier is licensed exclusively to the individual member who downloaded it 
     head: [['Verification Dimension', 'Audit Record & Authenticity Metadata']],
     body: [
       ['Publication Title', sanitizePdfText(`ReFIREly Master Country Relocation & FIRE Dossier - ${country.name}`)],
-      ['Publication Volume', `${totalPages}-Page Master Edition (19 Chapters)`],
+      ['Publication Volume', `${totalPages}-Page Master Edition (22 Chapters)`],
       ['Document Control ID', documentControlId],
       ['Issuing Entity', 'ReFIREly Global Relocation Intelligence Unit'],
       ['Official Website', 'https://refirely.com'],
@@ -2957,7 +3479,7 @@ This dossier is licensed exclusively to the individual member who downloaded it 
   doc.setFontSize(7.5);
   doc.setTextColor(...INDIGO_600);
   doc.text(
-    sanitizePdfText(`${totalPages}-Page Master Edition (19 Chapters)`),
+    sanitizePdfText(`${totalPages}-Page Master Edition (22 Chapters)`),
     kpiStartX + kpiTotalW / 2 + 35,
     metaCardY + 17.2
   );

@@ -224,10 +224,10 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsPdfModalOpen(true)}
               className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-teal-500 via-indigo-600 to-amber-500 hover:from-teal-600 hover:to-amber-600 text-white transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title={`Export complete 29-page ${country.name} master retirement dossier as a formatted PDF`}
+              title={`Export complete 35-page ${country.name} master retirement dossier as a formatted PDF`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export 29-Page Dossier PDF</span>
+              <span>Export 35-Page Master Dossier PDF</span>
             </motion.button>
 
             {journalEntries[country.id] ? (

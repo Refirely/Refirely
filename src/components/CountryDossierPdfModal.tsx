@@ -18,6 +18,8 @@ import {
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { getCountryHealthcareProfile } from '../data/countryHealthcare';
 import { getCountryTravelMobility } from '../data/countryTravelMobility';
+import { getCountryHousingProfile } from '../data/countryHousingAndRentals';
+import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
 import { CountryFlag } from './CountryFlag';
 import { BrandLogo } from './BrandLogo';
 import {
@@ -31,6 +33,11 @@ import {
   Printer,
   Check,
   ShieldAlert,
+  Home,
+  UtensilsCrossed,
+  TrendingUp,
+  MapPin,
+  Flame,
 } from 'lucide-react';
 
 interface CountryDossierPdfModalProps {
@@ -65,6 +72,8 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
     includeHealthcareAndInsurance: true,
     includeCostAndBudget: true,
     includeHousingAndRentals: true,
+    includeFIREModeling: true,
+    includeFoodAndGastronomy: true,
     includeTravelAndMobility: true,
     includeClimateAndTowns: true,
     includeDemographicsAndLifestyle: true,
@@ -87,20 +96,25 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   const structuredVisaRows = useMemo(() => getStructuredVisaRows(country), [country]);
   const hc = useMemo(() => getCountryHealthcareProfile(country), [country]);
   const mobility = useMemo(() => getCountryTravelMobility(country), [country]);
+  const housing = useMemo(() => getCountryHousingProfile(country), [country]);
+  const gastronomy = useMemo(() => getCountryGastronomyProfile(country), [country]);
 
-  // Calculate dynamic page count based on selected sections (29 pages when all sections enabled)
+  // Calculate dynamic page count based on selected sections (35 pages when all sections enabled)
   const estimatedPageCount = useMemo(() => {
-    let pages = 4; // Page 1 Cover + Page 2 Master TOC + Page 28 12-Month Roadmap + Page 29 Legal/Copyright
+    let pages = 5; // Page 1 Cover + Page 2 Master TOC + Page 33 Roadmap Pt1 + Page 34 Roadmap Pt2 + Page 35 Governance/Seal
     if (options.includeExecutiveSummary) pages += 2; // Ch 01 & 01B (2 pages)
     if (options.includeVisaAndLegal) pages += 2; // Ch 02 & 02B (2 pages)
     if (options.includeShortTermVisas) pages += 1; // Ch 03 (1 page)
     if (options.includeHealthcareAndInsurance) pages += 4; // Ch 04, 05, 06 & 06B (4 pages)
-    if (options.includeCostAndBudget) pages += 4; // Ch 07, 07B, 08 & 09 (4 pages)
-    if (options.includeTravelAndMobility) pages += 5; // Ch 10, 10B, 11, 12 & 12B (5 pages)
-    if (options.includeClimateAndTowns) pages += 2; // Ch 13 & 14 (2 pages)
-    if (options.includeDemographicsAndLifestyle) pages += 1; // Ch 15 (1 page)
-    if (options.includeRelocationFaqs) pages += faqs.length > 4 ? 3 : 2; // Ch 16, 16B & 16C (3 pages)
-    if (options.includeCommunityAndMeetups) pages += 1; // Ch 17 (1 page)
+    if (options.includeCostAndBudget) pages += 2; // Ch 07 & 07B (2 pages)
+    if (options.includeHousingAndRentals) pages += 2; // Ch 08 & 08B (2 pages)
+    if (options.includeFIREModeling) pages += 1; // Ch 09 (1 page)
+    if (options.includeFoodAndGastronomy) pages += 3; // Ch 10, 10B & 10C (3 pages)
+    if (options.includeTravelAndMobility) pages += 5; // Ch 11, 11B, 12, 13 & 13B (5 pages)
+    if (options.includeClimateAndTowns) pages += 2; // Ch 14 & 15 (2 pages)
+    if (options.includeDemographicsAndLifestyle) pages += 2; // Ch 16 & 16B (2 pages)
+    if (options.includeRelocationFaqs) pages += faqs.length > 4 ? 3 : 2; // Ch 17, 17B & 17C (3 pages)
+    if (options.includeCommunityAndMeetups) pages += 1; // Ch 18 (1 page)
     return pages;
   }, [options, faqs.length]);
 
@@ -120,6 +134,8 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
       includeHealthcareAndInsurance: true,
       includeCostAndBudget: true,
       includeHousingAndRentals: true,
+      includeFIREModeling: true,
+      includeFoodAndGastronomy: true,
       includeTravelAndMobility: true,
       includeClimateAndTowns: true,
       includeDemographicsAndLifestyle: true,
@@ -142,7 +158,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
         meetups,
         options,
       });
-      trackDossierDownload(country.id, country.name, 'Comprehensive 29-Page PDF Dossier');
+      trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier');
       setExportSuccess(true);
     } finally {
       setIsGenerating(false);
@@ -189,11 +205,11 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 </h2>
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-gradient-to-r from-teal-500/15 via-indigo-500/15 to-amber-500/15 text-indigo-950 border border-indigo-300/80">
                   <Sparkles className="w-3 h-3 text-indigo-600" />
-                  {estimatedPageCount}-Page Publication · 19 Chapters
+                  {estimatedPageCount}-Page Publication · 22 Chapters
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                Complete website intelligence in one vector PDF: 6-axis radar telemetry, 10-point visa matrix, 4-page healthcare &amp; insurance guide, budget calculator, mobility personas, FAQs &amp; 12-month roadmap.
+                Complete website intelligence in one vector PDF: 6-axis radar, 10-point visa matrix, 4-page healthcare &amp; insurance, budget calculator, housing &amp; rental enclaves, food &amp; gastronomy traditions, mobility personas, FAQs &amp; 12-month execution roadmap.
               </p>
             </div>
           </div>
@@ -245,14 +261,14 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
               <div className="flex items-center gap-1.5">
                 <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                  Included Dossier Modules ({activeSectionsCount}/12)
+                  Included Dossier Modules ({activeSectionsCount}/15)
                 </h3>
               </div>
               <button
                 onClick={selectAllOptions}
                 className="text-[11px] font-bold text-indigo-700 hover:text-teal-700 hover:underline cursor-pointer"
               >
-                Select All 12 Modules
+                Select All 15 Modules
               </button>
             </div>
 
@@ -261,7 +277,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 {
                   key: 'includeExecutiveSummary' as const,
                   label: '1. Executive Profile, 6-Axis Radar & SWOT (2p)',
-                  desc: 'Overview prose, 8 core KPIs, radar telemetry & pros/cons.',
+                  desc: 'Overview prose, 8 core KPIs, radar telemetry & pros/cons (Ch 01 & 01B).',
                   accent: 'border-teal-300 bg-teal-50/40',
                   checkBg: 'from-teal-500 to-emerald-600',
                 },
@@ -275,70 +291,91 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 {
                   key: 'includeVisaAndLegal' as const,
                   label: '3. Visa, PR & 10-Point Legal Matrix (2p)',
-                  desc: `${country.visa.retirementVisaName} thresholds, PR timeline & tax rules.`,
+                  desc: `${country.visa.retirementVisaName} thresholds, PR timeline & tax rules (Ch 02 & 02B).`,
                   accent: 'border-violet-300 bg-violet-50/40',
                   checkBg: 'from-violet-500 to-purple-600',
                 },
                 {
                   key: 'includeShortTermVisas' as const,
                   label: `4. Short-Stay & Trial Visas (${shortVisas.length} Options, 1p)`,
-                  desc: 'Tourist waivers, digital nomad permits & 3 decision frameworks.',
+                  desc: 'Tourist waivers, digital nomad permits & 3 decision frameworks (Ch 03).',
                   accent: 'border-amber-300 bg-amber-50/40',
                   checkBg: 'from-amber-500 to-orange-600',
                 },
                 {
                   key: 'includeHealthcareAndInsurance' as const,
                   label: '5. Healthcare, Emergency & Insurance (4p)',
-                  desc: `Routine care, ${hc.emergencyServices.emergencyNumberPrimary} ER triage, 3 insurance tiers & cash tariffs.`,
+                  desc: `Routine care, ${hc.emergencyServices.emergencyNumberPrimary} ER triage, 3 insurance tiers & cash tariffs (Ch 04, 05, 06 & 06B).`,
                   accent: 'border-teal-300 bg-teal-50/40',
                   checkBg: 'from-teal-500 to-indigo-600',
                 },
                 {
                   key: 'includeCostAndBudget' as const,
-                  label: '6. Cost of Living, Budget Calc & FIRE (4p)',
-                  desc: 'Dual-currency expenses, 3 lifestyle budgets, leases & 4%/3.5% SWR.',
+                  label: '6. Cost of Living & Budget Calculator (2p)',
+                  desc: 'Dual-currency expenses, 3 lifestyle tiers & budget matrix (Ch 07 & 07B).',
                   accent: 'border-indigo-300 bg-indigo-50/40',
                   checkBg: 'from-indigo-500 to-violet-600',
                 },
                 {
+                  key: 'includeHousingAndRentals' as const,
+                  label: '7. Housing Markets, Leases & Caution Zones (2p)',
+                  desc: `${housing.safeExpatNeighborhoods.length} prime city enclaves, tenant broker fees, statutory leases & safety (Ch 08 & 08B).`,
+                  accent: 'border-emerald-300 bg-emerald-50/40',
+                  checkBg: 'from-emerald-500 to-teal-600',
+                },
+                {
+                  key: 'includeFIREModeling' as const,
+                  label: '8. FIRE Financial Modeling & SWR (1p)',
+                  desc: '4.0% vs 3.5% safe withdrawal rates & geo-arbitrage capital longevity (Ch 09).',
+                  accent: 'border-amber-300 bg-amber-50/40',
+                  checkBg: 'from-amber-500 to-orange-600',
+                },
+                {
+                  key: 'includeFoodAndGastronomy' as const,
+                  label: '9. Food Heritage, Daily Routine Meals & Dining (3p)',
+                  desc: `${gastronomy.nationalDishes.length} signature dishes, local meal rhythms, veg/vegan ease & hygiene (Ch 10, 10B & 10C).`,
+                  accent: 'border-rose-300 bg-rose-50/40',
+                  checkBg: 'from-rose-500 to-amber-600',
+                },
+                {
                   key: 'includeTravelAndMobility' as const,
-                  label: '7. Travel, Activities & Mobility Personas (5p)',
-                  desc: `${mobility.retireeActivities.length} pursuits, transit, Couples, Solo & Solo Female guides.`,
+                  label: '10. Travel, Activities & Mobility Personas (5p)',
+                  desc: `${mobility.retireeActivities.length} pursuits, transit, Couples, Solo & Solo Female guides (Ch 11–13B).`,
                   accent: 'border-amber-300 bg-amber-50/40',
                   checkBg: 'from-amber-500 to-rose-500',
                 },
                 {
                   key: 'includeClimateAndTowns' as const,
-                  label: `8. Climate Cycles & Top Expat Towns (${country.topCities.length} Hubs, 2p)`,
-                  desc: '3-season weather guide and regional hub comparisons.',
+                  label: `11. Climate Cycles & Top Expat Towns (${country.topCities.length} Hubs, 2p)`,
+                  desc: '3-season weather guide and regional hub comparisons (Ch 14 & 15).',
                   accent: 'border-teal-300 bg-teal-50/40',
                   checkBg: 'from-teal-500 to-emerald-600',
                 },
                 {
                   key: 'includeDemographicsAndLifestyle' as const,
-                  label: '9. Demographics & Dating Culture (1p)',
-                  desc: 'Median age, F:M gender ratio, and social integration dynamics.',
+                  label: '12. Demographics & Dating Culture (1p)',
+                  desc: 'Median age, F:M gender ratio, and social integration dynamics (Ch 16).',
                   accent: 'border-violet-300 bg-violet-50/40',
                   checkBg: 'from-violet-500 to-fuchsia-600',
                 },
                 {
                   key: 'includeDiscreetNightlife' as const,
-                  label: '10. Nightlife & Adult Entertainment',
-                  desc: 'Optional discreet entertainment districts, scores & safety.',
+                  label: '13. Senior Nightlife & Adult Entertainment (1p)',
+                  desc: 'Evening social venues, districts, scores & safety rules (Ch 16B).',
                   accent: 'border-rose-300 bg-rose-50/40',
                   checkBg: 'from-rose-500 to-amber-500',
                 },
                 {
                   key: 'includeRelocationFaqs' as const,
-                  label: `11. Readiness Checklist & FAQs (${faqs.length} Guides, 3p)`,
-                  desc: '4-pillar readiness checklist, banking, 183-day tax & leases.',
+                  label: `14. Readiness Checklist & FAQs (${faqs.length} Guides, 3p)`,
+                  desc: '4-pillar readiness checklist, banking, 183-day tax & leases (Ch 17–17C).',
                   accent: 'border-indigo-300 bg-indigo-50/40',
                   checkBg: 'from-indigo-600 to-teal-500',
                 },
                 {
                   key: 'includeCommunityAndMeetups' as const,
-                  label: '12. Expat Mentors, Meetups & Forum (1p)',
-                  desc: `${meetups.length} meetups, ${threads.length} discussions, and local mentors.`,
+                  label: '15. Expat Mentors, Meetups & Forum (1p)',
+                  desc: `${meetups.length} meetups, ${threads.length} discussions, and local mentors (Ch 18).`,
                   accent: 'border-amber-300 bg-amber-50/40',
                   checkBg: 'from-amber-500 to-orange-600',
                 },
@@ -387,7 +424,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Includes multi-colored prestige cover page, 19-chapter blueprint, running headers, tabular financial &amp; healthcare matrices, and 12-month execution roadmap.
+                Includes multi-colored prestige cover page, 22-chapter master blueprint, running headers, neighborhood enclaves, gastronomy tasting guides, tabular financial &amp; healthcare matrices, and 12-month execution roadmap.
               </p>
               {exportSuccess && (
                 <div className="pt-2 flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
@@ -697,12 +734,12 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 6: Cost of Living, Budget Calculator & FIRE */}
+                {/* Preview Section 6: Cost of Living & Budget Calculator Matrix */}
                 {options.includeCostAndBudget && (
                   <section className="space-y-3">
                     <div className="border-l-4 border-indigo-600 bg-gradient-to-r from-indigo-50/90 to-amber-50/50 px-3.5 py-2 rounded-r-xl">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Chapters 07, 07B, 08 &amp; 09 · Cost of Living, Budget Calculator, Leases &amp; FIRE (Pages 12–15)
+                        Chapters 07 &amp; 07B · Cost of Living &amp; Budget Calculator Matrix (Pages 12–13)
                       </h3>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
@@ -734,12 +771,122 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 7: Travel, Activities & Mobility Personas */}
+                {/* Preview Section 7: Housing & Rental Market */}
+                {options.includeHousingAndRentals && (
+                  <section className="space-y-3">
+                    <div className="border-l-4 border-emerald-600 bg-gradient-to-r from-emerald-50/90 to-teal-50/50 px-3.5 py-2 rounded-r-xl flex items-center justify-between">
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Chapters 08 &amp; 08B · Housing &amp; Rental Market, Leases &amp; Caution Zones (Pages 14–15)
+                      </h3>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">
+                        2 Dedicated Pages
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-emerald-900 mb-1">
+                          <Home className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Neighborhood Tiers</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          {housing.safeExpatNeighborhoods.length} prime city enclaves profiled with 1-bed/2-bed rents, transit, and expat enclave ratings.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-teal-900 mb-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                          <span>Tenant Broker Fees</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          Tenant fee: <strong>{housing.brokerAndFees.whoPaysBrokerFee}</strong>. Commission: {housing.brokerAndFees.typicalBrokerCommission}.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-amber-900 mb-1">
+                          <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Caution Districts</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          {housing.areasToAvoidOrCaution.length} districts with specific nighttime and acoustic safety rules for expats.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Preview Section 8: FIRE Financial Modeling */}
+                {options.includeFIREModeling && (
+                  <section className="space-y-3">
+                    <div className="border-l-4 border-amber-500 bg-gradient-to-r from-amber-50/90 to-orange-50/50 px-3.5 py-2 rounded-r-xl">
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Chapter 09 · FIRE Financial Modeling &amp; Geo-Arbitrage Economics (Page 16)
+                      </h3>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-amber-50/40 border border-amber-200 text-xs space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-bold text-slate-900">
+                          Single 4.0% SWR Capital: <strong className="text-amber-900 font-mono">${(country.costOfLiving.monthlyBudgetSingleUSD * 12 * 25).toLocaleString()}</strong>
+                        </span>
+                        <span className="font-bold text-slate-900">
+                          Couple 4.0% SWR Capital: <strong className="text-amber-900 font-mono">${(country.costOfLiving.monthlyBudgetCoupleUSD * 12 * 25).toLocaleString()}</strong>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        Comprehensive geo-arbitrage capital preservation modeling comparing 4.0% and conservative 3.5% safe withdrawal rates against dual-currency budgets.
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {/* Preview Section 9: Food & Gastronomy */}
+                {options.includeFoodAndGastronomy && (
+                  <section className="space-y-3">
+                    <div className="border-l-4 border-rose-500 bg-gradient-to-r from-rose-50/90 to-amber-50/50 px-3.5 py-2 rounded-r-xl flex items-center justify-between">
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Chapters 10, 10B &amp; 10C · Food &amp; Gastronomy Heritage (Pages 17–19)
+                      </h3>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-900">
+                        3 Dedicated Pages
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl bg-rose-50/50 border border-rose-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-rose-900 mb-1">
+                          <UtensilsCrossed className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Daily Meal Rhythms</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          {gastronomy.routines.map(r => r.mealName).join(' · ')} routines, typical local breakfasts, and sociable lunches.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-amber-900 mb-1">
+                          <Flame className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Signature National Dishes</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          {gastronomy.nationalDishes.slice(0, 3).map(d => d.name).join(', ')} with flavor profiles and authentic tasting spots.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200">
+                        <div className="flex items-center gap-1.5 font-extrabold text-teal-900 mb-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                          <span>Dietary &amp; Hygiene</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          Veg rating: <strong>{gastronomy.dietaryRestrictions.vegetarianRating}</strong>. Hygiene: <strong>{gastronomy.costsAndHygiene.eatingOutHygieneScore}/100</strong>. Tap: {gastronomy.costsAndHygiene.waterSafety}.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Preview Section 10: Travel, Activities & Mobility Personas */}
                 {options.includeTravelAndMobility && (
                   <section className="space-y-3">
                     <div className="border-l-4 border-amber-500 bg-gradient-to-r from-amber-50/90 to-teal-50/50 px-3.5 py-2 rounded-r-xl">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Chapters 10–12B · {mobility.retireeActivities.length} Retiree Pursuits, Transit &amp; 3 Safety Personas (Pages 16–20)
+                        Chapters 11, 11B, 12, 13 &amp; 13B · {mobility.retireeActivities.length} Retiree Pursuits, Transit &amp; 3 Safety Personas (Pages 20–24)
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
@@ -748,12 +895,12 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 8: Climate & Top Expat Towns */}
+                {/* Preview Section 11: Climate & Top Expat Towns */}
                 {options.includeClimateAndTowns && (
                   <section className="space-y-3">
                     <div className="border-l-4 border-teal-500 bg-gradient-to-r from-teal-50/90 to-indigo-50/50 px-3.5 py-2 rounded-r-xl">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Chapters 13 &amp; 14 · 3-Season Climate Guide &amp; Top Expat Towns ({country.topCities.length} Hubs · Pages 21–22)
+                        Chapters 14 &amp; 15 · 3-Season Climate Guide &amp; Top Expat Towns ({country.topCities.length} Hubs · Pages 25–26)
                       </h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -773,13 +920,12 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 9 & 10: Demographics & Lifestyle */}
+                {/* Preview Section 12: Demographics & Dating Culture */}
                 {options.includeDemographicsAndLifestyle && (
                   <section className="space-y-3">
                     <div className="border-l-4 border-violet-600 bg-gradient-to-r from-violet-50/90 to-rose-50/40 px-3.5 py-2 rounded-r-xl">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Chapter 15 · Demographics, Social Culture{' '}
-                        {options.includeDiscreetNightlife ? '& Nightlife' : ''} (Page 23)
+                        Chapter 16 · Demographics, Social Dynamics &amp; Dating Culture (Page 27)
                       </h3>
                     </div>
                     <p className="text-xs text-slate-700 leading-relaxed">
@@ -792,12 +938,27 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 11: Pre-Retirement Hurdles & FAQs */}
+                {/* Preview Section 13: Senior Nightlife Vibrancy & Entertainment */}
+                {options.includeDiscreetNightlife && (
+                  <section className="space-y-3">
+                    <div className="border-l-4 border-rose-500 bg-gradient-to-r from-rose-50/90 to-amber-50/40 px-3.5 py-2 rounded-r-xl">
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Chapter 16B · Senior Nightlife Vibrancy &amp; Adult Entertainment Districts (Page 28)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      <strong>Nightlife Score:</strong> {country.adultEntertainment.nightlifeScore}/5 ({country.adultEntertainment.nightlifeVibrancy}) ·{' '}
+                      <strong>Legal Framework:</strong> {country.adultEntertainment.legalStatus}. Profiles top entertainment districts, acoustic standards, and senior safety rules.
+                    </p>
+                  </section>
+                )}
+
+                {/* Preview Section 14: Pre-Retirement Hurdles & FAQs */}
                 {options.includeRelocationFaqs && (
                   <section className="space-y-3">
                     <div className="border-l-4 border-indigo-600 bg-gradient-to-r from-indigo-50/90 to-teal-50/50 px-3.5 py-2 rounded-r-xl">
                       <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                        Chapters 16–16C · 4-Pillar Readiness Checklist &amp; {faqs.length} Detailed Hurdle Guides (Pages 24–26)
+                        Chapters 17, 17B &amp; 17C · 4-Pillar Readiness Checklist &amp; {faqs.length} Detailed Hurdle Guides (Pages 29–31)
                       </h3>
                     </div>
                     <div className="space-y-2">
@@ -818,19 +979,19 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   </section>
                 )}
 
-                {/* Preview Section 12: Community, Roadmap & Legal Governance */}
+                {/* Preview Section 15: Community, 12-Month Roadmap & Legal Governance */}
                 <section className="space-y-3">
                   <div className="border-l-4 border-emerald-600 bg-gradient-to-r from-emerald-50/90 to-teal-50/50 px-3.5 py-2 rounded-r-xl">
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                      Chapters 17, 18 &amp; 19 · Community Mentors, 12-Month Execution Roadmap &amp; Legal Seal (Pages 27–{estimatedPageCount})
+                      Chapters 18, 19, 19B &amp; 20 · Community Mentors, 12-Month Master Roadmap &amp; Legal Seal (Pages 32–{estimatedPageCount})
                     </h3>
                   </div>
                   <div className="p-4 rounded-xl bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-950 text-slate-200 text-xs space-y-2">
                     <div className="text-[11px] font-extrabold text-teal-300 uppercase tracking-wider">
-                      Official ReFIREly Global Intelligence Notice
+                      Official ReFIREly Global Intelligence Notice · 35-Page Master Volume
                     </div>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      This {estimatedPageCount}-page master dossier is compiled for private informational, educational, and scouting benchmarking purposes. All content is the proprietary copyright of ReFIREly (ReFIREly.com).
+                      This {estimatedPageCount}-page master dossier is compiled for private informational, educational, and scouting benchmarking purposes across 22 chapters. All content is the proprietary copyright of ReFIREly (ReFIREly.com).
                     </p>
                   </div>
                 </section>

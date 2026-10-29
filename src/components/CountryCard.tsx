@@ -107,8 +107,11 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includePersonalReadinessAndJournal: true,
         includeVisaAndLegal: true,
         includeShortTermVisas: true,
+        includeHealthcareAndInsurance: true,
         includeCostAndBudget: true,
         includeHousingAndRentals: true,
+        includeFIREModeling: true,
+        includeFoodAndGastronomy: true,
         includeTravelAndMobility: true,
         includeClimateAndTowns: true,
         includeDemographicsAndLifestyle: true,
@@ -117,7 +120,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includeCommunityAndMeetups: true,
       },
     });
-    trackDossierDownload(country.id, country.name, 'Quick Country Card Dossier');
+    trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier');
   };
 
   return (
@@ -457,10 +460,10 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
             whileTap={{ scale: 0.96 }}
             onClick={handleQuickExportPdf}
             className="inline-flex items-center gap-1 text-xs font-bold text-purple-800 hover:text-purple-950 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/90 transition-colors py-1.5 px-2.5 rounded-xl whitespace-nowrap cursor-pointer shadow-2xs"
-            title={`Download complete ${country.name} retirement dossier PDF`}
+            title={`Download complete 35-page ${country.name} master retirement dossier PDF`}
           >
             <Download className="w-3 h-3 text-purple-700" />
-            <span>PDF</span>
+            <span>35p PDF</span>
           </motion.button>
 
           {/* Deep Dive Page CTA (Crawlable SEO Link + Instant SPA Navigation) */}
