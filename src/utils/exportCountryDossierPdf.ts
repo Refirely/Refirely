@@ -22,6 +22,7 @@ export interface DossierExportOptions {
   includeShortTermVisas: boolean;
   includeHealthcareAndInsurance?: boolean;
   includeCostAndBudget: boolean;
+  includeHousingAndRentals?: boolean;
   includeTravelAndMobility: boolean;
   includeClimateAndTowns: boolean;
   includeDemographicsAndLifestyle: boolean;

@@ -9,6 +9,7 @@ import { CountryFaqHurdles } from './CountryFaqHurdles';
 import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryHealthcareTab } from './CountryHealthcareTab';
 import { CountryFinancesAndTaxesTab } from './CountryFinancesAndTaxesTab';
+import { CountryHousingAndRentalTab } from './CountryHousingAndRentalTab';
 import { CountryLifestyleAndDatingSection } from './CountryLifestyleAndDatingSection';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
@@ -92,6 +93,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     | 'healthcare'
     | 'finances'
     | 'cost'
+    | 'housing'
     | 'travel'
     | 'faq'
     | 'lifestyle'
@@ -325,15 +327,19 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
 
             {/* Quick KPI Strip - Multi-Colored Luminous Cards */}
             <div className="flex items-center gap-4 sm:gap-6 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl px-5 py-4 shrink-0 shadow-sm">
-              <div>
-                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block">
-                  Single Living
+              <button
+                onClick={() => setActiveTab('housing')}
+                className="text-left group cursor-pointer"
+                title="Click to open full Housing, Neighborhood Rents & Tenancy guide"
+              >
+                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block group-hover:underline">
+                  Single Living →
                 </span>
                 <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
                   ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
                   <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
                 </span>
-              </div>
+              </button>
               <div className="w-px h-9 bg-indigo-100" />
               <button
                 onClick={() => setActiveTab('healthcare')}
@@ -372,6 +378,11 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               { id: 'healthcare', label: 'Healthcare', title: 'Healthcare Access, Emergency & Insurance' },
               { id: 'finances', label: 'Finances & Tax', title: 'National & Private Banks, Remittances & Expat Taxes' },
               { id: 'cost', label: 'Budget', title: 'Interactive Annual Retirement Budget Calculator' },
+              {
+                id: 'housing',
+                label: 'Housing & Rental',
+                title: 'Neighborhood Rents, Latest Trends, Broker Commissions, Safe Areas & Legal Rules',
+              },
               { id: 'travel', label: 'Travel', title: 'Travel, Leisure & Domestic Mobility' },
               { id: 'faq', label: 'FAQ', title: 'Relocation FAQs & Practical Hurdles' },
               {
@@ -977,6 +988,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   onNavigateToHealthcare={() => setActiveTab('healthcare')}
                 />
               </div>
+            )}
+
+            {/* TAB 3.5: HOUSING, NEIGHBORHOOD RENTS, BROKER COMMISSIONS & LEGAL RULES */}
+            {activeTab === 'housing' && (
+              <CountryHousingAndRentalTab
+                country={country}
+                onNavigateTab={tab => setActiveTab(tab)}
+              />
             )}
 
             {/* TAB 4: TRAVEL, FAMOUS RETIREMENT ACTIVITIES & DOMESTIC MOBILITY */}

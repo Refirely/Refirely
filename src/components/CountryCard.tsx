@@ -107,6 +107,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includeVisaAndLegal: true,
         includeShortTermVisas: true,
         includeCostAndBudget: true,
+        includeHousingAndRentals: true,
         includeTravelAndMobility: true,
         includeClimateAndTowns: true,
         includeDemographicsAndLifestyle: true,

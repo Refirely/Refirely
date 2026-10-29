@@ -2,11 +2,11 @@ import { Country } from '../types';
 import { AppView } from '../context/AppContext';
 
 const DEFAULT_TITLE =
-  'ReFIREly – Global Retirement Haven Guide & FIRE Calculator';
+  'ReFirely – Where Your Freedom Goes Further | Global Retirement Havens & FIRE Guide';
 const DEFAULT_DESCRIPTION =
-  'Compare 200+ global retirement havens by visa rules, cost of living, healthcare, and expat life. Plan your overseas retirement with ReFIREly.';
+  'Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rental costs, healthcare scores, and FIRE calculators on ReFirely.';
 const DEFAULT_KEYWORDS =
-  'best countries to retire, global retirement havens, retire abroad guide, FIRE calculator, early retirement overseas, retirement visa requirements, cost of living for retirees, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat community, geographic arbitrage, financial independence retire early';
+  'best countries to retire 2026, global retirement havens, retire abroad guide, overseas housing rental costs, safe expat neighborhoods, apartment rents abroad, broker commission rental rules, FIRE calculator overseas, retirement visa requirements, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, geographic arbitrage, financial independence retire early';
 
 const VALID_VIEWS: AppView[] = [
   'landing',
@@ -198,6 +198,18 @@ function updateStructuredDataJsonLd(
             },
             {
               '@type': 'PropertyValue',
+              name: 'Average 1-Bed Apartment Rent (City Center USD)',
+              value: selectedCountry.costOfLiving.rent1BedCenterUSD,
+              unitText: 'USD/month',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Average 1-Bed Apartment Rent (Outside Center USD)',
+              value: selectedCountry.costOfLiving.rent1BedOutsideUSD,
+              unitText: 'USD/month',
+            },
+            {
+              '@type': 'PropertyValue',
               name: 'Primary Retirement Visa Pathway',
               value: visaName,
             },
@@ -217,6 +229,11 @@ function updateStructuredDataJsonLd(
               name: 'Safety Index Score',
               value: `${selectedCountry.lifestyle.safetyScore}/100`,
             },
+            {
+              '@type': 'PropertyValue',
+              name: 'Female-to-Male Demographic Ratio',
+              value: `${selectedCountry.demographics.femalesPer100Males.toFixed(1)}:100`,
+            },
           ],
         },
         {
@@ -227,7 +244,15 @@ function updateStructuredDataJsonLd(
               name: `How much does it cost to retire in ${selectedCountry.name}?`,
               acceptedAnswer: {
                 '@type': 'Answer',
-                text: `A single retiree in ${selectedCountry.name} typically spends around $${singleBudget.toLocaleString()} USD per month, while a retired couple averages $${coupleBudget.toLocaleString()} USD per month. A 1-bedroom apartment in the city center averages $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month.`,
+                text: `A single retiree in ${selectedCountry.name} typically spends around $${singleBudget.toLocaleString()} USD per month, while a retired couple averages $${coupleBudget.toLocaleString()} USD per month. A 1-bedroom apartment in ${selectedCountry.capital} or prime city center averages $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, while suburban districts average $${selectedCountry.costOfLiving.rent1BedOutsideUSD.toLocaleString()}/month.`,
+              },
+            },
+            {
+              '@type': 'Question',
+              name: `What are apartment rental costs and safe areas for expats in ${selectedCountry.name}?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `In ${selectedCountry.name}, 1-bedroom apartments in prime walkable districts average $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, and 2-bedroom units average $${Math.round(selectedCountry.costOfLiving.rent1BedCenterUSD * 1.55).toLocaleString()}/month. Real estate agency commissions are typically covered by the property owner. ReFirely provides verified neighborhood rent breakdowns, walkability scores, and safe expat districts.`,
               },
             },
             {
@@ -291,38 +316,39 @@ export function updatePageSeo(
   if (currentView === 'country-detail' && selectedCountry) {
     const singleBudget = selectedCountry.costOfLiving.monthlyBudgetSingleUSD.toLocaleString();
     const coupleBudget = selectedCountry.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString();
+    const rentCenter = selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString();
     const visaName = selectedCountry.visa.retirementVisaName;
     const healthScore = selectedCountry.lifestyle.healthcareScore;
 
-    title = `${selectedCountry.name} Retirement Guide: Visas, Cost & Healthcare | ReFIREly`;
-    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, ${visaName} rules, ${healthScore}/100 healthcare score, and FIRE calculator on ReFIREly.`;
-    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} expat healthcare, ReFIREly ${selectedCountry.name}`;
+    title = `${selectedCountry.name} Retirement Guide (2026): Visas, Rents & Healthcare | ReFirely`;
+    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, $${rentCenter}/mo 1-bed rent, ${visaName} rules, ${healthScore}/100 healthcare, and safe expat districts on ReFirely.`;
+    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} safe neighborhoods, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
     canonicalUrl = `${origin}/?country=${encodeURIComponent(selectedCountry.id)}`;
   } else if (currentView === 'explore') {
-    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '200+';
-    title = `Explore ${countLabel} Global Retirement Havens | ReFIREly`;
+    const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '209';
+    title = `Explore ${countLabel} Global Retirement Havens & Rents (2026) | ReFirely`;
     description =
-      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living costs, healthcare ratings, and find your perfect overseas retirement.`;
+      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living budgets, neighborhood rental costs, dating ratios, and find your overseas retirement.`;
     canonicalUrl = `${origin}/?view=explore`;
   } else if (currentView === 'compare') {
-    title = 'Compare Global Retirement Havens Side-by-Side | ReFIREly';
+    title = 'Compare 209 Global Retirement Havens Side-by-Side | ReFirely';
     description =
-      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, tax treaties, healthcare quality, and safety ratings.';
+      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, apartment rent prices, tax treaties, healthcare quality, and safety.';
     canonicalUrl = `${origin}/?view=compare`;
   } else if (currentView === 'dashboard') {
-    title = 'Global FIRE Calculator & Overseas Relocation Plan | ReFIREly';
+    title = 'Global FIRE Retirement Calculator & Relocation Planner | ReFirely';
     description =
-      'Calculate your FIRE number across 200+ countries. Simulate geographic arbitrage savings, model currency expenses, and track your relocation checklist.';
+      'Calculate your FIRE number across 209 countries. Simulate geographic arbitrage savings, model housing rents, currency expenses, and track your relocation checklist.';
     canonicalUrl = `${origin}/?view=dashboard`;
   } else if (currentView === 'community') {
-    title = 'Expat Retirement Community & Global Q&A Forum | ReFIREly';
+    title = 'Expat Retirement Community & Global Relocation Forum | ReFirely';
     description =
-      'Connect with verified expats living abroad. Ask questions about retirement visas, healthcare registration, rental markets, and social integration.';
+      'Connect with verified expats living abroad. Ask questions about retirement visas, apartment lease rules, healthcare registration, and social integration.';
     canonicalUrl = `${origin}/?view=community`;
   } else if (currentView === 'meetups') {
-    title = 'Expat Meetups & Retirement Gatherings Worldwide | ReFIREly';
+    title = 'Expat Meetups & Retirement Gatherings Worldwide | ReFirely';
     description =
-      'Join in-person and online meetups in Portugal, Spain, Thailand, Costa Rica, and other top havens. RSVP to connect with fellow prospective retirees.';
+      'Join in-person and online meetups in Portugal, Spain, Thailand, Costa Rica, and top havens. RSVP to connect with fellow prospective retirees.';
     canonicalUrl = `${origin}/?view=meetups`;
   }
 
