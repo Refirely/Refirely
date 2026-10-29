@@ -562,3 +562,82 @@ export interface CountryDownloadAggregate {
   downloadsLast7Days: number;
 }
 
+// ==========================================
+// Food & Gastronomy Profile
+// ==========================================
+
+export interface NationalDish {
+  name: string;
+  localName?: string;
+  category: 'Signature Main' | 'Street Food / Snack' | 'Soup / Stew' | 'Dessert / Pastry' | 'Seafood Delicacy';
+  description: string;
+  traditionOrHistory: string;
+  flavorProfile: string;
+  vegetarianFriendly: boolean;
+  vegetarianAlternative?: string;
+  typicalCostUSD: number;
+  typicalCostLocalCurrency: string;
+  bestAuthenticPlaces: string[];
+}
+
+export interface MealRoutine {
+  mealName: 'Breakfast' | 'Mid-Morning Coffee & Snack' | 'Lunch' | 'Afternoon Snack / Merienda' | 'Dinner';
+  timing: string;
+  typicalFoods: string[];
+  culturalImportance: string;
+}
+
+export interface ExpatDiningHurdle {
+  title: string;
+  category: 'Meal Timings & Schedules' | 'Ordering & Etiquette' | 'Hidden Ingredients / Allergens' | 'Payment & Tipping' | 'Spice & Palate Adaptation';
+  description: string;
+  workaroundTip: string;
+}
+
+export interface DietaryRestrictionGuide {
+  vegetarianRating: 'Effortless & Abundant' | 'Very Easy' | 'Moderate / Some Planning' | 'Challenging / Meat-Centric';
+  veganRating: 'Effortless & Abundant' | 'Very Easy' | 'Moderate / Focus on Specialty Spots' | 'Challenging / Custom Ordering';
+  glutenFreeRating: 'Effortless & Abundant' | 'Very High Awareness' | 'Moderate / Common Substitutes' | 'Limited Outside Major Cities';
+  summary: string;
+  hiddenNonVegIngredients: string[];
+  helpfulLocalPhrases: {
+    phrase: string;
+    english: string;
+    phonetic?: string;
+  }[];
+  stapleVegDishes: string[];
+}
+
+export interface FoodCostsAndHygiene {
+  streetFoodOrMarketMealUSD: number;
+  casualRestaurantMealUSD: number;
+  midRangeDinnerForTwoUSD: number;
+  highEndFineDiningUSD: number;
+  localBeerOrWineGlassUSD: number;
+  specialtyCoffeeUSD: number;
+  groceriesVsDiningOutVerdict: string;
+  waterSafety: '100% Safe from Tap' | 'Safe in Major Cities / Filter Preferred' | 'Bottled or Filtered Only';
+  waterDetails: string;
+  eatingOutHygieneScore: number; // 0 - 100
+  hygieneGuidance: string;
+  streetFoodSafetyTips: string[];
+  produceWashingAdvice: string;
+}
+
+export interface CountryGastronomyProfile {
+  countryId: string;
+  countryName: string;
+  cuisineHeadline: string;
+  culinaryTraditionsOverview: string;
+  routines: MealRoutine[];
+  nationalDishes: NationalDish[];
+  dietaryRestrictions: DietaryRestrictionGuide;
+  expatHurdles: ExpatDiningHurdle[];
+  costsAndHygiene: FoodCostsAndHygiene;
+  marketAndGroceryCulture: {
+    freshMarketsOverview: string;
+    supermarketChains: string[];
+    importedWesternGoodsAvailability: 'Widely Available in Supermarkets' | 'Available in Specialty Expat Delis' | 'Limited / Expensive Imports';
+  };
+}
+

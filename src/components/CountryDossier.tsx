@@ -10,6 +10,7 @@ import { CountryTravelAndMobility } from './CountryTravelAndMobility';
 import { CountryHealthcareTab } from './CountryHealthcareTab';
 import { CountryFinancesAndTaxesTab } from './CountryFinancesAndTaxesTab';
 import { CountryHousingAndRentalTab } from './CountryHousingAndRentalTab';
+import { CountryFoodAndGastronomyTab } from './CountryFoodAndGastronomyTab';
 import { CountryLifestyleAndDatingSection } from './CountryLifestyleAndDatingSection';
 import { CountryDossierPdfModal } from './CountryDossierPdfModal';
 import { CountryFlag } from './CountryFlag';
@@ -94,6 +95,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     | 'finances'
     | 'cost'
     | 'housing'
+    | 'food'
     | 'travel'
     | 'faq'
     | 'lifestyle'
@@ -382,6 +384,11 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 id: 'housing',
                 label: 'Housing & Rental',
                 title: 'Neighborhood Rents, Latest Trends, Broker Commissions, Safe Areas & Legal Rules',
+              },
+              {
+                id: 'food',
+                label: 'Food & Dining',
+                title: 'Food Culture, Routine Meals, National Dishes, Vegan Ease, Costs & Hygiene',
               },
               { id: 'travel', label: 'Travel', title: 'Travel, Leisure & Domestic Mobility' },
               { id: 'faq', label: 'FAQ', title: 'Relocation FAQs & Practical Hurdles' },
@@ -995,6 +1002,14 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
               <CountryHousingAndRentalTab
                 country={country}
                 onNavigateTab={tab => setActiveTab(tab)}
+              />
+            )}
+
+            {/* TAB 3.8: FOOD, GASTRONOMY, NATIONAL DISHES & LOCAL DINING */}
+            {activeTab === 'food' && (
+              <CountryFoodAndGastronomyTab
+                country={country}
+                onNavigateTab={tab => setActiveTab(tab as typeof activeTab)}
               />
             )}
 

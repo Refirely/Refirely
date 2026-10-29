@@ -1,12 +1,13 @@
 import { Country } from '../types';
 import { AppView } from '../context/AppContext';
+import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
 
 const DEFAULT_TITLE =
   'ReFirely – Where Your Freedom Goes Further | Global Retirement Havens & FIRE Guide';
 const DEFAULT_DESCRIPTION =
-  'Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rental costs, healthcare scores, and FIRE calculators on ReFirely.';
+  'Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rents, food & gastronomy guides, healthcare, and FIRE calculators on ReFirely.';
 const DEFAULT_KEYWORDS =
-  'best countries to retire 2026, global retirement havens, retire abroad guide, overseas housing rental costs, safe expat neighborhoods, apartment rents abroad, broker commission rental rules, FIRE calculator overseas, retirement visa requirements, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, geographic arbitrage, financial independence retire early';
+  'best countries to retire 2026, global retirement havens, retire abroad guide, overseas housing rental costs, safe expat neighborhoods, apartment rents abroad, food and gastronomy abroad, national dishes expat dining, vegetarian vegan retirement abroad, tap water safety overseas, broker commission rental rules, FIRE calculator overseas, retirement visa requirements, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, geographic arbitrage, financial independence retire early';
 
 const VALID_VIEWS: AppView[] = [
   'landing',
@@ -147,6 +148,7 @@ function updateStructuredDataJsonLd(
     const coupleBudget = selectedCountry.costOfLiving.monthlyBudgetCoupleUSD;
     const visaName = selectedCountry.visa.retirementVisaName;
     const minIncome = selectedCountry.visa.minimumIncomeUSD;
+    const foodProfile = getCountryGastronomyProfile(selectedCountry);
 
     const jsonLd = {
       '@context': 'https://schema.org',
@@ -234,6 +236,27 @@ function updateStructuredDataJsonLd(
               name: 'Female-to-Male Demographic Ratio',
               value: `${selectedCountry.demographics.femalesPer100Males.toFixed(1)}:100`,
             },
+            {
+              '@type': 'PropertyValue',
+              name: 'National Cuisine Headline',
+              value: foodProfile.cuisineHeadline,
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Casual Restaurant Meal Cost (USD)',
+              value: foodProfile.costsAndHygiene.casualRestaurantMealUSD,
+              unitText: 'USD/meal',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Drinking Tap Water Safety',
+              value: foodProfile.costsAndHygiene.waterSafety,
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Vegetarian & Vegan Dining Ease',
+              value: foodProfile.dietaryRestrictions.vegetarianRating,
+            },
           ],
         },
         {
@@ -253,6 +276,14 @@ function updateStructuredDataJsonLd(
               acceptedAnswer: {
                 '@type': 'Answer',
                 text: `In ${selectedCountry.name}, 1-bedroom apartments in prime walkable districts average $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, and 2-bedroom units average $${Math.round(selectedCountry.costOfLiving.rent1BedCenterUSD * 1.55).toLocaleString()}/month. Real estate agency commissions are typically covered by the property owner. ReFirely provides verified neighborhood rent breakdowns, walkability scores, and safe expat districts.`,
+              },
+            },
+            {
+              '@type': 'Question',
+              name: `What is the food and dining culture like in ${selectedCountry.name}?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `Dining in ${selectedCountry.name} is known for ${foodProfile.cuisineHeadline.toLowerCase()}. Signature national dishes include ${foodProfile.nationalDishes.map(d => `${d.name} (${d.localName})`).slice(0, 3).join(', ')}. Casual dining averages $${foodProfile.costsAndHygiene.casualRestaurantMealUSD} USD per meal, while street food or bakery snacks cost around $${foodProfile.costsAndHygiene.streetFoodOrMarketMealUSD} USD. Tap water status: ${foodProfile.costsAndHygiene.waterSafety}. Vegetarian/vegan friendliness: ${foodProfile.dietaryRestrictions.vegetarianRating}.`,
               },
             },
             {
@@ -319,21 +350,23 @@ export function updatePageSeo(
     const rentCenter = selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString();
     const visaName = selectedCountry.visa.retirementVisaName;
     const healthScore = selectedCountry.lifestyle.healthcareScore;
+    const foodProfile = getCountryGastronomyProfile(selectedCountry);
+    const topDish = foodProfile.nationalDishes[0]?.name || 'Local Gastronomy';
 
-    title = `${selectedCountry.name} Retirement Guide (2026): Visas, Rents & Healthcare | ReFirely`;
-    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, $${rentCenter}/mo 1-bed rent, ${visaName} rules, ${healthScore}/100 healthcare, and safe expat districts on ReFirely.`;
-    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} safe neighborhoods, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
+    title = `${selectedCountry.name} Expat Guide: Visas, Rents, Food & Healthcare | ReFirely`;
+    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, $${rentCenter}/mo rent, ${topDish} & dining costs, ${visaName} rules, and safe expat districts.`;
+    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} safe neighborhoods, ${selectedCountry.name} food and gastronomy, ${selectedCountry.name} national dishes, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
     canonicalUrl = `${origin}/?country=${encodeURIComponent(selectedCountry.id)}`;
   } else if (currentView === 'explore') {
     const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '209';
-    title = `Explore ${countLabel} Global Retirement Havens & Rents (2026) | ReFirely`;
+    title = `Explore ${countLabel} Global Retirement Havens, Rents & Dining | ReFirely`;
     description =
-      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living budgets, neighborhood rental costs, dating ratios, and find your overseas retirement.`;
+      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living budgets, neighborhood rental costs, local dining, and find your overseas retirement.`;
     canonicalUrl = `${origin}/?view=explore`;
   } else if (currentView === 'compare') {
     title = 'Compare 209 Global Retirement Havens Side-by-Side | ReFirely';
     description =
-      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, apartment rent prices, tax treaties, healthcare quality, and safety.';
+      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, apartment rent prices, local gastronomy, healthcare quality, and safety.';
     canonicalUrl = `${origin}/?view=compare`;
   } else if (currentView === 'dashboard') {
     title = 'Global FIRE Retirement Calculator & Relocation Planner | ReFirely';

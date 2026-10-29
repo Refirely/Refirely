@@ -1,6 +1,6 @@
 {
   "name": "ReFirely - Where Your Freedom Goes Further",
-  "description": "Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rental costs, healthcare scores, and FIRE calculators on ReFirely.",
+  "description": "Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rents, food & gastronomy guides, healthcare, and FIRE calculators on ReFirely.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
