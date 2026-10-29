@@ -15,8 +15,9 @@ import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 import { AdminSocialPromoStudio } from './AdminSocialPromoStudio';
 import { AdminAccountingModule } from './AdminAccountingModule';
+import { AdminDossierDownloadsModule } from './AdminDossierDownloadsModule';
 
-type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'cloud';
+type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'downloads' | 'cloud';
 
 interface AdminDashboardProps {
   onOpenBrandKit?: () => void;
@@ -54,6 +55,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     totalUnreadDms,
     setActiveDmThreadId,
     switchAccount,
+    dossierDownloads,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -361,6 +363,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     };
   }, [activeTab, countries.length]);
 
+  // Live Dossier Downloads Snapshot
+  const downloadStats = useMemo(() => {
+    const total = dossierDownloads.length;
+    const memberCount = dossierDownloads.filter(d => d.isRegisteredUser).length;
+    const guestCount = total - memberCount;
+    const map = new Map<string, { countryId: string; name: string; count: number; flag: string }>();
+    dossierDownloads.forEach(d => {
+      const existing = map.get(d.countryId) || {
+        countryId: d.countryId,
+        name: d.countryName,
+        count: 0,
+        flag: countries.find(c => c.id === d.countryId)?.flag || '🌍',
+      };
+      existing.count += 1;
+      map.set(d.countryId, existing);
+    });
+    const sorted = Array.from(map.values()).sort((a, b) => b.count - a.count);
+    const topCountry = sorted[0]?.name || 'N/A';
+    const topCountryCount = sorted[0]?.count || 0;
+    return {
+      total,
+      memberCount,
+      guestCount,
+      topCountry,
+      topCountryCount,
+      topHavens: sorted.slice(0, 4),
+    };
+  }, [dossierDownloads, countries]);
+
   // Regional Catalog Breakdown
   const regionBreakdown = useMemo(() => {
     const map: Record<string, { count: number; totalBudget: number }> = {};
@@ -587,6 +618,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
                 {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger (₹ / $)'}
                 {activeTab === 'social-promo' && 'Portrait Social Promo Studio'}
+                {activeTab === 'downloads' && `Country Dossier Downloads (${dossierDownloads.length})`}
                 {activeTab === 'cloud' && 'Cloud Database & Sync Center'}
               </span>
             </div>
@@ -598,6 +630,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               {activeTab === 'feedback' && 'User Feedback, Ideas & Bug Triage'}
               {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger'}
               {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots Studio'}
+              {activeTab === 'downloads' && 'Country Dossier Downloads & Expat Demand Tracker'}
               {activeTab === 'cloud' && 'Firebase Cloud Database & Sync Center'}
             </h1>
           </div>
@@ -778,6 +811,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             </button>
 
             <button
+              onClick={() => setActiveTab('downloads')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'downloads'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Download className="w-4 h-4 text-teal-600" />
+                <span>Dossier Downloads</span>
+              </span>
+              <span
+                className={`font-mono tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
+                  activeTab === 'downloads' ? 'bg-white/15 text-white' : 'bg-teal-50 text-teal-800'
+                }`}
+              >
+                {dossierDownloads.length}
+              </span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('community')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'community'
@@ -876,21 +930,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             ========================================================= */}
             {activeTab === 'overview' && (
               <>
-                {/* 4-Column Executive Platform Pulse Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {/* 5-Column Executive Platform Pulse Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                   <div
                     onClick={() => setActiveTab('users')}
                     className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-400 transition-all cursor-pointer shadow-2xs"
                   >
                     <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                      <span>01 · Registered Users</span>
+                      <span>01 · Users</span>
                       <Users className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
                       {userStats.total} Accounts
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      {userStats.membersCount} Members · Avg Budget ${userStats.avgBudget.toLocaleString()}/mo
+                      {userStats.membersCount} Members · ${userStats.avgBudget.toLocaleString()}/mo
                     </div>
                   </div>
 
@@ -899,14 +953,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                     className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
                   >
                     <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                      <span>02 · Country CMS Catalog</span>
+                      <span>02 · Catalog</span>
                       <Globe className="w-4 h-4 text-teal-600" />
                     </div>
                     <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
                       {countries.length} Havens
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      Across {regionBreakdown.length} global regions · Full visa &amp; cost data
+                      {regionBreakdown.length} global regions · Full visa data
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setActiveTab('downloads')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>03 · Downloads</span>
+                      <Download className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
+                      {downloadStats.total} Dossiers
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1 truncate">
+                      Top: {downloadStats.topCountry} ({downloadStats.topCountryCount}) · {downloadStats.memberCount} M / {downloadStats.guestCount} G
                     </div>
                   </div>
 
@@ -915,14 +985,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                     className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 transition-all cursor-pointer shadow-2xs"
                   >
                     <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                      <span>03 · Accounting &amp; Expenses</span>
+                      <span>04 · Ledger</span>
                       <IndianRupee className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
                       ₹{Math.round(accountingSnapshot.totalExpenseINR).toLocaleString('en-IN')}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      {accountingSnapshot.totalTransactions} entries · Rev: ₹{Math.round(accountingSnapshot.totalRevenueINR).toLocaleString('en-IN')} · $1 = ₹{accountingSnapshot.fxRate}
+                      {accountingSnapshot.totalTransactions} txs · Rev: ₹{Math.round(accountingSnapshot.totalRevenueINR).toLocaleString('en-IN')}
                     </div>
                   </div>
 
@@ -931,20 +1001,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                     className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-rose-400 transition-all cursor-pointer shadow-2xs"
                   >
                     <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                      <span>04 · Moderation &amp; Support</span>
+                      <span>05 · Support</span>
                       <MessageSquarePlus className="w-4 h-4 text-rose-600" />
                     </div>
                     <div className="font-mono tabular-nums text-2xl font-extrabold text-slate-900 mt-1.5">
-                      {feedbackReports.filter(r => r.status === 'new').length} Open Reports
+                      {feedbackReports.filter(r => r.status === 'new').length} Open
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      {threads.length} Forum Threads · {meetups.length} Meetups · {dmThreads.length} DMs
+                      {threads.length} Threads · {meetups.length} Meetups
                     </div>
                   </div>
                 </div>
 
                 {/* =========================================================
-                    ALL 8 ADMIN MODULES — UNIFIED SNAPSHOT GRID
+                    ALL 9 ADMIN MODULES — UNIFIED SNAPSHOT GRID
                 ========================================================= */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                   {/* MODULE SNAPSHOT 1: REGISTERED USERS & RELOCATION DEMAND */}
@@ -1659,6 +1729,88 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                         className="font-bold text-sky-700 hover:text-sky-900 cursor-pointer"
                       >
                         Open Cloud Center →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 9: COUNTRY DOSSIER DOWNLOADS & EXPAT DEMAND MATRIX */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-teal-600">
+                            Module 09 · Expat Demand &amp; Dossier Telemetry
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Country Dossier Downloads ({downloadStats.total})
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Real-time tracking of 29-page comprehensive dossier exports by registered members and guest visitors.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('downloads')}
+                          className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Total Downloads</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-slate-900">
+                            {downloadStats.total}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Members</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-teal-700">
+                            {downloadStats.memberCount}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <div className="text-[11px] text-slate-500">Guest Visitors</div>
+                          <div className="font-mono tabular-nums text-base font-extrabold text-indigo-700">
+                            {downloadStats.guestCount}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top Havens List */}
+                      <div>
+                        <div className="text-[11px] font-semibold text-slate-500 mb-2">
+                          Top Havens in Demand
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                          {downloadStats.topHavens.map((h, idx) => (
+                            <div key={h.countryId} className="py-2 flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[11px] font-bold text-slate-600">
+                                  #{idx + 1}
+                                </span>
+                                <span className="text-sm">{h.flag}</span>
+                                <span className="font-semibold text-slate-900">{h.name}</span>
+                              </div>
+                              <span className="font-mono font-bold text-slate-700">
+                                {h.count} downloads
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        Detailed user IDs, timestamps &amp; CSV export available
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('downloads')}
+                        className="font-bold text-teal-700 hover:text-teal-900 cursor-pointer"
+                      >
+                        Explore Infographics &amp; Matrix →
                       </button>
                     </div>
                   </div>
@@ -2417,6 +2569,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             ========================================================= */}
             {activeTab === 'social-promo' && (
               <AdminSocialPromoStudio countries={countries} />
+            )}
+
+            {/* =========================================================
+                TAB 5.8: COUNTRY DOSSIER DOWNLOADS & AUDIT LOG
+            ========================================================= */}
+            {activeTab === 'downloads' && (
+              <AdminDossierDownloadsModule />
             )}
 
             {/* =========================================================

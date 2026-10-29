@@ -68,6 +68,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
     userProfile,
     isAuthenticated,
     budgetMax,
+    trackDossierDownload,
   } = useApp();
 
   const saved = isCountrySaved(country.id);
@@ -116,6 +117,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includeCommunityAndMeetups: true,
       },
     });
+    trackDossierDownload(country.id, country.name, 'Quick Country Card Dossier');
   };
 
   return (

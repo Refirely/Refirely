@@ -7,6 +7,7 @@ import {
   CountryJournalEntry,
   UserProfile,
 } from '../types';
+import { useApp } from '../context/AppContext';
 import {
   DossierExportOptions,
   generateCountryDossierPdf,
@@ -55,6 +56,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   meetups,
   discreetLifestyleEnabled,
 }) => {
+  const { trackDossierDownload } = useApp();
   const [options, setOptions] = useState<DossierExportOptions>({
     includeExecutiveSummary: true,
     includePersonalReadinessAndJournal: true,
@@ -140,6 +142,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
         meetups,
         options,
       });
+      trackDossierDownload(country.id, country.name, 'Comprehensive 29-Page PDF Dossier');
       setExportSuccess(true);
     } finally {
       setIsGenerating(false);

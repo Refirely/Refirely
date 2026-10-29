@@ -531,3 +531,34 @@ export interface FeedbackReport {
   updatedAt?: string;
 }
 
+// ==========================================
+// Dossier Downloads & Analytics Tracking
+// ==========================================
+
+export interface DossierDownloadRecord {
+  id: string;
+  countryId: string;
+  countryName: string;
+  countryCode?: string;
+  flag?: string;
+  isRegisteredUser: boolean;
+  userId?: string;
+  userName: string;
+  userEmail?: string;
+  exportFormat: 'Comprehensive 29-Page PDF Dossier' | 'Quick Country Card Dossier' | string;
+  downloadedAt: string;
+  deviceInfo?: string;
+}
+
+export interface CountryDownloadAggregate {
+  countryId: string;
+  countryName: string;
+  flag?: string;
+  totalDownloads: number;
+  registeredUserDownloads: number;
+  guestDownloads: number;
+  latestDownloadDate: string;
+  latestUser: string;
+  downloadsLast7Days: number;
+}
+

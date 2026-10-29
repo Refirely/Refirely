@@ -4,7 +4,7 @@ import {
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
   UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType,
   InAppMessageNotification, FeedbackReport, FeedbackType, FeedbackStatus, FeedbackPriority,
-  FireNumbersRating
+  FireNumbersRating, DossierDownloadRecord
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
@@ -12,9 +12,11 @@ import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
+import { INITIAL_DOSSIER_DOWNLOADS } from '../data/seedDossierDownloads';
 import { playNotificationChime } from '../utils/audioNotification';
 import { parseUrlToRoute, getViewUrl } from '../utils/seo';
 import { matchesContinentFilter } from '../utils/continents';
+import { trackAnalyticsEvent } from '../utils/analytics';
 import {
   loadUserDmThreads,
   saveUserDmThreads,
@@ -250,6 +252,11 @@ interface AppContextType {
   feedbackInitialType: FeedbackType;
   openFeedbackModal: (initialType?: FeedbackType) => void;
   closeFeedbackModal: () => void;
+
+  // Dossier Downloads Tracking & Analytics
+  dossierDownloads: DossierDownloadRecord[];
+  trackDossierDownload: (countryId: string, countryName: string, exportFormat?: string) => void;
+  clearAllDossierDownloads: () => void;
 
   // Firebase Auth & Cloud Sync
   firebaseUser: FirebaseUser | null;
@@ -797,6 +804,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(feedbackReports));
     } catch {}
   }, [feedbackReports]);
+
+  // Dossier Downloads Tracking State with localStorage & Firestore persistence
+  const [dossierDownloads, setDossierDownloads] = useState<DossierDownloadRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return INITIAL_DOSSIER_DOWNLOADS;
+    } catch {
+      return INITIAL_DOSSIER_DOWNLOADS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify(dossierDownloads));
+    } catch {}
+  }, [dossierDownloads]);
+
+  const trackDossierDownload = React.useCallback(
+    (countryId: string, countryName: string, exportFormat: string = 'Comprehensive 29-Page PDF Dossier') => {
+      const isAuth = isAuthenticatedRef.current;
+      const currentProfile = userProfileRef.current;
+      const currentId = currentUserIdRef.current;
+      const targetCountry = countriesRef.current.find(c => c.id === countryId);
+
+      const resolvedUserName =
+        isAuth && currentProfile?.name && currentProfile.name !== 'Guest User'
+          ? currentProfile.name
+          : 'Guest (Anonymous)';
+
+      const resolvedEmail =
+        isAuth && currentProfile?.email && !currentProfile.email.includes('guest')
+          ? currentProfile.email
+          : undefined;
+
+      const newRecord: DossierDownloadRecord = {
+        id: `dl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        countryId,
+        countryName: countryName || targetCountry?.name || countryId,
+        countryCode: targetCountry?.code,
+        flag: targetCountry?.flag,
+        isRegisteredUser: isAuth && currentId !== 'guest',
+        userId: isAuth && currentId !== 'guest' ? currentId : 'guest',
+        userName: resolvedUserName,
+        userEmail: resolvedEmail,
+        exportFormat,
+        downloadedAt: new Date().toISOString(),
+        deviceInfo: typeof navigator !== 'undefined'
+          ? `${navigator.platform || 'Desktop'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`
+          : 'Desktop Browser',
+      };
+
+      setDossierDownloads(prev => [newRecord, ...prev]);
+
+      // Sync record to Firestore if database is available
+      try {
+        if (db) {
+          const docRef = doc(db, 'dossierDownloads', newRecord.id);
+          setDoc(docRef, newRecord).catch(() => {});
+        }
+      } catch {}
+
+      // Fire Google Analytics 4 event
+      try {
+        trackAnalyticsEvent('dossier_pdf_download', {
+          country_id: countryId,
+          country_name: countryName,
+          export_format: exportFormat,
+          user_type: isAuth ? 'registered' : 'guest',
+        });
+      } catch {}
+    },
+    []
+  );
+
+  const clearAllDossierDownloads = React.useCallback(() => {
+    setDossierDownloads([]);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify([]));
+    } catch {}
+  }, []);
 
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -3959,6 +4052,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         feedbackInitialType,
         openFeedbackModal,
         closeFeedbackModal,
+        dossierDownloads,
+        trackDossierDownload,
+        clearAllDossierDownloads,
         firebaseUser,
         isFirebaseConnected,
         isFirebaseSyncing,
