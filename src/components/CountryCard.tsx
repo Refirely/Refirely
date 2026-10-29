@@ -61,7 +61,6 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
     toggleSaveCountry,
     isCountryCompared,
     toggleCompareCountry,
-    discreetLifestyleEnabled,
     sortBy,
     threads,
     meetups,
@@ -111,7 +110,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includeTravelAndMobility: true,
         includeClimateAndTowns: true,
         includeDemographicsAndLifestyle: true,
-        includeDiscreetNightlife: discreetLifestyleEnabled,
+        includeDiscreetNightlife: true,
         includeRelocationFaqs: true,
         includeCommunityAndMeetups: true,
       },
@@ -388,25 +387,39 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
             </div>
           )}
 
-          {/* Optional Discreet Lifestyle & Nightlife summary */}
-          {(discreetLifestyleEnabled || sortBy === 'dating-nightlife-desc') && (
-            <div className="mt-3 pt-2.5 border-t border-violet-200/70 flex items-center justify-between text-xs bg-gradient-to-r from-violet-50/80 to-fuchsia-50/50 -mx-5 px-5 py-2.5">
+          {/* Permanent Lifestyle, Dating & Nightlife Dynamics Strip (Always Visible Under All Sort Parameters) */}
+          <div className="mt-3 pt-2.5 border-t border-violet-200/80 -mx-5 px-5 py-2.5 bg-gradient-to-r from-violet-50/95 via-fuchsia-50/70 to-purple-50/80">
+            <div className="flex items-center justify-between text-xs">
               <div>
-                <span className="text-violet-600 font-bold text-[10px] uppercase tracking-wider block">
-                  Nightlife &amp; Social
+                <span className="text-violet-700 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  <span>Lifestyle &amp; Nightlife</span>
                 </span>
-                <span className="font-semibold text-slate-800">{country.adultEntertainment.nightlifeVibrancy}</span>
+                <span className="font-bold text-slate-800 text-[11px] block mt-0.5">
+                  {country.adultEntertainment.nightlifeVibrancy}
+                  <span className="text-purple-700 font-mono font-semibold ml-1">({country.adultEntertainment.nightlifeScore}/5)</span>
+                </span>
               </div>
               <div className="text-right">
-                <span className="text-violet-600 font-bold text-[10px] uppercase tracking-wider block">
-                  Youth Under 30
+                <span className="text-purple-700 font-bold text-[10px] uppercase tracking-wider block">
+                  Dating &amp; Ratio
                 </span>
-                <span className="font-mono tabular-nums font-extrabold text-violet-900">
-                  {country.demographics.youngPopulationPercent}%
+                <span className="font-mono tabular-nums font-extrabold text-purple-900 text-[11px] block mt-0.5">
+                  {country.demographics.femalesPer100Males}♀:100♂ <span className="text-slate-300">·</span> Dating {country.demographics.datingRating}/5
                 </span>
               </div>
             </div>
-          )}
+
+            <div className="mt-2 pt-1.5 border-t border-violet-200/50 flex items-center justify-between text-[10px]">
+              <span className="text-slate-600 truncate max-w-[210px]" title={country.adultEntertainment.legalStatus}>
+                <span className="text-slate-400 font-medium">Social Scene:</span>{' '}
+                <strong className="text-slate-800 font-semibold">{country.adultEntertainment.legalStatus}</strong>
+              </span>
+              <span className="font-mono tabular-nums text-purple-900 font-bold bg-white/90 border border-purple-200 px-1.5 py-0.5 rounded shadow-2xs shrink-0 ml-1">
+                Youth {country.demographics.youngPopulationPercent}%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

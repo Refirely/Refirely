@@ -31,8 +31,6 @@ export const CompareStudio: React.FC = () => {
     replaceCompareCountry,
     clearComparedCountries,
     navigateToCountry,
-    discreetLifestyleEnabled,
-    setDiscreetLifestyleEnabled,
   } = useApp();
 
   const [selectorSearch, setSelectorSearch] = useState('');
@@ -109,20 +107,6 @@ export const CompareStudio: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-              className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer ${
-                discreetLifestyleEnabled
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-sm'
-                  : 'bg-white border-indigo-200 text-indigo-950 hover:bg-indigo-50'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Lifestyle Metrics: {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
-            </motion.button>
-
             {comparedCountries.length > 0 && (
               <button
                 onClick={clearComparedCountries}
@@ -199,7 +183,7 @@ export const CompareStudio: React.FC = () => {
       <CountryRadarChart
         countries={countries}
         comparedCountries={comparedCountries}
-        discreetLifestyleEnabled={discreetLifestyleEnabled}
+        discreetLifestyleEnabled={true}
         onToggleCompareCountry={toggleCompareCountry}
         onReplaceCompareCountry={replaceCompareCountry}
         onNavigateToCountry={navigateToCountry}
@@ -595,43 +579,39 @@ export const CompareStudio: React.FC = () => {
                   ))}
                 </tr>
 
-                {/* Optional Discreet Lifestyle Section */}
-                {discreetLifestyleEnabled && (
-                  <>
-                    <tr className="bg-amber-50/50 font-semibold text-amber-900">
-                      <td colSpan={comparedCountries.length + 1} className="py-2.5 px-4 uppercase text-[11px] tracking-wider">
-                        Lifestyle & Adult Entertainment Parameters
-                      </td>
-                    </tr>
+                {/* Permanent Lifestyle & Adult Entertainment Section */}
+                <tr className="bg-amber-50/50 font-semibold text-amber-900">
+                  <td colSpan={comparedCountries.length + 1} className="py-2.5 px-4 uppercase text-[11px] tracking-wider">
+                    Lifestyle, Nightlife &amp; Entertainment Dynamics
+                  </td>
+                </tr>
 
-                    <tr>
-                      <td className="py-3 px-4 font-medium text-slate-900">Nightlife Vibrancy</td>
-                      {comparedCountries.map(c => (
-                        <td key={c.id} className="py-3 px-4 font-medium text-slate-800">
-                          {c.adultEntertainment.nightlifeVibrancy}
-                        </td>
-                      ))}
-                    </tr>
+                <tr>
+                  <td className="py-3 px-4 font-medium text-slate-900">Nightlife Vibrancy</td>
+                  {comparedCountries.map(c => (
+                    <td key={c.id} className="py-3 px-4 font-medium text-slate-800">
+                      {c.adultEntertainment.nightlifeVibrancy} ({c.adultEntertainment.nightlifeScore}/5)
+                    </td>
+                  ))}
+                </tr>
 
-                    <tr>
-                      <td className="py-3 px-4 font-medium text-slate-900">Adult Entertainment Score</td>
-                      {comparedCountries.map(c => (
-                        <td key={c.id} className="py-3 px-4 font-mono tabular-nums text-slate-800">
-                          {c.adultEntertainment.adultEntertainmentScore} / 5
-                        </td>
-                      ))}
-                    </tr>
+                <tr>
+                  <td className="py-3 px-4 font-medium text-slate-900">Adult Entertainment Score</td>
+                  {comparedCountries.map(c => (
+                    <td key={c.id} className="py-3 px-4 font-mono tabular-nums text-slate-800">
+                      {c.adultEntertainment.adultEntertainmentScore} / 5
+                    </td>
+                  ))}
+                </tr>
 
-                    <tr>
-                      <td className="py-3 px-4 font-medium text-slate-900">Regulatory Framework</td>
-                      {comparedCountries.map(c => (
-                        <td key={c.id} className="py-3 px-4 text-xs text-slate-600">
-                          {c.adultEntertainment.legalStatus}
-                        </td>
-                      ))}
-                    </tr>
-                  </>
-                )}
+                <tr>
+                  <td className="py-3 px-4 font-medium text-slate-900">Regulatory Framework</td>
+                  {comparedCountries.map(c => (
+                    <td key={c.id} className="py-3 px-4 text-xs text-slate-600">
+                      {c.adultEntertainment.legalStatus}
+                    </td>
+                  ))}
+                </tr>
 
               </tbody>
             </table>

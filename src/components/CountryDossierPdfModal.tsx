@@ -65,7 +65,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
     includeTravelAndMobility: true,
     includeClimateAndTowns: true,
     includeDemographicsAndLifestyle: true,
-    includeDiscreetNightlife: discreetLifestyleEnabled,
+    includeDiscreetNightlife: true,
     includeRelocationFaqs: true,
     includeCommunityAndMeetups: true,
   });

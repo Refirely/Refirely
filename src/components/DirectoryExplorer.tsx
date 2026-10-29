@@ -29,8 +29,6 @@ export const DirectoryExplorer: React.FC = () => {
     sortBy,
     setSortBy,
     resetFilters,
-    discreetLifestyleEnabled,
-    setDiscreetLifestyleEnabled,
     comparedCountryIds,
     setCurrentView,
   } = useApp();
@@ -343,8 +341,8 @@ export const DirectoryExplorer: React.FC = () => {
                       className="px-2.5 py-1 text-xs font-bold text-slate-900 border border-indigo-200/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white hover:border-indigo-300 transition-colors cursor-pointer shadow-2xs min-w-0 max-w-[220px] sm:max-w-none truncate"
                     >
                       <option value="recommended">Curated Haven Match</option>
-                      <option value="alpha-asc">Alphabetical (A – Z)</option>
-                      <option value="alpha-desc">Alphabetical (Z – A)</option>
+                      <option value="dating-nightlife-desc">Best Dating &amp; Nightlife</option>
+                      <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
                       <option value="budget-asc">Lowest Cost of Living</option>
                       <option value="healthcare-desc">Highest Healthcare Index</option>
                       <option value="travel-leisure-desc">Top Travel &amp; Leisure (Mobility &amp; Activities)</option>
@@ -352,8 +350,8 @@ export const DirectoryExplorer: React.FC = () => {
                       <option value="safety-desc">Highest Safety Score</option>
                       <option value="visa-difficulty-asc">Easiest Visa Process (Tier 1-2)</option>
                       <option value="visa-income-asc">Lowest Visa Income Requirement</option>
-                      <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
-                      <option value="dating-nightlife-desc">Best Dating &amp; Nightlife</option>
+                      <option value="alpha-asc">Alphabetical (A – Z)</option>
+                      <option value="alpha-desc">Alphabetical (Z – A)</option>
                     </select>
                   </div>
 
@@ -530,17 +528,10 @@ export const DirectoryExplorer: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <HeartHandshake className="w-3.5 h-3.5 text-violet-600" />
-                <span className="text-[11px] text-slate-500 font-medium">Nightlife &amp; Dating Dynamics:</span>
-                <button
-                  onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
-                    discreetLifestyleEnabled
-                      ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
-                      : 'bg-violet-50/80 text-violet-900 border-violet-200 hover:bg-violet-100'
-                  }`}
-                >
-                  {discreetLifestyleEnabled ? 'Details Visible (Active)' : 'Show Discreet Lifestyle Details'}
-                </button>
+                <span className="text-[11px] text-slate-600 font-semibold">Dating &amp; Lifestyle Dynamics:</span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-100 text-violet-900 border border-violet-200 shadow-2xs">
+                  Active &amp; Visible Everywhere
+                </span>
               </div>
             </div>
 

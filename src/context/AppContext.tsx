@@ -88,6 +88,7 @@ interface AppContextType {
   logout: () => void;
   switchAccount: (userId: string) => void;
   deleteUserAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAllTestAccounts: () => Promise<{ success: boolean; deletedCount: number }>;
   adminUpdateUserAccount: (updatedAccount: UserAccount) => Promise<void>;
   refreshRegisteredUsersFromCloud: () => Promise<{ success: boolean; count: number; error?: string }>;
 
@@ -243,6 +244,7 @@ interface AppContextType {
     priority?: FeedbackPriority
   ) => Promise<{ success: boolean; error?: string }>;
   deleteFeedbackReport: (id: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAllTestFeedbacks: () => Promise<{ success: boolean; deletedCount: number }>;
   isFeedbackModalOpen: boolean;
   setIsFeedbackModalOpen: (open: boolean) => void;
   feedbackInitialType: FeedbackType;
@@ -371,8 +373,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return clean.includes('images.unsplash.com');
   };
 
-  // Registered accounts in local storage (merging DEFAULT_ACCOUNTS with any user-created accounts so custom User IDs are never lost)
+  // Persistent tombstone set of deleted user account IDs so deleted test personas NEVER reload
+  const getDeletedUserAccountIds = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch {}
+    return new Set();
+  };
+
+  const markUserAccountIdsDeleted = (ids: string[]) => {
+    try {
+      const current = getDeletedUserAccountIds();
+      ids.forEach(id => {
+        if (id && id !== 'usr-ganesh') {
+          current.add(id);
+        }
+      });
+      const arr = Array.from(current);
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
+
+      if (auth.currentUser) {
+        const nowIso = new Date().toISOString();
+        setDoc(doc(db, 'users', auth.currentUser.uid, 'workspace', 'deletedAccounts'), {
+          id: 'deletedAccounts',
+          userId: auth.currentUser.uid,
+          deletedUserIds: arr,
+          updatedAt: nowIso,
+        }).catch(() => {});
+      }
+    } catch {}
+  };
+
+  // Registered accounts in local storage (guarantees deleted personas stay deleted and never resurrect)
   const [registeredAccounts, setRegisteredAccounts] = useState<UserAccount[]>(() => {
+    const deletedUserIds = getDeletedUserAccountIds();
+    const isAccountsSeeded = localStorage.getItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`) === 'true';
+
     try {
       const savedGooglePhoto =
         localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_ganesh.indireddy@gmail.com`) ||
@@ -382,7 +423,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed: UserAccount[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const repaired = parsed.map(acc => {
+          // Strictly exclude any accounts marked deleted
+          const nonDeleted = parsed.filter(acc => acc && acc.id && !deletedUserIds.has(acc.id));
+          const repaired = nonDeleted.map(acc => {
             if (acc.id === 'usr-ganesh' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
               const currentAvatar = acc.profile?.avatarUrl || '';
               const cleanedAvatar = isSampleStockAvatar(currentAvatar) ? savedGooglePhoto : currentAvatar;
@@ -397,13 +440,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             return acc;
           });
-          const existingIds = new Set(repaired.map(a => a.id));
-          const missingDefaults = DEFAULT_ACCOUNTS.filter(d => !existingIds.has(d.id));
-          return [...repaired, ...missingDefaults];
+
+          // Always ensure primary admin account usr-ganesh exists
+          const hasGanesh = repaired.some(a => a.id === 'usr-ganesh' || a.email?.toLowerCase() === 'ganesh.indireddy@gmail.com');
+          const finalAccounts = hasGanesh ? repaired : [DEFAULT_ACCOUNTS[0], ...repaired];
+
+          // If accounts have already been seeded or modified, NEVER re-insert missing default test personas!
+          if (isAccountsSeeded) {
+            return finalAccounts;
+          }
+
+          // First run only: add any non-deleted defaults
+          const existingIds = new Set(finalAccounts.map(a => a.id));
+          const missingDefaults = DEFAULT_ACCOUNTS.filter(d => !existingIds.has(d.id) && !deletedUserIds.has(d.id));
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
+          return [...finalAccounts, ...missingDefaults];
         }
       }
     } catch {}
-    return DEFAULT_ACCOUNTS;
+
+    // First time initial seed: filter out any tombstoned IDs and mark seeded
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
+    return DEFAULT_ACCOUNTS.filter(d => !deletedUserIds.has(d.id));
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -545,7 +603,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedClimate, setSelectedClimate] = useState('All');
   const [visaDifficultyMax, setVisaDifficultyMax] = useState(5);
   const [visaIncomeMax, setVisaIncomeMax] = useState(3500);
-  const [discreetLifestyleEnabled, setDiscreetLifestyleEnabled] = useState(false);
+  const [discreetLifestyleEnabled, setDiscreetLifestyleEnabled] = useState(true);
   const [sortBy, setSortBy] = useState<SortByType>('recommended');
 
   // Compared countries
@@ -680,13 +738,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const current = getDeletedFeedbackIds();
       ids.forEach(id => current.add(id));
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_feedback_ids`, JSON.stringify(Array.from(current)));
+      const arr = Array.from(current);
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_feedback_ids`, JSON.stringify(arr));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`, 'true');
+
+      if (auth.currentUser) {
+        const nowIso = new Date().toISOString();
+        setDoc(doc(db, 'users', auth.currentUser.uid, 'workspace', 'deletedFeedbacks'), {
+          id: 'deletedFeedbacks',
+          userId: auth.currentUser.uid,
+          deletedFeedbackIds: arr,
+          updatedAt: nowIso,
+        }).catch(() => {});
+      }
     } catch {}
   };
 
-  // Feedback & Bug Reports state with local storage fallback (respects empty array [] and deleted IDs!)
+  // Feedback & Bug Reports state with local storage fallback (strictly respects empty array [] and deleted IDs!)
   const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>(() => {
     const deletedIds = getDeletedFeedbackIds();
+    const isFeedbackSeeded = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`) === 'true';
+
     try {
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feedback_reports`);
       if (saved !== null) {
@@ -695,8 +767,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return parsed.filter(r => r && r.id && !deletedIds.has(r.id));
         }
       }
+      // If feedback was already initialized or purged before, NEVER reload sample tickets
+      if (isFeedbackSeeded) {
+        return [];
+      }
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`, 'true');
       return INITIAL_FEEDBACK_REPORTS.filter(r => !deletedIds.has(r.id));
     } catch {
+      if (isFeedbackSeeded) return [];
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`, 'true');
       return INITIAL_FEEDBACK_REPORTS.filter(r => !deletedIds.has(r.id));
     }
   });
@@ -1406,6 +1485,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
+          // Load any remote tombstones for deleted users and feedback
+          try {
+            const delAccDocSnap = await getDoc(doc(db, 'users', user.uid, 'workspace', 'deletedAccounts'));
+            if (delAccDocSnap.exists()) {
+              const data = delAccDocSnap.data() as any;
+              if (Array.isArray(data.deletedUserIds)) {
+                const localDeleted = getDeletedUserAccountIds();
+                data.deletedUserIds.forEach((id: string) => localDeleted.add(id));
+                localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(Array.from(localDeleted)));
+              }
+            }
+          } catch {}
+
+          try {
+            const delFbDocSnap = await getDoc(doc(db, 'users', user.uid, 'workspace', 'deletedFeedbacks'));
+            if (delFbDocSnap.exists()) {
+              const data = delFbDocSnap.data() as any;
+              if (Array.isArray(data.deletedFeedbackIds)) {
+                const localDeleted = getDeletedFeedbackIds();
+                data.deletedFeedbackIds.forEach((id: string) => localDeleted.add(id));
+                localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_feedback_ids`, JSON.stringify(Array.from(localDeleted)));
+              }
+            }
+          } catch {}
+
+          const currentDeletedUserIds = getDeletedUserAccountIds();
+          const currentDeletedFeedbackIds = getDeletedFeedbackIds();
+
           // 1. Fetch all saved custom User IDs belonging to this Firebase user from /users/{uid}/savedAccounts
           const savedAccCollRef = collection(db, 'users', user.uid, 'savedAccounts');
           const savedAccSnap = await getDocs(savedAccCollRef);
@@ -1414,6 +1521,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           savedAccSnap.forEach(d => {
             const data = d.data() as any;
             if (data && data.id && data.id !== 'guest' && data.profile) {
+              // Ignore any deleted or tombstoned account IDs
+              if (currentDeletedUserIds.has(data.id)) {
+                return;
+              }
               // Non-admin users ignore any stale copies of the 3 default admin personas in their subcollection
               if (!isAdminUser && defaultIds.has(data.id)) {
                 return;
@@ -1459,6 +1570,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               topSavedSnap.forEach(d => {
                 const data = d.data() as any;
                 if (data && data.id && data.id !== 'guest' && data.profile && !remoteAccountsMap.has(data.id)) {
+                  if (currentDeletedUserIds.has(data.id)) {
+                    return;
+                  }
                   const cleanName = !isGuestPlaceholder(data.name)
                     ? data.name
                     : !isGuestPlaceholder(data.profile?.name)
@@ -1504,15 +1618,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             persistedFirestoreRoleRef.current = isAdminUser ? 'admin' : 'member';
           }
 
-          // 3. Build merged accounts map (repairing canonical email on the 3 default accounts if polluted in localStorage)
-          const localAccounts = registeredAccountsRef.current.filter(a => a.id !== 'guest');
+          // 3. Build merged accounts map (NEVER force-reinject deleted DEFAULT_ACCOUNTS!)
+          const localAccounts = registeredAccountsRef.current.filter(
+            a => a.id !== 'guest' && !currentDeletedUserIds.has(a.id)
+          );
           const mergedMap = new Map<string, UserAccount>();
 
-          for (const defAcc of DEFAULT_ACCOUNTS) {
-            mergedMap.set(sanitizeAccountId(defAcc.id), defAcc);
+          // Ensure primary admin account (usr-ganesh) is retained
+          const ganeshDefault = DEFAULT_ACCOUNTS[0];
+          if (!currentDeletedUserIds.has(ganeshDefault.id)) {
+            mergedMap.set(sanitizeAccountId(ganeshDefault.id), ganeshDefault);
           }
+
           for (const localAcc of localAccounts) {
             const safeLocalId = sanitizeAccountId(localAcc.id);
+            if (currentDeletedUserIds.has(safeLocalId)) continue;
             const matchingDefault = DEFAULT_ACCOUNTS.find(d => d.id === safeLocalId);
             if (matchingDefault) {
               mergedMap.set(safeLocalId, {
@@ -1527,7 +1647,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               mergedMap.set(safeLocalId, localAcc);
             }
           }
-          remoteAccountsMap.forEach((acc, id) => mergedMap.set(id, acc));
+          remoteAccountsMap.forEach((acc, id) => {
+            if (!currentDeletedUserIds.has(id)) {
+              mergedMap.set(id, acc);
+            }
+          });
+
+          // Proactively purge any tombstoned accounts from Firestore
+          for (const deadId of Array.from(currentDeletedUserIds)) {
+            if (deadId === 'usr-ganesh') continue;
+            const safeDeadId = sanitizeAccountId(deadId);
+            try {
+              await deleteDoc(doc(db, 'users', user.uid, 'savedAccounts', safeDeadId));
+              await deleteDoc(doc(db, 'savedAccounts', safeDeadId));
+              if (safeDeadId !== user.uid) {
+                await deleteDoc(doc(db, 'users', safeDeadId));
+              }
+              await deleteDoc(doc(db, 'relocationChecklists', safeDeadId));
+            } catch {}
+          }
+
+          // Proactively purge any tombstoned feedback tickets from Firestore and clean up active state
+          for (const deadFbId of Array.from(currentDeletedFeedbackIds)) {
+            try {
+              await deleteDoc(doc(db, 'feedbackReports', deadFbId));
+            } catch {}
+          }
+          setFeedbackReports(prev => {
+            const cleaned = prev.filter(r => !currentDeletedFeedbackIds.has(r.id));
+            try {
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(cleaned));
+            } catch {}
+            return cleaned;
+          });
 
           // 4. Resolve the signed-in Google user's dedicated UserAccount (e.g. usr-<gmail-handle>) with their Google Name, Gmail ID, and Avatar
           const resolvedGoogleAccount = resolveGoogleAccountForUser(
@@ -1538,10 +1690,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           mergedMap.set(resolvedGoogleAccount.id, resolvedGoogleAccount);
 
           // 5. Sync accounts to Firestore:
-          // - Admin user (ganesh.indireddy@gmail.com) syncs all accounts in mergedMap (including usr-ganesh, usr-elena, usr-marcus)
-          // - General Gmail users sync ONLY their own resolvedGoogleAccount and non-default accounts in their own remoteAccountsMap
+          // - Only sync active, non-deleted accounts!
           const nowIso = new Date().toISOString();
           for (const [safeId, acc] of Array.from(mergedMap.entries())) {
+            if (currentDeletedUserIds.has(safeId)) continue;
             const belongsToCurrentUser =
               isAdminUser ||
               safeId === resolvedGoogleAccount.id ||
@@ -2387,6 +2539,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const next = prev.filter(r => r.id !== id);
         try {
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(next));
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`, 'true');
         } catch {}
         return next;
       });
@@ -2402,6 +2555,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to delete feedback report' };
     }
+  };
+
+  const deleteAllTestFeedbacks = async (): Promise<{ success: boolean; deletedCount: number }> => {
+    const sampleIds = new Set(['fb-101', 'fb-102', 'fb-103', 'fb-104', 'fb-105']);
+    const testTickets = feedbackReports.filter(
+      r => sampleIds.has(r.id) || r.id.startsWith('fb-10') || INITIAL_FEEDBACK_REPORTS.some(i => i.id === r.id)
+    );
+
+    if (testTickets.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+
+    const testTicketIds = testTickets.map(r => r.id);
+    markFeedbackIdsDeleted(testTicketIds);
+
+    const remainingReports = feedbackReports.filter(r => !testTicketIds.includes(r.id));
+    setFeedbackReports(remainingReports);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_reports`, JSON.stringify(remainingReports));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_feedback_seeded`, 'true');
+    } catch {}
+
+    if (db) {
+      for (const id of testTicketIds) {
+        try {
+          await deleteDoc(doc(db, 'feedbackReports', id));
+        } catch {}
+      }
+    }
+
+    return { success: true, deletedCount: testTicketIds.length };
   };
 
   const switchAccount = (userId: string) => {
@@ -2481,15 +2665,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteUserAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    if (userId === 'usr-ganesh' || userId === 'ganesh.reddy') {
+      return { success: false, error: 'Cannot delete the primary Administrator account (Ganesh Reddy).' };
+    }
+    const targetAccount = registeredAccounts.find(a => a.id === userId);
+    if (targetAccount?.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' || targetAccount?.profile?.role === 'admin') {
+      return { success: false, error: 'Cannot delete an Administrator account.' };
+    }
     if (registeredAccounts.length <= 1) {
       return { success: false, error: 'Cannot delete the only remaining user account.' };
     }
+
+    markUserAccountIdsDeleted([userId]);
+
     const nextAccounts = registeredAccounts.filter(a => a.id !== userId);
     setRegisteredAccounts(nextAccounts);
     registeredAccountsRef.current = nextAccounts;
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccounts));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_checklist_${userId}`);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_journal_${userId}`);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_profile_${userId}`);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_avatar_${userId}`);
+    } catch {}
 
     if (currentUserId === userId) {
-      const fallback = nextAccounts[0];
+      const fallback = nextAccounts.find(a => a.id === 'usr-ganesh') || nextAccounts[0];
       switchAccount(fallback.id);
     }
 
@@ -2509,6 +2711,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     return { success: true };
+  };
+
+  const deleteAllTestAccounts = async (): Promise<{ success: boolean; deletedCount: number }> => {
+    const testAccounts = registeredAccounts.filter(
+      acc =>
+        acc.id !== 'guest' &&
+        acc.id !== 'usr-ganesh' &&
+        acc.id !== currentUserId &&
+        acc.profile?.role !== 'admin' &&
+        acc.email?.toLowerCase() !== 'ganesh.indireddy@gmail.com'
+    );
+
+    if (testAccounts.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+
+    const testIds = testAccounts.map(a => a.id);
+    markUserAccountIdsDeleted(testIds);
+
+    const remainingAccounts = registeredAccounts.filter(acc => !testIds.includes(acc.id));
+    setRegisteredAccounts(remainingAccounts);
+    registeredAccountsRef.current = remainingAccounts;
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(remainingAccounts));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
+      for (const id of testIds) {
+        localStorage.removeItem(`${LOCAL_STORAGE_KEY}_checklist_${id}`);
+        localStorage.removeItem(`${LOCAL_STORAGE_KEY}_journal_${id}`);
+        localStorage.removeItem(`${LOCAL_STORAGE_KEY}_profile_${id}`);
+        localStorage.removeItem(`${LOCAL_STORAGE_KEY}_avatar_${id}`);
+      }
+    } catch {}
+
+    if (auth.currentUser) {
+      for (const id of testIds) {
+        const safeId = sanitizeAccountId(id);
+        try {
+          await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'savedAccounts', safeId));
+          await deleteDoc(doc(db, 'savedAccounts', safeId));
+          if (safeId !== auth.currentUser.uid) {
+            await deleteDoc(doc(db, 'users', safeId));
+          }
+          await deleteDoc(doc(db, 'relocationChecklists', safeId));
+        } catch {}
+      }
+      recordSyncTimestamp();
+    }
+
+    return { success: true, deletedCount: testIds.length };
   };
 
   const adminUpdateUserAccount = async (updatedAccount: UserAccount): Promise<void> => {
@@ -2561,9 +2812,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setIsFirebaseSyncing(true);
     try {
+      const deletedUserIds = getDeletedUserAccountIds();
       const mergedMap = new Map<string, UserAccount>();
       for (const acc of registeredAccountsRef.current) {
-        if (acc.id !== 'guest') {
+        if (acc.id !== 'guest' && !deletedUserIds.has(acc.id)) {
           mergedMap.set(sanitizeAccountId(acc.id), acc);
         }
       }
@@ -2574,6 +2826,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const data = d.data() as any;
         if (data && data.id && data.id !== 'guest' && data.profile) {
           const safeId = sanitizeAccountId(data.id);
+          if (deletedUserIds.has(safeId)) {
+            return;
+          }
           mergedMap.set(safeId, {
             id: safeId,
             username: data.username || safeId,
@@ -2600,6 +2855,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const data = d.data() as any;
           if (data && data.id && data.id !== 'guest' && data.profile) {
             const safeId = sanitizeAccountId(data.id);
+            if (deletedUserIds.has(safeId)) {
+              return;
+            }
             if (!mergedMap.has(safeId)) {
               mergedMap.set(safeId, {
                 id: safeId,
@@ -2622,7 +2880,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       } catch {}
 
-      const nextList = Array.from(mergedMap.values());
+      const nextList = Array.from(mergedMap.values()).filter(a => !deletedUserIds.has(a.id));
       setRegisteredAccounts(nextList);
       registeredAccountsRef.current = nextList;
       recordSyncTimestamp();
@@ -3596,6 +3854,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         switchAccount,
         deleteUserAccount,
+        deleteAllTestAccounts,
         adminUpdateUserAccount,
         refreshRegisteredUsersFromCloud,
         isAuthModalOpen,
@@ -3694,6 +3953,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         submitFeedbackReport,
         updateFeedbackStatus,
         deleteFeedbackReport,
+        deleteAllTestFeedbacks,
         isFeedbackModalOpen,
         setIsFeedbackModalOpen,
         feedbackInitialType,

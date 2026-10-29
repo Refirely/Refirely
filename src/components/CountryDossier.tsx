@@ -78,8 +78,6 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     threads,
     meetups,
     startDmWithPeer,
-    discreetLifestyleEnabled,
-    setDiscreetLifestyleEnabled,
     journalEntries,
     userProfile,
     isAuthenticated,
@@ -1101,89 +1099,67 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                       </span>
                     </div>
 
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        discreetLifestyleEnabled
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-xs'
-                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                      }`}
-                    >
-                      {discreetLifestyleEnabled ? 'Hide Details' : 'Show Details'}
-                    </motion.button>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        Full Details Always Visible
+                      </span>
+                    </div>
                   </div>
 
-                  {discreetLifestyleEnabled ? (
-                    <div className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-white border border-amber-200/80">
-                          <span className="text-xs font-bold text-amber-800 block">
-                            Nightlife Vibrancy
-                          </span>
-                          <span className="text-sm font-extrabold text-slate-900 mt-1 block">
-                            {country.adultEntertainment.nightlifeVibrancy}
-                          </span>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50/80 to-white border border-rose-200/80">
-                          <span className="text-xs font-bold text-rose-800 block">
-                            Adult Venue Score
-                          </span>
-                          <span className="font-mono tabular-nums text-lg font-extrabold text-rose-950 mt-1 block">
-                            {country.adultEntertainment.adultEntertainmentScore} / 5
-                          </span>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/80 to-white border border-violet-200/80">
-                          <span className="text-xs font-bold text-violet-800 block">
-                            Regulatory Framework
-                          </span>
-                          <span className="text-xs font-bold text-slate-800 mt-1 block">
-                            {country.adultEntertainment.legalStatus}
-                          </span>
-                        </div>
+                  <div className="space-y-4 mt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-white border border-amber-200/80">
+                        <span className="text-xs font-bold text-amber-800 block">
+                          Nightlife Vibrancy
+                        </span>
+                        <span className="text-sm font-extrabold text-slate-900 mt-1 block">
+                          {country.adultEntertainment.nightlifeVibrancy}
+                        </span>
                       </div>
 
-                      <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-xs sm:text-sm text-slate-700 space-y-3">
-                        <p className="leading-relaxed">{country.adultEntertainment.overview}</p>
-                        <div>
-                          <strong className="text-slate-900 block mb-1.5">
-                            Key Entertainment Zones:
-                          </strong>
-                          <div className="flex flex-wrap gap-2">
-                            {country.adultEntertainment.topVenuesOrDistricts.map((d, i) => (
-                              <span
-                                key={i}
-                                className="px-3 py-1 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200/80 text-indigo-950 text-xs font-bold"
-                              >
-                                {d}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-500 border-t border-slate-200 pt-2.5">
-                          <strong className="text-slate-800">Safety Guidance:</strong>{' '}
-                          {country.adultEntertainment.safetyGuidance}
-                        </p>
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50/80 to-white border border-rose-200/80">
+                        <span className="text-xs font-bold text-rose-800 block">
+                          Adult Venue Score
+                        </span>
+                        <span className="font-mono tabular-nums text-lg font-extrabold text-rose-950 mt-1 block">
+                          {country.adultEntertainment.adultEntertainmentScore} / 5
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/80 to-white border border-violet-200/80">
+                        <span className="text-xs font-bold text-violet-800 block">
+                          Regulatory Framework
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 mt-1 block">
+                          {country.adultEntertainment.legalStatus}
+                        </span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-amber-50/40 border border-indigo-100 text-center">
-                      <p className="text-xs text-slate-600 mb-3">
-                        Nightlife and adult entertainment indicators are currently softened. Click "Show Details" above to view complete regulatory status and district metrics.
+
+                    <div className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-xs sm:text-sm text-slate-700 space-y-3">
+                      <p className="leading-relaxed">{country.adultEntertainment.overview}</p>
+                      <div>
+                        <strong className="text-slate-900 block mb-1.5">
+                          Key Entertainment Zones:
+                        </strong>
+                        <div className="flex flex-wrap gap-2">
+                          {country.adultEntertainment.topVenuesOrDistricts.map((d, i) => (
+                            <span
+                              key={i}
+                              className="px-3 py-1 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200/80 text-indigo-950 text-xs font-bold"
+                            >
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 border-t border-slate-200 pt-2.5">
+                        <strong className="text-slate-800">Safety Guidance:</strong>{' '}
+                        {country.adultEntertainment.safetyGuidance}
                       </p>
-                      <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setDiscreetLifestyleEnabled(true)}
-                        className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-amber-500 text-white shadow-xs cursor-pointer"
-                      >
-                        Reveal Nightlife &amp; Lifestyle Data
-                      </motion.button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1479,7 +1455,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
         journalEntry={journalEntries[country.id]}
         threads={countryThreads}
         meetups={countryMeetups}
-        discreetLifestyleEnabled={discreetLifestyleEnabled}
+        discreetLifestyleEnabled={true}
       />
     </div>
   );

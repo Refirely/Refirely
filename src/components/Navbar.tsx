@@ -23,8 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     updateUserProfile,
     savedCountryIds,
     dmThreads,
-    discreetLifestyleEnabled,
-    setDiscreetLifestyleEnabled,
     isAuthenticated,
     currentUserId,
     openAuthModal,
@@ -129,22 +127,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
 
         {/* Zone 3: Compact Right Utility & Account Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Discreet lifestyle toggle button (Normal/Guest users only) */}
-          {!canAccessAdmin && (
-            <button
-              onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-              title={discreetLifestyleEnabled ? "Discreet lifestyle filters active (Nightlife & Adult indicators visible)" : "Show lifestyle & nightlife indicators"}
-              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer shrink-0 ${
-                discreetLifestyleEnabled
-                  ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-2xs'
-                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
-              <span className="whitespace-nowrap">Lifestyle {discreetLifestyleEnabled ? 'ON' : 'OFF'}</span>
-            </button>
-          )}
-
           {/* Single Canonical Admin Console Button (Admin Only) */}
           {canAccessAdmin && (
             <button
@@ -667,20 +649,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               </div>
             )}
           </div>
-
-          {!canAccessAdmin && (
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs text-slate-500">Nightlife & Lifestyle Details</span>
-              <button
-                onClick={() => setDiscreetLifestyleEnabled(!discreetLifestyleEnabled)}
-                className={`px-3 py-1 text-xs rounded font-medium ${
-                  discreetLifestyleEnabled ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {discreetLifestyleEnabled ? 'Enabled' : 'Disabled'}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </header>

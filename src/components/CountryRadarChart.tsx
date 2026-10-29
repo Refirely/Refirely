@@ -246,26 +246,25 @@ export const CountryRadarChart: React.FC<CountryRadarChartProps> = ({
       },
     ];
 
-    if (discreetLifestyleEnabled) {
-      baseDimensions.push({
-        key: 'nightlife',
-        label: 'Nightlife & Vibrancy',
-        shortLabel: 'Nightlife',
-        category: 'Lifestyle',
-        description: 'Evening entertainment density, social venues & adult lifestyle openness',
-        entries: comparedCountries.map((c, idx) => ({
-          country: c,
-          slotIndex: idx,
-          score: Math.round(
-            Math.min(98, Math.max(25, c.adultEntertainment.adultEntertainmentScore * 19))
-          ),
-          raw: `${c.adultEntertainment.nightlifeVibrancy} (${c.adultEntertainment.adultEntertainmentScore}/5)`,
-        })),
-      });
-    }
+    // Nightlife, Dating & Social Scene dimension is always included
+    baseDimensions.push({
+      key: 'nightlife',
+      label: 'Nightlife & Vibrancy',
+      shortLabel: 'Nightlife',
+      category: 'Lifestyle',
+      description: 'Evening entertainment density, social venues & adult lifestyle openness',
+      entries: comparedCountries.map((c, idx) => ({
+        country: c,
+        slotIndex: idx,
+        score: Math.round(
+          Math.min(98, Math.max(25, c.adultEntertainment.adultEntertainmentScore * 19))
+        ),
+        raw: `${c.adultEntertainment.nightlifeVibrancy} (${c.adultEntertainment.adultEntertainmentScore}/5)`,
+      })),
+    });
 
     return baseDimensions;
-  }, [comparedCountries, discreetLifestyleEnabled]);
+  }, [comparedCountries]);
 
   // Composite average scores for each active country
   const compositeScores = useMemo(() => {
