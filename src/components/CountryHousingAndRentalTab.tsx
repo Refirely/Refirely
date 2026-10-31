@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Country } from '../types';
+import { useApp } from '../context/AppContext';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import {
   getCountryHousingProfile,
   NeighborhoodRentalProfile,
@@ -40,7 +42,9 @@ export const CountryHousingAndRentalTab: React.FC<CountryHousingAndRentalTabProp
   country,
   onNavigateTab,
 }) => {
+  const { currentPersona } = useApp();
   const housing = useMemo(() => getCountryHousingProfile(country), [country]);
+  const nomadProfile = useMemo(() => getCountryNomadProfile(country), [country]);
 
   // Filter state for neighborhood directory
   const [selectedDistrictType, setSelectedDistrictType] = useState<string>('All');
@@ -134,6 +138,31 @@ export const CountryHousingAndRentalTab: React.FC<CountryHousingAndRentalTabProp
             </div>
           </div>
         </div>
+
+        {/* Nomad Lens Callout: Short-Term Furnished Burn */}
+        {currentPersona === 'nomad' && (
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-violet-50/70 to-teal-50/70 border border-indigo-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-indigo-600 text-white shrink-0">
+                <Wifi className="w-4 h-4" />
+              </span>
+              <div>
+                <span className="text-xs font-extrabold text-indigo-950 block">
+                  ⚡ Nomad Lens: Turnkey Furnished 1-Month Stay Baseline
+                </span>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Nomads avoid 12-month lease deposits and utility setup fees by booking furnished coliving or serviced apartments. Typical turnkey furnished stay: <strong>${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}/mo</strong> with high-speed fiber WiFi included.
+                </p>
+              </div>
+            </div>
+            <div className="text-left sm:text-right shrink-0">
+              <span className="font-mono text-lg font-extrabold text-indigo-950">
+                ${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}
+                <span className="text-xs font-sans text-slate-500 font-normal">/mo turnkey</span>
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 4 Core Benchmark Rental Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

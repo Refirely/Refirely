@@ -31,6 +31,8 @@ export const DirectoryExplorer: React.FC = () => {
     resetFilters,
     comparedCountryIds,
     setCurrentView,
+    currentPersona,
+    setCurrentPersona,
   } = useApp();
 
   const [showMap, setShowMap] = useState(false);
@@ -123,15 +125,29 @@ export const DirectoryExplorer: React.FC = () => {
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                Choose the Right Country to Retire with{' '}
-                <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
-                  Confidence
-                </span>
-                .
+                {currentPersona === 'retiree' ? (
+                  <>
+                    Choose the Right Country to Retire with{' '}
+                    <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
+                      Confidence
+                    </span>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Discover the World&apos;s Best{' '}
+                    <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
+                      Nomad Hubs &amp; Remote Havens
+                    </span>
+                    .
+                  </>
+                )}
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                Search, filter, and compare visa pathways, real couple budgets, climate zones, healthcare standards, and community life across {countries.length} verified havens in one unified console.
+                {currentPersona === 'retiree'
+                  ? `Search, filter, and compare visa pathways, real couple budgets, climate zones, healthcare standards, and community life across ${countries.length} verified havens in one unified console.`
+                  : `Explore turnkey coliving and furnished rentals, verified high-speed fiber internet, vibrant coworking spaces, and Digital Nomad Visas (DNV) across ${countries.length} global destinations.`}
               </p>
             </div>
 
@@ -193,6 +209,45 @@ export const DirectoryExplorer: React.FC = () => {
             {/* Top Multi-Colored Gradient Accent Ribbon */}
             <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
             
+            {/* Filter Console Header: Active Persona Lens Toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                  Explore Lens:
+                </span>
+                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/90 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPersona('retiree')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentPersona === 'retiree'
+                        ? 'bg-white text-emerald-950 font-black shadow-xs border border-emerald-200/80'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>🌿 Early Retiree</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPersona('nomad')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentPersona === 'nomad'
+                        ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>⚡ Digital Nomad / Creator</span>
+                  </button>
+                </div>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-500">
+                {currentPersona === 'retiree'
+                  ? 'Showing couple lease baseline & retirement visas'
+                  : 'Showing 1-mo turnkey burn, verified fiber speeds & remote visas'}
+              </span>
+            </div>
+
             {/* Zone 1: Single Unified Search Bar + Action Buttons + Popular Multi-Color Chips */}
             <div className="space-y-3">
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
@@ -341,6 +396,9 @@ export const DirectoryExplorer: React.FC = () => {
                       className="px-2.5 py-1 text-xs font-bold text-slate-900 border border-indigo-200/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white hover:border-indigo-300 transition-colors cursor-pointer shadow-2xs min-w-0 max-w-[220px] sm:max-w-none truncate"
                     >
                       <option value="recommended">Curated Haven Match</option>
+                      <option value="dnv-friendly">Digital Nomad Visa Friendly</option>
+                      <option value="internet-speed-desc">Fastest Internet Speeds</option>
+                      <option value="nomad-burn-asc">Lowest Monthly Runway Burn</option>
                       <option value="dating-nightlife-desc">Best Dating &amp; Nightlife</option>
                       <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
                       <option value="budget-asc">Lowest Cost of Living</option>

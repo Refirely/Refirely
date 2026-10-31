@@ -633,7 +633,7 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                   <a
                     href="https://safetywing.com/nomad-insurance?referenceID=26623834&utm_source=26623834&utm_medium=Ambassador"
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer sponsored"
                     onClick={() =>
                       trackAnalyticsEvent('affiliate_click_safetywing', {
                         country_id: country.id,
@@ -660,7 +660,7 @@ export const CountryHealthcareTab: React.FC<CountryHealthcareTabProps> = ({
                   whileTap={{ scale: 0.98 }}
                   href="https://safetywing.com/nomad-insurance?referenceID=26623834&utm_source=26623834&utm_medium=Ambassador"
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer sponsored"
                   onClick={() =>
                     trackAnalyticsEvent('affiliate_click_safetywing', {
                       country_id: country.id,

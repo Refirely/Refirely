@@ -21,6 +21,8 @@ export type ViewState =
 
 export type ClimateCategory = 'Mediterranean' | 'Tropical' | 'Subtropical' | 'Temperate' | 'Highlands / Mild';
 
+export type Persona = 'retiree' | 'nomad';
+
 export type SortByType =
   | 'recommended'
   | 'alpha-asc'
@@ -33,7 +35,10 @@ export type SortByType =
   | 'visa-difficulty-asc'
   | 'visa-income-asc'
   | 'female-ratio-desc'
-  | 'dating-nightlife-desc';
+  | 'dating-nightlife-desc'
+  | 'dnv-friendly'
+  | 'internet-speed-desc'
+  | 'nomad-burn-asc';
 
 export interface TopCity {
   name: string;

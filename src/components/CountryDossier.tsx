@@ -17,6 +17,7 @@ import { CountryFlag } from './CountryFlag';
 import { HavenMatcherPromoCard } from './HavenMatcherPromoCard';
 import { getFullCountryUrl } from '../utils/seo';
 import { trackAnalyticsEvent } from '../utils/analytics';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import {
   ArrowLeft,
   Heart,
@@ -39,6 +40,12 @@ import {
   MapPin,
   Users,
   Shield,
+  Zap,
+  Wifi,
+  Laptop,
+  Coffee,
+  ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -73,6 +80,8 @@ const TOWN_CARD_ACCENTS = [
 export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
   const {
     setCurrentView,
+    currentPersona,
+    setCurrentPersona,
     isCountrySaved,
     toggleSaveCountry,
     isCountryCompared,
@@ -86,6 +95,8 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
     openAuthModal,
     toggleRsvpMeetup,
   } = useApp();
+
+  const nomadProfile = getCountryNomadProfile(country);
 
   // Active section tab
   const [activeTab, setActiveTab] = useState<
@@ -285,6 +296,69 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
         </div>
       </div>
 
+      {/* Sticky Dual-Persona Lens Switcher Bar */}
+      <div className="sticky top-16 z-25 bg-white/95 backdrop-blur-md border-b border-indigo-100/90 py-2.5 px-4 sm:px-6 shadow-2xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
+              Dossier Lens:
+            </span>
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/90 shadow-inner">
+              <button
+                onClick={() => {
+                  setCurrentPersona('retiree');
+                  trackAnalyticsEvent('persona_switched', { persona: 'retiree', source: 'dossier_sticky' });
+                }}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentPersona === 'retiree'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🌿 Early Retirement View</span>
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentPersona('nomad');
+                  trackAnalyticsEvent('persona_switched', { persona: 'nomad', source: 'dossier_sticky' });
+                }}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentPersona === 'nomad'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>⚡ Nomad & Remote Work View</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs">
+            {currentPersona === 'nomad' ? (
+              <div className="flex items-center gap-2.5 text-indigo-950 font-semibold">
+                <span className="inline-flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/70">
+                  <Wifi className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{nomadProfile.verifiedInternetMbps} Mbps</span>
+                </span>
+                <span className="inline-flex items-center gap-1 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-200/70">
+                  <Laptop className="w-3.5 h-3.5 text-violet-600" />
+                  <span>Burn: ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo</span>
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 text-emerald-950 font-semibold">
+                <span className="inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/70">
+                  <span>Couple: ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo</span>
+                </span>
+                <span className="inline-flex items-center gap-1 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200/70">
+                  <span>Nest Egg: ${(country.costOfLiving.monthlyBudgetCoupleUSD * 12 * 25).toLocaleString()}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Hero Dossier Header - Multi-Colored Luminous Palette & Ambient Glow */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50/90 via-white to-amber-50/85 text-slate-900 py-10 border-b border-indigo-200/80 shadow-xs">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
@@ -306,7 +380,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                     {country.name}{' '}
                     <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
-                      Retirement Guide
+                      {currentPersona === 'nomad' ? 'Digital Nomad & Remote Hub' : 'Retirement Guide'}
                     </span>
                   </h1>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">
@@ -323,47 +397,87 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                 </div>
               </div>
               <p className="text-sm text-slate-600 max-w-3xl leading-relaxed mt-2">
-                {country.tagline}
+                {currentPersona === 'nomad'
+                  ? `Verified remote work infrastructure, short-term furnished living burn ($${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo), and remote visa pathways for foreign creators and telecommuters.`
+                  : country.tagline}
               </p>
             </div>
 
-            {/* Quick KPI Strip - Multi-Colored Luminous Cards */}
+            {/* Quick KPI Strip - Dynamic Dual-Persona Metric Cards */}
             <div className="flex items-center gap-4 sm:gap-6 bg-white/95 backdrop-blur-xs border border-indigo-200/80 rounded-2xl px-5 py-4 shrink-0 shadow-sm">
-              <button
-                onClick={() => setActiveTab('housing')}
-                className="text-left group cursor-pointer"
-                title="Click to open full Housing, Neighborhood Rents & Tenancy guide"
-              >
-                <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block group-hover:underline">
-                  Single Living →
-                </span>
-                <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
-                  ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
-                  <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
-                </span>
-              </button>
-              <div className="w-px h-9 bg-indigo-100" />
-              <button
-                onClick={() => setActiveTab('healthcare')}
-                className="text-left group cursor-pointer"
-                title="Click to open full Healthcare, Emergency & Insurance guide"
-              >
-                <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">
-                  Healthcare Score →
-                </span>
-                <span className="font-mono tabular-nums text-xl font-extrabold text-indigo-950">
-                  {country.lifestyle.healthcareScore}/100
-                </span>
-              </button>
-              <div className="w-px h-9 bg-indigo-100" />
-              <div>
-                <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider block">
-                  Sunny Days
-                </span>
-                <span className="font-mono tabular-nums text-xl font-extrabold text-amber-900">
-                  {country.climate.annualSunnyDays} d/yr
-                </span>
-              </div>
+              {currentPersona === 'nomad' ? (
+                <>
+                  <button
+                    onClick={() => setActiveTab('housing')}
+                    className="text-left group cursor-pointer"
+                    title="Click to view furnished rents & short-term stay rates"
+                  >
+                    <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">
+                      Turnkey Burn →
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-indigo-950">
+                      ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}
+                      <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
+                    </span>
+                  </button>
+                  <div className="w-px h-9 bg-indigo-100" />
+                  <div>
+                    <span className="text-[11px] text-violet-800 font-bold uppercase tracking-wider block">
+                      6-Mo Runway
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-violet-950">
+                      ${nomadProfile.sixMonthRunwayUSD.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="w-px h-9 bg-indigo-100" />
+                  <div>
+                    <span className="text-[11px] text-teal-800 font-bold uppercase tracking-wider block">
+                      Fiber Speed
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-teal-950">
+                      {nomadProfile.verifiedInternetMbps} <span className="text-xs font-sans font-normal text-slate-400">Mbps</span>
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setActiveTab('housing')}
+                    className="text-left group cursor-pointer"
+                    title="Click to open full Housing, Neighborhood Rents & Tenancy guide"
+                  >
+                    <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block group-hover:underline">
+                      Single Living →
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
+                      ${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
+                      <span className="text-xs font-sans font-normal text-slate-400 ml-1">/mo</span>
+                    </span>
+                  </button>
+                  <div className="w-px h-9 bg-indigo-100" />
+                  <button
+                    onClick={() => setActiveTab('healthcare')}
+                    className="text-left group cursor-pointer"
+                    title="Click to open full Healthcare, Emergency & Insurance guide"
+                  >
+                    <span className="text-[11px] text-indigo-800 font-bold uppercase tracking-wider block group-hover:underline">
+                      Healthcare Score →
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-indigo-950">
+                      {country.lifestyle.healthcareScore}/100
+                    </span>
+                  </button>
+                  <div className="w-px h-9 bg-indigo-100" />
+                  <div>
+                    <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider block">
+                      Sunny Days
+                    </span>
+                    <span className="font-mono tabular-nums text-xl font-extrabold text-amber-900">
+                      {country.climate.annualSunnyDays} d/yr
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -560,6 +674,153 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   </div>
                 </div>
 
+                {/* NOMAD LENS EXCLUSIVE: WORK & CREATOR INFRASTRUCTURE */}
+                {currentPersona === 'nomad' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="relative overflow-hidden bg-white rounded-3xl border border-indigo-200/90 p-6 sm:p-8 shadow-sm"
+                  >
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-indigo-600 to-violet-600" />
+
+                    {/* Indexing Fallback Banner when no curated nomad data */}
+                    {!nomadProfile.hasCuratedData && (
+                      <div className="mb-6 p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-2xs">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>⚡ Nomad &amp; Remote metrics are currently indexing for this country. Showing standard living costs and entry rules.</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-100 text-indigo-900 border border-indigo-300">
+                            <Laptop className="w-3.5 h-3.5 text-indigo-600" />
+                            Work &amp; Creator Infrastructure
+                          </span>
+                          <span className="text-xs text-slate-400">·</span>
+                          <span className="text-xs font-semibold text-slate-600">
+                            Remote Work &amp; Nomad Feasibility
+                          </span>
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                          Fiber Speeds, Coworking Hubs &amp; Remote Livability
+                        </h3>
+                      </div>
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200/80 rounded-xl text-xs font-bold text-indigo-950 shrink-0">
+                        <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <span>{nomadProfile.internetReliability}</span>
+                      </div>
+                    </div>
+
+                    {/* 4 Infrastructure Metric Pillars */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-white border border-indigo-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1.5 text-indigo-900 mb-1">
+                          <Wifi className="w-4 h-4 text-indigo-600" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Fiber Download</span>
+                        </div>
+                        <div className="font-mono text-2xl font-extrabold text-indigo-950">
+                          {nomadProfile.verifiedInternetMbps} <span className="text-xs font-sans font-normal text-slate-500">Mbps</span>
+                        </div>
+                        <span className="text-[11px] text-indigo-700/80 font-medium mt-0.5 block">
+                          {nomadProfile.internetReliability}
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-50/90 to-white border border-teal-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1.5 text-teal-900 mb-1">
+                          <Laptop className="w-4 h-4 text-teal-600" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Coworking Desks</span>
+                        </div>
+                        <div className="font-mono text-2xl font-extrabold text-teal-950">
+                          ${nomadProfile.coworkingMonthlyUSD} <span className="text-xs font-sans font-normal text-slate-500">/mo</span>
+                        </div>
+                        <span className="text-[11px] text-teal-700/80 font-medium mt-0.5 block">
+                          Density: {nomadProfile.coworkingDensity}
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1.5 text-amber-900 mb-1">
+                          <Coffee className="w-4 h-4 text-amber-600" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Café Work Culture</span>
+                        </div>
+                        <div className="text-base sm:text-lg font-extrabold text-amber-950 mt-1">
+                          {nomadProfile.cafeWorkCulture}
+                        </div>
+                        <span className="text-[11px] text-amber-700/80 font-medium mt-0.5 block">
+                          Laptop &amp; plug friendly
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 to-white border border-violet-200/80 shadow-2xs">
+                        <div className="flex items-center gap-1.5 text-violet-900 mb-1">
+                          <Zap className="w-4 h-4 text-violet-600" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Power Grid Stability</span>
+                        </div>
+                        <div className="text-base sm:text-lg font-extrabold text-violet-950 mt-1 truncate" title={nomadProfile.powerAndBackupStability}>
+                          {nomadProfile.powerAndBackupStability}
+                        </div>
+                        <span className="text-[11px] text-violet-700/80 font-medium mt-0.5 block">
+                          Zoom call continuity
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Top Nomad Hubs & Short-term Furnished Living */}
+                    <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Top Hubs for Remote Workers &amp; Digital Nomads
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {nomadProfile.topNomadCities.map((hub: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-3 py-1 rounded-xl text-xs font-bold bg-white text-indigo-950 border border-indigo-200/80 shadow-2xs"
+                            >
+                              📍 {hub}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right shrink-0">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Short-Term Furnished Stay
+                        </span>
+                        <span className="font-mono text-base font-extrabold text-slate-900 mt-0.5 block">
+                          ${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}/mo <span className="text-xs font-normal text-slate-500">(1-mo turnkey)</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* DNV & Remote Visa Quick Snapshot */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-teal-50/60 to-amber-50/70 border border-indigo-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800 block">
+                          Digital Nomad &amp; Remote Work Visa
+                        </span>
+                        <h4 className="text-base font-extrabold text-slate-900">
+                          {nomadProfile.remoteWorkVisaName}
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                          {nomadProfile.remoteWorkVisaIncomeUSD > 0
+                            ? `Requires verified remote monthly earnings of ~$${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo. Duration: ${nomadProfile.remoteWorkVisaStay}. ${nomadProfile.remoteWorkVisaDetails}`
+                            : `${nomadProfile.remoteWorkVisaStay}. ${nomadProfile.remoteWorkVisaDetails}`}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('visa')}
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                      >
+                        Explore Remote Visa Rules →
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Recharts Radar Comparison: Country vs. Global Benchmark */}
                 <CountryRadarComparison country={country} />
 
@@ -576,11 +837,19 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                        Retirement Advantages
+                        {currentPersona === 'nomad' ? 'Nomad & Remote Advantages' : 'Retirement Advantages'}
                       </h3>
                     </div>
                     <ul className="space-y-3 text-sm text-slate-700">
-                      {country.pros.map((pro, idx) => (
+                      {(currentPersona === 'nomad'
+                        ? [
+                            nomadProfile.creatorVibe,
+                            `Verified ${nomadProfile.verifiedInternetMbps} Mbps fiber download speeds (${nomadProfile.internetReliability})`,
+                            `Coworking hub network: ${nomadProfile.coworkingDensity} (~$${nomadProfile.coworkingMonthlyUSD}/mo hotdesk)`,
+                            `Remote visa pathway: ${nomadProfile.remoteWorkVisaName} (${nomadProfile.remoteWorkVisaStay})`,
+                          ]
+                        : country.pros
+                      ).map((pro: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-2.5">
                           <span className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 mt-2 shrink-0" />
                           <span className="leading-relaxed">{pro}</span>
@@ -600,11 +869,19 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                         <AlertCircle className="w-4 h-4" />
                       </div>
                       <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                        Trade-offs &amp; Considerations
+                        {currentPersona === 'nomad' ? 'Nomad Trade-offs & Hurdles' : 'Trade-offs & Considerations'}
                       </h3>
                     </div>
                     <ul className="space-y-3 text-sm text-slate-700">
-                      {country.cons.map((con, idx) => (
+                      {(currentPersona === 'nomad'
+                        ? [
+                            `Furnished turnkey stays ($${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}/mo) carry a markup over unfurnished 1-year leases`,
+                            `Café work expectations: ${nomadProfile.cafeWorkCulture}`,
+                            `Power continuity: ${nomadProfile.powerAndBackupStability}`,
+                            `Remote legal residency parameters: ${nomadProfile.remoteWorkVisaDetails}`,
+                          ]
+                        : country.cons
+                      ).map((con: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-2.5">
                           <span className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 mt-2 shrink-0" />
                           <span className="leading-relaxed">{con}</span>
@@ -729,33 +1006,52 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-cyan-500 to-indigo-500" />
                   <div className="flex items-start gap-3.5">
                     <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Stethoscope className="w-5 h-5" />
+                      {currentPersona === 'nomad' ? <ShieldCheck className="w-5 h-5" /> : <Stethoscope className="w-5 h-5" />}
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                          Healthcare Access, Emergency Services &amp; Expat Insurance
+                          {currentPersona === 'nomad'
+                            ? 'Flexible Travel Medical & Evacuation Insurance (Nomad Lens)'
+                            : 'Healthcare Access, Emergency Services & Expat Insurance'}
                         </h4>
                         <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-teal-100/80 text-teal-900 border border-teal-200">
-                          Score: {country.lifestyle.healthcareScore}/100 · ~$
-                          {country.costOfLiving.healthcareMonthlyUSD}/mo
+                          {currentPersona === 'nomad'
+                            ? `SafetyWing Nomad Insurance · ~$${nomadProfile.travelMedicalInsuranceRecommendation.estimatedMonthlyUSD}/mo`
+                            : `Score: ${country.lifestyle.healthcareScore}/100 · ~$${country.costOfLiving.healthcareMonthlyUSD}/mo`}
                         </span>
                       </div>
                       <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                        {country.lifestyle.healthcareSummary}{' '}
-                        {country.lifestyle.publicHealthcareAccess}
+                        {currentPersona === 'nomad'
+                          ? `For remote creators and nomads in ${country.name}, lock-in annual expat policies aren’t required. We recommend SafetyWing Nomad Insurance (~$${nomadProfile.travelMedicalInsuranceRecommendation.estimatedMonthlyUSD}/mo) for flexible month-to-month medical, outpatient accidents, and 30-day visits back to your home country.`
+                          : `${country.lifestyle.healthcareSummary} ${country.lifestyle.publicHealthcareAccess}`}
                       </p>
                     </div>
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.03, x: 2 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setActiveTab('healthcare')}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-xs cursor-pointer"
-                  >
-                    <span>Healthcare &amp; Insurance Guide</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </motion.button>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {currentPersona === 'nomad' && (
+                      <motion.a
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        href="https://safetywing.com/nomad-insurance?referenceID=26623834&utm_source=26623834&utm_medium=Ambassador"
+                        target="_blank"
+                        rel="noopener noreferrer sponsored"
+                        className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Check SafetyWing Plan</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </motion.a>
+                    )}
+                    <motion.button
+                      whileHover={{ scale: 1.03, x: 2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setActiveTab('healthcare')}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs transition-all whitespace-nowrap flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    >
+                      <span>Healthcare &amp; Insurance Guide</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </motion.button>
+                  </div>
                 </div>
 
                 {/* Pre-Retirement FAQ & Relocation Hurdles Callout */}
@@ -763,14 +1059,18 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500" />
                   <div className="flex items-start gap-3.5">
                     <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <FileCheck className="w-5 h-5" />
+                      {currentPersona === 'nomad' ? <Laptop className="w-5 h-5" /> : <FileCheck className="w-5 h-5" />}
                     </div>
                     <div>
                       <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                        Pre-Retirement Hurdles &amp; Knowledge Base: Banking, Taxes &amp; Leases
+                        {currentPersona === 'nomad'
+                          ? 'Nomad Knowledge Base: Remote Visas, 183-Day Tax Treaties & Co-living'
+                          : 'Pre-Retirement Hurdles & Knowledge Base: Banking, Taxes & Leases'}
                       </h4>
                       <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                        Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), language bureaucracy, and rental lease protocols in {country.name}.
+                        {currentPersona === 'nomad'
+                          ? `Review legal stay durations, digital nomad visa qualification, cross-border 183-day tax residency triggers, furnished month-to-month contracts, and Wise banking in ${country.name}.`
+                          : `Review concrete requirements for opening local bank accounts, cross-border tax residency rules (183-day thresholds), language bureaucracy, and rental lease protocols in ${country.name}.`}
                       </p>
                     </div>
                   </div>
@@ -823,15 +1123,17 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     <div>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-800 border border-indigo-200">
                         <Shield className="w-3 h-3 text-indigo-600" />
-                        Official Visa Classification
+                        {currentPersona === 'nomad' ? 'Digital Nomad & Remote Work Visa' : 'Official Visa Classification'}
                       </span>
                       <h2 className="text-2xl font-extrabold bg-gradient-to-r from-slate-900 via-indigo-950 to-teal-900 bg-clip-text text-transparent mt-1.5">
-                        {country.visa.retirementVisaName}
+                        {currentPersona === 'nomad' ? nomadProfile.remoteWorkVisaName : country.visa.retirementVisaName}
                       </h2>
                       <p className="text-xs text-slate-500 mt-1">
                         Permitted to work locally:{' '}
                         <strong className="text-slate-800">
-                          {country.visa.allowedToWork
+                          {currentPersona === 'nomad'
+                            ? 'Yes — Remote employment & foreign clients fully permitted'
+                            : country.visa.allowedToWork
                             ? 'Yes (Remote / Investment)'
                             : 'Strictly passive income only (No local employment)'}
                         </strong>
@@ -841,46 +1143,60 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     <div className="flex items-center gap-4 bg-gradient-to-r from-emerald-50/80 via-indigo-50/50 to-amber-50/70 border border-indigo-200/80 rounded-2xl p-3.5 shrink-0 shadow-2xs">
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
-                          Min. Passive Income
+                          {currentPersona === 'nomad' ? 'Min. Remote Income' : 'Min. Passive Income'}
                         </span>
                         <span className="font-mono tabular-nums text-lg font-extrabold text-emerald-950">
-                          ${country.visa.minimumIncomeUSD.toLocaleString()}
+                          {currentPersona === 'nomad'
+                            ? (nomadProfile.remoteWorkVisaIncomeUSD > 0 ? `$${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}` : 'Tourist Limits')
+                            : `$${country.visa.minimumIncomeUSD.toLocaleString()}`}
                           <span className="text-xs font-sans text-slate-500 font-normal">/mo</span>
                         </span>
                       </div>
                       <div className="w-px h-8 bg-indigo-200/80" />
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-800 block">
-                          Processing Time
+                          {currentPersona === 'nomad' ? 'Stay Duration' : 'Processing Time'}
                         </span>
                         <span className="font-mono tabular-nums text-lg font-extrabold text-indigo-950">
-                          ~{country.visa.processingMonths} mos
+                          {currentPersona === 'nomad' ? nomadProfile.remoteWorkVisaStay : `~${country.visa.processingMonths} mos`}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Roadmap to PR / Citizenship */}
+                  {/* Roadmap to PR / Stay Status */}
                   <div className="my-6 p-4 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/60 to-amber-50/70 border border-teal-200/80 flex items-start gap-3">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                      <FileCheck className="w-4 h-4" />
+                      {currentPersona === 'nomad' ? <Laptop className="w-4 h-4" /> : <FileCheck className="w-4 h-4" />}
                     </div>
                     <div>
                       <span className="text-xs font-extrabold text-indigo-950 block">
-                        Path to Permanent Residency &amp; Citizenship
+                        {currentPersona === 'nomad' ? 'Remote Status & Stay Longevity' : 'Path to Permanent Residency & Citizenship'}
                       </span>
                       <p className="text-xs text-slate-700 mt-0.5 leading-relaxed">
-                        {country.visa.pathwayToPR}
+                        {currentPersona === 'nomad'
+                          ? nomadProfile.remoteWorkVisaDetails
+                          : country.visa.pathwayToPR}
                       </p>
                     </div>
                   </div>
 
                   {/* Mandatory Checklist / Requirements */}
                   <h3 className="text-base font-extrabold text-slate-900 mb-3">
-                    Key Qualification Requirements
+                    {currentPersona === 'nomad' ? 'Remote Worker & Nomad Checklist' : 'Key Qualification Requirements'}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {country.visa.keyRequirements.map((req, idx) => {
+                    {(currentPersona === 'nomad'
+                      ? [
+                          'Valid passport with minimum 6 months validity beyond intended stay',
+                          nomadProfile.remoteWorkVisaIncomeUSD > 0
+                            ? `Documented remote employment contracts or foreign clients earning ~$${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo`
+                            : 'Proof of liquid savings or deposit certificate demonstrating financial independence',
+                          `Active rolling travel medical insurance (e.g., SafetyWing Nomad Insurance ~$${nomadProfile.travelMedicalInsuranceRecommendation.estimatedMonthlyUSD}/mo)`,
+                          'Clear criminal background clearance and verified local accommodation address',
+                        ]
+                      : country.visa.keyRequirements
+                    ).map((req: string, idx: number) => {
                       const badgeGradients = [
                         'from-teal-500 to-emerald-600',
                         'from-indigo-500 to-violet-600',
@@ -910,14 +1226,16 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                   {/* Tax Regime Information */}
                   <div className="mt-8 pt-6 border-t border-indigo-100/80">
                     <h3 className="text-base font-extrabold text-slate-900 mb-2">
-                      Retiree Tax Landscape
+                      {currentPersona === 'nomad' ? 'Nomad & Remote Worker Tax Framework' : 'Retiree Tax Landscape'}
                     </h3>
                     <div className="relative overflow-hidden text-xs sm:text-sm text-slate-700 leading-relaxed bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-indigo-50/50 border border-amber-200/80 p-4 rounded-2xl">
                       <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 via-orange-500 to-indigo-500" />
                       <strong className="text-amber-950 block mb-1 pl-2">
-                        Fiscal Status &amp; Treaties:
+                        {currentPersona === 'nomad' ? 'Digital Nomad Tax Exemption / Status:' : 'Fiscal Status & Treaties:'}
                       </strong>
-                      <p className="pl-2">{country.visa.taxStatus}</p>
+                      <p className="pl-2">
+                        {currentPersona === 'nomad' ? nomadProfile.remoteWorkVisaDetails : country.visa.taxStatus}
+                      </p>
                     </div>
                   </div>
                 </div>

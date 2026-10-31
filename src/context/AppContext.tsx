@@ -4,10 +4,11 @@ import {
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
   UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType,
   InAppMessageNotification, FeedbackReport, FeedbackType, FeedbackStatus, FeedbackPriority,
-  FireNumbersRating, DossierDownloadRecord
+  FireNumbersRating, DossierDownloadRecord, Persona
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import { INITIAL_THREADS, INITIAL_MEETUPS, INITIAL_DM_THREADS, INITIAL_CHECKLIST } from '../data/community';
 import { DEFAULT_ACCOUNTS, DEFAULT_FINANCIAL_PORTFOLIO, GUEST_PROFILE, isPublicMemberAccount } from '../data/userAccounts';
 import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
@@ -150,6 +151,8 @@ interface AppContextType {
   setVisaIncomeMax: (income: number) => void;
   discreetLifestyleEnabled: boolean;
   setDiscreetLifestyleEnabled: (enabled: boolean) => void;
+  currentPersona: Persona;
+  setCurrentPersona: (persona: Persona) => void;
   sortBy: SortByType;
   setSortBy: (sort: SortByType) => void;
   resetFilters: () => void;
@@ -603,7 +606,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return GUEST_PROFILE;
   });
 
-  // Filters
+  // Filters & Persona Lens
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('All');
   const [budgetMax, setBudgetMax] = useState(3500);
@@ -611,6 +614,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [visaDifficultyMax, setVisaDifficultyMax] = useState(5);
   const [visaIncomeMax, setVisaIncomeMax] = useState(3500);
   const [discreetLifestyleEnabled, setDiscreetLifestyleEnabled] = useState(true);
+  const [currentPersona, setCurrentPersonaState] = useState<Persona>(() => {
+    try {
+      const saved = localStorage.getItem('refirely_persona');
+      return saved === 'nomad' || saved === 'retiree' ? saved : 'retiree';
+    } catch {
+      return 'retiree';
+    }
+  });
+
+  const setCurrentPersona = (persona: Persona) => {
+    setCurrentPersonaState(persona);
+    try {
+      localStorage.setItem('refirely_persona', persona);
+    } catch {}
+  };
+
   const [sortBy, setSortBy] = useState<SortByType>('recommended');
 
   // Compared countries
@@ -3925,6 +3944,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (adultDiff !== 0) return adultDiff;
       return (b.demographics.youngPopulationPercent || 0) - (a.demographics.youngPopulationPercent || 0);
     }
+    if (sortBy === 'dnv-friendly') {
+      const pA = getCountryNomadProfile(a);
+      const pB = getCountryNomadProfile(b);
+      // Prioritize destinations with curated remote visas / DTV / DNV
+      if (pB.hasCuratedData !== pA.hasCuratedData) {
+        return pB.hasCuratedData ? 1 : -1;
+      }
+      // Then lowest required monthly income threshold
+      return (pA.remoteWorkVisaIncomeUSD || 0) - (pB.remoteWorkVisaIncomeUSD || 0);
+    }
+    if (sortBy === 'internet-speed-desc') {
+      const pA = getCountryNomadProfile(a);
+      const pB = getCountryNomadProfile(b);
+      return pB.verifiedInternetMbps - pA.verifiedInternetMbps;
+    }
+    if (sortBy === 'nomad-burn-asc') {
+      const pA = getCountryNomadProfile(a);
+      const pB = getCountryNomadProfile(b);
+      return pA.monthlyNomadBurnUSD - pB.monthlyNomadBurnUSD;
+    }
     return 0; // Default recommended
   });
 
@@ -4014,6 +4053,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setVisaIncomeMax,
         discreetLifestyleEnabled,
         setDiscreetLifestyleEnabled,
+        currentPersona,
+        setCurrentPersona,
         sortBy,
         setSortBy,
         resetFilters,

@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Building2,
   Lock,
+  ExternalLink,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -452,6 +453,37 @@ export const CountryFinancesAndTaxesTab: React.FC<CountryFinancesAndTaxesTabProp
                 </div>
               );
             })}
+          </div>
+
+          {/* Wise Currency Transfer Sponsored Recommendation Card */}
+          <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/80 border border-teal-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-teal-100 text-teal-900 border border-teal-300">
+                  Zero FX Markup
+                </span>
+                <span className="text-xs font-bold text-slate-800">
+                  Recommended Geoarbitrage Transfer Channel
+                </span>
+              </div>
+              <h4 className="text-base sm:text-lg font-extrabold text-slate-900">
+                Move Funds into {country.name} ({country.currency}) at Real Mid-Market Rates
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Traditional retail banks take 3%–5% in hidden foreign exchange spreads. With a Wise multi-currency account, you can convert USD/EUR into <strong>{country.currency}</strong> at mid-market rates and remit directly into local {country.name} bank accounts.
+              </p>
+            </div>
+            <motion.a
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              href="https://wise.com"
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <span>Transfer with Wise</span>
+              <ExternalLink className="w-4 h-4" />
+            </motion.a>
           </div>
         </div>
       )}

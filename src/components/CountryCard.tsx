@@ -20,7 +20,12 @@ import {
   Sparkles,
   FileBadge,
   Users,
+  Zap,
+  Wifi,
+  Laptop,
+  Flame,
 } from 'lucide-react';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 
 interface CountryCardProps {
   country: Country;
@@ -69,6 +74,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
     isAuthenticated,
     budgetMax,
     trackDossierDownload,
+    currentPersona,
   } = useApp();
 
   const saved = isCountrySaved(country.id);
@@ -76,6 +82,8 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
   const travelLeisureScore = getCountryTravelLeisureScore(country);
   const mobility = getCountryTravelMobility(country);
   const countryUrl = getCountryUrl(country.id);
+  const nomadProfile = getCountryNomadProfile(country);
+  const retireeFireNestEgg = Math.round(country.costOfLiving.monthlyBudgetCoupleUSD * 12 * 25);
 
   // Pick a deterministic multi-colored theme based on index or country id
   const fallbackHash = country.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -208,9 +216,21 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
                   <div className="flex items-center gap-1.5 text-xs text-slate-200/95 mt-0.5 truncate font-medium">
                     <span>Capital: {country.capital}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="text-emerald-300 font-semibold">
-                      Couple ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
-                    </span>
+                    {currentPersona === 'retiree' ? (
+                      <span className="text-emerald-300 font-semibold">
+                        Couple ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-amber-300 font-semibold">
+                          Burn ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span className="text-teal-300 font-semibold">
+                          {nomadProfile.verifiedInternetMbps} Mbps
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -228,25 +248,38 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
           {/* 4-Color Empirical Metrics Matrix */}
           <div className="grid grid-cols-2 gap-2.5 text-xs">
             {/* Tile 1: Monthly Living (Emerald / Teal) */}
-            <div
-              className={`p-2.5 rounded-xl border transition-colors ${
-                isCoupleUnderFilter
-                  ? 'bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border-emerald-200/80'
-                  : 'bg-gradient-to-br from-amber-50/80 to-white border-amber-200/80'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                <span>Single / Couple</span>
-                <Wallet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            {currentPersona === 'retiree' ? (
+              <div
+                className={`p-2.5 rounded-xl border transition-colors ${
+                  isCoupleUnderFilter
+                    ? 'bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border-emerald-200/80'
+                    : 'bg-gradient-to-br from-amber-50/80 to-white border-amber-200/80'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                  <span>Single / Couple</span>
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                </div>
+                <div className="font-mono tabular-nums text-emerald-950 font-extrabold text-sm mt-1 flex items-baseline gap-1">
+                  <span>${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}</span>
+                  <span className="text-slate-400 font-normal">/</span>
+                  <span className="text-teal-800">${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="font-mono tabular-nums text-emerald-950 font-extrabold text-sm mt-1 flex items-baseline gap-1">
-                <span>${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}</span>
-                <span className="text-slate-400 font-normal">/</span>
-                <span className="text-teal-800">${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}</span>
+            ) : (
+              <div className="p-2.5 rounded-xl border bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-amber-200/80">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                  <span>Nomad Living Burn</span>
+                  <Flame className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                </div>
+                <div className="font-mono tabular-nums text-amber-950 font-extrabold text-sm mt-1 flex items-baseline gap-1">
+                  <span>${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}</span>
+                  <span className="text-[10px] font-sans font-normal text-slate-400">/mo turnkey</span>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Tile 2: Healthcare Tier (Rose / Purple) */}
+            {/* Tile 2: Healthcare Tier (Rose / Purple) - Shared Metric */}
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-rose-50/85 via-purple-50/45 to-white border border-rose-200/80">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-rose-800">
                 <span>Healthcare Index</span>
@@ -260,7 +293,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
               </div>
             </div>
 
-            {/* Tile 3: Annual Sunshine (Amber / Orange) */}
+            {/* Tile 3: Annual Sunshine (Amber / Orange) - Shared Metric */}
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-50/85 via-orange-50/45 to-white border border-amber-200/80">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-800">
                 <span>Annual Sunshine</span>
@@ -272,7 +305,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
               </div>
             </div>
 
-            {/* Tile 4: Safety Score (Indigo / Sky) */}
+            {/* Tile 4: Safety Score (Indigo / Sky) - Shared Metric */}
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50/85 via-sky-50/45 to-white border border-indigo-200/80">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-indigo-800">
                 <span>Safety &amp; Peace</span>
@@ -287,29 +320,81 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
             </div>
           </div>
 
-          {/* Visa & Lifestyle Multi-Color Breakdown */}
+          {/* Visa & Target Portfolio / Runway Multi-Color Breakdown */}
           <div className="space-y-2 pt-1">
-            {/* Visa Banner */}
-            <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-slate-50 border border-teal-200/70 flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <FileBadge className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                <span className="text-slate-800 font-bold truncate" title={country.visa.retirementVisaName}>
-                  {country.visa.retirementVisaName}
-                </span>
-              </div>
-              <span className="px-2 py-0.5 rounded-md bg-white border border-teal-200/80 font-mono tabular-nums text-teal-900 font-extrabold text-[11px] shrink-0 shadow-2xs">
-                Min. ${country.visa.minimumIncomeUSD.toLocaleString()}/mo
-              </span>
-            </div>
+            {currentPersona === 'retiree' ? (
+              <>
+                {/* Retiree Required FIRE Portfolio (4% Rule) */}
+                <div className="p-2 rounded-xl bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-white border border-amber-200/80 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Flame className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                    <span className="text-slate-800 font-bold truncate">Required FIRE Nest Egg (4%)</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-amber-200/90 font-mono tabular-nums text-orange-950 font-black text-[11px] shrink-0 shadow-2xs">
+                    ${(retireeFireNestEgg / 1000).toFixed(0)}k <span className="text-[10px] font-normal text-slate-500">(25x)</span>
+                  </span>
+                </div>
 
-            <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
-              <span>
-                Visa Approval: <strong className="text-slate-700">~{country.visa.processingMonths} mos</strong>
-              </span>
-              <span>
-                English: <strong className="text-indigo-700">{country.lifestyle.englishProficiency}</strong>
-              </span>
-            </div>
+                {/* Primary Passive Visa Pathway */}
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-slate-50 border border-teal-200/70 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <FileBadge className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                    <span className="text-slate-800 font-bold truncate" title={country.visa.retirementVisaName}>
+                      {country.visa.retirementVisaName}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-teal-200/80 font-mono tabular-nums text-teal-900 font-extrabold text-[11px] shrink-0 shadow-2xs">
+                    Min. ${country.visa.minimumIncomeUSD.toLocaleString()}/mo
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
+                  <span>
+                    Visa Approval: <strong className="text-slate-700">~{country.visa.processingMonths} mos</strong>
+                  </span>
+                  <span>
+                    English: <strong className="text-indigo-700">{country.lifestyle.englishProficiency}</strong>
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Nomad 6-Month Runway Burn */}
+                <div className="p-2 rounded-xl bg-gradient-to-r from-teal-50/80 via-emerald-50/60 to-white border border-teal-200/80 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Wifi className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                    <span className="text-slate-800 font-bold truncate">Fiber: {nomadProfile.verifiedInternetMbps} Mbps ({nomadProfile.internetReliability.split('/')[0]})</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-teal-200/90 font-mono tabular-nums text-teal-950 font-black text-[11px] shrink-0 shadow-2xs">
+                    6-Mo Runway: ${(nomadProfile.sixMonthRunwayUSD / 1000).toFixed(0)}k
+                  </span>
+                </div>
+
+                {/* Remote Work / DNV Visa Status */}
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-50/70 via-teal-50/50 to-slate-50 border border-indigo-200/70 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Laptop className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span className="text-slate-800 font-bold truncate" title={nomadProfile.remoteWorkVisaName}>
+                      {nomadProfile.remoteWorkVisaName}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-indigo-200/80 font-mono tabular-nums text-indigo-900 font-extrabold text-[11px] shrink-0 shadow-2xs">
+                    {nomadProfile.remoteWorkVisaIncomeUSD > 0
+                      ? `Min. $${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo`
+                      : 'Liquid Solvency / Zero Min.'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
+                  <span>
+                    Coworking: <strong className="text-teal-700">{nomadProfile.coworkingDensity.split(' ')[0]} Hub</strong>
+                  </span>
+                  <span>
+                    English: <strong className="text-indigo-700">{country.lifestyle.englishProficiency}</strong>
+                  </span>
+                </div>
+              </>
+            )}
 
             {/* Demographic Gender Ratio (Females per 100 Males) */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs px-1">

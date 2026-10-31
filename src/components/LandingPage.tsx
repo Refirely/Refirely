@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { CountryThumbnail } from './CountryThumbnail';
@@ -14,8 +14,10 @@ import {
   Compass, Sparkles, Flame, ArrowRight, Heart,
   ShieldCheck, Sun, Globe, Users, CheckCircle2,
   SlidersHorizontal, ChevronRight,
-  LogIn, UserPlus, RotateCcw, Wallet, HeartPulse, Plane, Layers
+  LogIn, UserPlus, RotateCcw, Wallet, HeartPulse, Plane, Layers,
+  Zap, Wifi, Laptop, Coffee
 } from 'lucide-react';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 
 export const LandingPage: React.FC = () => {
   const {
@@ -32,6 +34,8 @@ export const LandingPage: React.FC = () => {
     setSelectedRegion,
     setSelectedClimate,
     setSearchQuery,
+    currentPersona,
+    setCurrentPersona,
   } = useApp();
 
   // -------------------------------------------------------------
@@ -237,6 +241,52 @@ export const LandingPage: React.FC = () => {
     expectedGrowthRate,
   ]);
 
+  // -------------------------------------------------------------
+  // 3. Duo-Calculator Tab State & Nomad Runway Calculation
+  // -------------------------------------------------------------
+  const [calculatorTab, setCalculatorTab] = useState<'fire' | 'nomad'>('fire');
+
+  useEffect(() => {
+    setCalculatorTab(currentPersona === 'nomad' ? 'nomad' : 'fire');
+  }, [currentPersona]);
+
+  // Tab 2: Nomad Runway & Burn inputs
+  const [nomadSavings, setNomadSavings] = useState<number>(36000); // liquid cash savings / buffer
+  const [nomadMonthlyBurn, setNomadMonthlyBurn] = useState<number>(1850); // turnkey 1-month stay + coworking
+  const [nomadRemoteIncome, setNomadRemoteIncome] = useState<number>(850); // remote retainer / freelance / job
+
+  const nomadNetBurn = Math.max(0, nomadMonthlyBurn - nomadRemoteIncome);
+  const nomadRunwayMonths = nomadNetBurn <= 0 ? 999 : Math.floor(nomadSavings / nomadNetBurn);
+  const nomadRunwayYears = (nomadRunwayMonths / 12).toFixed(1);
+  const nomadSixMonthRunwayRequired = nomadNetBurn * 6;
+  const nomadTwelveMonthRunwayRequired = nomadNetBurn * 12;
+
+  // Top 4 matching destinations for Nomad Runway & Burn
+  const nomadMatchedCountries = useMemo(() => {
+    const list = countries.map(country => {
+      const nomadProfile = getCountryNomadProfile(country);
+      const burnDelta = nomadMonthlyBurn - nomadProfile.monthlyNomadBurnUSD;
+      let fitScore = nomadProfile.hasCuratedData ? 40 : 10;
+      if (burnDelta >= 0 && burnDelta <= 500) {
+        fitScore += 35; // Ideal budget fit
+      } else if (burnDelta > 500) {
+        fitScore += 25; // Well under budget
+      } else if (burnDelta >= -300) {
+        fitScore += 15; // Slightly above budget
+      } else {
+        fitScore -= Math.abs(burnDelta) / 25;
+      }
+      fitScore += Math.min(25, nomadProfile.verifiedInternetMbps / 10);
+      return {
+        country,
+        nomadProfile,
+        fitScore,
+      };
+    });
+    list.sort((a, b) => b.fitScore - a.fitScore);
+    return list.slice(0, 4);
+  }, [countries, nomadMonthlyBurn]);
+
   const scrollToSection = (id: string) => {
     const targetId = id === 'countries-grid' ? 'haven-matcher' : id;
     const el = document.getElementById(targetId);
@@ -279,18 +329,18 @@ export const LandingPage: React.FC = () => {
               <span>{countries.length} Verified Global Havens · Updated for 2026</span>
             </div>
 
-            {/* Impactful Headline */}
+            {/* Impactful Dual-Persona Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
-              Escape the Grind.{' '}
+              Live Better,{' '}
               <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-teal-300 bg-clip-text text-transparent">
-                Retire Years Earlier
-              </span>{' '}
-              Where Wealth Multiplies.
+                Work Anywhere
+              </span>
+              , Retire Years Earlier.
             </h1>
 
             {/* Subheading */}
             <p className="text-base sm:text-lg text-slate-200/90 font-normal leading-relaxed max-w-2xl">
-              Factual, empirical data across {countries.length} countries. Model your financial freedom with our interactive FIRE calculator, explore verified visa thresholds, and discover your personalized haven match.
+              The data-driven geoarbitrage platform. Whether you are mapping your long-term FIRE destination or funding slow travel and remote work across top global havens.
             </p>
 
             {/* Primary Action Buttons */}
@@ -328,6 +378,38 @@ export const LandingPage: React.FC = () => {
                 <Globe className="w-4 h-4 text-teal-300" />
                 <span>Explore Havens</span>
               </motion.button>
+            </div>
+
+            {/* Segmented Persona Toggle Directly Below CTA Buttons */}
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                Select Mode:
+              </span>
+              <div className="inline-flex p-1 rounded-2xl bg-slate-900/90 border border-white/25 backdrop-blur-md shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPersona('retiree')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    currentPersona === 'retiree'
+                      ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-black shadow-md'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <span>🌿 Plan Early Retirement</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPersona('nomad')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    currentPersona === 'nomad'
+                      ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-md'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <span>⚡ Nomad &amp; Slow Travel</span>
+                </button>
+              </div>
             </div>
 
             {/* Multi-Colored Social Proof Metric Tiles */}
@@ -1175,23 +1257,72 @@ export const LandingPage: React.FC = () => {
           <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full bg-amber-400/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-emerald-400/15 blur-3xl" />
 
-          <div className="relative z-10 max-w-3xl mb-8 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-bold shadow-xs">
-              <Flame className="w-3.5 h-3.5 text-amber-100" />
-              <span>International Geo-Arbitrage Engine</span>
+          <div className="relative z-10 max-w-4xl mb-8 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-bold shadow-xs">
+                <Flame className="w-3.5 h-3.5 text-amber-100" />
+                <span>International Geo-Arbitrage Engine</span>
+              </div>
+              <span className="text-xs font-bold text-slate-500">Dual-Persona Simulator</span>
             </div>
+
+            {/* Duo-Calculator Segmented Tab Switcher */}
+            <div className="pt-1 flex flex-wrap items-center gap-2.5">
+              <div className="inline-flex p-1 rounded-2xl bg-slate-900/10 border border-slate-300/80 backdrop-blur-md shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setCalculatorTab('fire')}
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                    calculatorTab === 'fire'
+                      ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-md'
+                      : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                  }`}
+                >
+                  <Flame className="w-4 h-4 text-amber-200" />
+                  <span>Tab 1: FIRE Target &amp; Nest Egg</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalculatorTab('nomad')}
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                    calculatorTab === 'nomad'
+                      ? 'bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 text-white shadow-md'
+                      : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                  }`}
+                >
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  <span>Tab 2: Nomad Runway &amp; Burn</span>
+                </button>
+              </div>
+            </div>
+
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Calculate Your{' '}
-              <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 bg-clip-text text-transparent">
-                FIRE Timeline Abroad
-              </span>
+              {calculatorTab === 'fire' ? (
+                <>
+                  Calculate Your{' '}
+                  <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 bg-clip-text text-transparent">
+                    FIRE Timeline Abroad
+                  </span>
+                </>
+              ) : (
+                <>
+                  Calculate Your{' '}
+                  <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-emerald-600 bg-clip-text text-transparent">
+                    Nomad Runway &amp; Monthly Burn
+                  </span>
+                </>
+              )}
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Living in an overseas haven with a high standard of living can reduce your required retirement portfolio by 40% to 65%, enabling you to retire a decade sooner.
+              {calculatorTab === 'fire'
+                ? 'Living in an overseas haven with a high standard of living can reduce your required retirement portfolio by 40% to 65%, enabling you to retire a decade sooner.'
+                : 'Determine exactly how many months or years of global freedom your liquid savings buy across top digital nomad havens, factoring in turnkey rent, coworking, and remote client retainers.'}
             </p>
           </div>
 
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {calculatorTab === 'fire' ? (
+            <>
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* Left Column: Multi-Colored Interactive Inputs */}
             <div className="lg:col-span-6 space-y-5 bg-white/95 backdrop-blur-xl p-6 rounded-3xl border border-amber-200/80 shadow-md">
@@ -1615,6 +1746,365 @@ export const LandingPage: React.FC = () => {
                 })}
               </div>
             </div>
+          </div>
+        </>
+      ) : (
+            /* TAB 2: NOMAD RUNWAY & BURN CALCULATOR */
+            <>
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* Left Column: Interactive Inputs for Nomads & Creators */}
+                <div className="lg:col-span-6 space-y-5 bg-white/95 backdrop-blur-xl p-6 rounded-3xl border border-teal-200/80 shadow-md">
+                  
+                  {/* Input 1: Liquid Savings / Runway Buffer */}
+                  <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200/80 space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <label className="font-extrabold text-teal-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <Wallet className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Liquid Cash Buffer / Savings</span>
+                      </label>
+                      <motion.span
+                        key={nomadSavings}
+                        initial={{ scale: 0.92 }}
+                        animate={{ scale: 1 }}
+                        className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-teal-950 text-teal-200 text-sm"
+                      >
+                        ${nomadSavings.toLocaleString()}
+                      </motion.span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5000"
+                      max="200000"
+                      step="2500"
+                      value={nomadSavings}
+                      onChange={e => setNomadSavings(Number(e.target.value))}
+                      className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                    />
+                    <div className="flex justify-between text-[11px] text-teal-800/80 font-mono">
+                      <span>$5,000</span>
+                      <span>$75,000</span>
+                      <span>$200,000+</span>
+                    </div>
+                  </div>
+
+                  {/* Input 2: Turnkey Monthly Living & Coworking Burn */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <label className="font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <Flame className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Short-Term Living &amp; Coworking Burn</span>
+                      </label>
+                      <motion.span
+                        key={nomadMonthlyBurn}
+                        initial={{ scale: 0.92 }}
+                        animate={{ scale: 1 }}
+                        className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-sm"
+                      >
+                        ${nomadMonthlyBurn.toLocaleString()}/mo
+                      </motion.span>
+                    </div>
+                    <input
+                      type="range"
+                      min="700"
+                      max="4500"
+                      step="50"
+                      value={nomadMonthlyBurn}
+                      onChange={e => setNomadMonthlyBurn(Number(e.target.value))}
+                      className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                    />
+                    <div className="flex justify-between text-[11px] text-amber-800/80 font-mono">
+                      <span>$700 (Lean SE Asia)</span>
+                      <span>$1,850 (Standard Nomad Hub)</span>
+                      <span>$4,500 (Luxury Lisbon/Tokyo)</span>
+                    </div>
+                  </div>
+
+                  {/* Input 3: Remote Income / Client Retainer */}
+                  <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <label className="font-extrabold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <Laptop className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Remote Work / Freelance Inflow</span>
+                      </label>
+                      <motion.span
+                        key={nomadRemoteIncome}
+                        initial={{ scale: 0.92 }}
+                        animate={{ scale: 1 }}
+                        className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-indigo-950 text-indigo-200 text-sm"
+                      >
+                        +${nomadRemoteIncome.toLocaleString()}/mo
+                      </motion.span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="6000"
+                      step="100"
+                      value={nomadRemoteIncome}
+                      onChange={e => setNomadRemoteIncome(Number(e.target.value))}
+                      className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                    <div className="flex justify-between text-[11px] text-indigo-800/80 font-mono">
+                      <span>$0 (Full Sabbatical)</span>
+                      <span>$1,500 (Part-Time Gig)</span>
+                      <span>$6,000+ (Full Remote Job)</span>
+                    </div>
+                  </div>
+
+                  {/* Info Explainer Banner */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/60 to-indigo-50/60 border border-teal-200/60 text-[11px] text-slate-600 leading-relaxed space-y-1">
+                    <div className="font-bold text-teal-950 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-teal-600" />
+                      <span>The Nomad Runway Formula:</span>
+                    </div>
+                    <p>
+                      Net Burn = Short-term Rent &amp; Coworking ($<strong>{nomadMonthlyBurn.toLocaleString()}</strong>) - Remote Inflow ($<strong>{nomadRemoteIncome.toLocaleString()}</strong>) = <strong className="text-slate-900">${nomadNetBurn.toLocaleString()}/mo</strong>.
+                      Dividing liquid savings by net burn reveals your real calendar survival runway before needing to take on additional clients.
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Right Column: Comparative Nomad Runway Results */}
+                <div className="lg:col-span-6 space-y-5">
+                  
+                  {/* Highlight Runway Cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-teal-50 via-emerald-50/80 to-white border border-teal-300/90 shadow-sm space-y-1"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
+                      <span className="text-xs font-extrabold text-teal-800 uppercase tracking-wide">
+                        Total Calendar Runway
+                      </span>
+                      <div className="text-2xl sm:text-3xl font-black text-teal-950 font-mono tabular-nums">
+                        {nomadNetBurn === 0 ? '∞ Infinite' : `${nomadRunwayMonths} Mos`}
+                      </div>
+                      <div className="text-xs text-teal-700 font-medium">
+                        {nomadNetBurn === 0
+                          ? 'Cashflow positive abroad!'
+                          : `~${nomadRunwayYears} years at current cash burn`}
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -3 }}
+                      className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-indigo-50 via-sky-50/80 to-white border border-indigo-200/90 shadow-sm space-y-1"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-sky-500" />
+                      <span className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">
+                        Net Monthly Cash Burn
+                      </span>
+                      <div className="text-2xl sm:text-3xl font-black text-indigo-950 font-mono tabular-nums">
+                        ${nomadNetBurn.toLocaleString()}/mo
+                      </div>
+                      <div className="text-xs text-indigo-700 font-medium">
+                        ${nomadMonthlyBurn.toLocaleString()} burn - ${nomadRemoteIncome.toLocaleString()} inflow
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Safety Buffer Target Tiles */}
+                  <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-700 text-white shadow-lg shadow-indigo-950/10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-teal-200">
+                        Runway Safety Thresholds
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-extrabold backdrop-blur-md">
+                        {nomadSavings >= nomadTwelveMonthRunwayRequired
+                          ? '12+ Months Safe'
+                          : nomadSavings >= nomadSixMonthRunwayRequired
+                          ? '6+ Months Viable'
+                          : 'Lean Buffer'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs pt-1">
+                      <div className="p-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
+                        <span className="text-teal-200 text-[10px] font-bold uppercase block">6-Month Runway Target</span>
+                        <div className="text-lg font-black font-mono text-white mt-0.5">
+                          ${nomadSixMonthRunwayRequired.toLocaleString()}
+                        </div>
+                        <span className="text-[11px] text-teal-100/80">
+                          {nomadSavings >= nomadSixMonthRunwayRequired ? '✅ Fully Funded' : `+$${(nomadSixMonthRunwayRequired - nomadSavings).toLocaleString()} needed`}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
+                        <span className="text-indigo-200 text-[10px] font-bold uppercase block">12-Month Runway Target</span>
+                        <div className="text-lg font-black font-mono text-white mt-0.5">
+                          ${nomadTwelveMonthRunwayRequired.toLocaleString()}
+                        </div>
+                        <span className="text-[11px] text-indigo-100/80">
+                          {nomadSavings >= nomadTwelveMonthRunwayRequired ? '✅ Fully Funded' : `+$${(nomadTwelveMonthRunwayRequired - nomadSavings).toLocaleString()} needed`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Runway Progress Strip */}
+                  <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-teal-100 shadow-md space-y-4">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-extrabold text-slate-900 uppercase tracking-wider">
+                        Cash Runway Depletion Bar
+                      </span>
+                      <span className="font-mono font-bold text-teal-800">
+                        {nomadNetBurn === 0
+                          ? 'Zero Cash Burn'
+                          : `${nomadRunwayMonths} Months of Freedom`}
+                      </span>
+                    </div>
+
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                      <div
+                        className="h-full bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, nomadNetBurn === 0 ? 100 : Math.round((nomadRunwayMonths / 24) * 100))}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                      <span>0 Mos</span>
+                      <span>6 Mos (Standard)</span>
+                      <span>12 Mos (Comfort)</span>
+                      <span>24+ Mos</span>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <button
+                        onClick={handleOpenAdvancedExplorer}
+                        className="text-xs font-extrabold text-teal-700 hover:text-indigo-700 inline-flex items-center gap-1.5 cursor-pointer group"
+                      >
+                        <span>Explore Digital Nomad Visa Havens</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                      </button>
+                      <span className="text-[11px] text-slate-400">
+                        Based on ${nomadMonthlyBurn.toLocaleString()}/mo short-term living
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Live Matching Nomad & Remote Destinations */}
+              <div className="relative z-10 mt-10 pt-8 border-t border-teal-200/70 space-y-6">
+                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-indigo-50/85 via-white to-teal-50/85 border border-teal-200/80 shadow-md space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 text-white text-[11px] font-bold uppercase tracking-wider mb-2 shadow-2xs">
+                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Live Nomad-Ready Destination Matches</span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                        Top 4 Hubs Matching Your ${nomadMonthlyBurn.toLocaleString()}/mo Turnkey Living Burn
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-teal-900 bg-white px-3.5 py-1.5 rounded-xl border border-teal-200/80 shadow-2xs self-start sm:self-auto">
+                      Ranked by verified fiber speed, coworking density &amp; visa terms
+                    </span>
+                  </div>
+
+                  {/* 4 Matching Nomad Countries Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {nomadMatchedCountries.map(({ country, nomadProfile }, idx) => {
+                      const topBarColors = [
+                        'from-teal-500 via-indigo-500 to-emerald-500',
+                        'from-indigo-500 via-violet-500 to-purple-500',
+                        'from-amber-500 via-orange-500 to-rose-500',
+                        'from-emerald-500 via-teal-500 to-cyan-500',
+                      ];
+                      return (
+                        <motion.div
+                          key={country.id}
+                          layout
+                          whileHover={{ y: -5 }}
+                          transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                          onClick={() => navigateToCountry(country.id)}
+                          className="group rounded-2xl bg-white border border-teal-100 hover:border-teal-300 transition-shadow cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-teal-950/10"
+                        >
+                          <div className={`h-1.5 w-full bg-gradient-to-r ${topBarColors[idx % topBarColors.length]}`} />
+
+                          <CountryThumbnail
+                            country={country}
+                            className="h-32 transition-transform duration-500 group-hover:scale-105"
+                          >
+                            <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-teal-200 border border-teal-500/30">
+                                {nomadProfile.verifiedInternetMbps} Mbps Fiber
+                              </span>
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex items-end p-3">
+                              <div className="flex items-center gap-2">
+                                <CountryFlag
+                                  countryCode={country.code}
+                                  countryName={country.name}
+                                  fallbackEmoji={country.flag}
+                                  className="w-5 h-3.5 rounded shadow-xs shrink-0"
+                                />
+                                <span className="font-extrabold text-white text-sm tracking-tight drop-shadow-sm truncate">
+                                  {country.name}
+                                </span>
+                              </div>
+                            </div>
+                          </CountryThumbnail>
+
+                          <div className="p-4 flex-1 flex flex-col justify-between gap-3.5">
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200/80">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 block">
+                                    Turnkey Burn
+                                  </span>
+                                  <span className="font-mono font-extrabold text-sm text-teal-950 tabular-nums mt-0.5 block">
+                                    ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo
+                                  </span>
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                                    6-Mo Runway
+                                  </span>
+                                  <span className="font-mono font-extrabold text-sm text-indigo-950 tabular-nums mt-0.5 block">
+                                    ${(nomadProfile.sixMonthRunwayUSD / 1000).toFixed(0)}k
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1 text-xs">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-bold text-slate-800 truncate" title={nomadProfile.remoteWorkVisaName}>
+                                    {nomadProfile.remoteWorkVisaName}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  {nomadProfile.remoteWorkVisaIncomeUSD > 0
+                                    ? `Min. $${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo income`
+                                    : 'Liquid Solvency / Zero Monthly Mandate'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                              <span className="font-semibold text-slate-600">
+                                Coworking: <strong className="text-teal-900">{nomadProfile.coworkingDensity.split(' ')[0]}</strong>
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 font-extrabold text-teal-700 group-hover:text-indigo-700 transition-colors">
+                                <span>Nomad Dossier</span>
+                                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
             {/* Lighter Themed Freedom Countdown & Advanced FIRE Conversion Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-amber-50/50 to-orange-50/60 text-slate-900 p-6 sm:p-8 shadow-xl shadow-amber-950/5 border border-amber-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
@@ -1736,10 +2226,9 @@ export const LandingPage: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
 
-        </div>
-      </section>
+          </div>
+        </section>
 
       {/* ============================================================ */}
       {/* 6. REAL EXPAT VOICES & SOCIAL PROOF                            */}
