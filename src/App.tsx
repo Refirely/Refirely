@@ -37,6 +37,7 @@ const MainContent: React.FC = () => {
     navigateToCountry,
     isAuthenticated,
     currentUserId,
+    currentPersona,
   } = useApp();
 
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -46,9 +47,9 @@ const MainContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    updatePageSeo(currentView, selectedCountry, countries);
+    updatePageSeo(currentView, selectedCountry, countries, currentPersona);
     trackPageView(currentView, selectedCountry);
-  }, [currentView, selectedCountry, countries]);
+  }, [currentView, selectedCountry, countries, currentPersona]);
 
   const handleSpaViewClick = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
     if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {

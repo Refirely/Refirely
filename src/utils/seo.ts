@@ -1,13 +1,14 @@
-import { Country } from '../types';
+import { Country, Persona } from '../types';
 import { AppView } from '../context/AppContext';
 import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 
 const DEFAULT_TITLE =
-  'ReFirely – Where Your Freedom Goes Further | Global Retirement Havens & FIRE Guide';
+  'ReFirely – Global Retirement (FIRE) & Digital Nomad Haven Guide | Runway & Burn Calculator';
 const DEFAULT_DESCRIPTION =
-  'Compare 209 global retirement havens: explore visa rules, living costs, neighborhood rents, food & gastronomy guides, healthcare, and FIRE calculators on ReFirely.';
+  'Compare 209 global havens for early retirement (FIRE) and digital nomads: explore monthly cash burn, nomad runway, remote & DNV visas, fiber internet, rents, food, and healthcare.';
 const DEFAULT_KEYWORDS =
-  'best countries to retire 2026, global retirement havens, retire abroad guide, overseas housing rental costs, safe expat neighborhoods, apartment rents abroad, food and gastronomy abroad, national dishes expat dining, vegetarian vegan retirement abroad, tap water safety overseas, broker commission rental rules, FIRE calculator overseas, retirement visa requirements, D7 visa Portugal, Spain non-lucrative visa, Thailand retirement visa, Costa Rica Pensionado, international healthcare for expats, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, geographic arbitrage, financial independence retire early';
+  'digital nomad cost of living 2026, nomad cash burn calculator, digital nomad runway simulator, best countries to retire 2026, global retirement havens, digital nomad visa friendly countries, Spain digital nomad visa, Thailand DTV visa, Portugal D8 digital nomad visa, Portugal D7 visa, fastest internet speed for remote work, coworking spaces abroad, short-term furnished apartment rent overseas, monthly living burn abroad, geographic arbitrage platform, slow travel budget calculator, FIRE calculator overseas, safe expat neighborhoods, apartment rents abroad, food and gastronomy abroad, vegetarian vegan expat dining, tap water safety overseas, retirement visa requirements, international healthcare for expats, SafetyWing nomad insurance, Wise multi-currency expat transfers, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, financial independence retire early';
 
 const VALID_VIEWS: AppView[] = [
   'landing',
@@ -149,6 +150,7 @@ function updateStructuredDataJsonLd(
     const visaName = selectedCountry.visa.retirementVisaName;
     const minIncome = selectedCountry.visa.minimumIncomeUSD;
     const foodProfile = getCountryGastronomyProfile(selectedCountry);
+    const nomadProfile = getCountryNomadProfile(selectedCountry);
 
     const jsonLd = {
       '@context': 'https://schema.org',
@@ -165,20 +167,20 @@ function updateStructuredDataJsonLd(
             {
               '@type': 'ListItem',
               position: 2,
-              name: 'Explore Retirement Havens',
+              name: 'Explore Retirement & Nomad Havens',
               item: `${origin}/?view=explore`,
             },
             {
               '@type': 'ListItem',
               position: 3,
-              name: `${selectedCountry.name} Retirement Guide`,
+              name: `${selectedCountry.name} Retirement & Digital Nomad Guide`,
               item: countryUrl,
             },
           ],
         },
         {
           '@type': 'Place',
-          name: `${selectedCountry.name} Retirement & Expat Haven`,
+          name: `${selectedCountry.name} Retirement (FIRE) & Digital Nomad Haven`,
           description: selectedCountry.overview || selectedCountry.tagline,
           url: countryUrl,
           containedInPlace: {
@@ -200,24 +202,58 @@ function updateStructuredDataJsonLd(
             },
             {
               '@type': 'PropertyValue',
-              name: 'Average 1-Bed Apartment Rent (City Center USD)',
+              name: 'Monthly Digital Nomad Cash Burn (Turnkey Stay + Coworking USD)',
+              value: nomadProfile.monthlyNomadBurnUSD,
+              unitText: 'USD/month',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: '6-Month Digital Nomad Runway Burn (USD)',
+              value: nomadProfile.sixMonthRunwayUSD,
+              unitText: 'USD/6 months',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Short-Term Furnished 1-Month Rent (Nomad USD)',
+              value: nomadProfile.furnishedShortTermRentUSD,
+              unitText: 'USD/month',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Average 1-Bed Apartment Rent (City Center Long-Term Lease USD)',
               value: selectedCountry.costOfLiving.rent1BedCenterUSD,
               unitText: 'USD/month',
             },
             {
               '@type': 'PropertyValue',
-              name: 'Average 1-Bed Apartment Rent (Outside Center USD)',
+              name: 'Average 1-Bed Apartment Rent (Outside Center Long-Term Lease USD)',
               value: selectedCountry.costOfLiving.rent1BedOutsideUSD,
               unitText: 'USD/month',
             },
             {
               '@type': 'PropertyValue',
-              name: 'Primary Retirement Visa Pathway',
+              name: 'Verified Fiber Internet Speed (Mbps)',
+              value: nomadProfile.verifiedInternetMbps,
+              unitText: 'Mbps',
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Coworking Hub Density & Monthly Desk Cost',
+              value: `${nomadProfile.coworkingDensity} (~$${nomadProfile.coworkingMonthlyUSD}/mo)`,
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Digital Nomad / Remote Work Visa Pathway',
+              value: nomadProfile.remoteWorkVisaName,
+            },
+            {
+              '@type': 'PropertyValue',
+              name: 'Primary Passive Retirement Visa Pathway',
               value: visaName,
             },
             {
               '@type': 'PropertyValue',
-              name: 'Minimum Monthly Visa Income Requirement (USD)',
+              name: 'Minimum Monthly Retirement Visa Income Requirement (USD)',
               value: minIncome,
               unitText: 'USD/month',
             },
@@ -264,10 +300,26 @@ function updateStructuredDataJsonLd(
           mainEntity: [
             {
               '@type': 'Question',
-              name: `How much does it cost to retire in ${selectedCountry.name}?`,
+              name: `What is the monthly cash burn and internet speed for digital nomads in ${selectedCountry.name}?`,
               acceptedAnswer: {
                 '@type': 'Answer',
-                text: `A single retiree in ${selectedCountry.name} typically spends around $${singleBudget.toLocaleString()} USD per month, while a retired couple averages $${coupleBudget.toLocaleString()} USD per month. A 1-bedroom apartment in ${selectedCountry.capital} or prime city center averages $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, while suburban districts average $${selectedCountry.costOfLiving.rent1BedOutsideUSD.toLocaleString()}/month.`,
+                text: `Digital nomads and remote creators in ${selectedCountry.name} have an estimated all-in monthly living burn of $${nomadProfile.monthlyNomadBurnUSD.toLocaleString()} USD/month ($${nomadProfile.sixMonthRunwayUSD.toLocaleString()} USD for a 6-month runway). This includes a turnkey 1-month furnished stay (~$${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}/mo), coworking membership (~$${nomadProfile.coworkingMonthlyUSD}/mo), and daily dining. Verified fiber broadband speeds average ${nomadProfile.verifiedInternetMbps} Mbps (${nomadProfile.internetReliability}) across top hubs like ${nomadProfile.topNomadCities.join(', ')}.`,
+              },
+            },
+            {
+              '@type': 'Question',
+              name: `Does ${selectedCountry.name} offer a Digital Nomad Visa or remote work permit?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `For remote workers, ${selectedCountry.name} offers the ${nomadProfile.remoteWorkVisaName} (${nomadProfile.remoteWorkVisaStay}). ${nomadProfile.remoteWorkVisaIncomeUSD > 0 ? `Applicants typically need ~$${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()} USD/month in verified remote earnings.` : 'Entry operates on liquid savings solvency or standard remote-friendly visitor rules.'} ${nomadProfile.remoteWorkVisaDetails}`,
+              },
+            },
+            {
+              '@type': 'Question',
+              name: `How much does it cost to retire long-term in ${selectedCountry.name}?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `A single retiree in ${selectedCountry.name} on a 12-month residential lease typically spends around $${singleBudget.toLocaleString()} USD per month, while a retired couple averages $${coupleBudget.toLocaleString()} USD per month (requiring a 4% SWR FIRE nest egg of ~$${(coupleBudget * 12 * 25).toLocaleString()} USD). A 1-bedroom apartment in ${selectedCountry.capital} or prime city center averages $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month.`,
               },
             },
             {
@@ -275,7 +327,7 @@ function updateStructuredDataJsonLd(
               name: `What are apartment rental costs and safe areas for expats in ${selectedCountry.name}?`,
               acceptedAnswer: {
                 '@type': 'Answer',
-                text: `In ${selectedCountry.name}, 1-bedroom apartments in prime walkable districts average $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, and 2-bedroom units average $${Math.round(selectedCountry.costOfLiving.rent1BedCenterUSD * 1.55).toLocaleString()}/month. Real estate agency commissions are typically covered by the property owner. ReFirely provides verified neighborhood rent breakdowns, walkability scores, and safe expat districts.`,
+                text: `In ${selectedCountry.name}, 1-bedroom long-term apartments in prime walkable districts average $${selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString()}/month, while short-term furnished nomad stays average $${nomadProfile.furnishedShortTermRentUSD.toLocaleString()}/month. ReFirely provides verified neighborhood rent breakdowns, walkability scores, and safe expat districts.`,
               },
             },
             {
@@ -294,14 +346,6 @@ function updateStructuredDataJsonLd(
                 text: `${selectedCountry.name} offers the ${visaName}, which requires a minimum passive income or pension of approximately $${minIncome.toLocaleString()} USD per month. Processing takes roughly ${selectedCountry.visa.processingMonths} months. Pathway to permanent residency: ${selectedCountry.visa.pathwayToPR}.`,
               },
             },
-            {
-              '@type': 'Question',
-              name: `How is the healthcare and tax environment for retirees in ${selectedCountry.name}?`,
-              acceptedAnswer: {
-                '@type': 'Answer',
-                text: `${selectedCountry.name} has a healthcare score of ${selectedCountry.lifestyle.healthcareScore}/100 (${selectedCountry.lifestyle.healthcareSummary}). Tax overview: ${selectedCountry.visa.taxStatus}.`,
-              },
-            },
           ],
         },
       ],
@@ -309,20 +353,23 @@ function updateStructuredDataJsonLd(
 
     scriptEl.textContent = JSON.stringify(jsonLd);
   } else if (allCountries && allCountries.length > 0) {
-    // Inject ItemList of all countries so web crawlers discover every dedicated country URL
+    // Inject ItemList of all countries so web crawlers discover every dedicated country URL with both Retiree & Nomad metrics
     const itemListJsonLd = {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: 'Global Retirement Havens & Country Dossiers | ReFirely',
+      name: 'Global Retirement (FIRE) & Digital Nomad Havens Directory | ReFirely',
       description: DEFAULT_DESCRIPTION,
       numberOfItems: allCountries.length,
-      itemListElement: allCountries.map((c, idx) => ({
-        '@type': 'ListItem',
-        position: idx + 1,
-        name: `${c.name} Retirement Guide & Visa Requirements`,
-        description: `${c.tagline} Single budget: $${c.costOfLiving.monthlyBudgetSingleUSD}/mo, Couple: $${c.costOfLiving.monthlyBudgetCoupleUSD}/mo, Visa: ${c.visa.retirementVisaName}.`,
-        url: `${origin}/?country=${encodeURIComponent(c.id)}`,
-      })),
+      itemListElement: allCountries.map((c, idx) => {
+        const np = getCountryNomadProfile(c);
+        return {
+          '@type': 'ListItem',
+          position: idx + 1,
+          name: `${c.name} Retirement (FIRE) & Digital Nomad Guide`,
+          description: `${c.tagline} Retiree couple budget: $${c.costOfLiving.monthlyBudgetCoupleUSD}/mo (${c.visa.retirementVisaName}). Digital Nomad cash burn: $${np.monthlyNomadBurnUSD}/mo, ${np.verifiedInternetMbps} Mbps fiber, Remote Visa: ${np.remoteWorkVisaName}.`,
+          url: `${origin}/?country=${encodeURIComponent(c.id)}`,
+        };
+      }),
     };
     scriptEl.textContent = JSON.stringify(itemListJsonLd);
   }
@@ -331,7 +378,8 @@ function updateStructuredDataJsonLd(
 export function updatePageSeo(
   currentView: AppView,
   selectedCountry?: Country | null,
-  allCountries?: Country[]
+  allCountries?: Country[],
+  currentPersona: Persona = 'retiree'
 ) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
@@ -349,39 +397,54 @@ export function updatePageSeo(
     const coupleBudget = selectedCountry.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString();
     const rentCenter = selectedCountry.costOfLiving.rent1BedCenterUSD.toLocaleString();
     const visaName = selectedCountry.visa.retirementVisaName;
-    const healthScore = selectedCountry.lifestyle.healthcareScore;
     const foodProfile = getCountryGastronomyProfile(selectedCountry);
     const topDish = foodProfile.nationalDishes[0]?.name || 'Local Gastronomy';
+    const nomadProfile = getCountryNomadProfile(selectedCountry);
+    const nomadBurn = nomadProfile.monthlyNomadBurnUSD.toLocaleString();
+    const fiberMbps = nomadProfile.verifiedInternetMbps;
+    const dnvName = nomadProfile.remoteWorkVisaName;
 
-    title = `${selectedCountry.name} Expat Guide: Visas, Rents, Food & Healthcare | ReFirely`;
-    description = `Retire in ${selectedCountry.name}: $${singleBudget}/mo budget, $${rentCenter}/mo rent, ${topDish} & dining costs, ${visaName} rules, and safe expat districts.`;
-    keywords = `retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} safe neighborhoods, ${selectedCountry.name} food and gastronomy, ${selectedCountry.name} national dishes, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
+    if (currentPersona === 'nomad') {
+      title = `${selectedCountry.name} Digital Nomad & FIRE Guide: $${nomadBurn}/mo Burn, ${fiberMbps} Mbps & Visas | ReFirely`;
+      description = `Digital Nomad & Retirement guide to ${selectedCountry.name}: $${nomadBurn}/mo turnkey cash burn, ${fiberMbps} Mbps fiber, ${dnvName}, $${singleBudget}/mo retiree budget & ${topDish}.`;
+    } else {
+      title = `${selectedCountry.name} Retirement & Nomad Guide: Visas, $${singleBudget}/mo Cost, Rents & Burn | ReFirely`;
+      description = `Retire or work remotely in ${selectedCountry.name}: $${singleBudget}/mo retiree budget ($${coupleBudget} couple), $${nomadBurn}/mo nomad burn, ${fiberMbps} Mbps fiber, ${visaName} & ${dnvName}.`;
+    }
+
+    keywords = `digital nomad ${selectedCountry.name}, ${selectedCountry.name} monthly cash burn, ${selectedCountry.name} digital nomad visa, ${dnvName}, ${selectedCountry.name} internet speed Mbps, coworking in ${selectedCountry.name}, retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} furnished apartment rent, ${selectedCountry.name} food and gastronomy, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
     canonicalUrl = `${origin}/?country=${encodeURIComponent(selectedCountry.id)}`;
   } else if (currentView === 'explore') {
     const countLabel = allCountries && allCountries.length > 0 ? `${allCountries.length}` : '209';
-    title = `Explore ${countLabel} Global Retirement Havens, Rents & Dining | ReFirely`;
-    description =
-      `Search and filter ${countLabel} verified global retirement havens. Compare visas, living budgets, neighborhood rental costs, local dining, and find your overseas retirement.`;
+    if (currentPersona === 'nomad') {
+      title = `Explore ${countLabel} Digital Nomad & Retirement Havens: Cash Burn, Fiber & DNV Visas | ReFirely`;
+      description =
+        `Filter ${countLabel} global havens by lowest monthly nomad cash burn, 6-month runway, Digital Nomad Visa (DNV) rules, verified fiber internet speeds, coworking, and FIRE budgets.`;
+    } else {
+      title = `Explore ${countLabel} Global Retirement (FIRE) & Digital Nomad Havens | ReFirely`;
+      description =
+        `Search and filter ${countLabel} verified global havens for early retirement and digital nomads. Compare visas, monthly cash burn, 4% FIRE nest eggs, fiber speeds, rents, and dining.`;
+    }
     canonicalUrl = `${origin}/?view=explore`;
   } else if (currentView === 'compare') {
-    title = 'Compare 209 Global Retirement Havens Side-by-Side | ReFirely';
+    title = 'Compare 209 Retirement (FIRE) & Digital Nomad Havens Side-by-Side | ReFirely';
     description =
-      'Compare retirement countries side-by-side: evaluate visa income limits, monthly couple budgets, apartment rent prices, local gastronomy, healthcare quality, and safety.';
+      'Compare countries side-by-side: evaluate monthly nomad cash burn, 4% FIRE couple budgets, Digital Nomad & retirement visas, fiber internet speeds, apartment rents, food, and healthcare.';
     canonicalUrl = `${origin}/?view=compare`;
   } else if (currentView === 'dashboard') {
-    title = 'Global FIRE Retirement Calculator & Relocation Planner | ReFirely';
+    title = 'Global FIRE Nest Egg & Digital Nomad Runway Burn Calculator | ReFirely';
     description =
-      'Calculate your FIRE number across 209 countries. Simulate geographic arbitrage savings, model housing rents, currency expenses, and track your relocation checklist.';
+      'Calculate your 4% SWR FIRE target or Digital Nomad liquid cash runway across 209 countries. Model monthly cash burn, geoarbitrage savings, housing rents, and currency transfers.';
     canonicalUrl = `${origin}/?view=dashboard`;
   } else if (currentView === 'community') {
-    title = 'Expat Retirement Community & Global Relocation Forum | ReFirely';
+    title = 'Expat Retirement & Digital Nomad Community Forum | ReFirely';
     description =
-      'Connect with verified expats living abroad. Ask questions about retirement visas, apartment lease rules, healthcare registration, and social integration.';
+      'Connect with verified expats, early retirees, and digital nomads living abroad. Discuss DNV & retirement visas, coworking hubs, apartment leases, and healthcare.';
     canonicalUrl = `${origin}/?view=community`;
   } else if (currentView === 'meetups') {
-    title = 'Expat Meetups & Retirement Gatherings Worldwide | ReFirely';
+    title = 'Expat, Retiree & Digital Nomad Meetups Worldwide | ReFirely';
     description =
-      'Join in-person and online meetups in Portugal, Spain, Thailand, Costa Rica, and top havens. RSVP to connect with fellow prospective retirees.';
+      'Join in-person and online expat & digital nomad meetups in Portugal, Spain, Thailand, Costa Rica, Mexico, and top global havens.';
     canonicalUrl = `${origin}/?view=meetups`;
   }
 
