@@ -859,7 +859,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [dossierDownloads]);
 
   const trackDossierDownload = React.useCallback(
-    (countryId: string, countryName: string, exportFormat: string = 'Comprehensive 29-Page PDF Dossier') => {
+    (countryId: string, countryName: string, exportFormat: string = 'Comprehensive 35-Page PDF Dossier') => {
       const isAuth = isAuthenticatedRef.current;
       const currentProfile = userProfileRef.current;
       const currentId = currentUserIdRef.current;

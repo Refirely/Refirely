@@ -550,7 +550,7 @@ export interface DossierDownloadRecord {
   userId?: string;
   userName: string;
   userEmail?: string;
-  exportFormat: 'Comprehensive 29-Page PDF Dossier' | 'Quick Country Card Dossier' | string;
+  exportFormat: 'Comprehensive 35-Page PDF Dossier' | 'Quick Country Card Dossier' | string;
   downloadedAt: string;
   deviceInfo?: string;
 }

@@ -1745,7 +1745,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                             Country Dossier Downloads ({downloadStats.total})
                           </h2>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Real-time tracking of 29-page comprehensive dossier exports by registered members and guest visitors.
+                            Real-time tracking of 35-page comprehensive dossier exports by registered members and guest visitors.
                           </p>
                         </div>
                         <button

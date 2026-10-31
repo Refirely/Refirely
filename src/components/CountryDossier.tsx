@@ -589,7 +589,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-50 via-indigo-50 to-amber-50 hover:from-teal-100 hover:to-amber-100 text-indigo-950 border border-indigo-200/80 text-xs font-bold transition-all self-start sm:self-auto cursor-pointer shadow-2xs"
                     >
                       <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Preview &amp; Export 29-Page {country.name} PDF</span>
+                      <span>Preview &amp; Export 35-Page {country.name} PDF</span>
                     </motion.button>
                   </div>
                   <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
