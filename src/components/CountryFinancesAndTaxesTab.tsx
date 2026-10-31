@@ -476,7 +476,7 @@ export const CountryFinancesAndTaxesTab: React.FC<CountryFinancesAndTaxesTabProp
             <motion.a
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              href="https://wise.com"
+              href="https://wise.prf.hn/click/camref:1100l6wa9o"
               target="_blank"
               rel="noopener noreferrer sponsored"
               className="px-5 py-3 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"

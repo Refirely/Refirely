@@ -4,7 +4,7 @@ import { Country } from '../types';
 import {
   DollarSign, Calculator, ArrowRight, RefreshCw,
   Home, ShoppingCart, Utensils, Zap, Stethoscope, Car,
-  Sparkles, PiggyBank, ShieldCheck, Plane, FileCheck, Layers
+  Sparkles, PiggyBank, ShieldCheck, Plane, FileCheck, Layers, ExternalLink
 } from 'lucide-react';
 
 export const COUNTRY_EXCHANGE_RATES: Record<string, { rate: number; symbol: string; code: string; name: string }> = {
@@ -658,6 +658,41 @@ export const AnnualRetirementBudgetCalculator: React.FC<AnnualRetirementBudgetCa
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Wise Currency Transfer Sponsored Recommendation Card (Budget Tab) */}
+      <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/80 border border-teal-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
+        <div className="space-y-1.5 max-w-2xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-teal-100 text-teal-900 border border-teal-300">
+              Zero FX Markup
+            </span>
+            <span className="text-xs font-bold text-slate-800">
+              Recommended Geoarbitrage Transfer Channel
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-emerald-100/90 text-emerald-900 border border-emerald-300">
+              Save ~${Math.round(totalMonthlyUSD * 12 * 0.035).toLocaleString()}/yr on FX Spreads
+            </span>
+          </div>
+          <h4 className="text-base sm:text-lg font-extrabold text-slate-900">
+            Fund Your ${totalMonthlyUSD.toLocaleString()}/mo {country.name} Budget in {currencyInfo.code} at Real Mid-Market Rates
+          </h4>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Traditional retail banks take 3%–5% in hidden foreign exchange spreads when transferring your monthly living budget abroad. With a Wise multi-currency account, you can convert USD/EUR into <strong>{currencyInfo.code}</strong> at real mid-market rates and pay rent, utilities, and daily expenses directly in {country.name}.
+          </p>
+        </div>
+        <motion.a
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          href="https://wise.prf.hn/click/camref:1100l6wa9o"
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="px-5 py-3 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+        >
+          <span>Transfer with Wise</span>
+          <ExternalLink className="w-4 h-4" />
+        </motion.a>
       </div>
 
     </div>
