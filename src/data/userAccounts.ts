@@ -486,6 +486,11 @@ export const DEFAULT_FINANCIAL_PORTFOLIO: UserFinancialPortfolio = {
   expectedReturnRatePercent: 9.0,
   inflationRatePercent: 3.0,
   includePrimaryHomeInFire: false,
+  includeGoldInFire: true,
+  plannerPersonaMode: 'retiree',
+  expectedNomadMonthlyIncomeUSD: 2200,
+  nomadIncomeActiveYears: 10,
+  plannedSabbaticalYears: 3,
   loans: [
     {
       id: 'loan-1',

@@ -45,10 +45,11 @@ export const CurrencyAmountInput: React.FC<CurrencyAmountInputProps> = ({
     if (!isFocused) {
       const nextComputed = computeDisplayNumber(usdValue, isLocalActive, rate);
       const currentNumeric = parseFloat(draftValue);
-      // Avoid overwriting the user's exact typed local integer due to tiny USD rounding differences
+      // Avoid overwriting the user's exact typed local integer due to sub-cent USD rounding differences
       if (
         Number.isNaN(currentNumeric) ||
-        Math.abs(nextComputed - currentNumeric) > Math.max(1, Math.ceil(rate * 0.5))
+        (nextComputed === 0 && currentNumeric !== 0) ||
+        Math.abs(nextComputed - currentNumeric) > Math.max(1, Math.ceil(rate * 0.005))
       ) {
         setDraftValue(String(nextComputed));
       }

@@ -96,12 +96,15 @@ export const FireCalculatorTracker: React.FC = () => {
   const [currentAge, setCurrentAge] = useState<number>(finances.currentAge || 42);
   const [targetFireAge, setTargetFireAge] = useState<number>(finances.targetFireAge || 50);
   const [monthlySalaryUSD, setMonthlySalaryUSD] = useState<number>(
-    finances.monthlySalaryUSD || Math.round((finances.currentSalaryUSD || 120000) / 12)
+    finances.monthlySalaryUSD ?? Math.round(((finances.currentSalaryUSD ?? 120000) / 12) * 100) / 100
   );
   const [monthlyCurrentExpensesUSD, setMonthlyCurrentExpensesUSD] = useState<number>(
     finances.monthlyCurrentExpensesUSD ?? defaultResidingMonthlyExpenseUSD
   );
   const [monthlySipUSD, setMonthlySipUSD] = useState<number>(finances.monthlySipUSD ?? 2800);
+  const [lastActiveSipUSD, setLastActiveSipUSD] = useState<number>(
+    finances.monthlySipUSD && finances.monthlySipUSD > 0 ? finances.monthlySipUSD : 1000
+  );
   const [sipStepUpPct, setSipStepUpPct] = useState<number>(finances.annualSipStepUpPercent ?? 8);
   const [sipContinuityMode, setSipContinuityMode] = useState<'until-fire' | 'custom-years' | 'paused'>(
     finances.sipContinuityMode || 'until-fire'
@@ -123,6 +126,29 @@ export const FireCalculatorTracker: React.FC = () => {
   const [includePrimaryHome, setIncludePrimaryHome] = useState<boolean>(
     Boolean(finances.includePrimaryHomeInFire)
   );
+  const [includeGold, setIncludeGold] = useState<boolean>(
+    finances.includeGoldInFire ?? true
+  );
+  const [plannerPersonaMode, setPlannerPersonaMode] = useState<'retiree' | 'digital-nomad'>(() => {
+    if (finances.plannerPersonaMode) return finances.plannerPersonaMode;
+    try {
+      const savedGlobal = localStorage.getItem('refirely_persona');
+      if (savedGlobal === 'nomad') return 'digital-nomad';
+    } catch {
+      // ignore storage errors
+    }
+    return 'retiree';
+  });
+  const [expectedNomadMonthlyIncomeUSD, setExpectedNomadMonthlyIncomeUSD] = useState<number>(
+    finances.expectedNomadMonthlyIncomeUSD ?? 2200
+  );
+  const [nomadIncomeActiveYears, setNomadIncomeActiveYears] = useState<number>(
+    finances.nomadIncomeActiveYears ?? 10
+  );
+  const [plannedSabbaticalYears, setPlannedSabbaticalYears] = useState<number>(
+    finances.plannedSabbaticalYears ?? 3
+  );
+  const [showSurvivalTimelineTable, setShowSurvivalTimelineTable] = useState<boolean>(false);
   const [investmentsDraft, setInvestmentsDraft] = useState<UserFinancialPortfolio['investments']>({
     savingsUSD: finances.investments.savingsUSD || 0,
     stocksMutualFundsUSD: finances.investments.stocksMutualFundsUSD || 0,
@@ -131,10 +157,26 @@ export const FireCalculatorTracker: React.FC = () => {
     othersUSD: finances.investments.othersUSD || 0,
   });
   const [showAssetsEditorInFire, setShowAssetsEditorInFire] = useState<boolean>(false);
+  const [showFormulaAudit, setShowFormulaAudit] = useState<boolean>(true);
 
-  const [baseMonthlyExpenseTodayUSD, setBaseMonthlyExpenseTodayUSD] = useState<number>(
+  // Helper to preserve 2-decimal USD precision (prevents ₹75,000 INR -> $794 USD -> ₹75,033 INR drift)
+  const roundUsd2 = (val: number) => Math.round((Number(val) || 0) * 100) / 100;
+
+  // Heal legacy whole-dollar rounded 794 USD (₹75,033 INR at 94.5) back to exact ₹75,000 INR (793.65 USD)
+  const normalizeLegacyInrUsd = (usdVal: number | undefined, fallbackUsd: number): number => {
+    const raw = usdVal ?? fallbackUsd;
+    if (countryMacro.currencyCode === 'INR' && raw === 794) {
+      return 793.65;
+    }
+    return raw;
+  };
+
+  const [baseMonthlyExpenseTodayUSD, setBaseMonthlyExpenseTodayUSD] = useState<number>(() =>
     costBasisMode === 'residing'
-      ? (finances.monthlyCurrentExpensesUSD ?? defaultResidingMonthlyExpenseUSD)
+      ? normalizeLegacyInrUsd(
+          finances.monthlyRetirementExpensesUSD ?? finances.monthlyCurrentExpensesUSD,
+          defaultResidingMonthlyExpenseUSD
+        )
       : defaultTargetHavenMonthlyExpenseUSD
   );
 
@@ -143,20 +185,38 @@ export const FireCalculatorTracker: React.FC = () => {
     setCurrentAge(finances.currentAge || 42);
     setTargetFireAge(finances.targetFireAge || 50);
     setMonthlySalaryUSD(
-      finances.monthlySalaryUSD || Math.round((finances.currentSalaryUSD || 120000) / 12)
+      finances.monthlySalaryUSD ?? Math.round(((finances.currentSalaryUSD ?? 120000) / 12) * 100) / 100
     );
-    const nextCurrentExp =
-      finances.monthlyCurrentExpensesUSD ?? defaultResidingMonthlyExpenseUSD;
+    const nextCurrentExp = normalizeLegacyInrUsd(
+      finances.monthlyCurrentExpensesUSD,
+      defaultResidingMonthlyExpenseUSD
+    );
     setMonthlyCurrentExpensesUSD(nextCurrentExp);
     if (costBasisMode === 'residing') {
-      setBaseMonthlyExpenseTodayUSD(nextCurrentExp);
+      const nextRetireExp = normalizeLegacyInrUsd(
+        finances.monthlyRetirementExpensesUSD ?? finances.monthlyCurrentExpensesUSD,
+        nextCurrentExp
+      );
+      setBaseMonthlyExpenseTodayUSD(nextRetireExp);
     }
-    setMonthlySipUSD(finances.monthlySipUSD ?? 2800);
+    const nextSip = finances.monthlySipUSD ?? 2800;
+    setMonthlySipUSD(nextSip);
+    if (nextSip > 0) {
+      setLastActiveSipUSD(nextSip);
+    }
     setSipStepUpPct(finances.annualSipStepUpPercent ?? 8);
     setSipContinuityMode(finances.sipContinuityMode || 'until-fire');
     setSipDurationYears(finances.sipDurationYears || 7);
     setStopSipAtFire(finances.stopSipAtFire ?? true);
     setSwrPct(finances.safeWithdrawalRatePercent || 4.0);
+    setIncludePrimaryHome(Boolean(finances.includePrimaryHomeInFire));
+    setIncludeGold(finances.includeGoldInFire ?? true);
+    if (finances.plannerPersonaMode) {
+      setPlannerPersonaMode(finances.plannerPersonaMode);
+    }
+    setExpectedNomadMonthlyIncomeUSD(finances.expectedNomadMonthlyIncomeUSD ?? 2200);
+    setNomadIncomeActiveYears(finances.nomadIncomeActiveYears ?? 10);
+    setPlannedSabbaticalYears(finances.plannedSabbaticalYears ?? 3);
     setInvestmentsDraft({
       savingsUSD: finances.investments.savingsUSD || 0,
       stocksMutualFundsUSD: finances.investments.stocksMutualFundsUSD || 0,
@@ -170,12 +230,19 @@ export const FireCalculatorTracker: React.FC = () => {
     finances.monthlySalaryUSD,
     finances.currentSalaryUSD,
     finances.monthlyCurrentExpensesUSD,
+    finances.monthlyRetirementExpensesUSD,
     finances.monthlySipUSD,
     finances.annualSipStepUpPercent,
     finances.sipContinuityMode,
     finances.sipDurationYears,
     finances.stopSipAtFire,
     finances.safeWithdrawalRatePercent,
+    finances.includePrimaryHomeInFire,
+    finances.includeGoldInFire,
+    finances.plannerPersonaMode,
+    finances.expectedNomadMonthlyIncomeUSD,
+    finances.nomadIncomeActiveYears,
+    finances.plannedSabbaticalYears,
     finances.investments.savingsUSD,
     finances.investments.stocksMutualFundsUSD,
     finances.investments.realEstateUSD,
@@ -197,14 +264,18 @@ export const FireCalculatorTracker: React.FC = () => {
         matched?.costOfLiving.monthlyBudgetCoupleUSD ||
         nextMacro.typicalMonthlyExpenseUSD;
       setMonthlyCurrentExpensesUSD(nextExp);
-      setBaseMonthlyExpenseTodayUSD(nextExp);
+      setBaseMonthlyExpenseTodayUSD(finances.monthlyRetirementExpensesUSD ?? nextExp);
     }
   };
 
   const handleSwitchCostBasis = (mode: 'residing' | 'target-haven') => {
     setCostBasisMode(mode);
     if (mode === 'residing') {
-      setBaseMonthlyExpenseTodayUSD(monthlyCurrentExpensesUSD || defaultResidingMonthlyExpenseUSD);
+      setBaseMonthlyExpenseTodayUSD(
+        finances.monthlyRetirementExpensesUSD ??
+          monthlyCurrentExpensesUSD ??
+          defaultResidingMonthlyExpenseUSD
+      );
     } else {
       setBaseMonthlyExpenseTodayUSD(defaultTargetHavenMonthlyExpenseUSD);
     }
@@ -280,34 +351,55 @@ export const FireCalculatorTracker: React.FC = () => {
         .filter(s => s.continuesInRetirement)
         .reduce((sum, s) => sum + (s.monthlyAmountUSD || 0), 0)
     );
-    const cleanMonthlySalary = Math.round(monthlySalaryUSD || 0);
-    const cleanCurrentExpenses = Math.round(monthlyCurrentExpensesUSD || 0);
+    const cleanMonthlySalary = roundUsd2(
+      partialFinances.monthlySalaryUSD ?? monthlySalaryUSD ?? 0
+    );
+    const cleanCurrentExpenses = roundUsd2(
+      partialFinances.monthlyCurrentExpensesUSD ?? monthlyCurrentExpensesUSD ?? 0
+    );
+    const cleanRetirementExpenses = roundUsd2(
+      partialFinances.monthlyRetirementExpensesUSD ??
+        baseMonthlyExpenseTodayUSD ??
+        cleanCurrentExpenses ??
+        2400
+    );
+    const cleanMonthlySip = roundUsd2(
+      partialFinances.monthlySipUSD ?? monthlySipUSD ?? 0
+    );
+    const cleanSipContinuityMode =
+      partialFinances.sipContinuityMode ?? sipContinuityMode;
 
     updateUserProfile({
       residingCountry: selectedBasisCountry,
-      monthlyBudgetUSD: Math.round(baseMonthlyExpenseTodayUSD || cleanCurrentExpenses || 2400),
+      monthlyBudgetUSD: cleanRetirementExpenses,
       finances: {
         ...finances,
         currentAge: Math.round(currentAge || 42),
         targetFireAge: Math.round(targetFireAge || 50),
         monthlySalaryUSD: cleanMonthlySalary,
-        currentSalaryUSD: cleanMonthlySalary * 12,
+        currentSalaryUSD: roundUsd2(cleanMonthlySalary * 12),
         monthlyCurrentExpensesUSD: cleanCurrentExpenses,
-        monthlySipUSD: Math.round(monthlySipUSD || 0),
+        monthlyRetirementExpensesUSD: cleanRetirementExpenses,
+        monthlySipUSD: cleanMonthlySip,
         annualSipStepUpPercent: Number(sipStepUpPct) || 0,
-        sipContinuityMode,
+        sipContinuityMode: cleanSipContinuityMode,
         sipDurationYears: Number(sipDurationYears) || 7,
         stopSipAtFire,
         inflationRatePercent: Number(inflationPct) || countryMacro.defaultInflationPercent,
         expectedReturnRatePercent: Number(expectedReturnPct) || countryMacro.defaultReturnPercent,
         safeWithdrawalRatePercent: Number(swrPct) || 4.0,
         includePrimaryHomeInFire: includePrimaryHome,
+        includeGoldInFire: includeGold,
+        plannerPersonaMode,
+        expectedNomadMonthlyIncomeUSD: roundUsd2(expectedNomadMonthlyIncomeUSD || 0),
+        nomadIncomeActiveYears: Math.max(0, Math.round(nomadIncomeActiveYears || 0)),
+        plannedSabbaticalYears: Math.max(1, Math.round(plannedSabbaticalYears || 1)),
         investments: {
-          savingsUSD: Math.round(investmentsDraft.savingsUSD || 0),
-          stocksMutualFundsUSD: Math.round(investmentsDraft.stocksMutualFundsUSD || 0),
-          realEstateUSD: Math.round(investmentsDraft.realEstateUSD || 0),
-          goldUSD: Math.round(investmentsDraft.goldUSD || 0),
-          othersUSD: Math.round(investmentsDraft.othersUSD || 0),
+          savingsUSD: roundUsd2(investmentsDraft.savingsUSD || 0),
+          stocksMutualFundsUSD: roundUsd2(investmentsDraft.stocksMutualFundsUSD || 0),
+          realEstateUSD: roundUsd2(investmentsDraft.realEstateUSD || 0),
+          goldUSD: roundUsd2(investmentsDraft.goldUSD || 0),
+          othersUSD: roundUsd2(investmentsDraft.othersUSD || 0),
         },
         totalLiabilitiesUSD: totalLoansPrincipal,
         additionalMonthlyPassiveUSD: totalPassive,
@@ -316,6 +408,34 @@ export const FireCalculatorTracker: React.FC = () => {
       },
     });
     if (toastMsg) triggerToast(toastMsg);
+  };
+
+  // Stop SIP Right Away ($0/mo + Coast Mode) & Resume SIP Handlers
+  const handleStopSipRightAway = () => {
+    if (monthlySipUSD > 0) {
+      setLastActiveSipUSD(monthlySipUSD);
+    }
+    setMonthlySipUSD(0);
+    setSipContinuityMode('paused');
+    persistFireUpdates(
+      { monthlySipUSD: 0, sipContinuityMode: 'paused' },
+      'Stopped Monthly SIP right away ($0/mo — Coast FIRE Mode active)!'
+    );
+  };
+
+  const handleResumeSip = (customSipUSD?: number) => {
+    const restoredSip =
+      customSipUSD && customSipUSD > 0
+        ? customSipUSD
+        : lastActiveSipUSD > 0
+        ? lastActiveSipUSD
+        : 1000;
+    setMonthlySipUSD(restoredSip);
+    setSipContinuityMode('until-fire');
+    persistFireUpdates(
+      { monthlySipUSD: restoredSip, sipContinuityMode: 'until-fire' },
+      `Resumed active Monthly SIP (${formatDualCurrency(restoredSip, countryMacro, false)}/mo)!`
+    );
   };
 
   // Add / Edit / Delete Handlers for Loans, Side Incomes, and Future Milestones
@@ -413,8 +533,12 @@ export const FireCalculatorTracker: React.FC = () => {
     const gold = Math.round(investmentsDraft.goldUSD || 0);
     const others = Math.round(investmentsDraft.othersUSD || 0);
 
-    const liquidAssets = savings + stocks + gold + others;
-    const totalGrossAssets = liquidAssets + realEstate;
+    // 3 core always-liquid financial schemes (Savings + Stocks/MFs + Others)
+    const coreFinancialLiquidAssets = savings + stocks + others;
+    // Active liquid assets included in FIRE (includes Gold only when includeGold is true)
+    const liquidAssets = coreFinancialLiquidAssets + (includeGold ? gold : 0);
+    // Total gross wealth across all 5 schemes regardless of exclusion toggles
+    const totalGrossAssets = coreFinancialLiquidAssets + gold + realEstate;
 
     const loansList = finances.loans || [];
     const totalLoanPrincipalUSD = Math.round(
@@ -424,10 +548,10 @@ export const FireCalculatorTracker: React.FC = () => {
       loansList.reduce((s, l) => s + (l.monthlyEmiUSD || 0), 0)
     );
 
-    // Starting FIRE Corpus Today (Net of loan liabilities if included, or starting investable corpus)
+    // Starting FIRE Corpus Today (Net of loan liabilities, respecting both Gold and Home toggles)
     const startingCorpusTodayUSD = Math.max(
       0,
-      (includePrimaryHome ? totalGrossAssets : liquidAssets) - totalLoanPrincipalUSD
+      liquidAssets + (includePrimaryHome ? realEstate : 0) - totalLoanPrincipalUSD
     );
 
     // Side Income Streams
@@ -498,10 +622,11 @@ export const FireCalculatorTracker: React.FC = () => {
     );
 
     // Progress % toward Selected FIRE Target Today
-    const fireProgressPct = Math.min(
-      150,
-      Math.max(0, Math.round((startingCorpusTodayUSD / Math.max(1, comprehensiveFireNumberTodayUSD)) * 100))
+    const uncappedFireProgressPct = Math.max(
+      0,
+      Math.round((startingCorpusTodayUSD / Math.max(1, comprehensiveFireNumberTodayUSD)) * 100)
     );
+    const fireProgressPct = Math.min(150, uncappedFireProgressPct);
 
     // 2. Systematic SIP Compounding Returns Mathematical Engine
     const calculateSipReturns = (
@@ -613,11 +738,11 @@ export const FireCalculatorTracker: React.FC = () => {
         .filter(l => yrOffset >= l.remainingYears)
         .reduce((s, l) => s + (l.monthlyEmiUSD || 0), 0);
 
-      // Determine if SIP is active for this year based on user's continuity mode and earning status
+      // Determine if SIP is active for this year based on user's continuity mode, SIP amount, and earning status
       const alreadyFiredPriorYear = stopSipAtFire && crossoverYear !== null && yr > crossoverYear;
       let isSipActiveThisYear = false;
 
-      if (sipContinuityMode === 'paused') {
+      if (sipContinuityMode === 'paused' || monthlySipUSD <= 0) {
         isSipActiveThisYear = false;
       } else if (sipContinuityMode === 'custom-years') {
         const withinCommittedYears = yrOffset <= sipDurationYears;
@@ -705,46 +830,48 @@ export const FireCalculatorTracker: React.FC = () => {
     }
 
     // Pre-calculate SIP Compounding Returns across key horizons
+    const isSipStopped = sipContinuityMode === 'paused' || monthlySipUSD <= 0;
+    const effectiveMonthlySipUSD = isSipStopped ? 0 : monthlySipUSD;
     const sipDurationForFire =
-      sipContinuityMode === 'paused'
+      isSipStopped
         ? 0
         : sipContinuityMode === 'custom-years'
         ? Math.min(sipDurationYears, Math.max(0.5, yearsToFireExact))
         : Math.max(0.5, Math.min(25, yearsToFireExact));
 
     const sipReturnsAtFire = calculateSipReturns(
-      monthlySipUSD,
+      effectiveMonthlySipUSD,
       sipStepUpPct,
       expectedReturnPct,
       sipDurationForFire
     );
 
     const sipReturns3Yr = calculateSipReturns(
-      monthlySipUSD,
+      effectiveMonthlySipUSD,
       sipStepUpPct,
       expectedReturnPct,
-      sipContinuityMode === 'paused' ? 0 : Math.min(3, sipContinuityMode === 'custom-years' ? sipDurationYears : 3)
+      isSipStopped ? 0 : Math.min(3, sipContinuityMode === 'custom-years' ? sipDurationYears : 3)
     );
 
     const sipReturns5Yr = calculateSipReturns(
-      monthlySipUSD,
+      effectiveMonthlySipUSD,
       sipStepUpPct,
       expectedReturnPct,
-      sipContinuityMode === 'paused' ? 0 : Math.min(5, sipContinuityMode === 'custom-years' ? sipDurationYears : 5)
+      isSipStopped ? 0 : Math.min(5, sipContinuityMode === 'custom-years' ? sipDurationYears : 5)
     );
 
     const sipReturns10Yr = calculateSipReturns(
-      monthlySipUSD,
+      effectiveMonthlySipUSD,
       sipStepUpPct,
       expectedReturnPct,
-      sipContinuityMode === 'paused' ? 0 : Math.min(10, sipContinuityMode === 'custom-years' ? sipDurationYears : 10)
+      isSipStopped ? 0 : Math.min(10, sipContinuityMode === 'custom-years' ? sipDurationYears : 10)
     );
 
     const sipReturnsCustom = calculateSipReturns(
-      monthlySipUSD,
+      effectiveMonthlySipUSD,
       sipStepUpPct,
       expectedReturnPct,
-      sipContinuityMode === 'paused' ? 0 : sipDurationYears
+      isSipStopped ? 0 : sipDurationYears
     );
 
     // 4. Helper to quickly simulate years-to-FIRE for "What-If" Accelerator Levers
@@ -836,17 +963,17 @@ export const FireCalculatorTracker: React.FC = () => {
       : baseSimYears;
 
     // 4. Strengths & Weaknesses Diagnostic Analysis
-    const monthlySalary = Math.round(monthlySalaryUSD || 0);
-    const currentExpensesMo = Math.round(monthlyCurrentExpensesUSD || 0);
+    const monthlySalary = Math.round(monthlySalaryUSD ?? 0);
+    const currentExpensesMo = Math.round(monthlyCurrentExpensesUSD ?? 0);
     const totalMonthlyInflow = monthlySalary + activeSideMonthlyUSD;
-    const totalMonthlyOutflow = currentExpensesMo + totalMonthlyEmiUSD + monthlySipUSD;
+    const totalMonthlyOutflow = currentExpensesMo + totalMonthlyEmiUSD + Math.round(effectiveMonthlySipUSD);
     const unallocatedMonthlySurplusUSD = totalMonthlyInflow - totalMonthlyOutflow;
     const expenseToIncomePct =
       totalMonthlyInflow > 0
         ? Math.round(((currentExpensesMo + totalMonthlyEmiUSD) / totalMonthlyInflow) * 100)
         : 0;
     const savingsRatePct =
-      totalMonthlyInflow > 0 ? Math.round((monthlySipUSD / totalMonthlyInflow) * 100) : 0;
+      totalMonthlyInflow > 0 ? Math.round((effectiveMonthlySipUSD / totalMonthlyInflow) * 100) : 0;
     const debtToAssetPct =
       totalGrossAssets > 0 ? Math.round((totalLoanPrincipalUSD / totalGrossAssets) * 100) : 0;
     const emergencyMonths = Math.round(
@@ -859,7 +986,7 @@ export const FireCalculatorTracker: React.FC = () => {
     // Simulate trimming 15% of Monthly Current Expenses and rolling that savings into Monthly SIP
     const trim15SavingsUSD = Math.round(currentExpensesMo * 0.15);
     const trimExpensesYears = simulateYearsForScenario(
-      monthlySipUSD + trim15SavingsUSD,
+      effectiveMonthlySipUSD + trim15SavingsUSD,
       sipStepUpPct,
       costBasisMode === 'residing' ? Math.max(300, currentExpensesMo - trim15SavingsUSD) : baseMonthlyExpenseTodayUSD,
       expectedReturnPct
@@ -880,15 +1007,15 @@ export const FireCalculatorTracker: React.FC = () => {
       });
     }
 
-    if (sipContinuityMode === 'paused') {
+    if (isSipStopped) {
       weaknesses.push({
-        title: `SIP Currently Paused (Coast FIRE Mode Active)`,
-        detail: `You have paused monthly salary SIPs. Achieving FIRE depends entirely on your current nest egg (${formatDualCurrency(startingCorpusTodayUSD, countryMacro)}) compounding at ${expectedReturnPct}% without new savings.`,
+        title: `Monthly SIP Stopped ($0/mo — Coast FIRE Mode Active)`,
+        detail: `You have stopped fresh monthly SIP contributions. Achieving FIRE depends entirely on your current net corpus (${formatDualCurrency(startingCorpusTodayUSD, countryMacro)}) compounding at ${expectedReturnPct}% without new salary savings.`,
       });
     } else if (savingsRatePct >= 25) {
       strengths.push({
         title: `Strong Monthly SIP Rate (${savingsRatePct}% of Inflow)`,
-        detail: `You are systematically investing ${formatDualCurrency(monthlySipUSD, countryMacro)} every month with a ${sipStepUpPct}% annual step-up ${
+        detail: `You are systematically investing ${formatDualCurrency(effectiveMonthlySipUSD, countryMacro)} every month with a ${sipStepUpPct}% annual step-up ${
           sipContinuityMode === 'custom-years' ? `for the next ${sipDurationYears} years` : 'during your active earning phase'
         }.`,
       });
@@ -965,18 +1092,220 @@ export const FireCalculatorTracker: React.FC = () => {
       });
     }
 
+    // 5. 50-Year Work-Free Runway & Digital Nomad Survival Year Simulation Engine
+    const simulateCorpusSurvival = (
+      monthlyRemoteIncomeTodayUSD: number,
+      remoteIncomeDurationYrs: number,
+      sabbaticalZeroWorkFirstYrs = 0,
+      customBaseMonthlyExpenseUSD = effectiveMonthlyExpenseTodayUSD
+    ) => {
+      let balance = Math.max(0, startingCorpusTodayUSD);
+      let exactRunwayYears = 50;
+      let depletedYear: number | null = null;
+      let depletedAge: number | null = null;
+      let isPerpetual = true;
+      let balanceAfterSabbatical = balance;
+
+      const yearlyRows: {
+        yearOffset: number;
+        calendarYear: number;
+        age: number;
+        startCorpusUSD: number;
+        annualLivingAndEmiUSD: number;
+        annualPassiveAndNomadInflowUSD: number;
+        milestonesOutflowUSD: number;
+        netWithdrawalOrAdditionUSD: number;
+        endCorpusUSD: number;
+      }[] = [];
+
+      for (let y = 0; y < 50; y++) {
+        const calYear = currentYear + y;
+        const ageAtY = currentAge + y;
+        const startBal = balance;
+        const inflationMultiplier = Math.pow(1 + inflationDec, y);
+
+        // Living expense for this year
+        const annualLiving = customBaseMonthlyExpenseUSD * 12 * inflationMultiplier;
+
+        // Active loan EMIs still remaining in year y
+        const activeAnnualEmi =
+          loansList
+            .filter(l => y < l.remainingYears)
+            .reduce((s, l) => s + (l.monthlyEmiUSD || 0), 0) * 12;
+
+        // Continuing passive income (dividends, rental, pension) adjusted for inflation
+        const annualPassive =
+          retirementContinuingPassiveMonthlyUSD * 12 * inflationMultiplier;
+
+        // Digital Nomad / Remote work income (if within active earning window and after any initial sabbatical break)
+        const isEarningNomadThisYear =
+          y >= sabbaticalZeroWorkFirstYrs &&
+          y < sabbaticalZeroWorkFirstYrs + remoteIncomeDurationYrs &&
+          monthlyRemoteIncomeTodayUSD > 0;
+
+        const annualNomadIncome = isEarningNomadThisYear
+          ? monthlyRemoteIncomeTodayUSD * 12 * inflationMultiplier
+          : 0;
+
+        // One-time future milestone expenses occurring in calYear
+        const milestonesInYear = enrichedGoals
+          .filter(g => g.targetYear === calYear)
+          .reduce((s, g) => s + g.inflatedCostUSD, 0);
+
+        const totalAnnualOutflow = annualLiving + activeAnnualEmi + milestonesInYear;
+        const totalAnnualInflow = annualPassive + annualNomadIncome;
+        const netAnnualCashFlow = totalAnnualInflow - totalAnnualOutflow; // negative = withdrawal from corpus
+
+        // Portfolio growth during the year + net cash flow
+        const investmentGrowth = startBal * nominalReturnDec;
+        const nextBal = startBal + investmentGrowth + netAnnualCashFlow;
+
+        if (nextBal <= 0 && isPerpetual) {
+          isPerpetual = false;
+          // Calculate fractional year survival within year y
+          const netDrainThisYear = Math.max(1, -netAnnualCashFlow - investmentGrowth);
+          const fractionSurvived = Math.min(0.95, Math.max(0.05, startBal / netDrainThisYear));
+          exactRunwayYears = Math.round((y + fractionSurvived) * 10) / 10;
+          depletedYear = calYear;
+          depletedAge = ageAtY;
+        }
+
+        balance = Math.max(0, Math.round(nextBal));
+        if (y + 1 === sabbaticalZeroWorkFirstYrs) {
+          balanceAfterSabbatical = balance;
+        }
+
+        yearlyRows.push({
+          yearOffset: y + 1,
+          calendarYear: calYear,
+          age: ageAtY,
+          startCorpusUSD: Math.round(startBal),
+          annualLivingAndEmiUSD: Math.round(annualLiving + activeAnnualEmi),
+          annualPassiveAndNomadInflowUSD: Math.round(totalAnnualInflow),
+          milestonesOutflowUSD: Math.round(milestonesInYear),
+          netWithdrawalOrAdditionUSD: Math.round(netAnnualCashFlow),
+          endCorpusUSD: balance,
+        });
+      }
+
+      const wholeYears = Math.floor(exactRunwayYears);
+      const remMonths = Math.round((exactRunwayYears - wholeYears) * 12);
+
+      return {
+        exactRunwayYears,
+        wholeYears,
+        remMonths,
+        isPerpetual,
+        survivalYear: isPerpetual ? currentYear + 50 : depletedYear || currentYear,
+        survivalAge: isPerpetual ? currentAge + 50 : depletedAge || currentAge,
+        endingCorpusAt50YrsUSD: balance,
+        balanceAfterSabbaticalUSD:
+          sabbaticalZeroWorkFirstYrs > 0 ? balanceAfterSabbatical : startingCorpusTodayUSD,
+        yearlyRows,
+      };
+    };
+
+    // Scenario A: 100% Zero Active Work Starting Today (Pure Sabbatical / Retiree Drawdown)
+    const zeroWorkSim = simulateCorpusSurvival(0, 0, 0, effectiveMonthlyExpenseTodayUSD);
+
+    // Scenario B: With Expected Digital Nomad / Remote Income (for nomadIncomeActiveYears)
+    const withNomadSim = simulateCorpusSurvival(
+      expectedNomadMonthlyIncomeUSD,
+      nomadIncomeActiveYears,
+      0,
+      effectiveMonthlyExpenseTodayUSD
+    );
+
+    // Scenario C: Take `plannedSabbaticalYears` of 100% Work-Free Break Today, THEN earn Nomad Income
+    const sabbaticalThenNomadSim = simulateCorpusSurvival(
+      expectedNomadMonthlyIncomeUSD,
+      nomadIncomeActiveYears,
+      plannedSabbaticalYears,
+      effectiveMonthlyExpenseTodayUSD
+    );
+
+    // Scenario D: Zero-Work Runway if Geo-Arbitraging in Target Haven (using Target Haven monthly budget)
+    const targetHavenZeroWorkSim = simulateCorpusSurvival(
+      0,
+      0,
+      0,
+      Math.max(400, Math.round(defaultTargetHavenMonthlyExpenseUSD * tierMultiplier))
+    );
+
+    // Find Minimum Monthly Digital Nomad Income needed over nomadIncomeActiveYears so money lasts 50+ years (Perpetual)
+    let minMonthlyNomadIncomeForPerpetualUSD = 0;
+    if (!zeroWorkSim.isPerpetual) {
+      let low = 0;
+      let high = Math.max(15000, effectiveMonthlyExpenseTodayUSD + totalMonthlyEmiUSD + 3000);
+      for (let iter = 0; iter < 18; iter++) {
+        const mid = Math.round((low + high) / 2);
+        const testSim = simulateCorpusSurvival(
+          mid,
+          Math.max(1, nomadIncomeActiveYears),
+          0,
+          effectiveMonthlyExpenseTodayUSD
+        );
+        if (testSim.isPerpetual && testSim.endingCorpusAt50YrsUSD > 0) {
+          high = mid;
+        } else {
+          low = mid;
+        }
+      }
+      minMonthlyNomadIncomeForPerpetualUSD = Math.ceil(high / 25) * 25;
+    }
+
+    // Build combined Survival Timeline rows for the comparison table
+    const survivalTimeline = zeroWorkSim.yearlyRows
+      .filter(
+        r =>
+          r.yearOffset === 1 ||
+          r.yearOffset === 3 ||
+          r.yearOffset === 5 ||
+          r.yearOffset % 5 === 0 ||
+          r.calendarYear === zeroWorkSim.survivalYear ||
+          r.calendarYear === withNomadSim.survivalYear
+      )
+      .slice(0, 14)
+      .map(r => {
+        const matchingNomadRow = withNomadSim.yearlyRows.find(
+          nr => nr.calendarYear === r.calendarYear
+        );
+        const matchingSabbaticalRow = sabbaticalThenNomadSim.yearlyRows.find(
+          sr => sr.calendarYear === r.calendarYear
+        );
+        return {
+          ...r,
+          withNomadEndCorpusUSD: matchingNomadRow ? matchingNomadRow.endCorpusUSD : 0,
+          withNomadInflowUSD: matchingNomadRow
+            ? matchingNomadRow.annualPassiveAndNomadInflowUSD
+            : r.annualPassiveAndNomadInflowUSD,
+          afterSabbaticalEndCorpusUSD: matchingSabbaticalRow
+            ? matchingSabbaticalRow.endCorpusUSD
+            : 0,
+        };
+      });
+
     return {
+      savings,
+      stocks,
+      realEstate,
+      gold,
+      others,
+      coreFinancialLiquidAssets,
       startingCorpusTodayUSD,
       liquidAssets,
       totalGrossAssets,
       totalLoanPrincipalUSD,
       totalMonthlyEmiUSD,
+      monthlySalary,
       activeSideMonthlyUSD,
       retirementContinuingPassiveMonthlyUSD,
       currentExpensesMo,
       totalMonthlyInflow,
       totalMonthlyOutflow,
       unallocatedMonthlySurplusUSD,
+      isSipStopped,
+      effectiveMonthlySipUSD,
       expenseToIncomePct,
       effectiveMonthlyExpenseTodayUSD,
       netMonthlyPortfolioNeedTodayUSD,
@@ -990,6 +1319,10 @@ export const FireCalculatorTracker: React.FC = () => {
       totalFutureGoalsInflatedUSD,
       enrichedGoals,
       fireProgressPct,
+      uncappedFireProgressPct,
+      yearsToTargetAge,
+      realReturnPct: Math.round(realReturnDec * 1000) / 10,
+      tierMultiplier,
       trajectory,
       crossoverYear,
       crossoverAge,
@@ -1065,6 +1398,12 @@ export const FireCalculatorTracker: React.FC = () => {
       sipReturns5Yr,
       sipReturns10Yr,
       sipReturnsCustom,
+      zeroWorkSim,
+      withNomadSim,
+      sabbaticalThenNomadSim,
+      targetHavenZeroWorkSim,
+      minMonthlyNomadIncomeForPerpetualUSD,
+      survivalTimeline,
     };
   }, [
     finances,
@@ -1082,6 +1421,10 @@ export const FireCalculatorTracker: React.FC = () => {
     expectedReturnPct,
     swrPct,
     includePrimaryHome,
+    includeGold,
+    expectedNomadMonthlyIncomeUSD,
+    nomadIncomeActiveYears,
+    plannedSabbaticalYears,
     baseMonthlyExpenseTodayUSD,
     costBasisMode,
     fireTier,
@@ -1121,7 +1464,7 @@ export const FireCalculatorTracker: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
-                Unified FIRE calculator, cash-flow simulator, retirement corpus benchmark comparison, and multi-horizon compounding trajectory for <strong>{selectedBasisCountry}</strong> ({inflationPct}% inflation, {expectedReturnPct}% return) &amp; <strong>{targetHavenCountryName}</strong>.
+                Unified FIRE calculator, work-free runway survival simulator, Digital Nomad cash-flow bridge, and multi-horizon compounding trajectory for <strong>{selectedBasisCountry}</strong> ({inflationPct}% inflation, {expectedReturnPct}% return) &amp; <strong>{targetHavenCountryName}</strong>.
               </p>
             </div>
           </div>
@@ -1161,13 +1504,96 @@ export const FireCalculatorTracker: React.FC = () => {
             onClick={() =>
               persistFireUpdates(
                 {},
-                'Saved & Recalculated! All FIRE parameters, Monthly Current Expenses, assets, salary, and milestones are updated.'
+                'Saved & Recalculated! All FIRE parameters, Digital Nomad runway settings, expenses, assets, and milestones are updated.'
               )
             }
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Save &amp; Recalculate FIRE Plan</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* DUAL-PERSONA PLANNER SWITCHER: RETIREE vs. DIGITAL NOMAD & RUNWAY     */}
+      {/* ===================================================================== */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-indigo-50/95 via-white to-teal-50/90 border border-indigo-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-start sm:items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm ${
+            plannerPersonaMode === 'digital-nomad'
+              ? 'bg-teal-600 text-white'
+              : 'bg-indigo-600 text-white'
+          }`}>
+            {plannerPersonaMode === 'digital-nomad' ? '⚡' : '🌿'}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                Active Independence &amp; Survival Lens:
+              </span>
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                plannerPersonaMode === 'digital-nomad'
+                  ? 'bg-teal-100 text-teal-900 border border-teal-300'
+                  : 'bg-indigo-100 text-indigo-900 border border-indigo-300'
+              }`}>
+                {plannerPersonaMode === 'digital-nomad'
+                  ? 'Digital Nomad · Work-Free Runway & Survival Year Mode'
+                  : 'Early Retiree · Full Passive FIRE & Corpus Survival Mode'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              {plannerPersonaMode === 'digital-nomad'
+                ? `Showing how long you need not work today (${fireAnalysis.zeroWorkSim.isPerpetual ? '50+ Yrs / Perpetual' : `${fireAnalysis.zeroWorkSim.wholeYears} yrs ${fireAnalysis.zeroWorkSim.remMonths} mos`}), exact survival year without working (${fireAnalysis.zeroWorkSim.isPerpetual ? 'Perpetual 2076+' : `Year ${fireAnalysis.zeroWorkSim.survivalYear}`}), and survival year with expected remote income.`
+                : `Showing full passive ${swrPct.toFixed(1)}% SWR FIRE readiness (${fireAnalysis.uncappedFireProgressPct}% funded) plus exact calendar year your current corpus lasts without working (${fireAnalysis.zeroWorkSim.isPerpetual ? 'Perpetual 2076+' : `Until Year ${fireAnalysis.zeroWorkSim.survivalYear} · Age ${fireAnalysis.zeroWorkSim.survivalAge}`}).`}
+            </p>
+          </div>
+        </div>
+
+        <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200/90 shrink-0 self-start lg:self-center">
+          <button
+            type="button"
+            onClick={() => {
+              setPlannerPersonaMode('retiree');
+              try {
+                localStorage.setItem('refirely_persona', 'retiree');
+              } catch {
+                // ignore
+              }
+              persistFireUpdates(
+                { plannerPersonaMode: 'retiree' },
+                'Switched to Early Retiree & Full Passive FIRE View.'
+              );
+            }}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              plannerPersonaMode === 'retiree'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🌿 Retiree &amp; Full FIRE View</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPlannerPersonaMode('digital-nomad');
+              try {
+                localStorage.setItem('refirely_persona', 'nomad');
+              } catch {
+                // ignore
+              }
+              persistFireUpdates(
+                { plannerPersonaMode: 'digital-nomad' },
+                'Switched to Digital Nomad & Work-Free Runway Survival View.'
+              );
+            }}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              plannerPersonaMode === 'digital-nomad'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>⚡ Digital Nomad &amp; Work-Free Runway View</span>
           </button>
         </div>
       </div>
@@ -1184,15 +1610,18 @@ export const FireCalculatorTracker: React.FC = () => {
         
         {/* KPI 1: Current Net FIRE Corpus */}
         <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              1. Current Net FIRE Corpus
-            </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-teal-100 text-teal-800">
-              {fireAnalysis.fireProgressPct}% Funded
-            </span>
-          </div>
           <div>
+            <div className="flex items-center justify-between mb-1.5 gap-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                1. Current Net FIRE Corpus
+              </span>
+              <span
+                className="text-[10px] font-semibold px-2 py-0.5 rounded bg-teal-100 text-teal-800"
+                title={`Calculated as: Current Net FIRE Corpus ($${fireAnalysis.startingCorpusTodayUSD.toLocaleString()}) ÷ Target FIRE Corpus ($${fireAnalysis.comprehensiveFireNumberTodayUSD.toLocaleString()}) = ${fireAnalysis.uncappedFireProgressPct}%`}
+              >
+                {fireAnalysis.uncappedFireProgressPct}% Funded
+              </span>
+            </div>
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 tabular-nums">
               {countryMacro.currencyCode !== 'USD'
                 ? formatLocalCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)
@@ -1201,31 +1630,101 @@ export const FireCalculatorTracker: React.FC = () => {
             <div className="text-xs font-mono text-slate-600 font-semibold mt-0.5">
               ${fireAnalysis.startingCorpusTodayUSD.toLocaleString()} USD
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">
-              Liquid: ${fireAnalysis.liquidAssets.toLocaleString()} · Debt: -${fireAnalysis.totalLoanPrincipalUSD.toLocaleString()}
+
+            {/* Explicit Itemized Composition of Card 1 */}
+            <div className="mt-2.5 p-2 rounded-lg bg-white border border-slate-200/80 space-y-1 text-[10px] font-mono text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-sans">3 Financial Schemes (Cash+Stocks+Other):</span>
+                <span className="font-bold text-slate-800">+${fireAnalysis.coreFinancialLiquidAssets.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-sans">Gold &amp; Bullion (${fireAnalysis.gold.toLocaleString()}):</span>
+                <span className={`font-bold ${includeGold ? 'text-amber-700' : 'text-slate-400'}`}>
+                  {includeGold ? `+$${fireAnalysis.gold.toLocaleString()} (Included)` : '$0 (Excluded)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-sans">Real Estate Equity (${fireAnalysis.realEstate.toLocaleString()}):</span>
+                <span className={`font-bold ${includePrimaryHome ? 'text-indigo-700' : 'text-slate-400'}`}>
+                  {includePrimaryHome ? `+$${fireAnalysis.realEstate.toLocaleString()} (Included)` : '$0 (Excluded)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-0.5">
+                <span className="text-slate-500 font-sans">Less Loan Principal (Debt):</span>
+                <span className="font-bold text-rose-700">-${fireAnalysis.totalLoanPrincipalUSD.toLocaleString()}</span>
+              </div>
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>{includePrimaryHome ? 'Includes Home Equity' : 'Liquid Net of Debt'}</span>
-            <button
-              type="button"
-              onClick={() => setIncludePrimaryHome(!includePrimaryHome)}
-              className="text-orange-700 font-semibold hover:underline cursor-pointer"
-            >
-              {includePrimaryHome ? 'Exclude Home' : '+ Include Home'}
-            </button>
+
+          <div className="mt-3 pt-2 border-t border-slate-200/80 space-y-1.5">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>
+                🪙 Gold: <strong className={includeGold ? 'text-amber-800' : 'text-slate-500'}>{includeGold ? 'Included' : 'Excluded (Family Gold)'}</strong>
+              </span>
+              <span>
+                🏠 Home: <strong className={includePrimaryHome ? 'text-indigo-800' : 'text-slate-500'}>{includePrimaryHome ? 'Included' : 'Excluded'}</strong>
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextGold = !includeGold;
+                  setIncludeGold(nextGold);
+                  persistFireUpdates(
+                    { includeGoldInFire: nextGold },
+                    nextGold
+                      ? `Included Gold & Bullion (+$${fireAnalysis.gold.toLocaleString()}) in Current Net FIRE Corpus!`
+                      : `Excluded Gold & Bullion ($${fireAnalysis.gold.toLocaleString()}) — preserving family/heirloom gold outside FIRE drawdown.`
+                  );
+                }}
+                title="In many Indian & global households, family/women's gold is kept as generational wealth and not sold for retirement expenses."
+                className={`px-2 py-1 rounded font-bold text-[10px] transition-colors cursor-pointer text-center ${
+                  includeGold
+                    ? 'bg-amber-100/90 hover:bg-amber-200/90 text-amber-900 border border-amber-300/80'
+                    : 'bg-slate-200/80 hover:bg-amber-100 text-slate-700 border border-slate-300'
+                }`}
+              >
+                {includeGold
+                  ? `Exclude Gold (-$${fireAnalysis.gold.toLocaleString()})`
+                  : `+ Include Gold (+$${fireAnalysis.gold.toLocaleString()})`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const nextInclude = !includePrimaryHome;
+                  setIncludePrimaryHome(nextInclude);
+                  persistFireUpdates(
+                    { includePrimaryHomeInFire: nextInclude },
+                    nextInclude
+                      ? `Included Real Estate Equity (+$${fireAnalysis.realEstate.toLocaleString()}) in Current Net FIRE Corpus!`
+                      : `Excluded Real Estate Equity ($${fireAnalysis.realEstate.toLocaleString()}) — showing strictly Liquid Assets net of debt.`
+                  );
+                }}
+                className={`px-2 py-1 rounded font-bold text-[10px] transition-colors cursor-pointer text-center ${
+                  includePrimaryHome
+                    ? 'bg-indigo-100/90 hover:bg-indigo-200/90 text-indigo-900 border border-indigo-300/80'
+                    : 'bg-orange-100/80 hover:bg-orange-200/80 text-orange-800 border border-orange-200'
+                }`}
+              >
+                {includePrimaryHome
+                  ? `Exclude Home (-$${fireAnalysis.realEstate.toLocaleString()})`
+                  : `+ Include Home (+$${fireAnalysis.realEstate.toLocaleString()})`}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* KPI 2: Required Total FIRE Number (Living + Milestones) */}
         <div className="p-5 rounded-xl border-2 border-orange-400/60 bg-gradient-to-br from-orange-50/70 via-amber-50/30 to-purple-50/40 flex flex-col justify-between shadow-2xs">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-orange-950 uppercase tracking-wider">
-              2. Target {fireTier.toUpperCase()} FIRE Corpus
-            </span>
-            <Flame className="w-4 h-4 text-orange-600" />
-          </div>
           <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold text-orange-950 uppercase tracking-wider">
+                2. Target {fireTier.toUpperCase()} FIRE Corpus
+              </span>
+              <Flame className="w-4 h-4 text-orange-600" />
+            </div>
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-orange-950 tabular-nums">
               {countryMacro.currencyCode !== 'USD'
                 ? formatLocalCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)
@@ -1234,46 +1733,93 @@ export const FireCalculatorTracker: React.FC = () => {
             <div className="text-xs font-mono text-purple-900 font-semibold mt-0.5">
               ${fireAnalysis.comprehensiveFireNumberTodayUSD.toLocaleString()} USD
             </div>
-            <div className="text-[11px] text-orange-950/75 mt-1">
-              Living: ${fireAnalysis.activeFireTargetTodayUSD.toLocaleString()} + Goals: ${fireAnalysis.totalFutureGoalsTodayUSD.toLocaleString()}
+
+            {/* Explicit Formula Breakdown of Card 2 */}
+            <div className="mt-2.5 p-2 rounded-lg bg-white/85 border border-orange-200/70 space-y-1 text-[10px] font-mono text-orange-950/90">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-600">
+                  Net Expense (${fireAnalysis.netMonthlyPortfolioNeedTodayUSD.toLocaleString()}/mo × 12):
+                </span>
+                <span className="font-bold">${(fireAnalysis.netMonthlyPortfolioNeedTodayUSD * 12).toLocaleString()}/yr</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-600">
+                  Living Corpus (×{Math.round((100 / Math.max(1, swrPct)) * 10) / 10}x at {swrPct.toFixed(1)}% SWR):
+                </span>
+                <span className="font-bold">+${fireAnalysis.activeFireTargetTodayUSD.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-orange-100 pt-0.5">
+                <span className="font-sans text-slate-600">Plus One-Time Future Goals:</span>
+                <span className="font-bold text-purple-800">+${fireAnalysis.totalFutureGoalsTodayUSD.toLocaleString()}</span>
+              </div>
             </div>
           </div>
+
           <div className="mt-3 pt-2 border-t border-orange-200/70 text-[11px] text-orange-950/80 flex items-center justify-between">
             <span>Retire Exp: ${fireAnalysis.effectiveMonthlyExpenseTodayUSD.toLocaleString()}/mo</span>
-            <span className="font-mono font-bold">{swrPct.toFixed(1)}% SWR</span>
+            <span className="font-mono font-bold">{swrPct.toFixed(1)}% SWR ({Math.round((100 / Math.max(1, swrPct)) * 10) / 10}x)</span>
           </div>
         </div>
 
         {/* KPI 3: Monthly Current Expenses & Monthly SIP */}
         <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              3. Monthly SIP &amp; Expenses
-            </span>
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-              sipContinuityMode === 'paused'
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {sipContinuityMode === 'paused' ? 'SIP Paused (Coast)' : `${fireAnalysis.savingsRatePct}% SIP Rate`}
-            </span>
-          </div>
           <div>
+            <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                {plannerPersonaMode === 'digital-nomad'
+                  ? '3. Nomad Income & SIP Flow'
+                  : '3. Monthly SIP & Expenses'}
+              </span>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded shrink-0 ${
+                plannerPersonaMode === 'digital-nomad'
+                  ? 'bg-teal-100 text-teal-800'
+                  : fireAnalysis.isSipStopped
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                {plannerPersonaMode === 'digital-nomad'
+                  ? `Nomad: $${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo`
+                  : fireAnalysis.isSipStopped
+                  ? 'SIP Stopped ($0)'
+                  : `${fireAnalysis.savingsRatePct}% SIP Rate`}
+              </span>
+            </div>
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-800 tabular-nums">
-              {sipContinuityMode === 'paused'
+              {plannerPersonaMode === 'digital-nomad'
+                ? countryMacro.currencyCode !== 'USD'
+                  ? `${formatLocalCurrency(expectedNomadMonthlyIncomeUSD, countryMacro, false)}/mo`
+                  : `$${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo`
+                : fireAnalysis.isSipStopped
                 ? '$0 / mo (Coast Mode)'
                 : countryMacro.currencyCode !== 'USD'
-                ? `${formatLocalCurrency(monthlySipUSD, countryMacro, false)}/mo`
-                : `$${monthlySipUSD.toLocaleString()}/mo`}
+                ? `${formatLocalCurrency(fireAnalysis.effectiveMonthlySipUSD, countryMacro, false)}/mo`
+                : `$${fireAnalysis.effectiveMonthlySipUSD.toLocaleString()}/mo`}
             </div>
             <div className="text-xs font-mono text-slate-600 font-semibold mt-0.5">
-              {sipContinuityMode === 'paused'
+              {plannerPersonaMode === 'digital-nomad'
+                ? `Expected Nomad Income (${nomadIncomeActiveYears} yrs) · SIP: $${fireAnalysis.effectiveMonthlySipUSD.toLocaleString()}/mo`
+                : fireAnalysis.isSipStopped
                 ? '0 fresh contributions (compounding current assets)'
-                : sipContinuityMode === 'custom-years'
-                ? `Commitment: next ${sipDurationYears} yrs · +${sipStepUpPct}%/yr step-up`
-                : `Active while earning · +${sipStepUpPct}%/yr step-up`}
+                : `$${fireAnalysis.effectiveMonthlySipUSD.toLocaleString()} USD/mo · +${sipStepUpPct}%/yr step-up`}
+            </div>
+
+            {/* Explicit Cash-Flow Breakdown of Card 3 */}
+            <div className="mt-2.5 p-2 rounded-lg bg-white border border-slate-200/80 space-y-1 text-[10px] font-mono text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-500">Monthly Inflow (Salary+Side):</span>
+                <span className="font-bold text-slate-800">${fireAnalysis.totalMonthlyInflow.toLocaleString()}/mo</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-500">Current Living Expenses:</span>
+                <span className="font-bold text-rose-700">-${fireAnalysis.currentExpensesMo.toLocaleString()}/mo</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-0.5">
+                <span className="font-sans text-slate-500">Retire Passive Income Offset:</span>
+                <span className="font-bold text-emerald-700">+${fireAnalysis.retirementContinuingPassiveMonthlyUSD.toLocaleString()}/mo</span>
+              </div>
             </div>
           </div>
+
           <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between">
             <span>Current Expenses:</span>
             <span className="font-mono font-bold text-rose-700">
@@ -1284,22 +1830,43 @@ export const FireCalculatorTracker: React.FC = () => {
           </div>
         </div>
 
-        {/* KPI 4: Countdown & Distance to FIRE */}
-        <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              4. Time &amp; Distance to FIRE
-            </span>
-            <Clock className="w-4 h-4 text-purple-600" />
-          </div>
+        {/* KPI 4: Work-Free Runway, Survival Year & Time to FIRE */}
+        <div className={`p-5 rounded-xl border flex flex-col justify-between ${
+          plannerPersonaMode === 'digital-nomad'
+            ? 'border-2 border-teal-400/70 bg-gradient-to-br from-teal-50/80 via-white to-indigo-50/50 shadow-2xs'
+            : 'border-slate-200 bg-slate-50/70'
+        }`}>
           <div>
-            {fireAnalysis.yearsToFireExact === 0 ? (
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                {plannerPersonaMode === 'digital-nomad'
+                  ? '4. Work-Free Runway & Survival'
+                  : '4. Time to FIRE & Survival Year'}
+              </span>
+              <Clock className="w-4 h-4 text-teal-600" />
+            </div>
+
+            {plannerPersonaMode === 'digital-nomad' ? (
+              <>
+                <div className="text-xl sm:text-2xl font-extrabold font-mono text-teal-900 tabular-nums">
+                  {fireAnalysis.zeroWorkSim.isPerpetual
+                    ? '50+ Yrs (Perpetual)'
+                    : `${fireAnalysis.zeroWorkSim.wholeYears} Yrs ${fireAnalysis.zeroWorkSim.remMonths} Mos`}
+                </div>
+                <div className="text-xs font-mono text-teal-800 font-semibold mt-0.5">
+                  0-Work Survival:{' '}
+                  {fireAnalysis.zeroWorkSim.isPerpetual
+                    ? `Year ${currentYear + 50}+ (Age ${currentAge + 50}+)`
+                    : `Until Year ${fireAnalysis.zeroWorkSim.survivalYear} (Age ${fireAnalysis.zeroWorkSim.survivalAge})`}
+                </div>
+              </>
+            ) : fireAnalysis.yearsToFireExact === 0 ? (
               <>
                 <div className="text-xl sm:text-2xl font-extrabold text-emerald-700">
                   FIRE Achieved! 🎉
                 </div>
                 <div className="text-xs font-mono text-emerald-800 font-semibold mt-0.5">
-                  Surplus: {formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro)}
+                  Surplus: +{formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro)}
                 </div>
               </>
             ) : (
@@ -1313,24 +1880,725 @@ export const FireCalculatorTracker: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-xs font-mono text-rose-700 font-semibold mt-0.5">
-                  Gap: {formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro)}
+                  Gap: -{formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro)}
                 </div>
               </>
             )}
-            <div className="text-[11px] text-slate-500 mt-1">
-              {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD
-                ? `Coast FIRE Passed (${formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro, true)})`
-                : `${formatDualCurrency(Math.max(0, fireAnalysis.coastFireTargetTodayUSD - fireAnalysis.startingCorpusTodayUSD), countryMacro, true)} to Coast FIRE`}
+
+            {/* Explicit Formula & Survival Year Breakdown of Card 4 */}
+            <div className="mt-2.5 p-2 rounded-lg bg-white border border-slate-200/80 space-y-1 text-[10px] font-mono text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-500">Without Working (0 Income):</span>
+                <span className="font-bold text-indigo-800">
+                  {fireAnalysis.zeroWorkSim.isPerpetual
+                    ? `2076+ (Perpetual)`
+                    : `Until ${fireAnalysis.zeroWorkSim.survivalYear} (${fireAnalysis.zeroWorkSim.exactRunwayYears}y)`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-slate-500">
+                  With Nomad (${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo):
+                </span>
+                <span className="font-bold text-teal-800">
+                  {fireAnalysis.withNomadSim.isPerpetual
+                    ? `2076+ (Perpetual)`
+                    : `Until ${fireAnalysis.withNomadSim.survivalYear} (${fireAnalysis.withNomadSim.exactRunwayYears}y)`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-0.5">
+                <span className="font-sans text-slate-500">Full FIRE Crossover:</span>
+                <span className={`font-bold ${fireAnalysis.yearsToFireExact === 0 ? 'text-emerald-700' : 'text-purple-800'}`}>
+                  {fireAnalysis.yearsToFireExact === 0
+                    ? 'Achieved Today'
+                    : `${fireAnalysis.yearsToFireExact}y (Year ${fireAnalysis.crossoverYear || '2051+'})`}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>Projected FIRE Age:</span>
-            <span className="font-mono font-bold text-slate-900">
-              {fireAnalysis.crossoverAge ? `Age ${fireAnalysis.crossoverAge}` : `Age ${currentAge + 25}+`} (Goal: {targetFireAge})
+
+          <div className="mt-3 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between">
+            <span>Money Lasts (0 Work):</span>
+            <span className="font-mono font-bold text-teal-900">
+              {fireAnalysis.zeroWorkSim.isPerpetual
+                ? `Forever (Age ${currentAge + 50}+)`
+                : `Year ${fireAnalysis.zeroWorkSim.survivalYear} (Age ${fireAnalysis.zeroWorkSim.survivalAge})`}
             </span>
           </div>
         </div>
 
+      </div>
+
+      {/* ===================================================================== */}
+      {/* WORK-FREE RUNWAY, SURVIVAL YEAR & DIGITAL NOMAD PLANNER CONSOLE       */}
+      {/* ===================================================================== */}
+      <div className={`rounded-2xl border p-5 sm:p-6 space-y-5 shadow-xs transition-all ${
+        plannerPersonaMode === 'digital-nomad'
+          ? 'bg-gradient-to-br from-teal-50/90 via-white to-indigo-50/80 border-teal-300/90 ring-1 ring-teal-200/60'
+          : 'bg-gradient-to-br from-slate-50/90 via-white to-indigo-50/50 border-indigo-200/80'
+      }`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                  How Long Your Money Lasts — Work-Free Runway &amp; Survival Year Intelligence
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 border border-teal-200 text-[10px] font-bold uppercase">
+                  For Both Retirees &amp; Digital Nomads
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Simulates your exact corpus survival year from <strong>{currentYear} to {currentYear + 50}</strong> using your Current Net FIRE Corpus (<strong>{formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}</strong>), {expectedReturnPct}% portfolio return, {inflationPct}% annual inflation, active loan EMIs, and one-time future family milestones.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSwitchCostBasis(costBasisMode === 'residing' ? 'target-haven' : 'residing')}
+              className="px-3 py-1.5 rounded-xl bg-white border border-teal-300 hover:bg-teal-50 text-teal-950 text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              {costBasisMode === 'residing'
+                ? `🌍 Test Geo-Arbitrage in ${targetHavenCountryName} ($${defaultTargetHavenMonthlyExpenseUSD.toLocaleString()}/mo)`
+                : `🏠 Switch Back to ${selectedBasisCountry} Cost Basis`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSurvivalTimelineTable(!showSurvivalTimelineTable)}
+              className="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-950 text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              {showSurvivalTimelineTable ? 'Hide Year-by-Year Survival Table ▲' : 'View Year-by-Year Survival Table ▼'}
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Survival & Runway Intelligence Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Card A: Pure Zero-Work Runway (Stop Working Today) */}
+          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
+                  A. Without Working (0 Active Income)
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  fireAnalysis.zeroWorkSim.isPerpetual
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-indigo-100 text-indigo-800'
+                }`}>
+                  {fireAnalysis.zeroWorkSim.isPerpetual ? 'Perpetual' : 'Zero-Work Runway'}
+                </span>
+              </div>
+
+              <div className="text-xl font-extrabold font-mono text-slate-900 mt-1.5">
+                {fireAnalysis.zeroWorkSim.isPerpetual
+                  ? '50+ Years (Never Depletes)'
+                  : `${fireAnalysis.zeroWorkSim.wholeYears} Yrs, ${fireAnalysis.zeroWorkSim.remMonths} Mos`}
+              </div>
+
+              <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200/80 text-indigo-950 font-mono text-xs font-extrabold">
+                <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span>
+                  {fireAnalysis.zeroWorkSim.isPerpetual
+                    ? `Survives Beyond Year ${currentYear + 50}+ (Age ${currentAge + 50}+)`
+                    : `Lasts Until Year ${fireAnalysis.zeroWorkSim.survivalYear} (Age ${fireAnalysis.zeroWorkSim.survivalAge})`}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                If you stop all active work today and live solely off your <strong>{formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}</strong> corpus + <strong>{formatDualCurrency(fireAnalysis.retirementContinuingPassiveMonthlyUSD, countryMacro, false)}/mo</strong> passive income.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-500 flex items-center justify-between">
+              <span>Net Yr-1 Drawdown:</span>
+              <span className="font-bold text-slate-800">
+                {formatDualCurrency(fireAnalysis.netMonthlyPortfolioNeedTodayUSD + fireAnalysis.totalMonthlyEmiUSD, countryMacro, false)}/mo
+              </span>
+            </div>
+          </div>
+
+          {/* Card B: Survival Year WITH Expected Digital Nomad / Remote Income */}
+          <div className="p-4 rounded-xl bg-white border-2 border-teal-400/70 shadow-2xs flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-900">
+                  B. With Expected Nomad Income
+                </span>
+                <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 text-[10px] font-bold">
+                  +${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo ({nomadIncomeActiveYears}y)
+                </span>
+              </div>
+
+              <div className="text-xl font-extrabold font-mono text-teal-900 mt-1.5">
+                {fireAnalysis.withNomadSim.isPerpetual
+                  ? '50+ Years (Perpetual)'
+                  : `${fireAnalysis.withNomadSim.wholeYears} Yrs, ${fireAnalysis.withNomadSim.remMonths} Mos`}
+              </div>
+
+              <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-950 font-mono text-xs font-extrabold">
+                <Calendar className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                <span>
+                  {fireAnalysis.withNomadSim.isPerpetual
+                    ? `Survives Forever · Year ${currentYear + 50}+ (Age ${currentAge + 50}+)`
+                    : `Lasts Until Year ${fireAnalysis.withNomadSim.survivalYear} (Age ${fireAnalysis.withNomadSim.survivalAge})`}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                Earning <strong>{formatDualCurrency(expectedNomadMonthlyIncomeUSD, countryMacro, false)}/mo</strong> from remote/digital nomad work for <strong>{nomadIncomeActiveYears} years</strong>{' '}
+                {fireAnalysis.withNomadSim.isPerpetual && !fireAnalysis.zeroWorkSim.isPerpetual
+                  ? 'turns your corpus into a perpetual self-sustaining engine!'
+                  : fireAnalysis.withNomadSim.exactRunwayYears > fireAnalysis.zeroWorkSim.exactRunwayYears
+                  ? `extends your money survival by +${Math.round((fireAnalysis.withNomadSim.exactRunwayYears - fireAnalysis.zeroWorkSim.exactRunwayYears) * 10) / 10} years!`
+                  : 'keeps your corpus compounding safely across decades.'}
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-[10px] font-mono text-teal-900 flex items-center justify-between">
+              <span>Yr-1 Net Nomad Cash Flow:</span>
+              <span className="font-bold">
+                {expectedNomadMonthlyIncomeUSD >= fireAnalysis.netMonthlyPortfolioNeedTodayUSD + fireAnalysis.totalMonthlyEmiUSD
+                  ? `+${formatDualCurrency(expectedNomadMonthlyIncomeUSD - (fireAnalysis.netMonthlyPortfolioNeedTodayUSD + fireAnalysis.totalMonthlyEmiUSD), countryMacro, false)}/mo surplus`
+                  : `Covers ${Math.min(100, Math.round((expectedNomadMonthlyIncomeUSD / Math.max(1, fireAnalysis.netMonthlyPortfolioNeedTodayUSD + fireAnalysis.totalMonthlyEmiUSD)) * 100))}% of need`}
+              </span>
+            </div>
+          </div>
+
+          {/* Card C: Planned Work-Free Sabbatical / Career Break Stress Test */}
+          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-900">
+                  C. Take {plannedSabbaticalYears}-Yr Work-Free Break Now
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  fireAnalysis.sabbaticalThenNomadSim.balanceAfterSabbaticalUSD > 0
+                    ? 'bg-purple-100 text-purple-900'
+                    : 'bg-rose-100 text-rose-800'
+                }`}>
+                  {fireAnalysis.sabbaticalThenNomadSim.balanceAfterSabbaticalUSD > 0 ? 'Sabbatical Safe' : 'Depletes Early'}
+                </span>
+              </div>
+
+              <div className="text-xl font-extrabold font-mono text-purple-950 mt-1.5">
+                {formatDualCurrency(fireAnalysis.sabbaticalThenNomadSim.balanceAfterSabbaticalUSD, countryMacro, true)}
+              </div>
+
+              <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-950 font-mono text-xs font-extrabold">
+                <span>
+                  Corpus Left in Year {currentYear + plannedSabbaticalYears} ·{' '}
+                  {fireAnalysis.sabbaticalThenNomadSim.isPerpetual
+                    ? 'Then Perpetual'
+                    : `Lasts Until ${fireAnalysis.sabbaticalThenNomadSim.survivalYear}`}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                If you take <strong>{plannedSabbaticalYears} {plannedSabbaticalYears === 1 ? 'year' : 'years'} completely off work ($0 income)</strong> from {currentYear}–{currentYear + plannedSabbaticalYears}, and then earn remote income for {nomadIncomeActiveYears} yrs.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-500 flex items-center justify-between">
+              <span>Post-Break Survival:</span>
+              <span className="font-bold text-purple-900">
+                {fireAnalysis.sabbaticalThenNomadSim.isPerpetual
+                  ? `Year ${currentYear + 50}+ (Age ${currentAge + 50}+)`
+                  : `Year ${fireAnalysis.sabbaticalThenNomadSim.survivalYear} (Age ${fireAnalysis.sabbaticalThenNomadSim.survivalAge})`}
+              </span>
+            </div>
+          </div>
+
+          {/* Card D: Perpetual Nomad Bridge & Target Haven Geo-Arbitrage */}
+          <div className="p-4 rounded-xl bg-white border border-amber-200/90 shadow-2xs flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-950">
+                  D. Perpetual Survival Threshold
+                </span>
+                <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">
+                  Never Run Out
+                </span>
+              </div>
+
+              <div className="text-xl font-extrabold font-mono text-amber-950 mt-1.5">
+                {fireAnalysis.zeroWorkSim.isPerpetual
+                  ? '$0 / mo Needed!'
+                  : `${formatDualCurrency(fireAnalysis.minMonthlyNomadIncomeForPerpetualUSD, countryMacro, false)}/mo`}
+              </div>
+
+              <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 font-mono text-xs font-extrabold">
+                <span>
+                  {fireAnalysis.zeroWorkSim.isPerpetual
+                    ? 'Already Self-Sustaining on Zero Work!'
+                    : `Min. Nomad Income for ${nomadIncomeActiveYears}y → Perpetual`}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                {fireAnalysis.zeroWorkSim.isPerpetual
+                  ? `Your corpus already compounds faster than your ${costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName} withdrawals — you never have to work again.`
+                  : `Earning just ${formatDualCurrency(fireAnalysis.minMonthlyNomadIncomeForPerpetualUSD, countryMacro, false)}/mo remotely for ${nomadIncomeActiveYears} yrs makes your money last forever (2076+).`}
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-600 flex items-center justify-between">
+              <span>In {targetHavenCountryName} (0 Work):</span>
+              <span className="font-bold text-emerald-800">
+                {fireAnalysis.targetHavenZeroWorkSim.isPerpetual
+                  ? 'Lasts Forever (2076+)'
+                  : `Until ${fireAnalysis.targetHavenZeroWorkSim.survivalYear} (${fireAnalysis.targetHavenZeroWorkSim.exactRunwayYears}y)`}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Digital Nomad & Work-Free Runway Controls */}
+        <div className="p-4 rounded-xl bg-white/95 border border-slate-200/90 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {/* Control 1: Expected Monthly Digital Nomad / Remote Income */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-800">
+                1. Expected Digital Nomad / Remote Income (Monthly)
+              </label>
+              <span className="text-[10px] font-mono font-bold text-teal-800">
+                {formatDualCurrency(expectedNomadMonthlyIncomeUSD, countryMacro, false)}/mo
+              </span>
+            </div>
+            <CurrencyAmountInput
+              usdValue={expectedNomadMonthlyIncomeUSD}
+              onChangeUsd={val => setExpectedNomadMonthlyIncomeUSD(val)}
+              currencyMode={inputCurrencyMode}
+              countryMacro={countryMacro}
+              inputSize="sm"
+            />
+            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+              {[
+                { label: '$0 (Pure Retiree)', val: 0 },
+                { label: '$1,200/mo', val: 1200 },
+                { label: '$2,200/mo', val: 2200 },
+                { label: '$3,500/mo', val: 3500 },
+                ...(fireAnalysis.minMonthlyNomadIncomeForPerpetualUSD > 0
+                  ? [
+                      {
+                        label: `Perpetual ($${fireAnalysis.minMonthlyNomadIncomeForPerpetualUSD.toLocaleString()})`,
+                        val: fireAnalysis.minMonthlyNomadIncomeForPerpetualUSD,
+                      },
+                    ]
+                  : []),
+              ].map(preset => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    setExpectedNomadMonthlyIncomeUSD(preset.val);
+                    persistFireUpdates(
+                      { expectedNomadMonthlyIncomeUSD: preset.val },
+                      `Updated Expected Digital Nomad Income to $${preset.val.toLocaleString()}/mo.`
+                    );
+                  }}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer transition-colors ${
+                    expectedNomadMonthlyIncomeUSD === preset.val
+                      ? 'bg-teal-600 text-white font-bold'
+                      : 'bg-slate-100 hover:bg-teal-50 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Control 2: How Many Years You Expect to Earn Nomad / Remote Income */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-800">
+                2. Active Nomad / Slow-Work Horizon
+              </label>
+              <span className="px-2 py-0.5 rounded bg-teal-50 border border-teal-200 font-mono font-bold text-teal-900 text-[11px]">
+                {nomadIncomeActiveYears} {nomadIncomeActiveYears === 1 ? 'Year' : 'Years'} (Until {currentYear + nomadIncomeActiveYears})
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={30}
+              step={1}
+              value={nomadIncomeActiveYears}
+              onChange={e => setNomadIncomeActiveYears(parseInt(e.target.value, 10) || 0)}
+              className="w-full accent-teal-600 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>0 Yrs (No Work)</span>
+              <span>10 Yrs (Age {currentAge + 10})</span>
+              <span>30 Yrs</span>
+            </div>
+          </div>
+
+          {/* Control 3: Planned Immediate Work-Free Sabbatical / Career Break */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-800">
+                3. Planned Work-Free Break Starting Today
+              </label>
+              <span className="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 font-mono font-bold text-purple-900 text-[11px]">
+                {plannedSabbaticalYears} {plannedSabbaticalYears === 1 ? 'Year' : 'Years'} Off ({currentYear}–{currentYear + plannedSabbaticalYears})
+              </span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={15}
+              step={1}
+              value={plannedSabbaticalYears}
+              onChange={e => setPlannedSabbaticalYears(parseInt(e.target.value, 10) || 1)}
+              className="w-full accent-purple-600 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>1 Yr Break</span>
+              <span>5 Yrs Mini-Retire</span>
+              <span>15 Yrs</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Optional Expandable Year-by-Year Money Survival & Depletion Ledger Table */}
+        {showSurvivalTimelineTable && (
+          <div className="p-4 rounded-xl bg-white border border-slate-200 overflow-x-auto space-y-2 animate-in fade-in">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                Year-by-Year Corpus Survival &amp; Depletion Schedule ({currentYear} – {currentYear + 50})
+              </h4>
+              <span className="text-[11px] text-slate-500">
+                Compares <strong>Zero Active Work</strong> vs. <strong>With ${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo Nomad Income ({nomadIncomeActiveYears} yrs)</strong> vs. <strong>{plannedSabbaticalYears}-Yr Sabbatical First</strong>
+              </span>
+            </div>
+
+            <table className="w-full text-left border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                  <th className="py-2 pr-3">Calendar Year (Age)</th>
+                  <th className="py-2 px-3">Inflated Living + EMIs / yr</th>
+                  <th className="py-2 px-3">Future Goals in Year</th>
+                  <th className="py-2 px-3 text-indigo-900">A. Corpus Without Working</th>
+                  <th className="py-2 px-3 text-teal-900">B. Corpus With Nomad Income</th>
+                  <th className="py-2 pl-3 text-purple-900">C. After {plannedSabbaticalYears}-Yr Break</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-mono">
+                {fireAnalysis.survivalTimeline.map(row => (
+                  <tr key={row.calendarYear} className="hover:bg-slate-50/80">
+                    <td className="py-2 pr-3 font-bold text-slate-900">
+                      {row.calendarYear} <span className="text-slate-500 font-normal">(Age {row.age})</span>
+                    </td>
+                    <td className="py-2 px-3 text-rose-700">
+                      {formatDualCurrency(row.annualLivingAndEmiUSD, countryMacro, true)}
+                    </td>
+                    <td className="py-2 px-3 text-purple-700">
+                      {row.milestonesOutflowUSD > 0
+                        ? formatDualCurrency(row.milestonesOutflowUSD, countryMacro, true)
+                        : '—'}
+                    </td>
+                    <td className={`py-2 px-3 font-bold ${row.endCorpusUSD > 0 ? 'text-indigo-900' : 'text-rose-600'}`}>
+                      {row.endCorpusUSD > 0
+                        ? formatDualCurrency(row.endCorpusUSD, countryMacro, true)
+                        : '$0 (Depleted)'}
+                    </td>
+                    <td className={`py-2 px-3 font-bold ${row.withNomadEndCorpusUSD > 0 ? 'text-teal-800' : 'text-rose-600'}`}>
+                      {row.withNomadEndCorpusUSD > 0
+                        ? formatDualCurrency(row.withNomadEndCorpusUSD, countryMacro, true)
+                        : '$0 (Depleted)'}
+                    </td>
+                    <td className={`py-2 pl-3 font-bold ${row.afterSabbaticalEndCorpusUSD > 0 ? 'text-purple-900' : 'text-rose-600'}`}>
+                      {row.afterSabbaticalEndCorpusUSD > 0
+                        ? formatDualCurrency(row.afterSabbaticalEndCorpusUSD, countryMacro, true)
+                        : '$0 (Depleted)'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ===================================================================== */}
+      {/* TRANSPARENT STEP-BY-STEP FORMULA & ASSET BREAKDOWN AUDIT PANEL        */}
+      {/* ===================================================================== */}
+      <div className="rounded-2xl border border-indigo-200/90 bg-white/95 shadow-xs overflow-hidden">
+        <div className="px-4 py-3 bg-gradient-to-r from-indigo-50/90 via-slate-50 to-teal-50/80 border-b border-indigo-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-mono font-bold text-xs flex items-center justify-center">
+              ∑
+            </span>
+            <div>
+              <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                How Your FIRE Numbers Are Calculated — Live Asset &amp; Formula Audit
+              </h3>
+              <p className="text-[11px] text-slate-600">
+                Exact mathematical breakdown of your <strong>Current Net FIRE Corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)})</strong>, <strong>{fireAnalysis.uncappedFireProgressPct}% Funded Ratio</strong>, and <strong>Target FIRE Corpus ({formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)})</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFormulaAudit(!showFormulaAudit)}
+            className="px-3 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-900 hover:bg-indigo-50 text-[11px] font-bold cursor-pointer transition-colors"
+          >
+            {showFormulaAudit ? 'Hide Formula Breakdown ▲' : 'Show How Numbers Are Calculated ▼'}
+          </button>
+        </div>
+
+        {showFormulaAudit && (
+          <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs animate-in fade-in">
+            
+            {/* Column 1: How "1. Current Net FIRE Corpus" is Reached */}
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/90 space-y-2.5 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2 gap-1">
+                  <span className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">
+                    Step 1: Current Net FIRE Corpus
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-900 font-mono font-bold text-[10px]">
+                    {includeGold ? '3 Schemes + Gold' : '3 Schemes (No Gold)'}
+                    {includePrimaryHome ? ' + Home' : ''} − Debt
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Your <strong>Current Net FIRE Corpus</strong> starts with your <strong>3 Core Financial Schemes</strong> (Cash, Stocks/MFs, Other). Because <strong>Family / Women&apos;s Gold</strong> is often kept as heirloom wealth and <strong>Primary Home Equity</strong> is lived in rather than sold, you can freely include or exclude both below:
+                </p>
+
+                <div className="space-y-1.5 font-mono text-[11px] bg-white p-3 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">1. Savings &amp; Cash:</span>
+                    <span className="font-bold">+{formatDualCurrency(fireAnalysis.savings, countryMacro, true)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">2. Stocks &amp; Mutual Funds:</span>
+                    <span className="font-bold">+{formatDualCurrency(fireAnalysis.stocks, countryMacro, true)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">3. Other Investments:</span>
+                    <span className="font-bold">+{formatDualCurrency(fireAnalysis.others, countryMacro, true)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-dashed border-slate-200 text-slate-800 font-bold">
+                    <span className="font-sans">= Core Financial Liquid (1+2+3):</span>
+                    <span>{formatDualCurrency(fireAnalysis.coreFinancialLiquidAssets, countryMacro, true)}</span>
+                  </div>
+
+                  <div className={`flex items-center justify-between pt-1 border-t border-dashed border-slate-200 gap-1 ${includeGold ? 'text-amber-800 font-bold' : 'text-slate-400'}`}>
+                    <span className="font-sans flex items-center gap-1.5">
+                      <span>4. Gold ({includeGold ? 'Included' : 'Excluded'}):</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextGold = !includeGold;
+                          setIncludeGold(nextGold);
+                          persistFireUpdates(
+                            { includeGoldInFire: nextGold },
+                            nextGold
+                              ? `Included Gold & Bullion (+$${fireAnalysis.gold.toLocaleString()}) in FIRE Corpus!`
+                              : `Excluded Gold & Bullion ($${fireAnalysis.gold.toLocaleString()}) from FIRE Corpus.`
+                          );
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-sans font-bold text-[9px] cursor-pointer"
+                      >
+                        {includeGold ? 'Exclude' : '+ Include'}
+                      </button>
+                    </span>
+                    <span>
+                      {includeGold
+                        ? `+${formatDualCurrency(fireAnalysis.gold, countryMacro, true)}`
+                        : `$0 (of ${formatDualCurrency(fireAnalysis.gold, countryMacro, true)})`}
+                    </span>
+                  </div>
+
+                  <div className={`flex items-center justify-between pt-1 border-t border-dashed border-slate-200 gap-1 ${includePrimaryHome ? 'text-indigo-800 font-bold' : 'text-slate-400'}`}>
+                    <span className="font-sans flex items-center gap-1.5">
+                      <span>5. Real Estate ({includePrimaryHome ? 'Included' : 'Excluded'}):</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextHome = !includePrimaryHome;
+                          setIncludePrimaryHome(nextHome);
+                          persistFireUpdates(
+                            { includePrimaryHomeInFire: nextHome },
+                            nextHome
+                              ? `Included Real Estate Equity (+$${fireAnalysis.realEstate.toLocaleString()}) in FIRE Corpus!`
+                              : `Excluded Real Estate Equity ($${fireAnalysis.realEstate.toLocaleString()}) from FIRE Corpus.`
+                          );
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-sans font-bold text-[9px] cursor-pointer"
+                      >
+                        {includePrimaryHome ? 'Exclude' : '+ Include'}
+                      </button>
+                    </span>
+                    <span>
+                      {includePrimaryHome
+                        ? `+${formatDualCurrency(fireAnalysis.realEstate, countryMacro, true)}`
+                        : `$0 (of ${formatDualCurrency(fireAnalysis.realEstate, countryMacro, true)})`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-rose-700 pt-1 border-t border-dashed border-slate-200">
+                    <span className="font-sans">6. Less Loan Principal (Debt):</span>
+                    <span className="font-bold">−{formatDualCurrency(fireAnalysis.totalLoanPrincipalUSD, countryMacro, true)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t-2 border-slate-300 text-slate-950 font-extrabold text-xs">
+                    <span className="font-sans">= 1. Current Net FIRE Corpus:</span>
+                    <span>{formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-1 flex items-center justify-between gap-2 text-[11px]">
+                <span className="text-slate-500">
+                  Gross All 5 Assets: <strong>{formatDualCurrency(fireAnalysis.totalGrossAssets, countryMacro, true)}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAssetsEditorInFire(true)}
+                  className="text-indigo-700 font-bold hover:underline cursor-pointer"
+                >
+                  Edit 5 Asset Values ↓
+                </button>
+              </div>
+            </div>
+
+            {/* Column 2: How "2. Target FIRE Corpus" & "% Funded" Are Reached */}
+            <div className="p-4 rounded-xl bg-orange-50/40 border border-orange-200/80 space-y-2.5 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between border-b border-orange-200/70 pb-2">
+                  <span className="font-extrabold text-orange-950 uppercase tracking-wider text-[11px]">
+                    Step 2: Target FIRE Corpus &amp; % Funded
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 font-mono font-bold text-[10px]">
+                    {swrPct.toFixed(1)}% SWR = {Math.round((100 / Math.max(1, swrPct)) * 10) / 10}x Annual Need
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  At a <strong>{swrPct.toFixed(1)}% Safe Withdrawal Rate</strong>, you need <strong>{Math.round((100 / Math.max(1, swrPct)) * 10) / 10}×</strong> your net annual retirement expenses, plus the present value of one-time family/life milestones.
+                </p>
+
+                <div className="space-y-1.5 font-mono text-[11px] bg-white p-3 rounded-xl border border-orange-200/70">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">Base Retire Expense ({fireTier.toUpperCase()} {Math.round(fireAnalysis.tierMultiplier * 100)}%):</span>
+                    <span className="font-bold">{formatDualCurrency(fireAnalysis.effectiveMonthlyExpenseTodayUSD, countryMacro, false)}/mo</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-700">
+                    <span className="font-sans">Less Continuing Passive Income:</span>
+                    <span className="font-bold">−{formatDualCurrency(fireAnalysis.retirementContinuingPassiveMonthlyUSD, countryMacro, false)}/mo</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-dashed border-slate-200 text-slate-900 font-bold">
+                    <span className="font-sans">= Net Monthly Portfolio Drawdown:</span>
+                    <span>{formatDualCurrency(fireAnalysis.netMonthlyPortfolioNeedTodayUSD, countryMacro, false)}/mo</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">× 12 Months (Annual Portfolio Need):</span>
+                    <span className="font-bold">{formatDualCurrency(fireAnalysis.netMonthlyPortfolioNeedTodayUSD * 12, countryMacro, true)}/yr</span>
+                  </div>
+                  <div className="flex items-center justify-between text-orange-900 font-bold">
+                    <span className="font-sans">÷ {swrPct.toFixed(1)}% SWR (Living FIRE Corpus):</span>
+                    <span>{formatDualCurrency(fireAnalysis.activeFireTargetTodayUSD, countryMacro, true)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-purple-800">
+                    <span className="font-sans">+ Future Milestones ({fireAnalysis.enrichedGoals.length} Goals Today):</span>
+                    <span className="font-bold">+{formatDualCurrency(fireAnalysis.totalFutureGoalsTodayUSD, countryMacro, true)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t-2 border-orange-300 text-orange-950 font-extrabold text-xs">
+                    <span className="font-sans">= 2. Target {fireTier.toUpperCase()} FIRE Corpus:</span>
+                    <span>{formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-teal-50/90 border border-teal-200 text-[11px] flex items-center justify-between">
+                <span className="text-teal-950 font-semibold">
+                  <strong>% Funded Formula:</strong> Corpus ÷ Target
+                </span>
+                <span className="font-mono font-extrabold text-teal-900">
+                  ${fireAnalysis.startingCorpusTodayUSD.toLocaleString()} ÷ ${fireAnalysis.comprehensiveFireNumberTodayUSD.toLocaleString()} = {fireAnalysis.uncappedFireProgressPct}%
+                </span>
+              </div>
+            </div>
+
+            {/* Column 3: How "Coast FIRE", "Surplus/Gap" & "Time to FIRE" Are Reached */}
+            <div className="p-4 rounded-xl bg-purple-50/40 border border-purple-200/80 space-y-2.5 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between border-b border-purple-200/70 pb-2">
+                  <span className="font-extrabold text-purple-950 uppercase tracking-wider text-[11px]">
+                    Step 3: Surplus/Gap, Coast FIRE &amp; Years
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-mono font-bold text-[10px]">
+                    {fireAnalysis.yearsToTargetAge} Yrs to Age {targetFireAge}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  <strong>Surplus / Gap</strong> compares your current net corpus against today&apos;s target. <strong>Coast FIRE</strong> is the amount needed today so real returns ({expectedReturnPct}% return − {inflationPct}% inflation = <strong>{fireAnalysis.realReturnPct}%/yr</strong>) reach your target by age {targetFireAge} with $0 new SIP.
+                </p>
+
+                <div className="space-y-1.5 font-mono text-[11px] bg-white p-3 rounded-xl border border-purple-200/70">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">Current Net FIRE Corpus (Card 1):</span>
+                    <span className="font-bold">{formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">Less Target FIRE Corpus (Card 2):</span>
+                    <span className="font-bold">−{formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)}</span>
+                  </div>
+                  <div className={`flex items-center justify-between pt-1 border-t border-dashed border-slate-200 font-extrabold ${gapOrSurplusUSD >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <span className="font-sans">= Current Net {gapOrSurplusUSD >= 0 ? 'Surplus' : 'Gap'} Today:</span>
+                    <span>
+                      {gapOrSurplusUSD >= 0 ? '+' : '−'}
+                      {formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro, true)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5 border-t border-dashed border-slate-200 text-indigo-900 font-bold">
+                    <span className="font-sans">Coast FIRE Target (at {fireAnalysis.realReturnPct}% real/yr):</span>
+                    <span>{formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro, true)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-sans">Annual Trajectory Formula:</span>
+                    <span className="font-bold text-[10px]">Corpus×(1+{expectedReturnPct}%)+SIP−Goals</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t-2 border-purple-300 text-purple-950 font-extrabold text-xs">
+                    <span className="font-sans">= 4. Time to Full FIRE Crossover:</span>
+                    <span>
+                      {fireAnalysis.yearsToFireExact === 0
+                        ? '0 Yrs (Already Achieved! 🎉)'
+                        : `${fireAnalysis.yearsToFireExact} Yrs (Age ${fireAnalysis.crossoverAge || currentAge + 25})`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-indigo-50/90 border border-indigo-200 text-[11px] text-indigo-950">
+                {gapOrSurplusUSD >= 0 ? (
+                  <span>
+                    ✅ <strong>Why it says FIRE Achieved:</strong> Your liquid corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) already exceeds your {fireTier.toUpperCase()} FIRE target ({formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)}) by <strong>{formatDualCurrency(gapOrSurplusUSD, countryMacro, true)}</strong>!
+                  </span>
+                ) : (
+                  <span>
+                    📈 <strong>Compounding Bridge:</strong> Your current corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) + {formatDualCurrency(monthlySipUSD, countryMacro, false)}/mo SIP bridges the {formatDualCurrency(Math.abs(gapOrSurplusUSD), countryMacro, true)} gap in <strong>{fireAnalysis.yearsToFireExact} years</strong>.
+                  </span>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
       </div>
 
       {/* ===================================================================== */}
@@ -1351,85 +2619,171 @@ export const FireCalculatorTracker: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
-          <div className="p-2.5 rounded-lg bg-white border border-slate-200/90">
-            <span className="text-[10px] font-bold uppercase text-slate-500 block">
-              1. Total Monthly Inflow
-            </span>
-            <div className="font-mono font-extrabold text-slate-900 text-sm mt-0.5">
-              {formatDualCurrency(fireAnalysis.totalMonthlyInflow, countryMacro, false)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-white border border-slate-200/90 flex flex-col justify-between shadow-2xs">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                1. Total Monthly Inflow
+              </span>
+              <div className="font-mono font-extrabold text-slate-900 text-sm mt-1">
+                {formatDualCurrency(fireAnalysis.totalMonthlyInflow, countryMacro, false)}
+              </div>
+              <div className="text-[10px] text-slate-600 mt-1 space-y-0.5 leading-snug">
+                <div className="flex items-center justify-between gap-1">
+                  <span>Salary:</span>
+                  <span className="font-mono font-semibold text-slate-800">
+                    {formatLocalCurrency(fireAnalysis.monthlySalary, countryMacro, false)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-1">
+                  <span>Side Income:</span>
+                  <span className="font-mono font-semibold text-emerald-700">
+                    {formatLocalCurrency(fireAnalysis.activeSideMonthlyUSD, countryMacro, false)} (${fireAnalysis.activeSideMonthlyUSD.toLocaleString()})
+                  </span>
+                </div>
+              </div>
             </div>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
-              Salary + ${fireAnalysis.activeSideMonthlyUSD.toLocaleString()} side income
-            </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-100">
+              {fireAnalysis.monthlySalary > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMonthlySalaryUSD(0);
+                    persistFireUpdates(
+                      { monthlySalaryUSD: 0, currentSalaryUSD: 0 },
+                      'Set Current Monthly Salary to $0/mo (Zero active salary inflow)!'
+                    );
+                  }}
+                  className="text-[10px] font-bold text-slate-600 hover:text-rose-700 hover:underline cursor-pointer"
+                  title="Zero out monthly salary if you have stopped working"
+                >
+                  Set Salary 0
+                </button>
+              )}
+              {fireAnalysis.activeSideMonthlyUSD > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveLedgerTab('side-income');
+                  }}
+                  className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                  title="View or edit your side & passive income streams"
+                >
+                  Edit Side ({finances.sideIncomes?.length || 0}) →
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-white border-2 border-rose-300/80 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase text-rose-800 block">
-              2. Monthly Current Expenses
-            </span>
-            <div className="font-mono font-extrabold text-rose-700 text-sm mt-0.5">
-              {formatDualCurrency(fireAnalysis.currentExpensesMo, countryMacro, false)}
+          <div className="p-3 rounded-xl bg-white border-2 border-rose-300/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 block">
+                2. Monthly Current Expenses
+              </span>
+              <div className="font-mono font-extrabold text-rose-700 text-sm mt-1">
+                {formatDualCurrency(fireAnalysis.currentExpensesMo, countryMacro, false)}
+              </div>
             </div>
-            <span className="text-[10px] text-rose-700/80 block mt-0.5">
+            <span className="text-[10px] text-rose-700/80 block mt-2 pt-1.5 border-t border-rose-100">
               Household &amp; living ({Math.round((fireAnalysis.currentExpensesMo / Math.max(1, fireAnalysis.totalMonthlyInflow)) * 100)}% of inflow)
             </span>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-white border border-slate-200/90">
-            <span className="text-[10px] font-bold uppercase text-slate-500 block">
-              3. Monthly Loan EMIs
-            </span>
-            <div className="font-mono font-extrabold text-amber-800 text-sm mt-0.5">
-              {formatDualCurrency(fireAnalysis.totalMonthlyEmiUSD, countryMacro, false)}
+          <div className="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                3. Monthly Loan EMIs
+              </span>
+              <div className="font-mono font-extrabold text-amber-800 text-sm mt-1">
+                {formatDualCurrency(fireAnalysis.totalMonthlyEmiUSD, countryMacro, false)}
+              </div>
             </div>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
+            <span className="text-[10px] text-slate-500 block mt-2 pt-1.5 border-t border-slate-100">
               Across {finances.loans?.length || 0} active loan(s)
             </span>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-white border border-emerald-200">
-            <span className="text-[10px] font-bold uppercase text-emerald-800 block">
-              4. Monthly SIP Invested
-            </span>
-            <div className="font-mono font-extrabold text-emerald-700 text-sm mt-0.5">
-              {formatDualCurrency(monthlySipUSD, countryMacro, false)}
+          <div className={`p-3 rounded-xl bg-white border shadow-2xs flex flex-col justify-between ${
+            fireAnalysis.isSipStopped ? 'border-amber-300 bg-amber-50/30' : 'border-emerald-200'
+          }`}>
+            <div>
+              <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                fireAnalysis.isSipStopped ? 'text-amber-900' : 'text-emerald-800'
+              }`}>
+                4. Monthly SIP Invested
+              </span>
+              <div className={`font-mono font-extrabold text-sm mt-1 ${
+                fireAnalysis.isSipStopped ? 'text-amber-800' : 'text-emerald-700'
+              }`}>
+                {formatDualCurrency(fireAnalysis.effectiveMonthlySipUSD, countryMacro, false)}
+              </div>
+              <span className={`text-[10px] block mt-1 ${
+                fireAnalysis.isSipStopped ? 'text-amber-800/90 font-medium' : 'text-emerald-700/80'
+              }`}>
+                {fireAnalysis.isSipStopped
+                  ? 'SIP Stopped ($0/mo · Coast Mode)'
+                  : `${fireAnalysis.savingsRatePct}% of monthly inflow`}
+              </span>
             </div>
-            <span className="text-[10px] text-emerald-700/80 block mt-0.5">
-              {fireAnalysis.savingsRatePct}% of monthly inflow
-            </span>
+            <div className="mt-2 pt-1.5 border-t border-slate-100">
+              {fireAnalysis.isSipStopped ? (
+                <button
+                  type="button"
+                  onClick={() => handleResumeSip()}
+                  className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                >
+                  + Resume Monthly SIP →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStopSipRightAway}
+                  className="text-[10px] font-bold text-rose-700 hover:underline cursor-pointer"
+                >
+                  ✕ Stop SIP Right Away ($0)
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className={`p-2.5 rounded-lg border flex flex-col justify-between ${fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? 'bg-white border-teal-200' : 'bg-rose-50/60 border-rose-300'}`}>
+          <div className={`p-3 rounded-xl border shadow-2xs flex flex-col justify-between ${fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? 'bg-white border-teal-200' : 'bg-rose-50/60 border-rose-300'}`}>
             <div>
-              <span className="text-[10px] font-bold uppercase text-slate-600 block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
                 5. Unallocated Cash Flow
               </span>
-              <div className={`font-mono font-extrabold text-sm mt-0.5 ${fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? 'text-teal-800' : 'text-rose-700'}`}>
+              <div className={`font-mono font-extrabold text-sm mt-1 ${fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? 'text-teal-800' : 'text-rose-700'}`}>
                 {fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? '+' : ''}
                 {formatDualCurrency(fireAnalysis.unallocatedMonthlySurplusUSD, countryMacro, false)}
               </div>
             </div>
-            {fireAnalysis.unallocatedMonthlySurplusUSD >= 100 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const nextSip = monthlySipUSD + fireAnalysis.unallocatedMonthlySurplusUSD;
-                  setMonthlySipUSD(nextSip);
-                  persistFireUpdates(
-                    { monthlySipUSD: nextSip },
-                    `Added unallocated surplus (+$${fireAnalysis.unallocatedMonthlySurplusUSD.toLocaleString()}/mo) to Monthly SIP!`
-                  );
-                }}
-                className="mt-1 text-[10px] font-bold text-orange-700 hover:underline text-left cursor-pointer"
-              >
-                + Roll Surplus into SIP →
-              </button>
-            ) : (
-              <span className="text-[10px] text-slate-500 block mt-0.5">
-                {fireAnalysis.unallocatedMonthlySurplusUSD >= 0 ? 'Fully allocated' : 'Exceeds monthly inflow'}
-              </span>
-            )}
+            <div className="mt-2 pt-1.5 border-t border-slate-100">
+              {fireAnalysis.unallocatedMonthlySurplusUSD >= 100 && !fireAnalysis.isSipStopped ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextSip = fireAnalysis.effectiveMonthlySipUSD + fireAnalysis.unallocatedMonthlySurplusUSD;
+                    setMonthlySipUSD(nextSip);
+                    setLastActiveSipUSD(nextSip);
+                    setSipContinuityMode('until-fire');
+                    persistFireUpdates(
+                      { monthlySipUSD: nextSip, sipContinuityMode: 'until-fire' },
+                      `Added unallocated surplus (+$${fireAnalysis.unallocatedMonthlySurplusUSD.toLocaleString()}/mo) to Monthly SIP!`
+                    );
+                  }}
+                  className="text-[10px] font-bold text-orange-700 hover:underline text-left cursor-pointer"
+                >
+                  + Roll Surplus into SIP →
+                </button>
+              ) : (
+                <span className="text-[10px] text-slate-500 block">
+                  {fireAnalysis.isSipStopped
+                    ? 'Retained in cash (SIP stopped)'
+                    : fireAnalysis.unallocatedMonthlySurplusUSD >= 0
+                    ? 'Fully allocated'
+                    : 'Exceeds monthly inflow'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1474,94 +2828,124 @@ export const FireCalculatorTracker: React.FC = () => {
         </div>
 
         {/* Row 1: Residing Country Selector, Current & Target Age, Current Monthly Salary, Monthly Current Expenses, Monthly SIP, Base Retirement Expense */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div>
-            <label className="font-semibold text-slate-700 block mb-1">
-              Residing Country (Basis)
-            </label>
-            <select
-              value={selectedBasisCountry}
-              onChange={e => handleBasisCountryChange(e.target.value)}
-              className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              {!WORLD_COUNTRIES.some(c => c.name === selectedBasisCountry) && selectedBasisCountry && (
-                <option value={selectedBasisCountry}>🌍 {selectedBasisCountry}</option>
-              )}
-              {WORLD_COUNTRIES.map(c => (
-                <option key={`fire-basis-${c.code}-${c.name}`} value={c.name}>
-                  {c.flag} {c.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-[10px] font-mono text-slate-500 mt-1 block">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Card 1: Residing Country (Basis) */}
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1.5">
+                Residing Country (Basis)
+              </label>
+              <select
+                value={selectedBasisCountry}
+                onChange={e => handleBasisCountryChange(e.target.value)}
+                className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {!WORLD_COUNTRIES.some(c => c.name === selectedBasisCountry) && selectedBasisCountry && (
+                  <option value={selectedBasisCountry}>🌍 {selectedBasisCountry}</option>
+                )}
+                {WORLD_COUNTRIES.map(c => (
+                  <option key={`fire-basis-${c.code}-${c.name}`} value={c.name}>
+                    {c.flag} {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="text-[10px] font-mono text-slate-500 block pt-1 border-t border-slate-100">
               {countryMacro.currencyCode !== 'USD'
-                ? `1 USD = ${countryMacro.symbol.trim()}${countryMacro.rateToUSD} ${countryMacro.currencyCode}`
-                : 'Base: $ USD'}
+                ? `Exchange Rate: 1 USD = ${countryMacro.symbol.trim()}${countryMacro.rateToUSD} ${countryMacro.currencyCode}`
+                : 'Base Currency: $ USD'}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="font-semibold text-slate-700 block mb-1">Current Age</label>
-              <input
-                type="number"
-                step="any"
-                min={18}
-                max={85}
-                value={currentAge}
-                onChange={e => setCurrentAge(Number(e.target.value))}
-                className="w-full px-2.5 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
-              />
+          {/* Card 2: Current Age & Target FIRE Age */}
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1.5">Current Age</label>
+                <input
+                  type="number"
+                  step="any"
+                  min={18}
+                  max={85}
+                  value={currentAge}
+                  onChange={e => setCurrentAge(Number(e.target.value))}
+                  className="w-full px-2.5 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1.5">Target FIRE Age</label>
+                <input
+                  type="number"
+                  step="any"
+                  min={20}
+                  max={95}
+                  value={targetFireAge}
+                  onChange={e => setTargetFireAge(Number(e.target.value))}
+                  className="w-full px-2.5 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                />
+              </div>
             </div>
-            <div>
-              <label className="font-semibold text-slate-700 block mb-1">Target FIRE Age</label>
-              <input
-                type="number"
-                step="any"
-                min={20}
-                max={95}
-                value={targetFireAge}
-                onChange={e => setTargetFireAge(Number(e.target.value))}
-                className="w-full px-2.5 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
-              />
-            </div>
+            <span className="text-[10px] font-mono text-slate-500 block pt-1 border-t border-slate-100">
+              Compounding Horizon: {Math.max(1, targetFireAge - currentAge)} years (until {currentYear + Math.max(1, targetFireAge - currentAge)})
+            </span>
           </div>
 
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="font-semibold text-slate-700">
-                Current Monthly Salary ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
-              </span>
+          {/* Card 3: Current Monthly Salary */}
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="font-semibold text-slate-700">
+                  Current Monthly Salary ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
+                </span>
+                {monthlySalaryUSD > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMonthlySalaryUSD(0);
+                      persistFireUpdates(
+                        { monthlySalaryUSD: 0, currentSalaryUSD: 0 },
+                        'Set Current Monthly Salary to $0/mo!'
+                      );
+                    }}
+                    className="text-[10px] font-bold text-slate-500 hover:text-rose-700 hover:underline cursor-pointer shrink-0"
+                  >
+                    Set $0
+                  </button>
+                )}
+              </div>
+              <CurrencyAmountInput
+                usdValue={monthlySalaryUSD}
+                onChangeUsd={val => setMonthlySalaryUSD(val)}
+                currencyMode={inputCurrencyMode}
+                countryMacro={countryMacro}
+                inputSize="sm"
+                helperSuffix="/mo"
+              />
             </div>
-            <CurrencyAmountInput
-              usdValue={monthlySalaryUSD}
-              onChangeUsd={val => setMonthlySalaryUSD(val)}
-              currencyMode={inputCurrencyMode}
-              countryMacro={countryMacro}
-              inputSize="sm"
-              helperSuffix="/mo"
-            />
+            <span className="text-[10px] font-mono text-slate-500 block pt-1 border-t border-slate-100">
+              Active take-home salary feeding monthly cash flow
+            </span>
           </div>
 
-          <div>
-            <div className="flex justify-between mb-1">
-              <span className="font-bold text-rose-800">
-                Monthly Current Expenses ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
-              </span>
+          {/* Card 4: Monthly Current Expenses */}
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="font-bold text-rose-800">
+                  Monthly Current Expenses ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
+                </span>
+              </div>
+              <CurrencyAmountInput
+                usdValue={monthlyCurrentExpensesUSD}
+                onChangeUsd={val => {
+                  setMonthlyCurrentExpensesUSD(val);
+                }}
+                currencyMode={inputCurrencyMode}
+                countryMacro={countryMacro}
+                inputSize="sm"
+                helperSuffix="/mo"
+              />
             </div>
-            <CurrencyAmountInput
-              usdValue={monthlyCurrentExpensesUSD}
-              onChangeUsd={val => {
-                setMonthlyCurrentExpensesUSD(val);
-                if (costBasisMode === 'residing') {
-                  setBaseMonthlyExpenseTodayUSD(val);
-                }
-              }}
-              currencyMode={inputCurrencyMode}
-              countryMacro={countryMacro}
-              inputSize="sm"
-              helperSuffix="/mo"
-            />
             <input
               type="range"
               min={300}
@@ -1571,76 +2955,126 @@ export const FireCalculatorTracker: React.FC = () => {
               onChange={e => {
                 const nextVal = Number(e.target.value);
                 setMonthlyCurrentExpensesUSD(nextVal);
-                if (costBasisMode === 'residing') {
-                  setBaseMonthlyExpenseTodayUSD(nextVal);
-                }
               }}
-              className="w-full accent-rose-600 cursor-pointer mt-1.5"
+              className="w-full accent-rose-600 cursor-pointer"
             />
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-teal-50/30 to-white border border-emerald-200/90 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
-                <PiggyBank className="w-4 h-4 text-emerald-600" />
-                <span>Monthly SIP ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                sipContinuityMode === 'paused'
-                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                  : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-              }`}>
-                {sipContinuityMode === 'paused' ? 'Paused (Coast Mode)' : `Active Earning · +${sipStepUpPct}%/yr`}
-              </span>
+          {/* Card 5: Monthly SIP */}
+          <div className={`p-3.5 rounded-xl border shadow-2xs flex flex-col justify-between space-y-2 ${
+            fireAnalysis.isSipStopped
+              ? 'bg-gradient-to-br from-amber-50/80 via-orange-50/30 to-white border-amber-300/90'
+              : 'bg-gradient-to-br from-emerald-50/70 via-teal-50/30 to-white border-emerald-200/90'
+          }`}>
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                <span className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
+                  <PiggyBank className={`w-4 h-4 shrink-0 ${fireAnalysis.isSipStopped ? 'text-amber-600' : 'text-emerald-600'}`} />
+                  <span>Monthly SIP ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})</span>
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
+                  fireAnalysis.isSipStopped
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                }`}>
+                  {fireAnalysis.isSipStopped ? 'SIP Stopped ($0)' : `Active · +${sipStepUpPct}%/yr`}
+                </span>
+              </div>
+              <CurrencyAmountInput
+                usdValue={fireAnalysis.effectiveMonthlySipUSD}
+                onChangeUsd={val => {
+                  setMonthlySipUSD(val);
+                  if (val > 0) {
+                    setLastActiveSipUSD(val);
+                    if (sipContinuityMode === 'paused') {
+                      setSipContinuityMode('until-fire');
+                    }
+                  } else {
+                    setSipContinuityMode('paused');
+                  }
+                }}
+                currencyMode={inputCurrencyMode}
+                countryMacro={countryMacro}
+                inputSize="sm"
+                helperSuffix="/mo"
+              />
             </div>
-            <CurrencyAmountInput
-              usdValue={monthlySipUSD}
-              onChangeUsd={val => setMonthlySipUSD(val)}
-              currencyMode={inputCurrencyMode}
-              countryMacro={countryMacro}
-              inputSize="sm"
-              helperSuffix="/mo"
-            />
-            <input
-              type="range"
-              min={0}
-              max={25000}
-              step={50}
-              value={Math.min(25000, Math.round(monthlySipUSD))}
-              onChange={e => setMonthlySipUSD(Number(e.target.value))}
-              className="w-full accent-emerald-600 cursor-pointer mt-1"
-            />
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-              <span>$0 (Coast)</span>
-              <span>${Math.round(monthlySipUSD).toLocaleString()}/mo</span>
-              <span>$25k/mo</span>
+            <div className="space-y-1.5">
+              <input
+                type="range"
+                min={0}
+                max={25000}
+                step={50}
+                value={Math.min(25000, Math.round(fireAnalysis.effectiveMonthlySipUSD))}
+                onChange={e => {
+                  const nextVal = Number(e.target.value);
+                  setMonthlySipUSD(nextVal);
+                  if (nextVal > 0) {
+                    setLastActiveSipUSD(nextVal);
+                    if (sipContinuityMode === 'paused') {
+                      setSipContinuityMode('until-fire');
+                    }
+                  } else {
+                    setSipContinuityMode('paused');
+                  }
+                }}
+                className="w-full accent-emerald-600 cursor-pointer"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                <span className="text-[10px] text-slate-600 font-mono">
+                  {fireAnalysis.isSipStopped
+                    ? '$0/mo (Coast Mode)'
+                    : `$${Math.round(fireAnalysis.effectiveMonthlySipUSD).toLocaleString()}/mo`}
+                </span>
+                {fireAnalysis.isSipStopped ? (
+                  <button
+                    type="button"
+                    onClick={() => handleResumeSip()}
+                    className="px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] cursor-pointer transition-colors shrink-0"
+                  >
+                    Resume SIP
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleStopSipRightAway}
+                    className="px-2.5 py-0.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] cursor-pointer transition-colors shrink-0"
+                    title="Immediately stop all monthly SIP investments ($0/mo) and switch to Coast FIRE mode"
+                  >
+                    Stop SIP Now ($0)
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-semibold text-slate-700">
-                {costBasisMode === 'residing' ? 'Retirement Expense/mo' : `${targetHavenCountryName} Expense/mo`}
-              </span>
-              {baseMonthlyExpenseTodayUSD !== monthlyCurrentExpensesUSD && (
-                <button
-                  type="button"
-                  onClick={() => setBaseMonthlyExpenseTodayUSD(monthlyCurrentExpensesUSD)}
-                  className="text-[10px] font-bold text-orange-700 hover:underline cursor-pointer"
-                  title="Match Monthly Current Expenses"
-                >
-                  Match Current
-                </button>
-              )}
+          {/* Card 6: Retirement Monthly Expense */}
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                <span className="font-semibold text-slate-700">
+                  {costBasisMode === 'residing' ? 'Retirement Expense/mo' : `${targetHavenCountryName} Expense/mo`}
+                </span>
+                {Math.round(baseMonthlyExpenseTodayUSD) !== Math.round(monthlyCurrentExpensesUSD) && (
+                  <button
+                    type="button"
+                    onClick={() => setBaseMonthlyExpenseTodayUSD(monthlyCurrentExpensesUSD)}
+                    className="text-[10px] font-bold text-orange-700 hover:underline cursor-pointer shrink-0"
+                    title="Match Monthly Current Expenses"
+                  >
+                    Match Current
+                  </button>
+                )}
+              </div>
+              <CurrencyAmountInput
+                usdValue={baseMonthlyExpenseTodayUSD}
+                onChangeUsd={val => setBaseMonthlyExpenseTodayUSD(val)}
+                currencyMode={inputCurrencyMode}
+                countryMacro={countryMacro}
+                inputSize="sm"
+                helperSuffix="/mo"
+              />
             </div>
-            <CurrencyAmountInput
-              usdValue={baseMonthlyExpenseTodayUSD}
-              onChangeUsd={val => setBaseMonthlyExpenseTodayUSD(val)}
-              currencyMode={inputCurrencyMode}
-              countryMacro={countryMacro}
-              inputSize="sm"
-              helperSuffix="/mo"
-            />
             <input
               type="range"
               min={300}
@@ -1648,7 +3082,7 @@ export const FireCalculatorTracker: React.FC = () => {
               step={50}
               value={Math.min(20000, Math.round(baseMonthlyExpenseTodayUSD))}
               onChange={e => setBaseMonthlyExpenseTodayUSD(Number(e.target.value))}
-              className="w-full accent-orange-600 cursor-pointer mt-1.5"
+              className="w-full accent-orange-600 cursor-pointer"
             />
           </div>
         </div>
@@ -1658,10 +3092,10 @@ export const FireCalculatorTracker: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs shrink-0">
                   <TrendingUp className="w-4 h-4" />
                 </div>
-                <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
                   <span>SIP Earning Continuity Switch &amp; Returns on Investment</span>
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
                     Calculated at {expectedReturnPct}% Return · +{sipStepUpPct}% Step-Up
@@ -1674,12 +3108,20 @@ export const FireCalculatorTracker: React.FC = () => {
             </div>
 
             {/* Switch / Mode Selector Bar */}
-            <div className="inline-flex rounded-xl p-1 bg-slate-100/90 border border-slate-200 text-xs font-bold gap-1 self-start lg:self-auto shrink-0">
+            <div className="flex flex-wrap rounded-xl p-1 bg-slate-100/90 border border-slate-200 text-xs font-bold gap-1 self-start lg:self-auto shrink-0">
               <button
                 type="button"
-                onClick={() => setSipContinuityMode('until-fire')}
+                onClick={() => {
+                  const nextSip = monthlySipUSD > 0 ? monthlySipUSD : (lastActiveSipUSD > 0 ? lastActiveSipUSD : 1000);
+                  setMonthlySipUSD(nextSip);
+                  setSipContinuityMode('until-fire');
+                  persistFireUpdates(
+                    { monthlySipUSD: nextSip, sipContinuityMode: 'until-fire' },
+                    'SIP Continuity set to: Active Until FIRE Reached!'
+                  );
+                }}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  sipContinuityMode === 'until-fire'
+                  !fireAnalysis.isSipStopped && sipContinuityMode === 'until-fire'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
                 }`}
@@ -1690,9 +3132,17 @@ export const FireCalculatorTracker: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setSipContinuityMode('custom-years')}
+                onClick={() => {
+                  const nextSip = monthlySipUSD > 0 ? monthlySipUSD : (lastActiveSipUSD > 0 ? lastActiveSipUSD : 1000);
+                  setMonthlySipUSD(nextSip);
+                  setSipContinuityMode('custom-years');
+                  persistFireUpdates(
+                    { monthlySipUSD: nextSip, sipContinuityMode: 'custom-years' },
+                    `SIP Continuity set to: Commit ${sipDurationYears} Years!`
+                  );
+                }}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  sipContinuityMode === 'custom-years'
+                  !fireAnalysis.isSipStopped && sipContinuityMode === 'custom-years'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
                 }`}
@@ -1703,15 +3153,15 @@ export const FireCalculatorTracker: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setSipContinuityMode('paused')}
+                onClick={handleStopSipRightAway}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  sipContinuityMode === 'paused'
-                    ? 'bg-amber-600 text-white shadow-xs'
+                  fireAnalysis.isSipStopped
+                    ? 'bg-rose-600 text-white shadow-xs'
                     : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>Pause SIP (Coast FIRE)</span>
+                <span>Stop SIP Right Away ($0 · Coast)</span>
               </button>
             </div>
           </div>
@@ -1920,13 +3370,13 @@ export const FireCalculatorTracker: React.FC = () => {
                   <div className="text-[11px] text-slate-600 leading-relaxed bg-white/80 p-2.5 rounded-xl border border-emerald-100 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      {sipContinuityMode === 'paused' ? (
+                      {fireAnalysis.isSipStopped ? (
                         <span>
-                          <strong>Coast Mode Active:</strong> You are testing zero fresh monthly contributions. Your current net corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) compounds without salary deductions.
+                          <strong>SIP Stopped (Coast Mode Active):</strong> You have stopped fresh monthly SIP contributions ($0/mo). Your current net corpus ({formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) compounds on its own without new salary deductions.
                         </span>
                       ) : (
                         <span>
-                          <strong>How your SIP is treated:</strong> You invest {formatDualCurrency(monthlySipUSD, countryMacro, false)}/mo out of active salary with a {sipStepUpPct}%/yr step-up. Over {activeReturns.durationYears} {activeReturns.durationYears === 1 ? 'year' : 'years'}, your personal investment of {formatDualCurrency(activeReturns.totalPrincipalUSD, countryMacro, true)} produces <strong>+{formatDualCurrency(activeReturns.wealthGainedUSD, countryMacro, true)}</strong> in compounded returns at {expectedReturnPct}% annual return. {stopSipAtFire ? 'Upon reaching FIRE, fresh salary injections halt and your accumulated investments support your lifestyle.' : ''}
+                          <strong>How your SIP is treated:</strong> You invest {formatDualCurrency(fireAnalysis.effectiveMonthlySipUSD, countryMacro, false)}/mo out of active salary with a {sipStepUpPct}%/yr step-up. Over {activeReturns.durationYears} {activeReturns.durationYears === 1 ? 'year' : 'years'}, your personal investment of {formatDualCurrency(activeReturns.totalPrincipalUSD, countryMacro, true)} produces <strong>+{formatDualCurrency(activeReturns.wealthGainedUSD, countryMacro, true)}</strong> in compounded returns at {expectedReturnPct}% annual return. {stopSipAtFire ? 'Upon reaching FIRE, fresh salary injections halt and your accumulated investments support your lifestyle.' : ''}
                         </span>
                       )}
                     </div>
@@ -2106,9 +3556,26 @@ export const FireCalculatorTracker: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="font-semibold text-indigo-900 block mb-1 text-[11px]">
-                  3. Real Estate Equity
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-indigo-900 text-[11px]">
+                    3. Real Estate Equity
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextHome = !includePrimaryHome;
+                      setIncludePrimaryHome(nextHome);
+                      persistFireUpdates({ includePrimaryHomeInFire: nextHome });
+                    }}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold cursor-pointer ${
+                      includePrimaryHome
+                        ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}
+                  >
+                    {includePrimaryHome ? '✓ In FIRE' : 'Excluded'}
+                  </button>
+                </div>
                 <CurrencyAmountInput
                   usdValue={investmentsDraft.realEstateUSD}
                   onChangeUsd={val => setInvestmentsDraft(prev => ({ ...prev, realEstateUSD: val }))}
@@ -2118,9 +3585,26 @@ export const FireCalculatorTracker: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="font-semibold text-amber-900 block mb-1 text-[11px]">
-                  4. Gold & Bullion
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-amber-900 text-[11px]">
+                    4. Gold &amp; Bullion
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextGold = !includeGold;
+                      setIncludeGold(nextGold);
+                      persistFireUpdates({ includeGoldInFire: nextGold });
+                    }}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold cursor-pointer ${
+                      includeGold
+                        ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}
+                  >
+                    {includeGold ? '✓ In FIRE' : 'Excluded (Family)'}
+                  </button>
+                </div>
                 <CurrencyAmountInput
                   usdValue={investmentsDraft.goldUSD}
                   onChangeUsd={val => setInvestmentsDraft(prev => ({ ...prev, goldUSD: val }))}
@@ -2170,27 +3654,34 @@ export const FireCalculatorTracker: React.FC = () => {
       {/* PART 2: VISUAL FIRE PATH, THERMOMETER & TRAJECTORY CHARTS (SECOND)    */}
       {/* ===================================================================== */}
       <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-6">
-        {/* VISUAL FIRE PROGRESS SCALE & MILESTONE THERMOMETER */}
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        {/* VISUAL FIRE PROGRESS SCALE & MILESTONE THERMOMETER (LIGHT EDITORIAL THEME) */}
+        <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-emerald-50/85 border border-indigo-200/90 text-slate-900 space-y-4 shadow-xs">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-amber-500 to-emerald-500" />
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-900">
                   FIRE Independence Thermometer &amp; 4-Stage Milestone Scale
                 </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                  {fireAnalysis.uncappedFireProgressPct}% Funded ({fireAnalysis.zeroWorkSim.isPerpetual ? 'Perpetual 2076+' : `Survives Until ${fireAnalysis.zeroWorkSim.survivalYear}`})
+                </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-600 mt-1">
                 {fireAnalysis.yearsToFireExact === 0
-                  ? `Congratulations! Your current corpus covers 100%+ of your ${fireTier.toUpperCase()} FIRE target including future family milestones.`
-                  : `You have completed ${fireAnalysis.fireProgressPct}% of your journey toward ${fireTier.toUpperCase()} FIRE in ${costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName}.`}
+                  ? `Congratulations! Your current net corpus (${formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}) covers 100%+ of your ${fireTier.toUpperCase()} FIRE target including future family milestones.`
+                  : `You have completed ${fireAnalysis.fireProgressPct}% of your journey toward ${fireTier.toUpperCase()} FIRE in ${costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName} — and your current money already lasts ${fireAnalysis.zeroWorkSim.isPerpetual ? '50+ years (forever)' : `${fireAnalysis.zeroWorkSim.wholeYears} yrs ${fireAnalysis.zeroWorkSim.remMonths} mos (until ${fireAnalysis.zeroWorkSim.survivalYear})`} without working.`}
               </p>
             </div>
 
             {/* FIRE Tier Selector Pills */}
-            <div className="inline-flex flex-wrap rounded-xl bg-white/10 p-1 text-xs font-semibold gap-1">
+            <div className="inline-flex flex-wrap rounded-xl bg-slate-100/90 border border-slate-200/90 p-1 text-xs font-semibold gap-1 shrink-0">
               {[
-                { id: 'barista', label: 'Barista FIRE (72%)' },
+                { id: 'barista', label: 'Barista / Nomad FIRE (72%)' },
                 { id: 'lean', label: 'Lean FIRE (80%)' },
                 { id: 'standard', label: 'Standard FIRE (100%)' },
                 { id: 'fat', label: 'Fat FIRE (135%)' },
@@ -2199,10 +3690,10 @@ export const FireCalculatorTracker: React.FC = () => {
                   key={t.id}
                   type="button"
                   onClick={() => setFireTier(t.id as FireTierMode)}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     fireTier === t.id
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-extrabold shadow-xs'
-                      : 'text-slate-300 hover:text-white'
+                      ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white font-extrabold shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                   }`}
                 >
                   {t.label}
@@ -2211,56 +3702,103 @@ export const FireCalculatorTracker: React.FC = () => {
             </div>
           </div>
 
-          {/* Progress Bar Track */}
-          <div className="space-y-2">
-            <div className="w-full h-4 rounded-full bg-white/15 overflow-hidden relative p-0.5">
+          {/* Progress Bar Track & Live Scale Labels */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-[11px] font-mono">
+              <span className="text-slate-600">
+                Current Net Corpus: <strong className="text-slate-900">{formatDualCurrency(fireAnalysis.startingCorpusTodayUSD, countryMacro, true)}</strong>
+              </span>
+              <span className="text-indigo-900 font-bold">
+                Target {fireTier.toUpperCase()} Corpus: {formatDualCurrency(fireAnalysis.comprehensiveFireNumberTodayUSD, countryMacro, true)}
+              </span>
+            </div>
+
+            <div className="w-full h-4 rounded-full bg-slate-200/80 border border-slate-300/70 overflow-hidden relative p-0.5 shadow-inner">
               <div
-                style={{ width: `${Math.min(100, fireAnalysis.fireProgressPct)}%` }}
-                className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(4, fireAnalysis.fireProgressPct))}%` }}
+                className="h-full rounded-full bg-gradient-to-r from-indigo-600 via-teal-500 to-emerald-500 transition-all duration-500"
               />
             </div>
 
             {/* 4 Milestone Stage Cards Under Scale */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
-              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                  <span>Stage 1: Coast FIRE</span>
-                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                </div>
-                <div className="font-mono font-bold text-sm mt-0.5">
-                  {formatDualCurrency(fireAnalysis.coastFireTargetTodayUSD, countryMacro)}
-                </div>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                  <span>Stage 2: Lean FIRE</span>
-                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                </div>
-                <div className="font-mono font-bold text-sm mt-0.5">
-                  {formatDualCurrency(fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-                </div>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                  <span>Stage 3: Standard FIRE</span>
-                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                </div>
-                <div className="font-mono font-bold text-sm mt-0.5">
-                  {formatDualCurrency(fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-                </div>
-              </div>
-
-              <div className={`p-2.5 rounded-xl border ${fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD ? 'bg-emerald-500/20 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-amber-300">
-                  <span>Stage 4: Fat FIRE</span>
-                  {fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                </div>
-                <div className="font-mono font-bold text-sm mt-0.5">
-                  {formatDualCurrency(fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD, countryMacro)}
-                </div>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 text-xs">
+              {[
+                {
+                  stage: 'Stage 1: Coast / Nomad Seed',
+                  targetUSD: fireAnalysis.coastFireTargetTodayUSD,
+                  subtitle: `Compounds to target by Age ${targetFireAge} with $0 new SIP`,
+                  achieved: fireAnalysis.startingCorpusTodayUSD >= fireAnalysis.coastFireTargetTodayUSD,
+                  active: fireTier === 'barista',
+                },
+                {
+                  stage: 'Stage 2: Lean FIRE (80%)',
+                  targetUSD: fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  subtitle: 'Essential living + all future family goals covered',
+                  achieved:
+                    fireAnalysis.startingCorpusTodayUSD >=
+                    fireAnalysis.leanFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  active: fireTier === 'lean',
+                },
+                {
+                  stage: 'Stage 3: Standard FIRE (100%)',
+                  targetUSD: fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  subtitle: 'Full comfortable lifestyle + future milestones',
+                  achieved:
+                    fireAnalysis.startingCorpusTodayUSD >=
+                    fireAnalysis.standardFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  active: fireTier === 'standard',
+                },
+                {
+                  stage: 'Stage 4: Fat FIRE (135%)',
+                  targetUSD: fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  subtitle: 'Abundant luxury, global travel & healthcare buffer',
+                  achieved:
+                    fireAnalysis.startingCorpusTodayUSD >=
+                    fireAnalysis.fatFireTargetTodayUSD + fireAnalysis.totalFutureGoalsTodayUSD,
+                  active: fireTier === 'fat',
+                },
+              ].map(item => {
+                const pctOfStage = Math.min(
+                  999,
+                  Math.round((fireAnalysis.startingCorpusTodayUSD / Math.max(1, item.targetUSD)) * 100)
+                );
+                return (
+                  <div
+                    key={item.stage}
+                    className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
+                      item.achieved
+                        ? 'bg-emerald-50/85 border-emerald-300/90 shadow-2xs'
+                        : item.active
+                        ? 'bg-indigo-50/80 border-indigo-300/90 shadow-2xs'
+                        : 'bg-white border-slate-200/90'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold uppercase tracking-wider">
+                        <span className={item.achieved ? 'text-emerald-900' : 'text-indigo-950'}>
+                          {item.stage}
+                        </span>
+                        {item.achieved ? (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-950 font-bold text-[9px]">
+                            <Check className="w-3 h-3 text-emerald-700" />
+                            Unlocked ({pctOfStage}%)
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[9px]">
+                            {pctOfStage}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono font-extrabold text-sm text-slate-900 mt-1">
+                        {formatDualCurrency(item.targetUSD, countryMacro)}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-600 mt-1.5 leading-snug">
+                      {item.subtitle}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

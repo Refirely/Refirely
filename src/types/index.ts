@@ -284,6 +284,7 @@ export interface UserFinancialPortfolio {
   currentAge?: number; // Default 42
   targetFireAge?: number; // Default 52
   monthlyCurrentExpensesUSD?: number; // Current monthly household & living expenses (excluding loan EMIs & SIP)
+  monthlyRetirementExpensesUSD?: number; // Custom post-retirement / work-free monthly living expense (independent of current expenses)
   monthlySipUSD?: number; // Monthly Systematic Investment Plan (SIP) contribution
   annualSipStepUpPercent?: number; // Annual % increase in SIP (e.g. 5% - 10%)
   sipContinuityMode?: 'until-fire' | 'custom-years' | 'paused'; // SIP continuation strategy while earning
@@ -292,6 +293,11 @@ export interface UserFinancialPortfolio {
   expectedReturnRatePercent?: number; // Expected annual portfolio return %
   inflationRatePercent?: number; // Residing country annual inflation %
   includePrimaryHomeInFire?: boolean; // Whether real estate equity is counted toward liquid FIRE
+  includeGoldInFire?: boolean; // Whether gold & bullion is counted toward FIRE corpus (can be excluded for family/heirloom gold)
+  plannerPersonaMode?: 'retiree' | 'digital-nomad'; // Active FIRE & Runway planner lens (Retiree vs Digital Nomad)
+  expectedNomadMonthlyIncomeUSD?: number; // Expected monthly remote/freelance/digital nomad income while living abroad or in slow-work phase
+  nomadIncomeActiveYears?: number; // How many years the user plans to earn expected nomad/remote income
+  plannedSabbaticalYears?: number; // Planned work-free break / mini-retirement sabbatical duration in years
   loans?: UserLoanItem[]; // Multiple itemized loans
   sideIncomes?: SideIncomeStream[]; // Itemized side/passive income streams
   futureExpenses?: FutureMilestoneExpense[]; // Itemized future life milestones & insurance goals

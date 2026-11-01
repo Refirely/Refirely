@@ -813,11 +813,16 @@ export const EditProfileModal: React.FC = () => {
               noValidate
               onSubmit={(e) => {
                 e.preventDefault();
-                const cleanAnnual = Math.round(
-                  Number(financesForm.currentSalaryUSD) || Number(financesForm.monthlySalaryUSD || 0) * 12
-                );
-                const cleanMonthly = Math.round(
-                  Number(financesForm.monthlySalaryUSD) || cleanAnnual / 12
+                const roundUsd2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
+                const hasExplicitMonthly =
+                  financesForm.monthlySalaryUSD !== undefined && financesForm.monthlySalaryUSD !== null;
+                const cleanMonthly = hasExplicitMonthly
+                  ? roundUsd2(Number(financesForm.monthlySalaryUSD) || 0)
+                  : roundUsd2((Number(financesForm.currentSalaryUSD) || 0) / 12);
+                const cleanAnnual = roundUsd2(
+                  financesForm.currentSalaryUSD !== undefined && financesForm.currentSalaryUSD !== null
+                    ? Number(financesForm.currentSalaryUSD) || 0
+                    : cleanMonthly * 12
                 );
                 updateUserProfile({
                   residingCountry: formData.residingCountry,
@@ -825,16 +830,16 @@ export const EditProfileModal: React.FC = () => {
                     ...financesForm,
                     currentSalaryUSD: cleanAnnual,
                     monthlySalaryUSD: cleanMonthly,
-                    monthlyCurrentExpensesUSD: Math.round(Number(financesForm.monthlyCurrentExpensesUSD ?? 3200)),
-                    monthlySipUSD: Math.round(Number(financesForm.monthlySipUSD) || 0),
-                    additionalMonthlyPassiveUSD: Math.round(Number(financesForm.additionalMonthlyPassiveUSD) || 0),
-                    totalLiabilitiesUSD: Math.round(Number(financesForm.totalLiabilitiesUSD) || 0),
+                    monthlyCurrentExpensesUSD: roundUsd2(financesForm.monthlyCurrentExpensesUSD ?? 3200),
+                    monthlySipUSD: roundUsd2(financesForm.monthlySipUSD ?? 0),
+                    additionalMonthlyPassiveUSD: roundUsd2(financesForm.additionalMonthlyPassiveUSD || 0),
+                    totalLiabilitiesUSD: roundUsd2(financesForm.totalLiabilitiesUSD || 0),
                     investments: {
-                      savingsUSD: Math.round(Number(financesForm.investments?.savingsUSD) || 0),
-                      stocksMutualFundsUSD: Math.round(Number(financesForm.investments?.stocksMutualFundsUSD) || 0),
-                      realEstateUSD: Math.round(Number(financesForm.investments?.realEstateUSD) || 0),
-                      goldUSD: Math.round(Number(financesForm.investments?.goldUSD) || 0),
-                      othersUSD: Math.round(Number(financesForm.investments?.othersUSD) || 0),
+                      savingsUSD: roundUsd2(financesForm.investments?.savingsUSD || 0),
+                      stocksMutualFundsUSD: roundUsd2(financesForm.investments?.stocksMutualFundsUSD || 0),
+                      realEstateUSD: roundUsd2(financesForm.investments?.realEstateUSD || 0),
+                      goldUSD: roundUsd2(financesForm.investments?.goldUSD || 0),
+                      othersUSD: roundUsd2(financesForm.investments?.othersUSD || 0),
                     },
                     updatedAt: new Date().toISOString().split('T')[0],
                   },
