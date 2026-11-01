@@ -38,6 +38,7 @@ export const UserDashboard: React.FC = () => {
     publicMemberAccounts,
     openPublicProfile,
     toggleInterest,
+    currentPersona,
   } = useApp();
 
   // New task modal
@@ -204,7 +205,7 @@ export const UserDashboard: React.FC = () => {
             </div>
             <h3 className="text-xs font-bold text-slate-900">Haven Potential Matrix</h3>
             <p className="text-[11px] text-slate-600 leading-relaxed">
-              Instant eligibility matching comparing your assets & income against Portugal D7, Spain Non-Lucrative, and Thai visas.
+              Instant eligibility matching comparing your assets &amp; remote income against Digital Nomad Visas (D8, DNV, DTV) and Retirement Visas (D7, Non-Lucrative).
             </p>
           </div>
 
@@ -305,7 +306,11 @@ export const UserDashboard: React.FC = () => {
                 ID: {currentUserId}
               </code>
               <span className="text-xs bg-orange-50 text-orange-900 border border-orange-200 px-2.5 py-0.5 rounded font-medium">
-                {userProfile.role === 'admin' ? 'Platform Administrator' : 'Retiree Member'}
+                {userProfile.role === 'admin'
+                  ? 'Platform Administrator'
+                  : currentPersona === 'nomad'
+                  ? '⚡ Nomad & Creator Member'
+                  : '🌿 Retiree Member'}
               </span>
               {userProfile.relocationStatus && (
                 <span className="text-xs bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded-full font-semibold">
