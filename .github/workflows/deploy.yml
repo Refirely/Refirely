@@ -31,6 +31,9 @@ jobs:
           npm install --legacy-peer-deps
 
       - name: Build Project
+        env:
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY || vars.VITE_GOOGLE_MAPS_API_KEY || secrets.GOOGLE_MAPS_API_KEY || vars.GOOGLE_MAPS_API_KEY || secrets.GOOGLE_MAPS_PLATFORM_KEY || vars.GOOGLE_MAPS_PLATFORM_KEY }}
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID || vars.VITE_GA_MEASUREMENT_ID }}
         run: |
           npm run build
 
