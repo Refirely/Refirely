@@ -3864,6 +3864,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const filteredCountries = countries.filter(c => {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
+      const nomadProf = getCountryNomadProfile(c);
       const match =
         c.name.toLowerCase().includes(q) ||
         c.capital.toLowerCase().includes(q) ||
@@ -3876,7 +3877,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         c.visa.pathwayToPR.toLowerCase().includes(q) ||
         c.visa.taxStatus.toLowerCase().includes(q) ||
         c.visa.keyRequirements.some(req => req.toLowerCase().includes(q)) ||
-        c.topCities.some(tc => tc.name.toLowerCase().includes(q) || tc.vibe.toLowerCase().includes(q));
+        c.topCities.some(tc => tc.name.toLowerCase().includes(q) || tc.vibe.toLowerCase().includes(q)) ||
+        nomadProf.remoteWorkVisaName.toLowerCase().includes(q) ||
+        nomadProf.remoteWorkVisaDetails.toLowerCase().includes(q) ||
+        nomadProf.creatorVibe.toLowerCase().includes(q) ||
+        nomadProf.coworkingDensity.toLowerCase().includes(q) ||
+        nomadProf.cafeWorkCulture.toLowerCase().includes(q) ||
+        nomadProf.topNomadCities.some(nc => nc.toLowerCase().includes(q));
       if (!match) return false;
     }
 
@@ -3958,6 +3965,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const pA = getCountryNomadProfile(a);
       const pB = getCountryNomadProfile(b);
       return pB.verifiedInternetMbps - pA.verifiedInternetMbps;
+    }
+    if (sortBy === 'coworking-friendly') {
+      const pA = getCountryNomadProfile(a);
+      const pB = getCountryNomadProfile(b);
+      const densityRank = (d: string) =>
+        d === 'World-Class Nomad Hub' ? 3 : d === 'Abundant & Vibrant' ? 2 : d === 'Growing Network' ? 1 : 0;
+      const cafeRank = (c: string) =>
+        c === 'Legendary Laptop Friendly' ? 3 : c === 'Widely Welcomed' ? 2 : 1;
+      const scoreA = densityRank(pA.coworkingDensity) * 15 + cafeRank(pA.cafeWorkCulture) * 10 + (pA.hasCuratedData ? 12 : 0) + pA.verifiedInternetMbps / 20;
+      const scoreB = densityRank(pB.coworkingDensity) * 15 + cafeRank(pB.cafeWorkCulture) * 10 + (pB.hasCuratedData ? 12 : 0) + pB.verifiedInternetMbps / 20;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return a.costOfLiving.monthlyBudgetSingleUSD - b.costOfLiving.monthlyBudgetSingleUSD;
     }
     if (sortBy === 'nomad-burn-asc') {
       const pA = getCountryNomadProfile(a);

@@ -478,6 +478,34 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
             </div>
           )}
 
+          {/* Contextual Digital Nomad & Coworking Spotlight when sorted by Nomad criteria */}
+          {(sortBy === 'coworking-friendly' ||
+            sortBy === 'internet-speed-desc' ||
+            sortBy === 'dnv-friendly' ||
+            sortBy === 'nomad-burn-asc') && (
+            <div className="mt-3 pt-2.5 border-t border-teal-200/80 flex flex-col gap-1.5 text-xs bg-gradient-to-r from-teal-50/90 via-indigo-50/60 to-amber-50/60 -mx-5 px-5 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-teal-950 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Nomad Infrastructure Spotlight</span>
+                </span>
+                <span className="font-mono tabular-nums font-bold text-teal-900 bg-white/90 border border-teal-200 px-1.5 py-0.5 rounded text-[10px]">
+                  {nomadProfile.cafeWorkCulture}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-700 line-clamp-1 font-medium">
+                Hubs: <strong className="text-slate-900">{nomadProfile.topNomadCities.slice(0, 3).join(' · ')}</strong>
+              </p>
+              <div className="flex items-center justify-between text-[10px] text-slate-600 pt-1 border-t border-teal-200/50 font-medium">
+                <span>Desk: ~${nomadProfile.coworkingMonthlyUSD}/mo</span>
+                <span>•</span>
+                <span>1BR Furnished: ~${nomadProfile.furnishedShortTermRentUSD}/mo</span>
+                <span>•</span>
+                <span>Grid: {nomadProfile.powerAndBackupStability.split(' ')[0]}</span>
+              </div>
+            </div>
+          )}
+
           {/* Permanent Lifestyle, Dating & Nightlife Dynamics Strip (Always Visible Under All Sort Parameters) */}
           <div className="mt-3 pt-2.5 border-t border-violet-200/80 -mx-5 px-5 py-2.5 bg-gradient-to-r from-violet-50/95 via-fuchsia-50/70 to-purple-50/80">
             <div className="flex items-center justify-between text-xs">

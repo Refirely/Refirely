@@ -38,6 +38,7 @@ export type SortByType =
   | 'dating-nightlife-desc'
   | 'dnv-friendly'
   | 'internet-speed-desc'
+  | 'coworking-friendly'
   | 'nomad-burn-asc';
 
 export interface TopCity {

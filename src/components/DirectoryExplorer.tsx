@@ -69,15 +69,26 @@ export const DirectoryExplorer: React.FC = () => {
 
   const climates = ['All', 'Mediterranean', 'Tropical', 'Subtropical', 'Temperate', 'Highlands / Mild'];
 
-  const quickSearchKeywords = [
-    { label: 'Portugal', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
-    { label: 'Mediterranean', color: 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100/80', activeColor: 'bg-amber-600 text-white border-amber-600' },
-    { label: 'Tropical', color: 'bg-emerald-50 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
-    { label: 'Pensionado', color: 'bg-sky-50 text-sky-900 border-sky-200/90 hover:bg-sky-100/80', activeColor: 'bg-sky-600 text-white border-sky-600' },
-    { label: 'D7 Passive Income', color: 'bg-indigo-50 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80', activeColor: 'bg-indigo-600 text-white border-indigo-600' },
-    { label: '0% tax', color: 'bg-rose-50 text-rose-900 border-rose-200/90 hover:bg-rose-100/80', activeColor: 'bg-rose-600 text-white border-rose-600' },
-    { label: 'Permanent Residency', color: 'bg-violet-50 text-violet-900 border-violet-200/90 hover:bg-violet-100/80', activeColor: 'bg-violet-600 text-white border-violet-600' },
-  ];
+  const quickSearchKeywords =
+    currentPersona === 'nomad'
+      ? [
+          { label: 'World-Class Nomad Hub', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
+          { label: 'Legendary Laptop Friendly', color: 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100/80', activeColor: 'bg-amber-600 text-white border-amber-600' },
+          { label: 'Digital Nomad Visa', color: 'bg-indigo-50 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80', activeColor: 'bg-indigo-600 text-white border-indigo-600' },
+          { label: '0% tax', color: 'bg-rose-50 text-rose-900 border-rose-200/90 hover:bg-rose-100/80', activeColor: 'bg-rose-600 text-white border-rose-600' },
+          { label: 'Chiang Mai', color: 'bg-emerald-50 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
+          { label: 'Lisbon', color: 'bg-sky-50 text-sky-900 border-sky-200/90 hover:bg-sky-100/80', activeColor: 'bg-sky-600 text-white border-sky-600' },
+          { label: 'Bali', color: 'bg-violet-50 text-violet-900 border-violet-200/90 hover:bg-violet-100/80', activeColor: 'bg-violet-600 text-white border-violet-600' },
+        ]
+      : [
+          { label: 'Portugal', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
+          { label: 'Mediterranean', color: 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100/80', activeColor: 'bg-amber-600 text-white border-amber-600' },
+          { label: 'Tropical', color: 'bg-emerald-50 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
+          { label: 'Pensionado', color: 'bg-sky-50 text-sky-900 border-sky-200/90 hover:bg-sky-100/80', activeColor: 'bg-sky-600 text-white border-sky-600' },
+          { label: 'D7 Passive Income', color: 'bg-indigo-50 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80', activeColor: 'bg-indigo-600 text-white border-indigo-600' },
+          { label: '0% tax', color: 'bg-rose-50 text-rose-900 border-rose-200/90 hover:bg-rose-100/80', activeColor: 'bg-rose-600 text-white border-rose-600' },
+          { label: 'Permanent Residency', color: 'bg-violet-50 text-violet-900 border-violet-200/90 hover:bg-violet-100/80', activeColor: 'bg-violet-600 text-white border-violet-600' },
+        ];
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
@@ -398,6 +409,7 @@ export const DirectoryExplorer: React.FC = () => {
                       <option value="recommended">Curated Haven Match</option>
                       <option value="dnv-friendly">Digital Nomad Visa Friendly</option>
                       <option value="internet-speed-desc">Fastest Internet Speeds</option>
+                      <option value="coworking-friendly">Best Coworking &amp; Cafe Culture</option>
                       <option value="nomad-burn-asc">Lowest Monthly Runway Burn</option>
                       <option value="dating-nightlife-desc">Best Dating &amp; Nightlife</option>
                       <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
