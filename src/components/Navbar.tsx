@@ -69,10 +69,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     }
   };
 
-  const navItems: { view: typeof currentView; label: string; isActive: boolean }[] = [
+  const navItems: { view: typeof currentView; label: string; isActive: boolean; badge?: string }[] = [
     { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
     { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
     { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
+    { view: 'scout', label: 'Scout & Hop', isActive: currentView === 'scout', badge: '✨ New' },
     { view: 'community', label: 'Community', isActive: currentView === 'community' },
     { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
     ...(!canAccessAdmin
@@ -101,13 +102,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
         </div>
 
         {/* Zone 2: Primary navigation links with animated active pill */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs lg:text-[13px] font-semibold text-slate-600 min-w-0 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/70">
+        <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 text-xs lg:text-[13px] font-semibold text-slate-600 min-w-0 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/70">
           {navItems.map((item) => (
             <a
               key={item.view}
               href={getViewUrl(item.view)}
               onClick={(e) => handleAnchorNav(e, item.view)}
-              className={`relative whitespace-nowrap shrink-0 transition-colors py-1.5 px-2.5 lg:px-3 rounded-xl cursor-pointer ${
+              className={`relative whitespace-nowrap shrink-0 transition-colors py-1.5 px-2 lg:px-2.5 rounded-xl cursor-pointer inline-flex items-center gap-1.5 ${
                 item.isActive
                   ? 'text-white font-bold'
                   : 'text-slate-600 hover:text-indigo-950 hover:bg-white/60'
@@ -121,6 +122,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 />
               )}
               <span className="relative z-10">{item.label}</span>
+              {item.badge && (
+                <span
+                  className={`relative z-10 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none tracking-tight transition-colors ${
+                    item.isActive
+                      ? 'bg-white/25 text-white ring-1 ring-white/40'
+                      : 'bg-gradient-to-r from-indigo-50 via-violet-50 to-teal-50 text-indigo-700 border border-indigo-200/80 shadow-2xs'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </a>
           ))}
         </nav>
@@ -505,6 +517,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               }`}
             >
               Compare Matrix ({comparedCountryIds.length})
+            </button>
+            <button
+              onClick={() => handleNav('scout')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between ${
+                currentView === 'scout' ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <span>Scout &amp; Hop Planner</span>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-50 via-violet-50 to-teal-50 text-indigo-700 border border-indigo-200/80">
+                ✨ New
+              </span>
             </button>
             <button
               onClick={() => handleNav('community')}

@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { ScoutTrip, ScoutScheduledItineraryItem } from '../types';
+import { DAY_SLOT_OPTIONS, buildGoogleMapsSearchUrl } from '../data/scoutVenueRecommendations';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { doc, setDoc, getDocs, deleteDoc, collection } from 'firebase/firestore';
 import { HavenMatcherWidget } from './HavenMatcherWidget';
 import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
@@ -16,6 +20,7 @@ import { motion } from 'motion/react';
 
 export type UserDashboardTab =
   | 'overview'
+  | 'scout'
   | 'matcher'
   | 'financials'
   | 'fire'
@@ -58,7 +63,7 @@ export const UserDashboard: React.FC = () => {
       const saved = localStorage.getItem('refirely_user_dashboard_tab') as UserDashboardTab | null;
       if (
         saved &&
-        ['overview', 'matcher', 'financials', 'fire', 'profile', 'journal', 'checklist', 'all'].includes(saved)
+        ['overview', 'scout', 'matcher', 'financials', 'fire', 'profile', 'journal', 'checklist', 'all'].includes(saved)
       ) {
         return saved;
       }
@@ -71,6 +76,138 @@ export const UserDashboard: React.FC = () => {
     try {
       localStorage.setItem('refirely_user_dashboard_tab', tab);
     } catch {}
+  };
+
+  // Saved Scout & Hop Trips & Complete Chosen Itinerary State
+  const [savedScoutTrips, setSavedScoutTrips] = useState<ScoutTrip[]>([]);
+  const [selectedTripId, setSelectedTripId] = useState<string>('');
+  const [dashboardTripStatusMsg, setDashboardTripStatusMsg] = useState<string | null>(null);
+  const [newDashSpotTitle, setNewDashSpotTitle] = useState<string>('');
+  const [newDashSpotNeighborhood, setNewDashSpotNeighborhood] = useState<string>('');
+  const [newDashSpotWeek, setNewDashSpotWeek] = useState<number>(1);
+  const [newDashSpotDay, setNewDashSpotDay] = useState<string>('Day 5 (Fri)');
+
+  useEffect(() => {
+    if (!isAuthenticated || currentUserId === 'guest') {
+      setSavedScoutTrips([]);
+      return;
+    }
+
+    let localTrips: ScoutTrip[] = [];
+    try {
+      const userRaw = localStorage.getItem(`refirely_saved_trips_${currentUserId}`);
+      const latestRaw = localStorage.getItem('refirely_saved_trips_latest');
+      const parsedUser: ScoutTrip[] = userRaw ? JSON.parse(userRaw) : [];
+      const parsedLatest: ScoutTrip[] = latestRaw ? JSON.parse(latestRaw) : [];
+      const map = new Map<string, ScoutTrip>();
+      parsedLatest.forEach(t => {
+        if (t && t.id) map.set(t.id, t);
+      });
+      parsedUser.forEach(t => {
+        if (t && t.id) map.set(t.id, t);
+      });
+      localTrips = Array.from(map.values()).sort((a, b) =>
+        (b.updatedAt || '').localeCompare(a.updatedAt || '')
+      );
+      setSavedScoutTrips(localTrips);
+      if (localTrips.length > 0 && !selectedTripId) {
+        setSelectedTripId(localTrips[0].id);
+      }
+    } catch {}
+
+    if (auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      getDocs(collection(db, 'users', uid, 'trips'))
+        .then(snap => {
+          const cloudList: ScoutTrip[] = [];
+          snap.forEach(d => cloudList.push(d.data() as ScoutTrip));
+          if (cloudList.length > 0) {
+            const mergedMap = new Map<string, ScoutTrip>();
+            localTrips.forEach(t => mergedMap.set(t.id, t));
+            cloudList.forEach(t => mergedMap.set(t.id, t));
+            const merged = Array.from(mergedMap.values()).sort((a, b) =>
+              (b.updatedAt || '').localeCompare(a.updatedAt || '')
+            );
+            setSavedScoutTrips(merged);
+            if (merged.length > 0 && !selectedTripId) {
+              setSelectedTripId(merged[0].id);
+            }
+            try {
+              localStorage.setItem(`refirely_saved_trips_${currentUserId}`, JSON.stringify(merged));
+              localStorage.setItem('refirely_saved_trips_latest', JSON.stringify(merged));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, currentUserId, firebaseUser]);
+
+  const activeScoutTrip =
+    savedScoutTrips.find(t => t.id === selectedTripId) || savedScoutTrips[0] || null;
+
+  const persistUpdatedScoutTripFromDashboard = async (updatedTrip: ScoutTrip, msg?: string) => {
+    const stamped: ScoutTrip = {
+      ...updatedTrip,
+      updatedAt: new Date().toISOString().slice(0, 40),
+    };
+    const nextList = savedScoutTrips.map(t => (t.id === stamped.id ? stamped : t));
+    setSavedScoutTrips(nextList);
+
+    try {
+      localStorage.setItem(`refirely_saved_trips_${currentUserId}`, JSON.stringify(nextList));
+      localStorage.setItem('refirely_saved_trips_latest', JSON.stringify(nextList));
+      localStorage.setItem('refirely_scout_draft', JSON.stringify(stamped));
+      localStorage.setItem('refirely_scout_discovery_v2', JSON.stringify(stamped));
+    } catch {}
+
+    if (auth.currentUser) {
+      const path = `users/${auth.currentUser.uid}/trips/${stamped.id}`;
+      try {
+        await setDoc(doc(db, 'users', auth.currentUser.uid, 'trips', stamped.id), stamped);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, path);
+      }
+    }
+
+    if (msg) {
+      setDashboardTripStatusMsg(msg);
+      setTimeout(() => setDashboardTripStatusMsg(null), 4000);
+    }
+  };
+
+  const handleOpenTripInScoutPlanner = (
+    trip: ScoutTrip,
+    initialTab: 'map-itinerary' | 'complete-itinerary' = 'complete-itinerary'
+  ) => {
+    try {
+      localStorage.setItem(
+        'refirely_active_edit_trip',
+        JSON.stringify({ trip, initialTab })
+      );
+      localStorage.setItem('refirely_scout_draft', JSON.stringify(trip));
+      localStorage.setItem('refirely_scout_discovery_v2', JSON.stringify(trip));
+    } catch {}
+    setCurrentView('scout');
+  };
+
+  const handleDeleteScoutTripFromDashboard = async (tripId: string) => {
+    const nextList = savedScoutTrips.filter(t => t.id !== tripId);
+    setSavedScoutTrips(nextList);
+    if (selectedTripId === tripId) {
+      setSelectedTripId(nextList[0]?.id || '');
+    }
+    try {
+      localStorage.setItem(`refirely_saved_trips_${currentUserId}`, JSON.stringify(nextList));
+      localStorage.setItem('refirely_saved_trips_latest', JSON.stringify(nextList));
+    } catch {}
+    if (auth.currentUser) {
+      const path = `users/${auth.currentUser.uid}/trips/${tripId}`;
+      try {
+        await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'trips', tripId));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, path);
+      }
+    }
   };
 
   // New task modal
@@ -305,9 +442,17 @@ export const UserDashboard: React.FC = () => {
       id: 'overview',
       label: 'All-Modules Overview',
       shortLabel: 'Overview',
-      badge: '6 Modules',
+      badge: '7 Modules',
       icon: <LayoutDashboard className="w-3.5 h-3.5" />,
       activeClass: 'bg-slate-900 text-white shadow-sm',
+    },
+    {
+      id: 'scout',
+      label: 'Scout & Hop Itineraries',
+      shortLabel: 'Scout & Hop',
+      badge: `${savedScoutTrips.length} Saved`,
+      icon: <Compass className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-sm',
     },
     {
       id: 'matcher',
@@ -524,6 +669,7 @@ export const UserDashboard: React.FC = () => {
             <span aria-hidden="true">/</span>
             <span className="text-slate-900 font-bold">
               {activeTab === 'overview' && 'All-Modules Executive Overview'}
+              {activeTab === 'scout' && `Saved Scout & Hop Roadmaps & Itineraries (${savedScoutTrips.length})`}
               {activeTab === 'matcher' && 'Haven Matcher AI & Visa Eligibility Engine'}
               {activeTab === 'financials' && '5-Scheme Financial Portfolio & Net Worth Ledger'}
               {activeTab === 'fire' && 'Unified FIRE Target & Nomad Runway Calculator'}
@@ -726,6 +872,33 @@ export const UserDashboard: React.FC = () => {
               <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                 {completedTasks}/{checklist.length} tasks · {userProfile.appliedVisas.length} visas
               </p>
+            </button>
+          </div>
+
+          {/* Scout & Hop Planner Quick-Launch Banner */}
+          <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 rounded-3xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                  ✨ New Module
+                </span>
+                <span className="text-xs text-teal-300 font-semibold">Cloud-Synced to Your Account</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-extrabold tracking-tight font-display">
+                Scout &amp; Hop: Sabbatical &amp; Visa Route Planner
+              </h3>
+              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                Map multi-stop scouting itineraries, track your live Schengen 90/180-day allowance, calculate monthly living burn across stops, and manage your relocation tasks &amp; packing vault.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentView('scout')}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-teal-500 hover:from-indigo-600 hover:to-teal-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Open Scout &amp; Hop Planner</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -967,6 +1140,492 @@ export const UserDashboard: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: SAVED SCOUT & HOP ROADMAPS & COMPLETE CHOSEN ITINERARY EDITOR    */}
+      {/* ===================================================================== */}
+      {(activeTab === 'scout' || activeTab === 'overview' || activeTab === 'all') && (
+        <div className="bg-white rounded-3xl border-2 border-indigo-200/90 p-6 sm:p-8 shadow-md space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-950 text-[10px] font-extrabold uppercase tracking-wider">
+                <Compass className="w-3.5 h-3.5 text-teal-600" />
+                <span>Saved Scout &amp; Hop Roadmaps · Dashboard Itinerary Editor</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                My Saved Scouting Roadmaps &amp; Chosen Venue Itineraries
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-3xl">
+                View and edit your saved Scout &amp; Hop trips directly from your Dashboard. Reassign any bar, dating spot, hiking trail, or paragliding operator to a different Week or Day, open its Google Maps location, or launch the full Scout &amp; Hop Studio.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {activeScoutTrip && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenTripInScoutPlanner(activeScoutTrip, 'map-itinerary')}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit in Scout &amp; Hop Studio</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setCurrentView('scout')}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create New Scouting Route</span>
+              </button>
+            </div>
+          </div>
+
+          {dashboardTripStatusMsg && (
+            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-bold flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{dashboardTripStatusMsg}</span>
+            </div>
+          )}
+
+          {savedScoutTrips.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-slate-50 border border-dashed border-slate-300 text-center space-y-3">
+              <p className="text-sm font-extrabold text-slate-800">
+                No saved Scout &amp; Hop itineraries yet.
+              </p>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Build a custom scouting route in the Scout &amp; Hop Planner, pick your favorite bars, dating spots, trails &amp; local operators, and click &ldquo;Save Complete Itinerary to Dashboard&rdquo;.
+              </p>
+              <button
+                type="button"
+                onClick={() => setCurrentView('scout')}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Compass className="w-4 h-4" />
+                <span>Launch Scout &amp; Hop Planner →</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Saved Trip Selector Tabs */}
+              <div className="flex flex-wrap items-center gap-2">
+                {savedScoutTrips.map(trip => {
+                  const isSelected = activeScoutTrip?.id === trip.id;
+                  return (
+                    <div
+                      key={trip.id}
+                      className={`px-3.5 py-2 rounded-2xl border transition-all flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-indigo-950 text-white border-indigo-950 shadow-xs'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTripId(trip.id)}
+                        className="text-left cursor-pointer"
+                      >
+                        <p className="text-xs font-extrabold">{trip.title}</p>
+                        <p
+                          className={`text-[10px] font-mono ${
+                            isSelected ? 'text-teal-300' : 'text-slate-500'
+                          }`}
+                        >
+                          {trip.stops?.length || 0} stops · {trip.totalDays}d ·{' '}
+                          {(trip.selectedItineraryItems || []).length} chosen places
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteScoutTripFromDashboard(trip.id)}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'text-slate-300 hover:text-rose-300'
+                            : 'text-slate-400 hover:text-rose-600'
+                        }`}
+                        title="Delete saved roadmap"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Active Selected Trip Details & Editable Itinerary Schedule */}
+              {activeScoutTrip && (
+                <div className="space-y-5">
+                  {/* Trip Summary Bar + Inline Title Editor */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-teal-50/40 border border-indigo-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                          Roadmap Title:
+                        </span>
+                        <input
+                          type="text"
+                          value={activeScoutTrip.title}
+                          onChange={e => {
+                            const updated: ScoutTrip = {
+                              ...activeScoutTrip,
+                              title: e.target.value,
+                            };
+                            setSavedScoutTrips(prev =>
+                              prev.map(t => (t.id === updated.id ? updated : t))
+                            );
+                          }}
+                          onBlur={() =>
+                            persistUpdatedScoutTripFromDashboard(
+                              activeScoutTrip,
+                              'Updated roadmap title!'
+                            )
+                          }
+                          className="px-3 py-1 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[240px]"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {(activeScoutTrip.stops || []).map((s, idx) => (
+                          <span
+                            key={s.id}
+                            className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold flex items-center gap-1.5"
+                          >
+                            <span>{s.countryFlag}</span>
+                            <span>
+                              Stop {idx + 1}: {s.cityFocus || s.countryName} ({s.arrivalDate} →{' '}
+                              {s.departureDate})
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          persistUpdatedScoutTripFromDashboard(
+                            activeScoutTrip,
+                            `Saved all changes to "${activeScoutTrip.title}"!`
+                          )
+                        }
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenTripInScoutPlanner(activeScoutTrip, 'complete-itinerary')
+                        }
+                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Open Full Itinerary in Scout &amp; Hop</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Add Custom Place / Venue to Saved Trip from Dashboard */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-extrabold text-slate-900">
+                        + Add a New Bar, Dating Spot, Hike or Activity to This Saved Itinerary
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Automatically creates a Google Maps search link and schedules it under your chosen Week &amp; Day.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        value={newDashSpotTitle}
+                        onChange={e => setNewDashSpotTitle(e.target.value)}
+                        placeholder="Venue or activity name..."
+                        className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 min-w-[180px]"
+                      />
+                      <input
+                        type="text"
+                        value={newDashSpotNeighborhood}
+                        onChange={e => setNewDashSpotNeighborhood(e.target.value)}
+                        placeholder="Neighborhood / City"
+                        className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 w-36"
+                      />
+                      <select
+                        value={newDashSpotWeek}
+                        onChange={e => setNewDashSpotWeek(Number(e.target.value))}
+                        className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-800"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(wk => (
+                          <option key={wk} value={wk}>
+                            Week {wk}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={newDashSpotDay}
+                        onChange={e => setNewDashSpotDay(e.target.value)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-800"
+                      >
+                        {DAY_SLOT_OPTIONS.map(d => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const clean = newDashSpotTitle.trim();
+                          if (!clean) return;
+                          const primaryStop = activeScoutTrip.stops?.[0];
+                          const city =
+                            newDashSpotNeighborhood.trim() ||
+                            primaryStop?.cityFocus ||
+                            primaryStop?.countryName ||
+                            'City Center';
+                          const countryName = primaryStop?.countryName || 'Destination';
+                          const newItem: ScoutScheduledItineraryItem = {
+                            id: `dash-sched-${Date.now()}`,
+                            recommendationId: `custom-dash-${Date.now()}`,
+                            stopId: primaryStop?.id || 'stop-1',
+                            countryId: primaryStop?.countryId || 'custom',
+                            countryName,
+                            countryFlag: primaryStop?.countryFlag || '🌍',
+                            cityName: primaryStop?.cityFocus || countryName,
+                            weekNumber: newDashSpotWeek,
+                            daySlot: newDashSpotDay,
+                            timeOfDay: 'Evening',
+                            title: clean,
+                            categoryLabel: 'Custom Dashboard Spot',
+                            interestId: 'culture',
+                            neighborhood: city,
+                            description: `Scheduled from your Dashboard for Week ${newDashSpotWeek} (${newDashSpotDay}).`,
+                            insiderTip: 'Click Google Maps to view live ratings, hours & directions.',
+                            rating: 4.8,
+                            reviewCount: 120,
+                            priceRange: '$$',
+                            photoUrl:
+                              'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
+                            fallbackGradient: 'from-indigo-700 via-teal-700 to-slate-900',
+                            googleMapsUrl: buildGoogleMapsSearchUrl(
+                              `${clean} ${city} ${primaryStop?.cityFocus || countryName} ${countryName}`
+                            ),
+                            completed: false,
+                          };
+                          const updatedTrip: ScoutTrip = {
+                            ...activeScoutTrip,
+                            selectedItineraryItems: [
+                              ...(activeScoutTrip.selectedItineraryItems || []),
+                              newItem,
+                            ].slice(0, 150),
+                          };
+                          setNewDashSpotTitle('');
+                          setNewDashSpotNeighborhood('');
+                          persistUpdatedScoutTripFromDashboard(
+                            updatedTrip,
+                            `Added "${clean}" to Week ${newDashSpotWeek} · ${newDashSpotDay}!`
+                          );
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold cursor-pointer"
+                      >
+                        + Add to Schedule
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Scheduled Itinerary Places List (Editable Week, Day, Completion & Remove) */}
+                  {(activeScoutTrip.selectedItineraryItems || []).length === 0 ? (
+                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                      <p className="text-xs font-bold text-slate-700">
+                        No individual venues scheduled on this roadmap yet.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenTripInScoutPlanner(activeScoutTrip, 'map-itinerary')}
+                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-extrabold cursor-pointer"
+                      >
+                        Browse Curated Bars, Dating Spots &amp; Operators in Scout &amp; Hop →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {[...(activeScoutTrip.selectedItineraryItems || [])]
+                        .sort((a, b) => {
+                          if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
+                          return (
+                            DAY_SLOT_OPTIONS.indexOf(a.daySlot) -
+                            DAY_SLOT_OPTIONS.indexOf(b.daySlot)
+                          );
+                        })
+                        .map(item => (
+                          <div
+                            key={item.id}
+                            className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                              item.completed
+                                ? 'bg-emerald-50/35 border-emerald-300 opacity-75'
+                                : 'bg-white border-slate-200/90 hover:border-indigo-300 shadow-2xs'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextItems = (
+                                    activeScoutTrip.selectedItineraryItems || []
+                                  ).map(i =>
+                                    i.id === item.id ? { ...i, completed: !i.completed } : i
+                                  );
+                                  persistUpdatedScoutTripFromDashboard({
+                                    ...activeScoutTrip,
+                                    selectedItineraryItems: nextItems,
+                                  });
+                                }}
+                                className={`mt-1 w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 cursor-pointer ${
+                                  item.completed
+                                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                                    : 'bg-white border-slate-300 hover:border-indigo-500'
+                                }`}
+                              >
+                                {item.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                              </button>
+
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 text-[10px] font-extrabold">
+                                    {item.countryFlag} {item.cityName} · {item.categoryLabel}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-mono text-[10px] font-extrabold flex items-center gap-1">
+                                    <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                                    <span>
+                                      {item.rating.toFixed(1)} ({item.reviewCount.toLocaleString()})
+                                    </span>
+                                  </span>
+                                </div>
+
+                                <h4
+                                  className={`text-sm font-extrabold leading-snug ${
+                                    item.completed
+                                      ? 'line-through text-slate-400'
+                                      : 'text-slate-900'
+                                  }`}
+                                >
+                                  {item.title}
+                                </h4>
+
+                                <p className="text-[11px] font-semibold text-teal-800 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-teal-600 shrink-0" />
+                                  <span>{item.neighborhood}</span>
+                                </p>
+
+                                <p className="text-[11px] text-slate-500 line-clamp-2">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  value={item.weekNumber}
+                                  onChange={e => {
+                                    const nextWk = Number(e.target.value);
+                                    const nextItems = (
+                                      activeScoutTrip.selectedItineraryItems || []
+                                    ).map(i =>
+                                      i.id === item.id ? { ...i, weekNumber: nextWk } : i
+                                    );
+                                    persistUpdatedScoutTripFromDashboard(
+                                      {
+                                        ...activeScoutTrip,
+                                        selectedItineraryItems: nextItems,
+                                      },
+                                      `Moved "${item.title}" to Week ${nextWk}`
+                                    );
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-800"
+                                >
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(wk => (
+                                    <option key={wk} value={wk}>
+                                      Week {wk}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <select
+                                  value={item.daySlot}
+                                  onChange={e => {
+                                    const nextDay = e.target.value;
+                                    const nextItems = (
+                                      activeScoutTrip.selectedItineraryItems || []
+                                    ).map(i =>
+                                      i.id === item.id ? { ...i, daySlot: nextDay } : i
+                                    );
+                                    persistUpdatedScoutTripFromDashboard(
+                                      {
+                                        ...activeScoutTrip,
+                                        selectedItineraryItems: nextItems,
+                                      },
+                                      `Rescheduled "${item.title}" to ${nextDay}`
+                                    );
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-800"
+                                >
+                                  {DAY_SLOT_OPTIONS.map(d => (
+                                    <option key={d} value={d}>
+                                      {d}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <a
+                                  href={item.googleMapsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-[11px] font-extrabold flex items-center gap-1"
+                                >
+                                  <MapPin className="w-3 h-3 text-indigo-600" />
+                                  <span>Google Maps</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextItems = (
+                                      activeScoutTrip.selectedItineraryItems || []
+                                    ).filter(i => i.id !== item.id);
+                                    persistUpdatedScoutTripFromDashboard(
+                                      {
+                                        ...activeScoutTrip,
+                                        selectedItineraryItems: nextItems,
+                                      },
+                                      `Removed "${item.title}" from itinerary`
+                                    );
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                  title="Remove from itinerary"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

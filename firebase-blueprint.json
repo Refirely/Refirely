@@ -374,6 +374,93 @@
         }
       },
       "required": ["id", "type", "status", "message", "createdAt"]
+    },
+    "ScoutTrip": {
+      "title": "ScoutTrip",
+      "description": "Multi-stop sabbatical and relocation scouting trip itinerary with Schengen allowance tracking, living burn calculation, relocation tasks, and packing vault",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique trip identifier",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the scouting itinerary",
+          "maxLength": 200
+        },
+        "stops": {
+          "type": "array",
+          "description": "List of 1 to 5 country stops with arrival/departure dates, visa tags, and burn rates"
+        },
+        "tasks": {
+          "type": "array",
+          "description": "Relocation tasks and bucket list experiences"
+        },
+        "accommodation": {
+          "type": "object",
+          "description": "Accommodation snapshot with property name, dates, host contact/code, and booking link"
+        },
+        "packingList": {
+          "type": "array",
+          "description": "Smart packing checklist items split into travel essentials and relocation documents"
+        },
+        "selectedItineraryItems": {
+          "type": "array",
+          "description": "User-selected places, venues, operators, and activities scheduled by week and day"
+        },
+        "selectedInterests": {
+          "type": "array",
+          "description": "Selected personal interest category IDs for the scouting trip"
+        },
+        "customHobbies": {
+          "type": "array",
+          "description": "Custom hobbies and passions entered by the user"
+        },
+        "totalDays": {
+          "type": "number",
+          "description": "Total duration of the scouting trip in days"
+        },
+        "schengenDays": {
+          "type": "number",
+          "description": "Total days spent in European Schengen zone countries"
+        },
+        "estimatedTotalBurnUSD": {
+          "type": "number",
+          "description": "Estimated total living burn in USD across all stops"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp",
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO last updated timestamp",
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "stops",
+        "tasks",
+        "accommodation",
+        "packingList",
+        "totalDays",
+        "schengenDays",
+        "estimatedTotalBurnUSD",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -416,6 +503,10 @@
     "/users/{userId}/workspace/{docId}": {
       "schema": "UserWorkspaceDoc",
       "description": "Subcollection storing synced community threads, meetups, messages, and country customizations"
+    },
+    "/users/{userId}/trips/{tripId}": {
+      "schema": "ScoutTrip",
+      "description": "Subcollection storing user scouting trip itineraries, Schengen visa allowances, relocation tasks, and packing checklists"
     }
   }
 }

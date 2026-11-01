@@ -13,6 +13,7 @@ export type ViewState =
   | 'explore'
   | 'country-detail'
   | 'compare'
+  | 'scout'
   | 'community'
   | 'meetups'
   | 'messages'
@@ -652,4 +653,102 @@ export interface CountryGastronomyProfile {
     importedWesternGoodsAvailability: 'Widely Available in Supermarkets' | 'Available in Specialty Expat Delis' | 'Limited / Expensive Imports';
   };
 }
+
+// ==========================================
+// Scout Trip & Visa Hopper Planner
+// ==========================================
+
+export type ScoutVisaStatusTag =
+  | '90-Day Tourist'
+  | 'Digital Nomad Visa'
+  | 'Visa-Free'
+  | 'Schengen 90/180'
+  | 'Retirement / Passive Visa'
+  | 'e-Visa / VoA';
+
+export interface ScoutTripStop {
+  id: string;
+  countryId: string;
+  countryName: string;
+  countryFlag: string;
+  cityFocus?: string;
+  arrivalDate: string; // YYYY-MM-DD
+  departureDate: string; // YYYY-MM-DD
+  visaStatusTag: ScoutVisaStatusTag;
+  isSchengen: boolean;
+  monthlyBurnRateUSD: number;
+  notes?: string;
+}
+
+export interface ScoutTaskItem {
+  id: string;
+  category: 'relocation' | 'bucket-list';
+  title: string;
+  countryTag?: string;
+  completed: boolean;
+}
+
+export interface ScoutAccommodation {
+  propertyName: string;
+  checkInDate: string;
+  checkOutDate: string;
+  hostContactOrDoorCode: string;
+  bookingLink: string;
+  cityOrNeighborhood?: string;
+  notes?: string;
+}
+
+export interface ScoutPackingItem {
+  id: string;
+  category: 'essentials' | 'documents';
+  title: string;
+  completed: boolean;
+}
+
+export interface ScoutScheduledItineraryItem {
+  id: string;
+  recommendationId?: string;
+  stopId: string;
+  countryId: string;
+  countryName: string;
+  countryFlag: string;
+  cityName: string;
+  weekNumber: number;
+  daySlot: string;
+  timeOfDay: 'Morning' | 'Afternoon' | 'Evening' | 'Night' | 'Full Day';
+  title: string;
+  categoryLabel: string;
+  interestId?: string;
+  neighborhood: string;
+  description: string;
+  insiderTip?: string;
+  rating: number;
+  reviewCount: number;
+  priceRange: string;
+  photoUrl: string;
+  fallbackGradient: string;
+  googleMapsUrl: string;
+  completed: boolean;
+  notes?: string;
+}
+
+export interface ScoutTrip {
+  id: string;
+  userId: string;
+  title: string;
+  stops: ScoutTripStop[];
+  tasks: ScoutTaskItem[];
+  accommodation: ScoutAccommodation;
+  packingList: ScoutPackingItem[];
+  selectedItineraryItems?: ScoutScheduledItineraryItem[];
+  selectedInterests?: string[];
+  customHobbies?: string[];
+  totalDays: number;
+  schengenDays: number;
+  estimatedTotalBurnUSD: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
 

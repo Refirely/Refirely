@@ -15,6 +15,7 @@ const VALID_VIEWS: AppView[] = [
   'explore',
   'country-detail',
   'compare',
+  'scout',
   'community',
   'meetups',
   'messages',
@@ -431,6 +432,11 @@ export function updatePageSeo(
     description =
       'Compare countries side-by-side: evaluate monthly nomad cash burn, 4% FIRE couple budgets, Digital Nomad & retirement visas, fiber internet speeds, apartment rents, food, and healthcare.';
     canonicalUrl = `${origin}/?view=compare`;
+  } else if (currentView === 'scout') {
+    title = 'Scout & Hop: Sabbatical & Visa Route Planner | Schengen 90/180 & Burn Calculator | ReFirely';
+    description =
+      'Test-drive countries before taking the leap. Map multi-stop scout trips, monitor Schengen 90/180-day allowances, calculate monthly living burn, and organize local relocation tasks.';
+    canonicalUrl = `${origin}/?view=scout`;
   } else if (currentView === 'dashboard') {
     title = 'Global FIRE Nest Egg & Digital Nomad Runway Burn Calculator | ReFirely';
     description =
@@ -489,6 +495,7 @@ const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {
   explore: ['#10b981', '#06b6d4', '#6366f1', '#f97316'],
   'country-detail': ['#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6'],
   compare: ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'],
+  scout: ['#14b8a6', '#6366f1', '#f59e0b', '#10b981'],
   community: ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b'],
   meetups: ['#f97316', '#ec4899', '#6366f1', '#10b981'],
   messages: ['#06b6d4', '#6366f1', '#d946ef', '#f43f5e'],

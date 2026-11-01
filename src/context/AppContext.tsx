@@ -41,6 +41,7 @@ export type AppView =
   | 'explore' 
   | 'country-detail' 
   | 'compare' 
+  | 'scout'
   | 'community' 
   | 'meetups' 
   | 'messages' 

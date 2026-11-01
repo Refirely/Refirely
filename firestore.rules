@@ -94,6 +94,29 @@ service cloud.firestore {
         data.message.size() <= 4000;
     }
 
+    function isValidScoutTrip(ownerUid, tripId, data) {
+      return data.id == tripId &&
+        data.userId == ownerUid &&
+        data.title is string &&
+        data.title.size() > 0 &&
+        data.title.size() <= 200 &&
+        data.stops is list &&
+        data.stops.size() <= 10 &&
+        data.tasks is list &&
+        data.tasks.size() <= 100 &&
+        data.accommodation is map &&
+        data.packingList is list &&
+        data.packingList.size() <= 100 &&
+        (!('selectedItineraryItems' in data) || (data.selectedItineraryItems is list && data.selectedItineraryItems.size() <= 150)) &&
+        (!('selectedInterests' in data) || (data.selectedInterests is list && data.selectedInterests.size() <= 30)) &&
+        (!('customHobbies' in data) || (data.customHobbies is list && data.customHobbies.size() <= 30)) &&
+        data.totalDays is number &&
+        data.schengenDays is number &&
+        data.estimatedTotalBurnUSD is number &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 40)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 40));
+    }
+
     // 1. Root /users/{userId} collection: stores primary auth session AND all User IDs (usr-ganesh, usr-elena, usr-marcus, etc.)
     match /users/{userId} {
       allow get: if isSignedIn() && isValidId(userId) && (userId == request.auth.uid || resource == null || resource.data.userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin());
@@ -160,6 +183,23 @@ service cloud.firestore {
         allow delete: if (isOwner(userId) || isBootstrappedAdmin()) &&
           isValidId(userId) &&
           isValidId(docId);
+      }
+
+      // Subcollection: Scout Trips & Visa Hopper Roadmaps
+      match /trips/{tripId} {
+        allow get: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId) && isValidId(tripId);
+        allow list: if (isOwner(userId) || isBootstrappedAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(tripId) &&
+          isValidScoutTrip(userId, tripId, incoming());
+        allow update: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(tripId) &&
+          isValidScoutTrip(userId, tripId, incoming());
+        allow delete: if (isOwner(userId) || isBootstrappedAdmin()) &&
+          isValidId(userId) &&
+          isValidId(tripId);
       }
     }
 

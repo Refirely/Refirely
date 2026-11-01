@@ -6,6 +6,7 @@ import { LandingPage } from './components/LandingPage';
 import { DirectoryExplorer } from './components/DirectoryExplorer';
 import { CountryDossier } from './components/CountryDossier';
 import { CompareStudio } from './components/CompareStudio';
+import { ScoutHopPlanner } from './components/ScoutHopPlanner';
 import { CommunityHub } from './components/CommunityHub';
 import { MeetupsView } from './components/MeetupsView';
 import { DirectMessenger } from './components/DirectMessenger';
@@ -86,6 +87,7 @@ const MainContent: React.FC = () => {
             {currentView === 'explore' && <DirectoryExplorer />}
             {currentView === 'country-detail' && <CountryDossier country={selectedCountry!} />}
             {currentView === 'compare' && <CompareStudio />}
+            {currentView === 'scout' && <ScoutHopPlanner />}
             {currentView === 'community' && <CommunityHub />}
             {currentView === 'meetups' && <MeetupsView />}
             {currentView === 'messages' && (
@@ -170,6 +172,7 @@ const MainContent: React.FC = () => {
                 <li><a href={getViewUrl('landing')} onClick={(e) => handleSpaViewClick(e, 'landing')} className="hover:text-orange-600 hover:underline transition-colors">Home / Overview</a></li>
                 <li><a href={getViewUrl('explore')} onClick={(e) => handleSpaViewClick(e, 'explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</a></li>
                 <li><a href={getViewUrl('compare')} onClick={(e) => handleSpaViewClick(e, 'compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</a></li>
+                <li><a href={getViewUrl('scout')} onClick={(e) => handleSpaViewClick(e, 'scout')} className="hover:text-indigo-600 hover:underline transition-colors font-semibold text-indigo-700">Scout &amp; Hop Trip Planner ✨</a></li>
                 <li><a href={getViewUrl('community')} onClick={(e) => handleSpaViewClick(e, 'community')} className="hover:text-orange-600 hover:underline transition-colors">Expat Community Boards</a></li>
                 <li><a href={getViewUrl('meetups')} onClick={(e) => handleSpaViewClick(e, 'meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups &amp; Socials</a></li>
                 <li><a href={getViewUrl('messages')} onClick={(e) => handleSpaViewClick(e, 'messages')} className="hover:text-orange-600 hover:underline transition-colors">Direct Member Messaging</a></li>
