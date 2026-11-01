@@ -10,9 +10,19 @@ import {
   User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
   Globe, Languages, Star, MapPin, Camera, Check, Trash2, ExternalLink, BookOpen,
-  TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins
+  TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins, LayoutDashboard, Layers
 } from 'lucide-react';
 import { motion } from 'motion/react';
+
+export type UserDashboardTab =
+  | 'overview'
+  | 'matcher'
+  | 'financials'
+  | 'fire'
+  | 'profile'
+  | 'journal'
+  | 'checklist'
+  | 'all';
 
 export const UserDashboard: React.FC = () => {
   const {
@@ -39,7 +49,29 @@ export const UserDashboard: React.FC = () => {
     openPublicProfile,
     toggleInterest,
     currentPersona,
+    setCurrentPersona,
   } = useApp();
+
+  // Active dashboard module tab (persisted for smooth navigation)
+  const [activeTab, setActiveTab] = useState<UserDashboardTab>(() => {
+    try {
+      const saved = localStorage.getItem('refirely_user_dashboard_tab') as UserDashboardTab | null;
+      if (
+        saved &&
+        ['overview', 'matcher', 'financials', 'fire', 'profile', 'journal', 'checklist', 'all'].includes(saved)
+      ) {
+        return saved;
+      }
+    } catch {}
+    return 'overview';
+  });
+
+  const handleSelectTab = (tab: UserDashboardTab) => {
+    setActiveTab(tab);
+    try {
+      localStorage.setItem('refirely_user_dashboard_tab', tab);
+    } catch {}
+  };
 
   // New task modal
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -236,6 +268,7 @@ export const UserDashboard: React.FC = () => {
 
   // My RSVP'd meetups
   const rsvpedMeetups = meetups.filter(m => userProfile.rsvpMeetupIds.includes(m.id));
+  const journalEntryList = Object.values(journalEntries || {});
 
   // Checklist calculations
   const completedTasks = checklist.filter(t => t.completed).length;
@@ -260,8 +293,74 @@ export const UserDashboard: React.FC = () => {
        (userProfile.finances.totalLiabilitiesUSD || 0))
     : 835000;
 
+  const moduleTabs: {
+    id: UserDashboardTab;
+    label: string;
+    shortLabel: string;
+    badge: string;
+    icon: React.ReactNode;
+    activeClass: string;
+  }[] = [
+    {
+      id: 'overview',
+      label: 'All-Modules Overview',
+      shortLabel: 'Overview',
+      badge: '6 Modules',
+      icon: <LayoutDashboard className="w-3.5 h-3.5" />,
+      activeClass: 'bg-slate-900 text-white shadow-sm',
+    },
+    {
+      id: 'matcher',
+      label: 'Haven Matcher AI',
+      shortLabel: 'Haven Matcher',
+      badge: `${countries.length} Havens`,
+      icon: <Sparkles className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm',
+    },
+    {
+      id: 'financials',
+      label: '5-Scheme Financials',
+      shortLabel: 'Financials',
+      badge: `$${Math.round(userNetWorthUSD / 1000)}k`,
+      icon: <Coins className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white shadow-sm',
+    },
+    {
+      id: 'fire',
+      label: 'FIRE & Runway Calc',
+      shortLabel: 'FIRE & Runway',
+      badge: `${userProfile.retirementTimelineYear}`,
+      icon: <TrendingUp className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-teal-600 via-emerald-600 to-indigo-600 text-white shadow-sm',
+    },
+    {
+      id: 'profile',
+      label: 'Expat Profile & Travel',
+      shortLabel: 'Profile & Trips',
+      badge: `${userProfile.travelHistory?.length || 0} Trips`,
+      icon: <Globe className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white shadow-sm',
+    },
+    {
+      id: 'journal',
+      label: 'Country Journal',
+      shortLabel: 'Journal',
+      badge: `${journalEntryList.length}`,
+      icon: <BookOpen className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-amber-600 to-teal-600 text-white shadow-sm',
+    },
+    {
+      id: 'checklist',
+      label: 'Checklist, Visas & Meetups',
+      shortLabel: 'Checklist & Visas',
+      badge: `${progressPercent}%`,
+      icon: <CheckSquare className="w-3.5 h-3.5" />,
+      activeClass: 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white shadow-sm',
+    },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       {/* Top Banner & Profile Overview - Multi-Colored Luminous Header */}
       <motion.div
@@ -415,20 +514,496 @@ export const UserDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* SECTION: FINANCIAL PORTFOLIO & 5 INVESTMENT SCHEMES */}
-      <UserFinancialsDashboard />
+      {/* STICKY MODULE NAVIGATION BAR (Admin-Style Modular Tabs) */}
+      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-2.5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-100 px-1">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">
+              Member Workspace
+            </span>
+            <span aria-hidden="true">/</span>
+            <span className="text-slate-900 font-bold">
+              {activeTab === 'overview' && 'All-Modules Executive Overview'}
+              {activeTab === 'matcher' && 'Haven Matcher AI & Visa Eligibility Engine'}
+              {activeTab === 'financials' && '5-Scheme Financial Portfolio & Net Worth Ledger'}
+              {activeTab === 'fire' && 'Unified FIRE Target & Nomad Runway Calculator'}
+              {activeTab === 'profile' && 'Expat Profile, Travel History & Lifestyle Readiness'}
+              {activeTab === 'journal' && `Confidential Country Journal (${journalEntryList.length})`}
+              {activeTab === 'checklist' && `Relocation Checklist (${progressPercent}%), Visas & Meetups`}
+              {activeTab === 'all' && 'Full-Scroll View (All Modules Expanded)'}
+            </span>
+          </div>
 
-      {/* SECTION: UNIFIED FIRE CALCULATOR, VISUAL PATH, MILESTONE PLANNER & INDEPENDENCE TRACKER */}
-      <FireCalculatorTracker />
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Dual-Persona Quick Switch */}
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/80 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setCurrentPersona('retiree')}
+                className={`px-2 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  currentPersona === 'retiree'
+                    ? 'bg-teal-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🌿 Retiree
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPersona('nomad')}
+                className={`px-2 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  currentPersona === 'nomad'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ⚡ Nomad
+              </button>
+            </div>
 
-      {/* SECTION: UNIFIED HAVEN MATCHER AI RECOMMENDATION & FINANCIAL POTENTIAL ENGINE */}
-      <HavenMatcherWidget />
+            {activeTab !== 'overview' && (
+              <button
+                type="button"
+                onClick={() => handleSelectTab('overview')}
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <LayoutDashboard className="w-3 h-3" />
+                <span>Overview</span>
+              </button>
+            )}
 
-      {/* SECTION: EXPAT IDENTITY, TRAVEL JOURNAL & RETIREMENT VISION */}
+            <button
+              type="button"
+              onClick={() => handleSelectTab(activeTab === 'all' ? 'overview' : 'all')}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-colors flex items-center gap-1 cursor-pointer border ${
+                activeTab === 'all'
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title="Toggle between single-module tabs and full-page scroll view"
+            >
+              <Layers className="w-3 h-3" />
+              <span>{activeTab === 'all' ? 'Tabbed View' : 'Show All'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Module Tab Buttons */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {moduleTabs.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleSelectTab(tab.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                  isActive
+                    ? tab.activeClass
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 bg-slate-50/70 border border-slate-200/60'
+                }`}
+              >
+                {tab.icon}
+                <span className="hidden md:inline">{tab.label}</span>
+                <span className="md:hidden">{tab.shortLabel}</span>
+                <span
+                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* TAB 0: ALL-MODULES EXECUTIVE OVERVIEW (Admin-Style Command Center)    */}
+      {/* ===================================================================== */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Quick KPI Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <button
+              type="button"
+              onClick={() => handleSelectTab('matcher')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/70 border border-indigo-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-indigo-700 font-bold mb-1">
+                <span>Haven Matcher AI</span>
+                <Sparkles className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                {countries.length} Havens
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                {currentPersona === 'nomad' ? '⚡ Nomad & DNV Lens' : '🌿 Early Retiree Lens'}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('financials')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-orange-50/70 border border-amber-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-amber-800 font-bold mb-1">
+                <span>Net Worth Ledger</span>
+                <Coins className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                ${userNetWorthUSD.toLocaleString()}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                ${userMonthlySalaryUSD.toLocaleString()}/mo income · 5 Schemes
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('fire')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/70 border border-teal-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-teal-800 font-bold mb-1">
+                <span>FIRE &amp; Runway</span>
+                <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                {userProfile.retirementTimelineYear}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                Target budget ${userProfile.monthlyBudgetUSD.toLocaleString()}/mo
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('profile')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-white to-purple-50/70 border border-violet-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-violet-800 font-bold mb-1">
+                <span>Visited &amp; Profile</span>
+                <Globe className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                {userProfile.travelHistory?.length || 0} Trips
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                {userProfile.languagesKnown?.length || 0} languages · {userProfile.interests?.length || 0} interests
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('journal')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-teal-50/70 border border-amber-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-amber-900 font-bold mb-1">
+                <span>Country Journal</span>
+                <BookOpen className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                {journalEntryList.length} Notes
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                Private scouting &amp; candidacy log
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('checklist')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-white to-indigo-50/70 border border-emerald-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between text-xs text-emerald-800 font-bold mb-1">
+                <span>Checklist &amp; Visas</span>
+                <CheckSquare className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <p className="text-lg font-extrabold text-slate-900 font-mono">
+                {progressPercent}% Done
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                {completedTasks}/{checklist.length} tasks · {userProfile.appliedVisas.length} visas
+              </p>
+            </button>
+          </div>
+
+          {/* 6 Interactive Module Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Module 1: Haven Matcher AI */}
+            <div className="bg-white rounded-3xl border border-indigo-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-indigo-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">Haven Matcher AI Engine</h3>
+                      <p className="text-[11px] text-slate-500">Retiree &amp; Digital Nomad Visa Matching</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
+                    {currentPersona === 'nomad' ? '⚡ Nomad Mode' : '🌿 Retiree Mode'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Rank all {countries.length} global havens by your monthly remote income, DNV visa threshold, fiber internet Mbps, coworking density, or 4% SWR retirement portfolio.
+                </p>
+                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Primary Target Haven:</span>
+                  <strong className="text-slate-900 inline-flex items-center gap-1.5">
+                    <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-xs" />
+                    <span>{userProfile.targetCountry}</span>
+                  </strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('matcher')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open Haven Matcher AI</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Module 2: 5-Scheme Financial Portfolio */}
+            <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
+                      <Coins className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">5-Scheme Financial Portfolio</h3>
+                      <p className="text-[11px] text-slate-500">Salary, Assets &amp; Net Worth Ledger</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                    ${userNetWorthUSD.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Manage your liquid savings, stocks &amp; mutual funds, real estate equity, physical gold, and alternative investments alongside your current annual salary.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/60">
+                    <span className="text-[10px] text-slate-500 block">Monthly Income</span>
+                    <strong className="font-mono text-slate-900">${userMonthlySalaryUSD.toLocaleString()}/mo</strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/60">
+                    <span className="text-[10px] text-slate-500 block">4% SWR Passive Yield</span>
+                    <strong className="font-mono text-emerald-900">${Math.round((userNetWorthUSD * 0.04) / 12).toLocaleString()}/mo</strong>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('financials')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open Financial Portfolio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Module 3: FIRE & Runway Calculator */}
+            <div className="bg-white rounded-3xl border border-teal-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-teal-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">FIRE &amp; Runway Calculator</h3>
+                      <p className="text-[11px] text-slate-500">Compound Trajectory &amp; Geoarbitrage</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-50 text-teal-900 border border-teal-200">
+                    Target {userProfile.retirementTimelineYear}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Simulate compound portfolio growth, safe withdrawal rates, and geoarbitrage purchasing power across global retirement and slow-travel hubs.
+                </p>
+                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Target Monthly Spend:</span>
+                  <strong className="font-mono text-teal-900">${userProfile.monthlyBudgetUSD.toLocaleString()} / mo</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('fire')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open FIRE &amp; Runway Calculator</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Module 4: Expat Identity & Travel History */}
+            <div className="bg-white rounded-3xl border border-violet-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-violet-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-2xs">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">Expat Profile &amp; Travel Log</h3>
+                      <p className="text-[11px] text-slate-500">Scouting Trips, Languages &amp; Interests</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-violet-50 text-violet-900 border border-violet-200">
+                    {userProfile.travelHistory?.length || 0} Visited
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Track visited countries, scouting trip ratings, spoken languages, and lifestyle hobbies that shape your ideal overseas community.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {(userProfile.languagesKnown || []).slice(0, 3).map(l => (
+                    <span key={l.id} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
+                      {l.language} ({l.proficiency})
+                    </span>
+                  ))}
+                  {knowsTargetLanguage && (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                      ✓ Speaks {targetLanguage}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('profile')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open Expat Profile &amp; Travel Log</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Module 5: Confidential Country Journal */}
+            <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">Country Journal &amp; Candidacy</h3>
+                      <p className="text-[11px] text-slate-500">Private Scouting Notes &amp; Pros/Cons</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                    {journalEntryList.length} Entries
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Record detailed personal observations, neighborhood impressions, target budgets, and pros/cons for every country you are evaluating.
+                </p>
+                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 truncate">
+                  {journalEntryList.length > 0
+                    ? `Latest: ${countries.find(c => c.id === journalEntryList[0].countryId)?.name || journalEntryList[0].countryId} (${journalEntryList[0].interestLevel})`
+                    : 'No journal entries yet — start logging your impressions!'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('journal')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-teal-600 hover:from-amber-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open Country Journal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Module 6: Relocation Checklist, Visas & Meetups */}
+            <div className="bg-white rounded-3xl border border-emerald-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-emerald-400 transition-all">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
+                      <CheckSquare className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">Checklist, Visas &amp; Meetups</h3>
+                      <p className="text-[11px] text-slate-500">Milestones, Consular Files &amp; Events</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-900 border border-emerald-200">
+                    {progressPercent}% Ready
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Complete pre-departure legal, tax, healthcare, and housing milestones, monitor consular visa applications, and manage your RSVP'd expat meetups.
+                </p>
+                <div className="mt-4 space-y-2">
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{completedTasks}/{checklist.length} Milestones</span>
+                    <span>{userProfile.appliedVisas.length} Active Visas · {rsvpedMeetups.length} Meetups</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('checklist')}
+                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span>Open Checklist, Visas &amp; Meetups</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: 5-SCHEME FINANCIAL PORTFOLIO                                     */}
+      {/* ===================================================================== */}
+      {(activeTab === 'financials' || activeTab === 'all') && (
+        <div className="animate-in fade-in duration-200">
+          <UserFinancialsDashboard />
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: UNIFIED FIRE & RUNWAY CALCULATOR                                 */}
+      {/* ===================================================================== */}
+      {(activeTab === 'fire' || activeTab === 'all') && (
+        <div className="animate-in fade-in duration-200">
+          <FireCalculatorTracker />
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: HAVEN MATCHER AI RECOMMENDATION & FINANCIAL POTENTIAL ENGINE     */}
+      {/* ===================================================================== */}
+      {(activeTab === 'matcher' || activeTab === 'all') && (
+        <div className="animate-in fade-in duration-200">
+          <HavenMatcherWidget />
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: EXPAT IDENTITY, TRAVEL JOURNAL & RETIREMENT VISION               */}
+      {/* ===================================================================== */}
+      {(activeTab === 'profile' || activeTab === 'all') && (
       <motion.div
         initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 260, damping: 26 }}
         className="relative overflow-hidden bg-gradient-to-br from-violet-50/70 via-white to-amber-50/70 rounded-3xl border border-violet-200/80 p-6 sm:p-8 shadow-md space-y-6"
       >
@@ -778,206 +1353,217 @@ export const UserDashboard: React.FC = () => {
           </div>
         </div>
       </motion.div>
+      )}
 
-      {/* Country Journal & Candidacy Tracker */}
-      <CountryJournal />
-
-      {/* Relocation Readiness Progress & Checklist */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-        className="relative overflow-hidden bg-gradient-to-br from-emerald-50/75 via-white to-indigo-50/75 rounded-3xl border border-emerald-200/80 p-6 sm:p-8 shadow-md"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600" />
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100/80">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-xs">
-                <CheckSquare className="w-4 h-4" />
-              </div>
-              <h2 className="text-lg font-extrabold text-slate-900">
-                Relocation Readiness Milestone Checklist
-              </h2>
-            </div>
-            <p className="text-xs text-slate-600 mt-1">
-              Essential legal, tax, medical, and logistical steps before departing for your chosen haven.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-right">
-              <span className="font-mono tabular-nums font-extrabold text-emerald-950 text-base">
-                {progressPercent}%
-              </span>
-              <span className="text-[11px] text-slate-500 block font-medium">
-                {completedTasks} of {checklist.length} Completed
-              </span>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setIsAddTaskOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-emerald-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Step</span>
-            </motion.button>
-          </div>
+      {/* ===================================================================== */}
+      {/* TAB: COUNTRY JOURNAL & CANDIDACY TRACKER                              */}
+      {/* ===================================================================== */}
+      {(activeTab === 'journal' || activeTab === 'all') && (
+        <div className="animate-in fade-in duration-200">
+          <CountryJournal />
         </div>
+      )}
 
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-100 h-3 rounded-full mt-4 overflow-hidden shadow-inner">
+      {/* ===================================================================== */}
+      {/* TAB: RELOCATION CHECKLIST, VISAS & MEETUPS                            */}
+      {/* ===================================================================== */}
+      {(activeTab === 'checklist' || activeTab === 'all') && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Relocation Readiness Progress & Checklist */}
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 h-full rounded-full"
-          />
-        </div>
-
-        {/* Checklist items */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
-          {checklist.map(task => (
-            <div
-              key={task.id}
-              onClick={() => toggleChecklistTask(task.id)}
-              className={`p-3.5 rounded-xl border text-left cursor-pointer transition-colors flex items-start gap-3 ${
-                task.completed
-                  ? 'bg-purple-50/50 border-purple-200'
-                  : 'bg-slate-50/50 border-slate-200 hover:bg-slate-100/50'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => {}} // handled by container onClick
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold ${task.completed ? 'text-slate-600 line-through' : 'text-slate-900'}`}>
-                    {task.title}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium">({task.category})</span>
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+            className="relative overflow-hidden bg-gradient-to-br from-emerald-50/75 via-white to-indigo-50/75 rounded-3xl border border-emerald-200/80 p-6 sm:p-8 shadow-md"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100/80">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-xs">
+                    <CheckSquare className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-lg font-extrabold text-slate-900">
+                    Relocation Readiness Milestone Checklist
+                  </h2>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                  {task.description}
+                <p className="text-xs text-slate-600 mt-1">
+                  Essential legal, tax, medical, and logistical steps before departing for your chosen haven.
                 </p>
               </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
-      {/* Applied Visa Tracker */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-        className="relative overflow-hidden bg-gradient-to-br from-amber-50/70 via-white to-teal-50/70 rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-md"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-teal-500" />
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-xs">
-            <FileText className="w-4 h-4" />
-          </div>
-          <h2 className="text-lg font-extrabold text-slate-900">
-            Active Visa &amp; Consular Application Tracker
-          </h2>
-        </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <span className="font-mono tabular-nums font-extrabold text-emerald-950 text-base">
+                    {progressPercent}%
+                  </span>
+                  <span className="text-[11px] text-slate-500 block font-medium">
+                    {completedTasks} of {checklist.length} Completed
+                  </span>
+                </div>
 
-        <div className="space-y-3">
-          {userProfile.appliedVisas.map((visa, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -2 }}
-              className="p-4 rounded-2xl bg-white/90 border border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
-            >
-              <div>
-                <span className="text-xs font-bold text-teal-800 uppercase tracking-wider block">Target: {visa.countryId.toUpperCase()}</span>
-                <h4 className="text-sm font-bold text-slate-900 mt-0.5">{visa.visaName}</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Consulate processing file #PT-2026-8819A</p>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                  {visa.status}
-                </span>
-                <button
-                  onClick={() => navigateToCountry(visa.countryId)}
-                  className="text-xs font-bold text-indigo-700 hover:text-indigo-950 hover:underline cursor-pointer"
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setIsAddTaskOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-emerald-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  View Guide →
-                </button>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Step</span>
+                </motion.button>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* RSVP'd Meetups */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-        className="relative overflow-hidden bg-gradient-to-br from-teal-50/75 via-white to-amber-50/70 rounded-3xl border border-teal-200/80 p-6 sm:p-8 shadow-md"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-amber-500" />
-        <div className="flex items-center justify-between pb-4 border-b border-teal-100/80 mb-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white flex items-center justify-center shadow-xs">
-              <Calendar className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-extrabold text-slate-900">
-              My RSVP'd Expat Meetups ({rsvpedMeetups.length})
-            </h2>
-          </div>
-          <button
-            onClick={() => setCurrentView('meetups')}
-            className="text-xs font-bold text-teal-800 hover:underline cursor-pointer"
-          >
-            Find More Meetups →
-          </button>
-        </div>
 
-        {rsvpedMeetups.length === 0 ? (
-          <p className="text-xs text-slate-500 py-4">
-            You haven't RSVP'd to any events yet. Check out the Expat Meetups tab to join informal coffee chats and wine nights!
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {rsvpedMeetups.map(meetup => (
-              <div key={meetup.id} className="p-4 rounded-2xl bg-white/90 border border-teal-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                <div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className="font-bold text-teal-800">{meetup.countryName}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{meetup.city}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{meetup.date} ({meetup.time})</span>
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-100 h-3 rounded-full mt-4 overflow-hidden shadow-inner">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 h-full rounded-full"
+              />
+            </div>
+
+            {/* Checklist items */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+              {checklist.map(task => (
+                <div
+                  key={task.id}
+                  onClick={() => toggleChecklistTask(task.id)}
+                  className={`p-3.5 rounded-xl border text-left cursor-pointer transition-colors flex items-start gap-3 ${
+                    task.completed
+                      ? 'bg-purple-50/50 border-purple-200'
+                      : 'bg-slate-50/50 border-slate-200 hover:bg-slate-100/50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => {}} // handled by container onClick
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${task.completed ? 'text-slate-600 line-through' : 'text-slate-900'}`}>
+                        {task.title}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">({task.category})</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                      {task.description}
+                    </p>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 mt-1">{meetup.title}</h4>
-                  <p className="text-xs text-slate-600 mt-0.5">{meetup.location}</p>
                 </div>
+              ))}
+            </div>
+          </motion.div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => toggleRsvpMeetup(meetup.id)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 border border-slate-300 rounded-xl bg-white cursor-pointer"
-                  >
-                    Cancel RSVP
-                  </button>
-                </div>
+          {/* Applied Visa Tracker */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+            className="relative overflow-hidden bg-gradient-to-br from-amber-50/70 via-white to-teal-50/70 rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-md"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-teal-500" />
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-xs">
+                <FileText className="w-4 h-4" />
               </div>
-            ))}
-          </div>
-        )}
-      </motion.div>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Active Visa &amp; Consular Application Tracker
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {userProfile.appliedVisas.map((visa, idx) => (
+                <motion.div
+                  key={idx}
+                  whileHover={{ y: -2 }}
+                  className="p-4 rounded-2xl bg-white/90 border border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                >
+                  <div>
+                    <span className="text-xs font-bold text-teal-800 uppercase tracking-wider block">Target: {visa.countryId.toUpperCase()}</span>
+                    <h4 className="text-sm font-bold text-slate-900 mt-0.5">{visa.visaName}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Consulate processing file #PT-2026-8819A</p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      {visa.status}
+                    </span>
+                    <button
+                      onClick={() => navigateToCountry(visa.countryId)}
+                      className="text-xs font-bold text-indigo-700 hover:text-indigo-950 hover:underline cursor-pointer"
+                    >
+                      View Guide →
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* RSVP'd Meetups */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+            className="relative overflow-hidden bg-gradient-to-br from-teal-50/75 via-white to-amber-50/70 rounded-3xl border border-teal-200/80 p-6 sm:p-8 shadow-md"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-amber-500" />
+            <div className="flex items-center justify-between pb-4 border-b border-teal-100/80 mb-6">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white flex items-center justify-center shadow-xs">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <h2 className="text-lg font-extrabold text-slate-900">
+                  My RSVP'd Expat Meetups ({rsvpedMeetups.length})
+                </h2>
+              </div>
+              <button
+                onClick={() => setCurrentView('meetups')}
+                className="text-xs font-bold text-teal-800 hover:underline cursor-pointer"
+              >
+                Find More Meetups →
+              </button>
+            </div>
+
+            {rsvpedMeetups.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4">
+                You haven't RSVP'd to any events yet. Check out the Expat Meetups tab to join informal coffee chats and wine nights!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {rsvpedMeetups.map(meetup => (
+                  <div key={meetup.id} className="p-4 rounded-2xl bg-white/90 border border-teal-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-bold text-teal-800">{meetup.countryName}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{meetup.city}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{meetup.date} ({meetup.time})</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900 mt-1">{meetup.title}</h4>
+                      <p className="text-xs text-slate-600 mt-0.5">{meetup.location}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => toggleRsvpMeetup(meetup.id)}
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 border border-slate-300 rounded-xl bg-white cursor-pointer"
+                      >
+                        Cancel RSVP
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
 
 
