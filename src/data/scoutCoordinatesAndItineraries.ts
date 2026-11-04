@@ -740,96 +740,306 @@ export const COUNTRY_HUB_COORDINATES: Record<string, GeoHubCoordinate[]> = {
     {
       countryId: 'sri-lanka',
       countryName: 'Sri Lanka',
-      cityName: 'Galle Fort & Weligama',
+      cityName: 'Galle Fort & Unawatuna',
       lat: 6.0535,
       lng: 80.221,
       continentGroup: 'Asia',
       airportCode: 'CMB',
-      highlight: 'Indian Ocean surf bays, Dutch heritage fort & tropical villas',
+      highlight: 'UNESCO Dutch colonial fort, Indian Ocean bays & boutique villas',
+    },
+    {
+      countryId: 'sri-lanka',
+      countryName: 'Sri Lanka',
+      cityName: 'Weligama & Mirissa',
+      lat: 5.9749,
+      lng: 80.4297,
+      continentGroup: 'Asia',
+      airportCode: 'CMB',
+      highlight: 'Premier surf bay, beach coworking cafes & whale-watching coast',
+    },
+    {
+      countryId: 'sri-lanka',
+      countryName: 'Sri Lanka',
+      cityName: 'Colombo (Cinnamon Gardens)',
+      lat: 6.9271,
+      lng: 79.8612,
+      continentGroup: 'Asia',
+      airportCode: 'CMB',
+      highlight: 'Modern oceanfront capital, private hospitals & international dining',
+    },
+    {
+      countryId: 'sri-lanka',
+      countryName: 'Sri Lanka',
+      cityName: 'Ella & Kandy Highlands',
+      lat: 6.8667,
+      lng: 81.0466,
+      continentGroup: 'Asia',
+      airportCode: 'CMB',
+      highlight: 'Cool emerald tea plantations, Nine Arch Bridge & mountain trails',
     },
   ],
   nepal: [
     {
       countryId: 'nepal',
       countryName: 'Nepal',
-      cityName: 'Pokhara & Kathmandu',
+      cityName: 'Pokhara (Lakeside)',
       lat: 28.2096,
       lng: 83.9856,
       continentGroup: 'Asia',
       airportCode: 'PKR',
-      highlight: 'Phewa lakeside tranquility, Himalayan panoramas & ultra-low living cost',
+      highlight: 'Phewa lakeside tranquility, Annapurna views & paragliding capital',
+    },
+    {
+      countryId: 'nepal',
+      countryName: 'Nepal',
+      cityName: 'Kathmandu & Patan (Lalitpur)',
+      lat: 27.7172,
+      lng: 85.324,
+      continentGroup: 'Asia',
+      airportCode: 'KTM',
+      highlight: 'UNESCO heritage courtyards, artisan cafes & expat social clubs',
     },
   ],
   india: [
     {
       countryId: 'india',
       countryName: 'India',
-      cityName: 'Goa (Assagao & Panjim)',
+      cityName: 'Goa (Assagao, Anjuna & Panjim)',
       lat: 15.4909,
       lng: 73.8278,
       continentGroup: 'Asia',
       airportCode: 'GOI',
-      highlight: 'Portuguese-heritage villas, fiber coworking cafes & coastal lifestyle',
+      highlight: 'Portuguese-heritage villas, specialty coworking cafes & Arabian Sea beaches',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Bengaluru (Indiranagar & Koramangala)',
+      lat: 12.9716,
+      lng: 77.5946,
+      continentGroup: 'Asia',
+      airportCode: 'BLR',
+      highlight: 'India’s Silicon Valley, pleasant 24°C highland weather, craft breweries & gigabit fiber',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Mumbai (Bandra West & Colaba)',
+      lat: 19.0596,
+      lng: 72.8295,
+      continentGroup: 'Asia',
+      airportCode: 'BOM',
+      highlight: 'Cosmopolitan seaside promenade, luxury dining, art districts & global connectivity',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Pune (Koregaon Park & Kalyani Nagar)',
+      lat: 18.5362,
+      lng: 73.894,
+      continentGroup: 'Asia',
+      airportCode: 'PNQ',
+      highlight: 'Leafy tree-lined avenues, wellness retreats, high safety & vibrant cafe culture',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Kochi (Fort Kochi) & Varkala Cliff',
+      lat: 9.9312,
+      lng: 76.2673,
+      continentGroup: 'Asia',
+      airportCode: 'COK',
+      highlight: 'Kerala backwaters, cliffside surf cafes, world-class Ayurveda & JCI hospitals',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Udaipur & Jaipur (Rajasthan Royal Hubs)',
+      lat: 24.5854,
+      lng: 73.7125,
+      continentGroup: 'Asia',
+      airportCode: 'UDR',
+      highlight: 'Lake Pichola palaces, luxury heritage hotels, content-creator architecture & crafts',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Rishikesh, Dehradun & Dharamkot',
+      lat: 30.0869,
+      lng: 78.2676,
+      continentGroup: 'Asia',
+      airportCode: 'DED',
+      highlight: 'Himalayan foothills, Ganges yoga & wellness sanctuary, mountain cafes & hikes',
+    },
+    {
+      countryId: 'india',
+      countryName: 'India',
+      cityName: 'Pondicherry (White Town) & Chennai',
+      lat: 11.9416,
+      lng: 79.8083,
+      continentGroup: 'Asia',
+      airportCode: 'MAA',
+      highlight: 'French Riviera of the East, bougainvillea villas, Auroville & top medical care',
     },
   ],
   belize: [
     {
       countryId: 'belize',
       countryName: 'Belize',
-      cityName: 'Ambergris Caye & Placencia',
+      cityName: 'Ambergris Caye (San Pedro)',
       lat: 17.9192,
       lng: -87.9628,
       continentGroup: 'Americas',
       airportCode: 'BZE',
-      highlight: 'Official English language, QRP Retirement Program & Caribbean reef',
+      highlight: 'Official English language, QRP Retirement Program & barrier reef living',
+    },
+    {
+      countryId: 'belize',
+      countryName: 'Belize',
+      cityName: 'Placencia Peninsula',
+      lat: 16.5142,
+      lng: -88.3665,
+      continentGroup: 'Americas',
+      airportCode: 'BZE',
+      highlight: 'Walkable 16-mile sandy peninsula, calm lagoon & relaxed expat community',
+    },
+    {
+      countryId: 'belize',
+      countryName: 'Belize',
+      cityName: 'San Ignacio (Cayo Highlands)',
+      lat: 17.1561,
+      lng: -89.0714,
+      continentGroup: 'Americas',
+      airportCode: 'BZE',
+      highlight: 'Eco-jungle river town, Mayan ruins, organic markets & low cost of living',
     },
   ],
   'dominican-republic': [
     {
       countryId: 'dominican-republic',
       countryName: 'Dominican Republic',
-      cityName: 'Las Terrenas & Punta Cana',
+      cityName: 'Las Terrenas (Samaná)',
       lat: 19.3111,
       lng: -69.5428,
       continentGroup: 'Americas',
       airportCode: 'SDQ',
-      highlight: 'European-style beach town in Samaná, direct US flights & tax perks',
+      highlight: 'French/Italian-influenced beach town in Samaná with bakeries & palm coves',
+    },
+    {
+      countryId: 'dominican-republic',
+      countryName: 'Dominican Republic',
+      cityName: 'Punta Cana & Cap Cana',
+      lat: 18.5601,
+      lng: -68.3725,
+      continentGroup: 'Americas',
+      airportCode: 'PUJ',
+      highlight: 'Gated golf & marina resorts, direct flights & modern private hospitals',
+    },
+    {
+      countryId: 'dominican-republic',
+      countryName: 'Dominican Republic',
+      cityName: 'Santo Domingo (Zona Colonial)',
+      lat: 18.4739,
+      lng: -69.8847,
+      continentGroup: 'Americas',
+      airportCode: 'SDQ',
+      highlight: '16th-century UNESCO stone plazas, rooftop lounges & fiber connectivity',
     },
   ],
   brazil: [
     {
       countryId: 'brazil',
       countryName: 'Brazil',
-      cityName: 'Florianópolis & Rio',
+      cityName: 'Florianópolis (Lagoa & Campeche)',
       lat: -27.5954,
       lng: -48.548,
       continentGroup: 'Americas',
       airportCode: 'FLN',
-      highlight: 'Magic Island tech & surf hub, 42 beaches & Brazil Digital Nomad Visa',
+      highlight: 'Magic Island tech & surf hub, 42 beaches, high safety & Nomad Visa',
+    },
+    {
+      countryId: 'brazil',
+      countryName: 'Brazil',
+      cityName: 'Rio de Janeiro (Ipanema & Leblon)',
+      lat: -22.9838,
+      lng: -43.2096,
+      continentGroup: 'Americas',
+      airportCode: 'GIG',
+      highlight: 'Iconic oceanfront boardwalk, mountain hikes & vibrant carioca lifestyle',
+    },
+    {
+      countryId: 'brazil',
+      countryName: 'Brazil',
+      cityName: 'São Paulo (Vila Madalena & Pinheiros)',
+      lat: -23.5505,
+      lng: -46.6333,
+      continentGroup: 'Americas',
+      airportCode: 'GRU',
+      highlight: 'South America’s Michelin culinary, art & startup powerhouse',
     },
   ],
   argentina: [
     {
       countryId: 'argentina',
       countryName: 'Argentina',
-      cityName: 'Buenos Aires (Palermo)',
-      lat: -34.6037,
-      lng: -58.3816,
+      cityName: 'Buenos Aires (Palermo & Recoleta)',
+      lat: -34.588,
+      lng: -58.4305,
       continentGroup: 'Americas',
       airportCode: 'EZE',
-      highlight: 'Paris of South America, vibrant steak & wine culture, Nomad Visa',
+      highlight: 'Paris of South America, leafy cafes, steak & wine culture, Nomad Visa',
+    },
+    {
+      countryId: 'argentina',
+      countryName: 'Argentina',
+      cityName: 'Mendoza Wine Country',
+      lat: -32.8895,
+      lng: -68.8458,
+      continentGroup: 'Americas',
+      airportCode: 'MDZ',
+      highlight: 'Sun-drenched Andean foothills, Malbec vineyards & relaxed pace',
+    },
+    {
+      countryId: 'argentina',
+      countryName: 'Argentina',
+      cityName: 'San Carlos de Bariloche',
+      lat: -41.1335,
+      lng: -71.3103,
+      continentGroup: 'Americas',
+      airportCode: 'BRC',
+      highlight: 'Patagonian Alpine lakes, mountain trekking & boutique chocolate towns',
     },
   ],
   chile: [
     {
       countryId: 'chile',
       countryName: 'Chile',
-      cityName: 'Santiago & Viña del Mar',
-      lat: -33.4489,
-      lng: -70.6693,
+      cityName: 'Santiago (Providencia & Las Condes)',
+      lat: -33.4263,
+      lng: -70.6109,
       continentGroup: 'Americas',
       airportCode: 'SCL',
-      highlight: 'Modern infrastructure, fast fiber, Pacific coast & Andean peaks',
+      highlight: 'Modern infrastructure, fast fiber, walkable parks & Andean views',
+    },
+    {
+      countryId: 'chile',
+      countryName: 'Chile',
+      cityName: 'Viña del Mar & Valparaíso',
+      lat: -33.0245,
+      lng: -71.5518,
+      continentGroup: 'Americas',
+      airportCode: 'SCL',
+      highlight: 'Pacific garden coast, colorful hillside funiculars & ocean breezes',
+    },
+    {
+      countryId: 'chile',
+      countryName: 'Chile',
+      cityName: 'Pucón & Lake Villarrica',
+      lat: -39.2822,
+      lng: -71.9543,
+      continentGroup: 'Americas',
+      airportCode: 'ZCO',
+      highlight: 'Volcanic lake adventure capital, thermal springs & alpine forests',
     },
   ],
   peru: [
@@ -843,236 +1053,777 @@ export const COUNTRY_HUB_COORDINATES: Record<string, GeoHubCoordinate[]> = {
       airportCode: 'LIM',
       highlight: 'Clifftop Pacific parks, world-renowned culinary capital & Rentista visa',
     },
+    {
+      countryId: 'peru',
+      countryName: 'Peru',
+      cityName: 'Cusco & Sacred Valley',
+      lat: -13.532,
+      lng: -71.9675,
+      continentGroup: 'Americas',
+      airportCode: 'CUZ',
+      highlight: 'Andean stone plazas, sacred mountain trails & thriving wellness community',
+    },
+    {
+      countryId: 'peru',
+      countryName: 'Peru',
+      cityName: 'Arequipa (White City)',
+      lat: -16.409,
+      lng: -71.5375,
+      continentGroup: 'Americas',
+      airportCode: 'AQP',
+      highlight: '300+ days of sunshine, UNESCO sillar-stone architecture & mild highland air',
+    },
   ],
   'south-africa': [
     {
       countryId: 'south-africa',
       countryName: 'South Africa',
-      cityName: 'Cape Town (Sea Point)',
+      cityName: 'Cape Town (Sea Point & Camps Bay)',
       lat: -33.9249,
       lng: 18.4241,
       continentGroup: 'Middle East & Africa',
       airportCode: 'CPT',
       highlight: 'Table Mountain oceanfront, European time zone & Remote Work Visa',
     },
+    {
+      countryId: 'south-africa',
+      countryName: 'South Africa',
+      cityName: 'Stellenbosch & Franschhoek',
+      lat: -33.9321,
+      lng: 18.8602,
+      continentGroup: 'Middle East & Africa',
+      airportCode: 'CPT',
+      highlight: 'Cape Winelands estates, oak-lined streets, fine dining & mountain cycling',
+    },
+    {
+      countryId: 'south-africa',
+      countryName: 'South Africa',
+      cityName: 'Knysna & Garden Route',
+      lat: -34.0351,
+      lng: 23.0465,
+      continentGroup: 'Middle East & Africa',
+      airportCode: 'GRJ',
+      highlight: 'Coastal lagoon sanctuary, championship golf & tranquil retiree haven',
+    },
   ],
   namibia: [
     {
       countryId: 'namibia',
       countryName: 'Namibia',
-      cityName: 'Swakopmund & Windhoek',
+      cityName: 'Swakopmund & Walvis Bay',
       lat: -22.6784,
       lng: 14.5266,
       continentGroup: 'Middle East & Africa',
       airportCode: 'WDH',
       highlight: 'Safe Atlantic coastal gem, English official language & desert beauty',
     },
+    {
+      countryId: 'namibia',
+      countryName: 'Namibia',
+      cityName: 'Windhoek (Klein Windhoek)',
+      lat: -22.5609,
+      lng: 17.0658,
+      continentGroup: 'Middle East & Africa',
+      airportCode: 'WDH',
+      highlight: 'Clean highland capital, modern private healthcare & German bakeries',
+    },
   ],
   kenya: [
     {
       countryId: 'kenya',
       countryName: 'Kenya',
-      cityName: 'Nairobi & Diani Beach',
+      cityName: 'Nairobi (Westlands & Karen)',
       lat: -1.2921,
       lng: 36.8219,
       continentGroup: 'Middle East & Africa',
       airportCode: 'NBO',
-      highlight: 'Silicon Savannah tech hub, highland climate & Indian Ocean coast',
+      highlight: 'Silicon Savannah tech hub, leafy Karen suburbs & year-round spring climate',
+    },
+    {
+      countryId: 'kenya',
+      countryName: 'Kenya',
+      cityName: 'Diani Beach & Kilifi Coast',
+      lat: -4.2798,
+      lng: 39.5947,
+      continentGroup: 'Middle East & Africa',
+      airportCode: 'MBA',
+      highlight: 'White-sand Indian Ocean reef, kitesurfing & tropical coworking villas',
     },
   ],
   seychelles: [
     {
       countryId: 'seychelles',
       countryName: 'Seychelles',
-      cityName: 'Mahé & Praslin',
+      cityName: 'Mahé (Beau Vallon & Eden Island)',
       lat: -4.6796,
       lng: 55.492,
       continentGroup: 'Middle East & Africa',
       airportCode: 'SEZ',
-      highlight: 'Workation Retreat Program & pristine granite island beaches',
+      highlight: 'Workation Retreat Program, luxury marina & granite island beaches',
+    },
+    {
+      countryId: 'seychelles',
+      countryName: 'Seychelles',
+      cityName: 'Praslin & La Digue Islands',
+      lat: -4.319,
+      lng: 55.7385,
+      continentGroup: 'Middle East & Africa',
+      airportCode: 'PRI',
+      highlight: 'Car-free bicycle island paths, Anse Source d’Argent & coral lagoons',
     },
   ],
   estonia: [
     {
       countryId: 'estonia',
       countryName: 'Estonia',
-      cityName: 'Tallinn (Kalamaja)',
+      cityName: 'Tallinn (Kalamaja & Telliskivi)',
       lat: 59.437,
       lng: 24.7536,
       continentGroup: 'Europe',
       airportCode: 'TLL',
       highlight: 'Pioneer of e-Residency & Digital Nomad Visa, medieval Old Town',
     },
+    {
+      countryId: 'estonia',
+      countryName: 'Estonia',
+      cityName: 'Tartu & Pärnu Coast',
+      lat: 58.378,
+      lng: 26.729,
+      continentGroup: 'Europe',
+      airportCode: 'TLL',
+      highlight: 'Historic university town, summer beach resort & startup ecosystem',
+    },
   ],
   hungary: [
     {
       countryId: 'hungary',
       countryName: 'Hungary',
-      cityName: 'Budapest',
+      cityName: 'Budapest (District V & Buda Hills)',
       lat: 47.4979,
       lng: 19.0402,
       continentGroup: 'Europe',
       airportCode: 'BUD',
       highlight: 'White Card Digital Nomad Visa, thermal baths & Danube boulevards',
     },
+    {
+      countryId: 'hungary',
+      countryName: 'Hungary',
+      cityName: 'Lake Balaton (Balatonfüred) & Pécs',
+      lat: 46.9599,
+      lng: 17.8851,
+      continentGroup: 'Europe',
+      airportCode: 'BUD',
+      highlight: 'Hungarian Sea vineyards, sailing marinas & sunny southern microclimate',
+    },
   ],
   'czech-republic': [
     {
       countryId: 'czech-republic',
       countryName: 'Czech Republic',
-      cityName: 'Prague & Brno',
+      cityName: 'Prague (Vinohrady & Karlín)',
       lat: 50.0755,
       lng: 14.4378,
       continentGroup: 'Europe',
       airportCode: 'PRG',
       highlight: 'Zivno freelancer visa, world-class public transit & central EU hub',
     },
+    {
+      countryId: 'czech-republic',
+      countryName: 'Czech Republic',
+      cityName: 'Brno & Karlovy Vary',
+      lat: 49.1951,
+      lng: 16.6068,
+      continentGroup: 'Europe',
+      airportCode: 'BRQ',
+      highlight: 'Moravian tech & cafe hub and historic thermal spa colonnades',
+    },
   ],
   romania: [
     {
       countryId: 'romania',
       countryName: 'Romania',
-      cityName: 'Brasov & Cluj-Napoca',
+      cityName: 'Brașov (Transylvania)',
       lat: 45.6427,
       lng: 25.5887,
       continentGroup: 'Europe',
+      airportCode: 'GHV',
+      highlight: 'Carpathian mountain town, medieval square & ultra-fast gigabit fiber',
+    },
+    {
+      countryId: 'romania',
+      countryName: 'Romania',
+      cityName: 'Cluj-Napoca & Sibiu',
+      lat: 46.7712,
+      lng: 23.6236,
+      continentGroup: 'Europe',
+      airportCode: 'CLJ',
+      highlight: 'Vibrant university tech capital, cultural festivals & Nomad Visa',
+    },
+    {
+      countryId: 'romania',
+      countryName: 'Romania',
+      cityName: 'Bucharest (Primăverii & Old Town)',
+      lat: 44.4268,
+      lng: 26.1025,
+      continentGroup: 'Europe',
       airportCode: 'OTP',
-      highlight: 'Ultra-fast gigabit fiber, Carpathian mountain towns & Nomad Visa',
+      highlight: 'Grand Belle Époque parks, specialty coffee & international flights',
     },
   ],
   bulgaria: [
     {
       countryId: 'bulgaria',
       countryName: 'Bulgaria',
-      cityName: 'Sofia, Plovdiv & Bansko',
+      cityName: 'Sofia (Lozenets & Vitosha)',
       lat: 42.6977,
       lng: 23.3219,
       continentGroup: 'Europe',
       airportCode: 'SOF',
-      highlight: '10% flat income tax, Bansko mountain coworking & low EU living burn',
+      highlight: '10% flat income tax, mountain backdrop & fast metro transit',
+    },
+    {
+      countryId: 'bulgaria',
+      countryName: 'Bulgaria',
+      cityName: 'Bansko (Pirin Mountain Nomad Hub)',
+      lat: 41.8404,
+      lng: 23.4886,
+      continentGroup: 'Europe',
+      airportCode: 'SOF',
+      highlight: 'Europe’s lowest-burn mountain coworking village, ski & summer hiking',
+    },
+    {
+      countryId: 'bulgaria',
+      countryName: 'Bulgaria',
+      cityName: 'Plovdiv & Varna (Black Sea)',
+      lat: 42.1354,
+      lng: 24.7453,
+      continentGroup: 'Europe',
+      airportCode: 'PDV',
+      highlight: 'Kapana creative arts district, Roman amphitheater & coastal gardens',
     },
   ],
   slovenia: [
     {
       countryId: 'slovenia',
       countryName: 'Slovenia',
-      cityName: 'Ljubljana & Piran',
+      cityName: 'Ljubljana (Riverfront Old Town)',
       lat: 46.0569,
       lng: 14.5058,
       continentGroup: 'Europe',
       airportCode: 'LJU',
-      highlight: 'Greenest car-free European capital, Alpine lakes & Adriatic coast',
+      highlight: 'Greenest car-free European capital, riverside cafes & high safety',
+    },
+    {
+      countryId: 'slovenia',
+      countryName: 'Slovenia',
+      cityName: 'Piran (Adriatic Coast) & Lake Bled',
+      lat: 45.5283,
+      lng: 13.5683,
+      continentGroup: 'Europe',
+      airportCode: 'LJU',
+      highlight: 'Venetian coastal peninsula and emerald Julian Alps lake scenery',
     },
   ],
   ireland: [
     {
       countryId: 'ireland',
       countryName: 'Ireland',
-      cityName: 'Cork, Galway & Dublin',
+      cityName: 'Cork & Kinsale Harbor',
       lat: 51.8985,
       lng: -8.4756,
       continentGroup: 'Europe',
+      airportCode: 'ORK',
+      highlight: 'English-speaking EU Non-Schengen haven, gourmet coast & Stamp 0',
+    },
+    {
+      countryId: 'ireland',
+      countryName: 'Ireland',
+      cityName: 'Galway & West Coast',
+      lat: 53.2707,
+      lng: -9.0568,
+      continentGroup: 'Europe',
+      airportCode: 'SNN',
+      highlight: 'Bohemian music & literary harbor on the Wild Atlantic Way',
+    },
+    {
+      countryId: 'ireland',
+      countryName: 'Ireland',
+      cityName: 'Dublin (Ranelagh & Dalkey)',
+      lat: 53.3498,
+      lng: -6.2603,
+      continentGroup: 'Europe',
       airportCode: 'DUB',
-      highlight: 'English-speaking EU Non-Schengen haven & Stamp 0 retirement pathway',
+      highlight: 'European tech headquarters, coastal DART rail villages & Georgian parks',
     },
   ],
   germany: [
     {
       countryId: 'germany',
       countryName: 'Germany',
-      cityName: 'Berlin & Munich',
+      cityName: 'Berlin (Prenzlauer Berg & Kreuzberg)',
       lat: 52.52,
       lng: 13.405,
       continentGroup: 'Europe',
       airportCode: 'BER',
-      highlight: 'Freiberufler freelancer visa, top-tier healthcare & rail links',
+      highlight: 'Freiberufler freelancer visa, English startup scene & cultural diversity',
+    },
+    {
+      countryId: 'germany',
+      countryName: 'Germany',
+      cityName: 'Munich & Bavarian Lakes',
+      lat: 48.1351,
+      lng: 11.582,
+      continentGroup: 'Europe',
+      airportCode: 'MUC',
+      highlight: 'Alpine proximity, beer gardens, world-class hospitals & ultra-safe streets',
+    },
+    {
+      countryId: 'germany',
+      countryName: 'Germany',
+      cityName: 'Freiburg & Heidelberg',
+      lat: 47.999,
+      lng: 7.8421,
+      continentGroup: 'Europe',
+      airportCode: 'BSL',
+      highlight: 'Germany’s sunniest Black Forest university town near France & Switzerland',
     },
   ],
   netherlands: [
     {
       countryId: 'netherlands',
       countryName: 'Netherlands',
-      cityName: 'Amsterdam, Utrecht & Hague',
+      cityName: 'Amsterdam & Haarlem',
       lat: 52.3676,
       lng: 4.9041,
       continentGroup: 'Europe',
       airportCode: 'AMS',
-      highlight: 'DAFT Entrepreneur treaty, cycling cities & 95% English fluency',
+      highlight: 'DAFT Entrepreneur treaty, canal cycling & 95% English fluency',
+    },
+    {
+      countryId: 'netherlands',
+      countryName: 'Netherlands',
+      cityName: 'Utrecht, Rotterdam & The Hague',
+      lat: 52.0907,
+      lng: 5.1214,
+      continentGroup: 'Europe',
+      airportCode: 'AMS',
+      highlight: 'Car-free medieval canals, North Sea beach at Scheveningen & fast rail',
     },
   ],
   switzerland: [
     {
       countryId: 'switzerland',
       countryName: 'Switzerland',
-      cityName: 'Zurich, Lugano & Geneva',
+      cityName: 'Zurich & Zug',
       lat: 47.3769,
       lng: 8.5417,
       continentGroup: 'Europe',
       airportCode: 'ZRH',
-      highlight: 'Unmatched Alpine safety, precision transit & lump-sum tax cantons',
+      highlight: 'Unmatched Alpine safety, lakeside baths & low-tax Zug canton',
+    },
+    {
+      countryId: 'switzerland',
+      countryName: 'Switzerland',
+      cityName: 'Lugano (Ticino) & Geneva',
+      lat: 46.0037,
+      lng: 8.9511,
+      continentGroup: 'Europe',
+      airportCode: 'ZRH',
+      highlight: 'Palm-lined Italian-speaking lakefront and international diplomatic hub',
     },
   ],
   austria: [
     {
       countryId: 'austria',
       countryName: 'Austria',
-      cityName: 'Vienna & Salzburg',
+      cityName: 'Vienna (Neubau & Innere Stadt)',
       lat: 48.2082,
       lng: 16.3738,
       continentGroup: 'Europe',
       airportCode: 'VIE',
-      highlight: 'Ranked #1 most livable city globally, coffeehouses & cultural wealth',
+      highlight: 'Ranked #1 most livable city globally, coffeehouses & €1/day transit',
+    },
+    {
+      countryId: 'austria',
+      countryName: 'Austria',
+      cityName: 'Salzburg & Innsbruck',
+      lat: 47.8095,
+      lng: 13.055,
+      continentGroup: 'Europe',
+      airportCode: 'SZG',
+      highlight: 'Baroque Alpine music capital and year-round mountain sports',
     },
   ],
   poland: [
     {
       countryId: 'poland',
       countryName: 'Poland',
-      cityName: 'Kraków & Warsaw',
+      cityName: 'Kraków (Kazimierz & Old Town)',
       lat: 50.0647,
       lng: 19.945,
       continentGroup: 'Europe',
       airportCode: 'KRK',
-      highlight: 'Walkable royal square, thriving tech talent & high safety',
+      highlight: 'Walkable royal square, lively cafe cellars & high safety',
+    },
+    {
+      countryId: 'poland',
+      countryName: 'Poland',
+      cityName: 'Warsaw & Wrocław',
+      lat: 52.2297,
+      lng: 21.0122,
+      continentGroup: 'Europe',
+      airportCode: 'WAW',
+      highlight: 'Dynamic European business skyline, Vistula boulevards & island bridges',
     },
   ],
   australia: [
     {
       countryId: 'australia',
       countryName: 'Australia',
-      cityName: 'Gold Coast, Sydney & Melbourne',
+      cityName: 'Gold Coast & Byron Bay',
       lat: -28.0167,
       lng: 153.4,
       continentGroup: 'Oceania',
+      airportCode: 'OOL',
+      highlight: 'Subtropical surf beaches, oceanfront paths & outdoor wellness culture',
+    },
+    {
+      countryId: 'australia',
+      countryName: 'Australia',
+      cityName: 'Sydney (Manly & Bondi)',
+      lat: -33.8688,
+      lng: 151.2093,
+      continentGroup: 'Oceania',
       airportCode: 'SYD',
-      highlight: 'Subtropical surf beaches, world-class healthcare & English lifestyle',
+      highlight: 'Iconic harbor ferries, coastal cliff walks & global financial hub',
+    },
+    {
+      countryId: 'australia',
+      countryName: 'Australia',
+      cityName: 'Melbourne & Sunshine Coast',
+      lat: -37.8136,
+      lng: 144.9631,
+      continentGroup: 'Oceania',
+      airportCode: 'MEL',
+      highlight: 'World specialty coffee capital, cultural laneways & top hospitals',
     },
   ],
   'new-zealand': [
     {
       countryId: 'new-zealand',
       countryName: 'New Zealand',
-      cityName: 'Auckland & Queenstown',
+      cityName: 'Auckland & Waiheke Island',
       lat: -36.8485,
       lng: 174.7633,
       continentGroup: 'Oceania',
       airportCode: 'AKL',
-      highlight: 'Breathtaking fjords, ultra-peaceful society & active outdoor life',
+      highlight: 'City of Sails harbors, island vineyards & peaceful English lifestyle',
+    },
+    {
+      countryId: 'new-zealand',
+      countryName: 'New Zealand',
+      cityName: 'Queenstown & Wanaka',
+      lat: -45.0312,
+      lng: 168.6626,
+      continentGroup: 'Oceania',
+      airportCode: 'ZQN',
+      highlight: 'Dramatic Southern Alps lakes, hiking trails & adventure capital',
+    },
+    {
+      countryId: 'new-zealand',
+      countryName: 'New Zealand',
+      cityName: 'Wellington & Nelson',
+      lat: -41.2865,
+      lng: 174.7762,
+      continentGroup: 'Oceania',
+      airportCode: 'WLG',
+      highlight: 'Walkable creative harbor capital and sunny Abel Tasman bays',
     },
   ],
   fiji: [
     {
       countryId: 'fiji',
       countryName: 'Fiji',
-      cityName: 'Nadi & Coral Coast',
+      cityName: 'Nadi (Denarau Marina) & Coral Coast',
       lat: -17.7765,
       lng: 177.4356,
       continentGroup: 'Oceania',
       airportCode: 'NAN',
       highlight: 'Warm Pacific hospitality, English official language & island lagoons',
     },
+    {
+      countryId: 'fiji',
+      countryName: 'Fiji',
+      cityName: 'Savusavu & Suva',
+      lat: -16.7784,
+      lng: 179.333,
+      continentGroup: 'Oceania',
+      airportCode: 'SUV',
+      highlight: 'Hidden paradise yacht bay, coral diving & lush rainforests',
+    },
   ],
 };
+
+/**
+ * Runtime registry for custom cities searched via Google Places Autocomplete or added by the user
+ * so they plot at their exact coordinates on the single-country map.
+ */
+const CUSTOM_CITY_COORDINATE_REGISTRY: Record<string, GeoHubCoordinate> = {};
+
+export function registerCustomCityCoordinate(
+  countryId: string,
+  countryName: string,
+  cityName: string,
+  lat: number,
+  lng: number,
+  region?: string,
+  highlight?: string
+): GeoHubCoordinate {
+  const cleanId = countryId.toLowerCase().trim();
+  const cleanCity = cityName.trim();
+  const coord: GeoHubCoordinate = {
+    countryId: cleanId,
+    countryName,
+    cityName: cleanCity,
+    lat,
+    lng,
+    continentGroup: mapRegionToContinentGroup(region || 'Europe'),
+    airportCode: cleanCity.slice(0, 3).toUpperCase(),
+    highlight: highlight || `Custom selected city hub in ${cleanCity}, ${countryName}`,
+  };
+  const key = `${cleanId}::${cleanCity.toLowerCase()}`;
+  CUSTOM_CITY_COORDINATE_REGISTRY[key] = coord;
+
+  const existingList = COUNTRY_HUB_COORDINATES[cleanId] || [];
+  const alreadyExists = existingList.some(
+    h => h.cityName.toLowerCase() === cleanCity.toLowerCase()
+  );
+  if (!alreadyExists) {
+    COUNTRY_HUB_COORDINATES[cleanId] = [...existingList, coord];
+  }
+  return coord;
+}
+
+/**
+ * ISO 3166-1 alpha-2 country codes used to strictly restrict Google Places Autocomplete
+ * (`includedRegionCodes: [iso2]`) to the single chosen country only.
+ */
+const COUNTRY_ISO2_MAP: Record<string, string> = {
+  portugal: 'pt',
+  spain: 'es',
+  france: 'fr',
+  italy: 'it',
+  greece: 'gr',
+  malta: 'mt',
+  cyprus: 'cy',
+  croatia: 'hr',
+  montenegro: 'me',
+  albania: 'al',
+  turkey: 'tr',
+  georgia: 'ge',
+  bulgaria: 'bg',
+  romania: 'ro',
+  hungary: 'hu',
+  'czech-republic': 'cz',
+  poland: 'pl',
+  estonia: 'ee',
+  latvia: 'lv',
+  lithuania: 'lt',
+  slovenia: 'si',
+  slovakia: 'sk',
+  austria: 'at',
+  switzerland: 'ch',
+  germany: 'de',
+  netherlands: 'nl',
+  belgium: 'be',
+  luxembourg: 'lu',
+  ireland: 'ie',
+  'united-kingdom': 'gb',
+  uk: 'gb',
+  denmark: 'dk',
+  sweden: 'se',
+  norway: 'no',
+  finland: 'fi',
+  iceland: 'is',
+  andorra: 'ad',
+  monaco: 'mc',
+  serbia: 'rs',
+  'north-macedonia': 'mk',
+  bosnia: 'ba',
+  armenia: 'am',
+  thailand: 'th',
+  malaysia: 'my',
+  vietnam: 'vn',
+  indonesia: 'id',
+  philippines: 'ph',
+  cambodia: 'kh',
+  laos: 'la',
+  singapore: 'sg',
+  japan: 'jp',
+  'south-korea': 'kr',
+  taiwan: 'tw',
+  india: 'in',
+  'sri-lanka': 'lk',
+  nepal: 'np',
+  uzbekistan: 'uz',
+  kazakhstan: 'kz',
+  uae: 'ae',
+  'united-arab-emirates': 'ae',
+  oman: 'om',
+  qatar: 'qa',
+  bahrain: 'bh',
+  jordan: 'jo',
+  'costa-rica': 'cr',
+  panama: 'pa',
+  mexico: 'mx',
+  colombia: 'co',
+  ecuador: 'ec',
+  uruguay: 'uy',
+  brazil: 'br',
+  argentina: 'ar',
+  chile: 'cl',
+  peru: 'pe',
+  paraguay: 'py',
+  bolivia: 'bo',
+  belize: 'bz',
+  'dominican-republic': 'do',
+  nicaragua: 'ni',
+  guatemala: 'gt',
+  honduras: 'hn',
+  barbados: 'bb',
+  bahamas: 'bs',
+  curacao: 'cw',
+  aruba: 'aw',
+  jamaica: 'jm',
+  mauritius: 'mu',
+  morocco: 'ma',
+  'south-africa': 'za',
+  namibia: 'na',
+  kenya: 'ke',
+  seychelles: 'sc',
+  'cape-verde': 'cv',
+  tunisia: 'tn',
+  egypt: 'eg',
+  rwanda: 'rw',
+  tanzania: 'tz',
+  ghana: 'gh',
+  senegal: 'sn',
+  botswana: 'bw',
+  australia: 'au',
+  'new-zealand': 'nz',
+  fiji: 'fj',
+  vanuatu: 'vu',
+};
+
+export function getCountryIso2Code(countryId: string, countryName?: string): string | undefined {
+  const cleanId = countryId.toLowerCase().trim();
+  if (COUNTRY_ISO2_MAP[cleanId]) return COUNTRY_ISO2_MAP[cleanId];
+  if (countryName) {
+    const cleanName = countryName.toLowerCase().trim().replace(/\s+/g, '-');
+    if (COUNTRY_ISO2_MAP[cleanName]) return COUNTRY_ISO2_MAP[cleanName];
+  }
+  return undefined;
+}
+
+/**
+ * Returns 4 to 8 rich city hubs for a given country, combining curated `COUNTRY_HUB_COORDINATES`,
+ * `country.topCities`, and `nomadProfile.topNomadCities` with distinct non-overlapping coordinates.
+ */
+export function getCityHubsForCountry(country: Country): GeoHubCoordinate[] {
+  const cleanId = country.id.toLowerCase().trim();
+  const cleanNameKey = country.name.toLowerCase().trim().replace(/\s+/g, '-');
+  const existingHubs = [
+    ...(COUNTRY_HUB_COORDINATES[cleanId] || COUNTRY_HUB_COORDINATES[cleanNameKey] || []),
+  ];
+
+  const baseCoord =
+    existingHubs[0] ||
+    getHubCoordinatesForCountry(country.id, country.name, country.capital, country.region);
+
+  const seenTokens = new Set<string>();
+  const result: GeoHubCoordinate[] = [];
+
+  const registerHubIfUnique = (hub: GeoHubCoordinate) => {
+    const primaryToken = hub.cityName
+      .toLowerCase()
+      .split(/[(&,/]/)[0]
+      .trim();
+    if (!primaryToken || seenTokens.has(primaryToken)) return;
+    seenTokens.add(primaryToken);
+    result.push(hub);
+  };
+
+  existingHubs.forEach(registerHubIfUnique);
+
+  const nomadProfile = getCountryNomadProfile(country);
+  const candidateNames: { name: string; highlight?: string }[] = [];
+
+  (country.topCities || []).forEach(tc => {
+    if (tc?.name) {
+      candidateNames.push({
+        name: tc.name,
+        highlight: tc.highlight || `${tc.vibe || 'Expat Hub'} in ${country.name}`,
+      });
+    }
+  });
+
+  (nomadProfile.topNomadCities || []).forEach(nc => {
+    if (nc) {
+      candidateNames.push({
+        name: nc,
+        highlight: `High-speed fiber & digital nomad hub in ${country.name}`,
+      });
+    }
+  });
+
+  if (country.capital) {
+    candidateNames.push({
+      name: country.capital,
+      highlight: `Capital city, international flight gateway & cultural center of ${country.name}`,
+    });
+  }
+
+  // Deterministic ring offsets around the country center for any synthesized city
+  const ringOffsets: [number, number][] = [
+    [0.85, -0.75],
+    [-0.95, 0.85],
+    [1.25, 1.1],
+    [-1.15, -0.9],
+    [0.55, 1.35],
+    [-0.65, -1.3],
+  ];
+
+  let offsetIdx = 0;
+  candidateNames.forEach(cand => {
+    const primaryToken = cand.name
+      .toLowerCase()
+      .split(/[(&,/]/)[0]
+      .trim();
+    if (!primaryToken || seenTokens.has(primaryToken)) return;
+    // Also skip if any existing hub already contains this city name
+    const alreadySubMatched = result.some(
+      h =>
+        h.cityName.toLowerCase().includes(primaryToken) ||
+        primaryToken.includes(h.cityName.toLowerCase().split(/[(&,/]/)[0].trim())
+    );
+    if (alreadySubMatched) return;
+
+    const [dLat, dLng] = ringOffsets[offsetIdx % ringOffsets.length];
+    offsetIdx++;
+    registerHubIfUnique({
+      countryId: cleanId,
+      countryName: country.name,
+      cityName: cand.name,
+      lat: Number((baseCoord.lat + dLat).toFixed(4)),
+      lng: Number((baseCoord.lng + dLng).toFixed(4)),
+      continentGroup: baseCoord.continentGroup,
+      airportCode: cand.name.slice(0, 3).toUpperCase(),
+      highlight: cand.highlight || `Top expat & scouting destination in ${country.name}`,
+    });
+  });
+
+  return result;
+}
 
 /**
  * Deterministic coordinate lookup for any additional country name/capital so pins never stack identically
@@ -1124,7 +1875,7 @@ const EXTRA_COUNTRY_LOOKUP: Record<string, { lat: number; lng: number; group: Ge
 };
 
 /**
- * Fallback coordinate resolver for any country in Refirely
+ * Fallback coordinate resolver for any country or city in Refirely
  */
 export function getHubCoordinatesForCountry(
   countryId: string,
@@ -1134,24 +1885,67 @@ export function getHubCoordinatesForCountry(
 ): GeoHubCoordinate {
   const cleanId = countryId.toLowerCase().trim();
   const cleanNameKey = countryName.toLowerCase().trim().replace(/\s+/g, '-');
+
+  if (cityFocus) {
+    const customKey = `${cleanId}::${cityFocus.trim().toLowerCase()}`;
+    if (CUSTOM_CITY_COORDINATE_REGISTRY[customKey]) {
+      return CUSTOM_CITY_COORDINATE_REGISTRY[customKey];
+    }
+  }
+
   const hubs = COUNTRY_HUB_COORDINATES[cleanId] || COUNTRY_HUB_COORDINATES[cleanNameKey];
   if (hubs && hubs.length > 0) {
     if (cityFocus) {
+      const cleanCityFocus = cityFocus.toLowerCase().trim();
+      const firstToken = cleanCityFocus.split(/[(&,/]/)[0].trim();
       const matchedCity = hubs.find(
         h =>
-          cityFocus.toLowerCase().includes(h.cityName.split(' ')[0].toLowerCase()) ||
-          h.cityName.toLowerCase().includes(cityFocus.split(',')[0].trim().toLowerCase())
+          h.cityName.toLowerCase() === cleanCityFocus ||
+          h.cityName.toLowerCase().includes(firstToken) ||
+          cleanCityFocus.includes(h.cityName.split(/[(&,/]/)[0].trim().toLowerCase())
       );
       if (matchedCity) return matchedCity;
+
+      // If cityFocus is a custom city in this country not in the predefined hubs, give it a deterministic offset
+      let cityHash = 0;
+      for (let i = 0; i < cleanCityFocus.length; i++) {
+        cityHash = (cityHash * 33 + cleanCityFocus.charCodeAt(i)) % 1000;
+      }
+      const dLat = ((cityHash % 19) - 9) * 0.22;
+      const dLng = (((cityHash >> 3) % 19) - 9) * 0.25;
+      return {
+        ...hubs[0],
+        cityName: cityFocus,
+        lat: Number((hubs[0].lat + dLat).toFixed(4)),
+        lng: Number((hubs[0].lng + dLng).toFixed(4)),
+        airportCode: cityFocus.slice(0, 3).toUpperCase(),
+        highlight: `Scouting hub in ${cityFocus}, ${countryName}`,
+      };
     }
-    return {
-      ...hubs[0],
-      cityName: cityFocus || hubs[0].cityName,
-    };
+    return hubs[0];
   }
 
   const extra = EXTRA_COUNTRY_LOOKUP[cleanId] || EXTRA_COUNTRY_LOOKUP[cleanNameKey];
   if (extra) {
+    if (cityFocus) {
+      let cityHash = 0;
+      const cleanCityFocus = cityFocus.toLowerCase().trim();
+      for (let i = 0; i < cleanCityFocus.length; i++) {
+        cityHash = (cityHash * 33 + cleanCityFocus.charCodeAt(i)) % 1000;
+      }
+      const dLat = ((cityHash % 17) - 8) * 0.18;
+      const dLng = (((cityHash >> 3) % 17) - 8) * 0.2;
+      return {
+        countryId: cleanId,
+        countryName,
+        cityName: cityFocus,
+        lat: Number((extra.lat + dLat).toFixed(4)),
+        lng: Number((extra.lng + dLng).toFixed(4)),
+        continentGroup: extra.group,
+        airportCode: cityFocus.slice(0, 3).toUpperCase(),
+        highlight: `Scouting basecamp in ${cityFocus}, ${countryName}`,
+      };
+    }
     return {
       countryId: cleanId,
       countryName,
@@ -1391,7 +2185,11 @@ export function generateWeeklyItineraryForStops(
 
   let globalWeekCounter = 1;
 
-  stops.forEach((stop, stopIdx) => {
+  const sortedStops = [...stops].sort((a, b) =>
+    (a.arrivalDate || '').localeCompare(b.arrivalDate || '')
+  );
+
+  sortedStops.forEach((stop, stopIdx) => {
     const countryObj = countries.find(
       c =>
         c.id.toLowerCase() === stop.countryId.toLowerCase() ||
@@ -1589,3 +2387,110 @@ export function generateWeeklyItineraryForStops(
 
   return blocks;
 }
+
+export type ScoutBudgetTier = 'economic' | 'medium' | 'luxury';
+
+export type ScoutExperienceLensId =
+  | 'solo-women-safe'
+  | 'content-creator'
+  | 'vip-exclusive'
+  | 'retiree-accessible'
+  | 'nomad-social';
+
+export interface ScoutBudgetTierMeta {
+  id: ScoutBudgetTier;
+  label: string;
+  emoji: string;
+  tagline: string;
+  priceMultiplierLabel: string;
+  cardBg: string;
+  activeBorder: string;
+}
+
+export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
+  {
+    id: 'economic',
+    label: 'Economic & High-Value',
+    emoji: '🪙',
+    tagline: 'Authentic street markets, community coworking, public trails & local bistros',
+    priceMultiplierLabel: '$ · Value Local Pricing',
+    cardBg: 'from-amber-50/90 via-white to-orange-50/70',
+    activeBorder: 'border-amber-400 ring-amber-400/30',
+  },
+  {
+    id: 'medium',
+    label: 'Medium Comfort & Balanced',
+    emoji: '⚖️',
+    tagline: 'Boutique cafes, verified rooftop lounges, guided adventures & turnkey rentals',
+    priceMultiplierLabel: '$$ · Balanced Expat Standard',
+    cardBg: 'from-rose-50/90 via-white to-pink-50/70',
+    activeBorder: 'border-rose-400 ring-rose-400/30',
+  },
+  {
+    id: 'luxury',
+    label: 'Luxury, Fine Dining & Concierge',
+    emoji: '💎',
+    tagline: '5-star beach clubs, private yacht/helicopter charters, Michelin dining & VIP clinics',
+    priceMultiplierLabel: '$$$ · Executive & Luxury',
+    cardBg: 'from-violet-50/90 via-white to-fuchsia-50/70',
+    activeBorder: 'border-violet-500 ring-violet-500/30',
+  },
+];
+
+export interface ScoutExperienceLensMeta {
+  id: ScoutExperienceLensId;
+  label: string;
+  shortBadge: string;
+  emoji: string;
+  description: string;
+  colorClasses: string;
+}
+
+export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
+  {
+    id: 'solo-women-safe',
+    label: 'Solo Women Safe Places',
+    shortBadge: '🛡️ Solo Female Safe',
+    emoji: '🛡️',
+    description:
+      'Prioritizes well-lit walkable neighborhoods, vetted daytime/early-evening venues, female-friendly social mixers & high-security transport.',
+    colorClasses: 'bg-rose-50 text-rose-900 border-rose-300',
+  },
+  {
+    id: 'content-creator',
+    label: 'Good for Content Creators',
+    shortBadge: '📸 Creator & Aesthetic',
+    emoji: '📸',
+    description:
+      'Highlights golden-hour viewpoints, photogenic architecture, drone-friendly scenic lookouts, design cafes & fast upload fiber.',
+    colorClasses: 'bg-amber-50 text-amber-900 border-amber-300',
+  },
+  {
+    id: 'vip-exclusive',
+    label: 'Rich / Exclusive / Private VIP',
+    shortBadge: '👑 Exclusive & Private VIP',
+    emoji: '👑',
+    description:
+      'Curates members-only clubs, private marinas, gated luxury enclaves, bespoke concierge tours & wealth/tax advisory consultations.',
+    colorClasses: 'bg-violet-50 text-violet-900 border-violet-300',
+  },
+  {
+    id: 'retiree-accessible',
+    label: 'Calm, Flat & Retiree Accessible',
+    shortBadge: '🌿 Step-Free & Calm Pace',
+    emoji: '🌿',
+    description:
+      'Focuses on flat waterfront promenades, quiet residential blocks, JCI private hospital tours & relaxed cultural mornings.',
+    colorClasses: 'bg-orange-50 text-orange-900 border-orange-300',
+  },
+  {
+    id: 'nomad-social',
+    label: 'High-Energy Nomad & Founder Community',
+    shortBadge: '⚡ Nomad & Founder Hub',
+    emoji: '⚡',
+    description:
+      'Centers on 250+ Mbps coworking campuses, Thursday expat mixers, padel/surf clubs & fast social integration.',
+    colorClasses: 'bg-indigo-50 text-indigo-900 border-indigo-300',
+  },
+];
+

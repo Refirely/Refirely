@@ -1,5 +1,11 @@
 import { Country, ScoutScheduledItineraryItem, ScoutTripStop } from '../types';
-import { ScoutInterestId, SCOUT_INTEREST_CATALOG } from './scoutCoordinatesAndItineraries';
+import {
+  ScoutInterestId,
+  SCOUT_INTEREST_CATALOG,
+  ScoutBudgetTier,
+  ScoutExperienceLensId,
+  SCOUT_EXPERIENCE_LENSES,
+} from './scoutCoordinatesAndItineraries';
 import { getCountryNomadProfile } from './countryNomadProfiles';
 import { getCountryPhotoConfig } from '../components/CountryThumbnail';
 
@@ -871,7 +877,167 @@ const COUNTRY_FAMOUS_VENUES: Record<string, CuratedVenueSeed[]> = {
       preselectedByDefault: true,
     },
   ],
+
+  india: [
+    {
+      idSuffix: 'in-gunpowder-soro-assagao',
+      interestId: 'nightlife',
+      categoryLabel: '🍸 Villa Cocktail Lounge & Craft Brewery',
+      title: 'Soro The Village Pub (Assagao), Joseph Bar (Panjim) & Toit Brewpub (Bengaluru)',
+      neighborhood: 'Assagao & Fontainhas (Goa) / Indiranagar (Bengaluru)',
+      description:
+        'Experience Goa’s iconic vintage-industrial garden pub in Assagao, heritage feni cocktail bars in Panjim’s Latin Quarter, and Indiranagar’s legendary craft microbrewery.',
+      insiderTip:
+        'Friday live music nights at Soro Assagao and sunset walks through Fontainhas draw creators, founders, and international expats.',
+      rating: 4.8,
+      reviewCount: 6420,
+      priceRange: '$8–$18 craft cocktails & tapas',
+      timeOfDay: 'Night',
+      defaultDaySlot: 'Day 5 (Fri)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-amber-800 via-rose-900 to-violet-950',
+      googleMapsQuery: 'Soro The Village Pub Assagao Goa India',
+      preselectedByDefault: true,
+    },
+    {
+      idSuffix: 'in-artjuna-subko-cowork',
+      interestId: 'coworking',
+      categoryLabel: '💻 Garden Coworking & Specialty Roastery',
+      title: 'Artjuna Garden Cafe (Anjuna), Clay Coworking & Subko Specialty Coffee (Bandra)',
+      neighborhood: 'Anjuna & Assagao (Goa) / Bandra West (Mumbai)',
+      description:
+        'Work beneath tropical banyan trees with 200+ Mbps fiber, artisanal sourdough bakeries, specialty Indian single-origin coffee, and creator networking.',
+      insiderTip:
+        'Morning 9:30 AM tables at Artjuna and Clay Cafe are the easiest places to meet long-stay digital nomads and boutique founders.',
+      rating: 4.9,
+      reviewCount: 4890,
+      priceRange: '$6–$14 specialty coffee & brunch',
+      timeOfDay: 'Morning',
+      defaultDaySlot: 'Day 1 (Mon)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-orange-800 via-amber-900 to-rose-950',
+      googleMapsQuery: 'Artjuna Cafe Anjuna Goa India',
+      preselectedByDefault: true,
+    },
+    {
+      idSuffix: 'in-thalassa-pichola-dating',
+      interestId: 'dating',
+      categoryLabel: '🥂 Sunset Clifftop & Lakefront Dining',
+      title: 'Thalassa Greek Clifftop (Siolim) & Ambrai Ghat Lakefront Terrace (Udaipur)',
+      neighborhood: 'Siolim Waterfront (Goa) / Lake Pichola (Udaipur)',
+      description:
+        'Golden-hour sunset dining overlooking the Chapora River estuary or candlelit heritage palace views across Lake Pichola.',
+      insiderTip:
+        'Reserve a waterfront table 45 minutes before sunset for spectacular golden-hour photography and relaxed conversation.',
+      rating: 4.8,
+      reviewCount: 7310,
+      priceRange: '$18–$38 sunset dinner',
+      timeOfDay: 'Evening',
+      defaultDaySlot: 'Day 4 (Thu)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-rose-800 via-pink-900 to-amber-950',
+      googleMapsQuery: 'Thalassa Siolim Goa India',
+      preselectedByDefault: true,
+    },
+    {
+      idSuffix: 'in-dudhsagar-rishikesh-hike',
+      interestId: 'hiking',
+      categoryLabel: '🥾 Western Ghats Trek & Himalayan Rafting',
+      title: 'Netravali & Dudhsagar Waterfall Trek (Goa) & Rishikesh Himalayan Foothills Trail',
+      neighborhood: 'Western Ghats Wildlife Sanctuary & Rishikesh Ganges Valley',
+      description:
+        'Guided rainforest trek past spice plantations and cascading waterfalls in the UNESCO Western Ghats, or sunrise ridge hiking above the turquoise Ganges.',
+      insiderTip:
+        'Book an early 7:00 AM certified eco-guide for birdwatching and natural freshwater canyon pools.',
+      rating: 4.9,
+      reviewCount: 3920,
+      priceRange: '$20–$45 guided trek',
+      timeOfDay: 'Morning',
+      defaultDaySlot: 'Day 6 (Sat)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-amber-800 via-orange-900 to-emerald-950',
+      googleMapsQuery: 'Netravali Wildlife Sanctuary Goa India',
+      preselectedByDefault: true,
+    },
+    {
+      idSuffix: 'in-fontainhas-fort-kochi-arch',
+      interestId: 'architecture',
+      categoryLabel: '🏛️ Heritage Quarters & Royal Palaces',
+      title: 'Fontainhas Latin Quarter (Panjim), Fort Kochi Heritage Walk & City Palace Udaipur',
+      neighborhood: 'Fontainhas (Goa) / Fort Kochi (Kerala) / Udaipur',
+      description:
+        'Stroll pastel-painted 18th-century Portuguese lanes, Dutch/British spice-merchant bungalows in Fort Kochi, and marble courtyard palaces.',
+      insiderTip:
+        'Ideal for content creators and solo travelers—morning light between 8:00 AM and 10:00 AM offers quiet, photogenic streets.',
+      rating: 4.9,
+      reviewCount: 5410,
+      priceRange: 'Free walk / $15 heritage tour',
+      timeOfDay: 'Morning',
+      defaultDaySlot: 'Day 2 (Tue)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-amber-700 via-rose-900 to-violet-950',
+      googleMapsQuery: 'Fontainhas Latin Quarter Panjim Goa India',
+      preselectedByDefault: true,
+    },
+  ],
 };
+
+export interface IncludedVenuePlace {
+  name: string;
+  googleMapsUrl: string;
+}
+
+/**
+ * Extracts individual venue/place names when a recommendation card combines 1, 2, or 3 suggested places
+ * (e.g., "Semilla Café Coworking (Laureles) & Selina Cowork (El Poblado)"),
+ * so the UI can clearly display "1 Place" vs "2 Suggested Places" with direct Google Maps links for each.
+ */
+export function extractPlacesFromVenueTitle(
+  title: string,
+  neighborhood: string,
+  cityName: string,
+  countryName: string
+): IncludedVenuePlace[] {
+  const cleanCity = cityName.split('&')[0].split('(')[0].trim() || countryName;
+  // Split on ' + ', ' & ', or ' / ' when separating distinct venue names
+  const rawSegments = title
+    .split(/\s+(?:\+|&|\/)\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length >= 4);
+
+  // Merge back short fragments that are part of a single name (e.g., "Arts & Sciences" or "Padel & Tennis")
+  const merged: string[] = [];
+  for (const seg of rawSegments) {
+    const lower = seg.toLowerCase();
+    if (
+      merged.length > 0 &&
+      (seg.split(/\s+/).length <= 1 ||
+        lower.startsWith('sciences') ||
+        lower.startsWith('tennis') ||
+        lower.startsWith('freediving') ||
+        lower.startsWith('bachata') ||
+        lower.startsWith('wellness') ||
+        lower.startsWith('advisor'))
+    ) {
+      merged[merged.length - 1] = `${merged[merged.length - 1]} & ${seg}`;
+    } else {
+      merged.push(seg);
+    }
+  }
+
+  const finalNames = merged.length > 0 ? merged.slice(0, 4) : [title];
+  return finalNames.map(placeName => ({
+    name: placeName,
+    googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${placeName} ${neighborhood} ${cleanCity} ${countryName}`
+    )}`,
+  }));
+}
 
 /**
  * Generates a concrete, named venue/operator recommendation for any interest in any city/country
@@ -897,7 +1063,7 @@ function buildDynamicCityVenueSeed(
         idSuffix: `dyn-nightlife-${weekOffset}`,
         interestId: 'nightlife',
         categoryLabel: '🍸 Famous Rooftop Bar & Pub Crawl',
-        title: `${topVenueDistrict} Flagship Rooftop Lounge & Craft Pubs`,
+        title: `${topVenueDistrict} Sky Rooftop Lounge & ${cleanCity} Craft Jazz Pub`,
         neighborhood: `${topVenueDistrict}, ${cleanCity}`,
         description: `Experience ${cleanCity}’s #1 rated evening social strip—start at a panoramic sunset rooftop lounge in ${topVenueDistrict}, followed by live acoustic/jazz pubs.`,
         insiderTip: `Peak atmosphere starts around 8:30 PM Thursday–Saturday; check Google Maps live busyness for the top terrace in ${topVenueDistrict}.`,
@@ -917,7 +1083,7 @@ function buildDynamicCityVenueSeed(
         idSuffix: `dyn-dating-${weekOffset}`,
         interestId: 'dating',
         categoryLabel: '🥂 Top Dating & Social Mixer Spot',
-        title: `${cleanCity} Botanical Wine Terrace & Expat-Local Social Mixer`,
+        title: `${cleanCity} Botanical Wine Terrace & Expat-Local Social Lounge`,
         neighborhood: `Central Pedestrian Promenade, ${cleanCity}`,
         description: `${
           countryObj?.demographics?.datingCultureSummary ||
@@ -1008,7 +1174,7 @@ function buildDynamicCityVenueSeed(
         idSuffix: `dyn-arch-${weekOffset}`,
         interestId: 'architecture',
         categoryLabel: '🏛️ Old Town Architecture & Plazas Walk',
-        title: `${cleanCity} Historic Quarter, Grand Plazas & Residential Architecture Walk`,
+        title: `${cleanCity} Historic Quarter, Grand Plazas & Heritage Walk`,
         neighborhood: `Old Town & Heritage District, ${cleanCity}`,
         description: `Explore ${cleanCity}’s landmark plazas, restored historic townhouses, and most walkable residential streets (Walkability score: ${
           countryObj?.lifestyle.walkabilityScore || 85
@@ -1074,7 +1240,7 @@ function buildDynamicCityVenueSeed(
         idSuffix: `dyn-hobbies-${weekOffset}`,
         interestId: 'hobbies',
         categoryLabel: '🧘 Padel, Tennis, Yoga & Wellness Club',
-        title: `${cleanCity} Padel & Racquet Club + Boutique Yoga/Wellness Studio`,
+        title: `${cleanCity} Padel & Racquet Club + Boutique Yoga Studio`,
         neighborhood: `Sports & Lifestyle District, ${cleanCity}`,
         description: `Book a drop-in match or trial wellness class at ${cleanCity}’s highest-rated padel/tennis club, golf course, or yoga studio.`,
         insiderTip: `Ask about monthly member socials and open match WhatsApp groups for newcomers.`,
@@ -1164,11 +1330,72 @@ function buildDynamicCityVenueSeed(
 
 export interface StopCuratedRecommendationCard extends ScoutScheduledItineraryItem {
   isPreselectedSuggestion: boolean;
+  placesIncluded: IncludedVenuePlace[];
+  experienceBadges: string[];
+}
+
+/**
+ * Adapts a venue recommendation seed according to the user's chosen Budget Tier
+ * (economic / medium / luxury) and Experience Lenses (solo-women-safe, content-creator, vip-exclusive, etc.)
+ */
+function tailorVenueForExperienceProfile(
+  seed: CuratedVenueSeed,
+  cityName: string,
+  budgetTier: ScoutBudgetTier,
+  experienceLenses: ScoutExperienceLensId[]
+): {
+  description: string;
+  insiderTip: string;
+  priceRange: string;
+  experienceBadges: string[];
+} {
+  const badges: string[] = [];
+  let description = seed.description;
+  let insiderTip = seed.insiderTip;
+  let priceRange = seed.priceRange;
+
+  if (budgetTier === 'economic') {
+    badges.push('🪙 Value / Economic Pick');
+    priceRange = `${seed.priceRange} (Value Local Tier)`;
+  } else if (budgetTier === 'luxury') {
+    badges.push('💎 Luxury & VIP Tier');
+    priceRange = `${seed.priceRange} · VIP / Private Option`;
+    insiderTip = `${seed.insiderTip} Ask for private terrace/concierge table reservations.`;
+  } else {
+    badges.push('⚖️ Balanced Comfort');
+  }
+
+  if (experienceLenses.includes('solo-women-safe')) {
+    badges.push('🛡️ Solo Female Safe');
+    insiderTip = `${insiderTip} Vetted safe, well-lit area in ${cityName.split('&')[0].trim()} with reliable Uber/ride-hailing pickup.`;
+  }
+  if (experienceLenses.includes('content-creator')) {
+    badges.push('📸 Creator & Aesthetic');
+    description = `${description} Features photogenic aesthetics, natural golden-hour lighting, and creator-friendly backdrops.`;
+  }
+  if (experienceLenses.includes('vip-exclusive')) {
+    badges.push('👑 Exclusive / Private');
+    description = `${description} Includes private member/concierge access and upscale networking.`;
+  }
+  if (experienceLenses.includes('retiree-accessible')) {
+    badges.push('🌿 Step-Free & Calm');
+  }
+  if (experienceLenses.includes('nomad-social')) {
+    badges.push('⚡ Nomad Social Hub');
+  }
+
+  return {
+    description,
+    insiderTip,
+    priceRange,
+    experienceBadges: badges,
+  };
 }
 
 /**
  * Returns a rich list of specific, concrete place/venue/operator recommendations for a given stop,
- * tailored to the user's selected interests and custom hobbies, with Google Maps links, ratings, and photos.
+ * tailored to the user's selected interests, custom hobbies, budget tier, and experience lenses,
+ * sorted chronologically by Week & Day and annotated with exact place counts.
  */
 export function getRecommendationsForStop(
   stop: ScoutTripStop,
@@ -1176,7 +1403,9 @@ export function getRecommendationsForStop(
   selectedInterests: ScoutInterestId[],
   customHobbies: string[],
   startWeekNumber: number,
-  numWeeksForStop: number
+  numWeeksForStop: number,
+  budgetTier: ScoutBudgetTier = 'medium',
+  experienceLenses: ScoutExperienceLensId[] = []
 ): StopCuratedRecommendationCard[] {
   const cleanId = stop.countryId.toLowerCase().trim();
   const cityName =
@@ -1184,9 +1413,25 @@ export function getRecommendationsForStop(
     countryObj?.topCities?.[0]?.name ||
     countryObj?.capital ||
     stop.countryName;
+  const cleanPrimaryCity = cityName.split('&')[0].split('(')[0].trim();
   const countryPhotos = getCountryPhotoConfig(cleanId, countryObj?.imageUrl);
 
-  const curatedSeeds: CuratedVenueSeed[] = [...(COUNTRY_FAMOUS_VENUES[cleanId] || [])];
+  // Filter curated country seeds so that if the user selected a specific city in a multi-city country,
+  // we prioritize seeds matching that city or adapt city-generic seeds to that specific city!
+  const rawCountrySeeds = COUNTRY_FAMOUS_VENUES[cleanId] || [];
+  const curatedSeeds: CuratedVenueSeed[] = rawCountrySeeds.map(s => {
+    const mentionsAnotherCity =
+      !s.neighborhood.toLowerCase().includes(cleanPrimaryCity.toLowerCase()) &&
+      !s.title.toLowerCase().includes(cleanPrimaryCity.toLowerCase());
+    if (mentionsAnotherCity && cleanPrimaryCity) {
+      return {
+        ...s,
+        neighborhood: `${cleanPrimaryCity} & ${s.neighborhood}`,
+        googleMapsQuery: `${s.title.split('&')[0].trim()} ${cleanPrimaryCity} ${stop.countryName}`,
+      };
+    }
+    return s;
+  });
 
   // Ensure every user-selected interest has at least one concrete recommendation for this stop
   const coveredInterests = new Set(curatedSeeds.map(s => s.interestId));
@@ -1219,6 +1464,73 @@ export function getRecommendationsForStop(
     }
   });
 
+  // Inject dedicated Experience Lens spotlight cards when chosen by the user
+  if (experienceLenses.includes('solo-women-safe')) {
+    curatedSeeds.push({
+      idSuffix: 'exp-solo-women-safe',
+      interestId: 'dating',
+      categoryLabel: '🛡️ Solo Women Safe Social & Walkable Hub',
+      title: `${cleanPrimaryCity} Women’s Expat Coffee Circle & Safe Boutique Promenade`,
+      neighborhood: `Verified Safe Residential Quarter, ${cleanPrimaryCity}`,
+      description: `Daytime & early-evening walkable boulevard in ${cleanPrimaryCity} with 24/7 security presence, specialty cafes, and weekly women-in-tech / solo female traveler meetups.`,
+      insiderTip: `Use verified ride-share apps after 9:00 PM and prioritize apartments within 300m of main lit avenues in ${cleanPrimaryCity}.`,
+      rating: 4.9,
+      reviewCount: 1890,
+      priceRange: '$8–$20 cafe & social',
+      timeOfDay: 'Afternoon',
+      defaultDaySlot: 'Day 2 (Tue)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-rose-800 via-pink-900 to-amber-900',
+      googleMapsQuery: `Best specialty cafe safe walkable neighborhood ${cleanPrimaryCity} ${stop.countryName}`,
+      preselectedByDefault: true,
+    });
+  }
+
+  if (experienceLenses.includes('content-creator')) {
+    curatedSeeds.push({
+      idSuffix: 'exp-content-creator',
+      interestId: 'architecture',
+      categoryLabel: '📸 Content Creator & Golden-Hour Viewpoint',
+      title: `${cleanPrimaryCity} Aesthetic Panorama Lookout & Creator Studio Cafe`,
+      neighborhood: `Scenic Viewpoint & Design District, ${cleanPrimaryCity}`,
+      description: `Top-rated Instagram/YouTube filming locations in ${cleanPrimaryCity} featuring unobstructed sunrise/sunset views, architectural symmetry, and 200+ Mbps upload cafes.`,
+      insiderTip: `Arrive 40 minutes before sunrise for empty plaza shots and clean B-roll audio in ${cleanPrimaryCity}.`,
+      rating: 4.9,
+      reviewCount: 3420,
+      priceRange: 'Free viewpoint / $12 studio cafe',
+      timeOfDay: 'Morning',
+      defaultDaySlot: 'Day 3 (Wed)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-amber-700 via-orange-800 to-rose-900',
+      googleMapsQuery: `Best viewpoint photography cafe ${cleanPrimaryCity} ${stop.countryName}`,
+      preselectedByDefault: true,
+    });
+  }
+
+  if (experienceLenses.includes('vip-exclusive')) {
+    curatedSeeds.push({
+      idSuffix: 'exp-vip-exclusive',
+      interestId: 'residency',
+      categoryLabel: '👑 Private Members Club, Marina & Wealth Consult',
+      title: `${cleanPrimaryCity} Private Members Lounge, Yacht Marina & Luxury Villa Viewing`,
+      neighborhood: `Exclusive Gated Enclave & Marina, ${cleanPrimaryCity}`,
+      description: `Private concierge tour of ${cleanPrimaryCity}’s premier gated residences, members-only social/golf club, and cross-border tax/golden visa wealth advisory.`,
+      insiderTip: `Request a private day pass or membership introduction through your relocation advisor prior to arrival.`,
+      rating: 4.9,
+      reviewCount: 980,
+      priceRange: '$$$ · Private Concierge & VIP',
+      timeOfDay: 'Afternoon',
+      defaultDaySlot: 'Day 5 (Fri)',
+      defaultWeekOffset: 0,
+      photoUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80',
+      fallbackGradient: 'from-violet-900 via-purple-900 to-amber-900',
+      googleMapsQuery: `Luxury yacht club golf country club ${cleanPrimaryCity} ${stop.countryName}`,
+      preselectedByDefault: true,
+    });
+  }
+
   // Inject concrete custom hobby venue recommendations (e.g. "Padel", "Salsa", "Paragliding", "Scuba")
   customHobbies.forEach((hobby, idx) => {
     const cleanHobby = hobby.trim();
@@ -1227,10 +1539,10 @@ export function getRecommendationsForStop(
       idSuffix: `custom-hobby-${idx}-${cleanHobby.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
       interestId: 'hobbies',
       categoryLabel: `🎯 ${cleanHobby}`,
-      title: `Top ${cleanHobby} Club & Experience in ${cityName.split('&')[0].trim()}`,
+      title: `Top ${cleanHobby} Club & Experience in ${cleanPrimaryCity}`,
       neighborhood: `${cityName}, ${stop.countryName}`,
       description: `Highly rated local venue, operator, or club for ${cleanHobby} in ${cityName}—connect with fellow enthusiasts and test weekly membership/session quality.`,
-      insiderTip: `Click "View on Google Maps" to check live reviews, photos, and session schedules for ${cleanHobby} in ${cityName}.`,
+      insiderTip: `Click "Google Maps & Reviews" to check live ratings, photos, and session schedules for ${cleanHobby} in ${cityName}.`,
       rating: 4.8,
       reviewCount: 940 + idx * 170,
       priceRange: '$15–$35 session',
@@ -1244,20 +1556,27 @@ export function getRecommendationsForStop(
     });
   });
 
-  // Sort so that recommendations matching user's active interests come first
   const interestSet = new Set(selectedInterests);
-  curatedSeeds.sort((a, b) => {
-    const aMatch = interestSet.has(a.interestId) ? 1 : 0;
-    const bMatch = interestSet.has(b.interestId) ? 1 : 0;
-    if (aMatch !== bMatch) return bMatch - aMatch;
-    return b.rating - a.rating;
-  });
 
-  return curatedSeeds.map((seed, idx) => {
+  const mappedCards: StopCuratedRecommendationCard[] = curatedSeeds.map((seed, idx) => {
     const assignedWeek =
       startWeekNumber + Math.min(numWeeksForStop - 1, seed.defaultWeekOffset ?? idx % numWeeksForStop);
     const assignedDay = seed.defaultDaySlot || DAY_SLOT_OPTIONS[idx % DAY_SLOT_OPTIONS.length];
     const recId = `rec-${stop.id}-${seed.idSuffix}`;
+
+    const tailored = tailorVenueForExperienceProfile(
+      seed,
+      cityName,
+      budgetTier,
+      experienceLenses
+    );
+
+    const placesIncluded = extractPlacesFromVenueTitle(
+      seed.title,
+      seed.neighborhood,
+      cityName,
+      stop.countryName
+    );
 
     return {
       id: recId,
@@ -1274,11 +1593,11 @@ export function getRecommendationsForStop(
       categoryLabel: seed.categoryLabel,
       interestId: seed.interestId,
       neighborhood: seed.neighborhood,
-      description: seed.description,
-      insiderTip: seed.insiderTip,
+      description: tailored.description,
+      insiderTip: tailored.insiderTip,
       rating: seed.rating,
       reviewCount: seed.reviewCount,
-      priceRange: seed.priceRange,
+      priceRange: tailored.priceRange,
       photoUrl: seed.photoUrl || countryPhotos.photoUrl,
       fallbackGradient: seed.fallbackGradient || countryPhotos.gradientFallback,
       googleMapsUrl: buildGoogleMapsSearchUrl(seed.googleMapsQuery),
@@ -1286,19 +1605,35 @@ export function getRecommendationsForStop(
       isPreselectedSuggestion: Boolean(
         seed.preselectedByDefault || interestSet.has(seed.interestId)
       ),
+      placesIncluded,
+      experienceBadges: tailored.experienceBadges,
     };
   });
+
+  // Sort chronologically by weekNumber ascending, then by daySlot order (Mon -> Sun), then by rating
+  mappedCards.sort((a, b) => {
+    if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
+    const dayIdxA = DAY_SLOT_OPTIONS.indexOf(a.daySlot);
+    const dayIdxB = DAY_SLOT_OPTIONS.indexOf(b.daySlot);
+    if (dayIdxA !== dayIdxB) return dayIdxA - dayIdxB;
+    return b.rating - a.rating;
+  });
+
+  return mappedCards;
 }
 
 /**
  * Generates an initial set of scheduled itinerary items across all stops when the user clicks
  * "Generate My Custom Itinerary" or when a trip has no scheduled items yet.
+ * Stops are sorted chronologically by arrivalDate ascending.
  */
 export function buildDefaultScheduledItineraryForStops(
   stops: ScoutTripStop[],
   countries: Country[],
   selectedInterests: ScoutInterestId[],
-  customHobbies: string[]
+  customHobbies: string[],
+  budgetTier: ScoutBudgetTier = 'medium',
+  experienceLenses: ScoutExperienceLensId[] = []
 ): {
   allRecommendationsByStop: Record<string, StopCuratedRecommendationCard[]>;
   defaultSelectedItems: ScoutScheduledItineraryItem[];
@@ -1313,7 +1648,12 @@ export function buildDefaultScheduledItineraryForStops(
 
   let currentWeekCursor = 1;
 
-  stops.forEach(stop => {
+  // Sort stops chronologically by arrivalDate ascending
+  const sortedStops = [...stops].sort((a, b) =>
+    (a.arrivalDate || '').localeCompare(b.arrivalDate || '')
+  );
+
+  sortedStops.forEach(stop => {
     const countryObj = countries.find(
       c =>
         c.id.toLowerCase() === stop.countryId.toLowerCase() ||
@@ -1343,11 +1683,13 @@ export function buildDefaultScheduledItineraryForStops(
       selectedInterests,
       customHobbies,
       startWeek,
-      numWeeks
+      numWeeks,
+      budgetTier,
+      experienceLenses
     );
     allRecommendationsByStop[stop.id] = recs;
 
-    // Pick top matching recommendations (up to 4–5 per stop) distributed across the stop's weeks & days
+    // Pick top matching recommendations (up to 5 per stop) distributed across the stop's weeks & days
     const preselected = recs.filter(r => r.isPreselectedSuggestion).slice(0, 5);
     const chosen = preselected.length > 0 ? preselected : recs.slice(0, 4);
 
@@ -1364,9 +1706,16 @@ export function buildDefaultScheduledItineraryForStops(
     currentWeekCursor += numWeeks;
   });
 
+  // Sort defaultSelectedItems chronologically by weekNumber and daySlot
+  defaultSelectedItems.sort((a, b) => {
+    if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
+    return DAY_SLOT_OPTIONS.indexOf(a.daySlot) - DAY_SLOT_OPTIONS.indexOf(b.daySlot);
+  });
+
   return {
     allRecommendationsByStop,
     defaultSelectedItems,
     stopWeekRanges,
   };
 }
+

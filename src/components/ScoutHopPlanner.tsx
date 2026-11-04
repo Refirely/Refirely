@@ -15,14 +15,19 @@ import {
   ScoutingFocusPreference,
   ScoutInterestId,
   SCOUT_INTEREST_CATALOG,
+  ScoutBudgetTier,
+  ScoutExperienceLensId,
+  SCOUT_BUDGET_TIERS,
+  SCOUT_EXPERIENCE_LENSES,
   WeeklyItineraryBlock,
   generateWeeklyItineraryForStops,
   getHubCoordinatesForCountry,
+  getCityHubsForCountry,
+  registerCustomCityCoordinate,
 } from '../data/scoutCoordinatesAndItineraries';
 import {
   StopCuratedRecommendationCard,
   DAY_SLOT_OPTIONS,
-  TIME_OF_DAY_OPTIONS,
   buildDefaultScheduledItineraryForStops,
   buildGoogleMapsSearchUrl,
 } from '../data/scoutVenueRecommendations';
@@ -376,9 +381,30 @@ type ContinentFilter = 'all' | 'Europe' | 'Asia' | 'Americas' | 'Middle East & A
 type DiscoveryBrowseMode = 'continents' | 'nomad-top' | 'search-all';
 type PlannerStageTab = 'discover' | 'map-itinerary' | 'complete-itinerary' | 'workspace' | 'all-in-one';
 type WizardStepId = 'step-1-region' | 'step-2-countries' | 'step-3-interests' | 'step-4-itinerary';
+type CityRoutingMode = 'auto-best' | 'single-city' | 'multi-city';
+
+type ExploreSortOption =
+  | 'recommended'
+  | 'budget-asc'
+  | 'healthcare-desc'
+  | 'travel-leisure-desc'
+  | 'sunny-desc'
+  | 'safety-desc'
+  | 'visa-difficulty-asc'
+  | 'visa-income-asc'
+  | 'alpha-asc'
+  | 'alpha-desc'
+  | 'internet-speed-desc'
+  | 'coworking-friendly'
+  | 'dnv-friendly'
+  | 'nomad-burn-asc'
+  | 'dating-nightlife-desc'
+  | 'female-ratio-desc';
 
 const INTERESTS_STORAGE_KEY = 'refirely_scout_interests_v1';
 const HOBBIES_STORAGE_KEY = 'refirely_scout_hobbies_v1';
+const BUDGET_TIER_STORAGE_KEY = 'refirely_scout_budget_tier_v1';
+const EXP_LENSES_STORAGE_KEY = 'refirely_scout_exp_lenses_v1';
 const ACTIVE_EDIT_TRIP_STORAGE_KEY = 'refirely_active_edit_trip';
 
 // Resilient Magazine-Grade Photo Banner for Interest Cards & Weekly Itinerary Cards
@@ -480,21 +506,54 @@ export const ScoutHopPlanner: React.FC = () => {
 
   const todayIsoDate = getTodayLocalIsoDate();
 
-  // Discovery & Preferences State (No pre-defined countries on initial load!)
+  // Explore Havens Full Filter & Sort Console State (Merged Step 1 & Step 2)
   const [browseMode, setBrowseMode] = useState<DiscoveryBrowseMode>('continents');
   const [selectedContinent, setSelectedContinent] = useState<ContinentFilter>('all');
+  const [exploreRegionFilter, setExploreRegionFilter] = useState<string>('All');
+  const [exploreSortBy, setExploreSortBy] = useState<ExploreSortOption>(
+    currentPersona === 'nomad' ? 'dnv-friendly' : 'recommended'
+  );
   const [countrySearchQuery, setCountrySearchQuery] = useState('');
   const [maxMonthlyBudgetUSD, setMaxMonthlyBudgetUSD] = useState<number>(3500);
+  const [maxVisaDifficultyTier, setMaxVisaDifficultyTier] = useState<number>(5);
+  const [maxVisaIncomeReq, setMaxVisaIncomeReq] = useState<number>(3500);
   const [tentativeStartDate, setTentativeStartDate] = useState<string>(() => getTodayLocalIsoDate());
-  const [daysPerStopPreference, setDaysPerStopPreference] = useState<number>(21); // Default 3 weeks per stop
+  const [daysPerStopPreference, setDaysPerStopPreference] = useState<number>(14); // Default 2 weeks per city stop
   const [scoutingFocus, setScoutingFocus] = useState<ScoutingFocusPreference>(
     currentPersona === 'nomad' ? 'nomad-fiber' : 'coastal-lifestyle'
   );
   const [climatePreference, setClimatePreference] = useState<string>('Any');
   const [focusedMapCountryId, setFocusedMapCountryId] = useState<string | null>(null);
   const [showDiscoveryMapPreview, setShowDiscoveryMapPreview] = useState<boolean>(true);
+  const [showGranularExploreFilters, setShowGranularExploreFilters] = useState<boolean>(true);
 
-  // User Personal Interests & Custom Hobbies State (Step 3)
+  // Single-Country City Routing Mode ('auto-best' | 'single-city' | 'multi-city')
+  const [cityRoutingMode, setCityRoutingMode] = useState<CityRoutingMode>('multi-city');
+  const [customCityRevision, setCustomCityRevision] = useState<number>(0);
+
+  // Experience & Traveler Style Tiers (Economic / Medium / Luxury + Solo Women Safe, Content Creators, VIP Exclusive, etc.)
+  const [budgetTier, setBudgetTier] = useState<ScoutBudgetTier>(() => {
+    try {
+      const saved = localStorage.getItem(BUDGET_TIER_STORAGE_KEY) as ScoutBudgetTier | null;
+      if (saved === 'economic' || saved === 'medium' || saved === 'luxury') return saved;
+    } catch {}
+    return 'medium';
+  });
+
+  const [experienceLenses, setExperienceLenses] = useState<ScoutExperienceLensId[]>(() => {
+    try {
+      const raw = localStorage.getItem(EXP_LENSES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return currentPersona === 'nomad'
+      ? ['nomad-social', 'content-creator']
+      : ['retiree-accessible', 'solo-women-safe'];
+  });
+
+  // User Personal Interests & Custom Hobbies State
   const [selectedInterests, setSelectedInterests] = useState<ScoutInterestId[]>(() => {
     try {
       const raw = localStorage.getItem(INTERESTS_STORAGE_KEY);
@@ -532,6 +591,18 @@ export const ScoutHopPlanner: React.FC = () => {
     } catch {}
   }, [customHobbies]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUDGET_TIER_STORAGE_KEY, budgetTier);
+    } catch {}
+  }, [budgetTier]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXP_LENSES_STORAGE_KEY, JSON.stringify(experienceLenses));
+    } catch {}
+  }, [experienceLenses]);
+
   // Resolve monthly cost for a country from Refirely's empirical dataset
   const getCountryMonthlyRateUSD = (countryId: string, mode = burnBasisMode): number => {
     const found = countries.find(
@@ -548,13 +619,13 @@ export const ScoutHopPlanner: React.FC = () => {
     return found.costOfLiving.monthlyBudgetSingleUSD;
   };
 
-  // Create an empty initial draft (NO pre-defined countries forced on the user)
+  // Create an empty initial draft
   const createBlankDiscoveryDraft = (): ScoutTrip => {
     const nowIso = new Date().toISOString();
     return {
       id: `trip-custom-${Date.now()}`,
       userId: auth.currentUser?.uid || currentUserId || 'guest',
-      title: 'My Custom Global Scouting Roadmap',
+      title: 'My Custom Single-Country Scouting Roadmap',
       stops: [],
       tasks: DEFAULT_RELOCATION_TASKS.map(t => ({ ...t })),
       accommodation: {
@@ -574,66 +645,88 @@ export const ScoutHopPlanner: React.FC = () => {
     };
   };
 
-  // Optional 1-click sample preset (Portugal 45d + Greece 30d) when user explicitly clicks the preset button
-  const createMediterraneanPresetDraft = (): ScoutTrip => {
-    const ptCountry = countries.find(c => c.id === 'portugal') || countries[0];
-    const grCountry = countries.find(c => c.id === 'greece') || countries[1];
-    const ptBurn = getCountryMonthlyRateUSD('portugal', burnBasisMode);
-    const grBurn = getCountryMonthlyRateUSD('greece', burnBasisMode);
+  // Optional 1-click sample preset (Single-Country Multi-City Scout: Portugal 45d across Lisbon, Porto & Lagos)
+  const createSingleCountryPresetDraft = (targetCountryId = 'portugal'): ScoutTrip => {
+    const targetCountry =
+      countries.find(c => c.id.toLowerCase() === targetCountryId.toLowerCase()) ||
+      countries.find(c => c.id === 'portugal') ||
+      countries[0];
+    const monthlyBurn = getCountryMonthlyRateUSD(targetCountry.id, burnBasisMode);
+    const hubs = getCityHubsForCountry(targetCountry);
+    const isSchengen = isCountrySchengen(targetCountry.id, targetCountry.name);
 
     const baseStart = clampToMinIsoDate(tentativeStartDate, todayIsoDate);
-    const ptArrival = baseStart;
-    const ptDeparture = addDaysToIsoDate(ptArrival, 44); // 45 days inclusive
-    const grArrival = addDaysToIsoDate(ptDeparture, 1);
-    const grDeparture = addDaysToIsoDate(grArrival, 29); // 30 days inclusive
+    const stop1Arrival = baseStart;
+    const stop1Departure = addDaysToIsoDate(stop1Arrival, 14); // 15 days
+    const stop2Arrival = addDaysToIsoDate(stop1Departure, 1);
+    const stop2Departure = addDaysToIsoDate(stop2Arrival, 14); // 15 days
+    const stop3Arrival = addDaysToIsoDate(stop2Departure, 1);
+    const stop3Departure = addDaysToIsoDate(stop3Arrival, 14); // 15 days
+
+    const city1 = hubs[0]?.cityName || 'Lisbon & Cascais';
+    const city2 = hubs[1]?.cityName || 'Porto & Gaia';
+    const city3 = hubs[2]?.cityName || 'Lagos & Algarve';
 
     const stops: ScoutTripStop[] = [
       {
-        id: 'stop-pt-45d',
-        countryId: ptCountry?.id || 'portugal',
-        countryName: ptCountry?.name || 'Portugal',
-        countryFlag: ptCountry?.flag || '🇵🇹',
-        cityFocus: 'Lisbon & Cascais',
-        arrivalDate: ptArrival,
-        departureDate: ptDeparture,
-        visaStatusTag: '90-Day Tourist',
-        isSchengen: true,
-        monthlyBurnRateUSD: ptBurn,
-        notes: 'Test D7/D8 neighborhoods, private CUF hospital, and coastal train links.',
+        id: `stop-${targetCountry.id}-1`,
+        countryId: targetCountry.id,
+        countryName: targetCountry.name,
+        countryFlag: targetCountry.flag,
+        cityFocus: city1,
+        arrivalDate: stop1Arrival,
+        departureDate: stop1Departure,
+        visaStatusTag: isSchengen ? '90-Day Tourist' : 'Visa-Free',
+        isSchengen,
+        monthlyBurnRateUSD: monthlyBurn,
+        notes: `Scout ${city1} neighborhoods, private hospitals, and fiber speeds.`,
       },
       {
-        id: 'stop-gr-30d',
-        countryId: grCountry?.id || 'greece',
-        countryName: grCountry?.name || 'Greece',
-        countryFlag: grCountry?.flag || '🇬🇷',
-        cityFocus: 'Athens Riviera',
-        arrivalDate: grArrival,
-        departureDate: grDeparture,
-        visaStatusTag: '90-Day Tourist',
-        isSchengen: true,
-        monthlyBurnRateUSD: grBurn,
-        notes: 'Compare Crete island living costs, fiber speeds, and 7% pension tax regime.',
+        id: `stop-${targetCountry.id}-2`,
+        countryId: targetCountry.id,
+        countryName: targetCountry.name,
+        countryFlag: targetCountry.flag,
+        cityFocus: city2,
+        arrivalDate: stop2Arrival,
+        departureDate: stop2Departure,
+        visaStatusTag: isSchengen ? '90-Day Tourist' : 'Visa-Free',
+        isSchengen,
+        monthlyBurnRateUSD: monthlyBurn,
+        notes: `Compare ${city2} walkability, rental yields, and cultural rhythm.`,
+      },
+      {
+        id: `stop-${targetCountry.id}-3`,
+        countryId: targetCountry.id,
+        countryName: targetCountry.name,
+        countryFlag: targetCountry.flag,
+        cityFocus: city3,
+        arrivalDate: stop3Arrival,
+        departureDate: stop3Departure,
+        visaStatusTag: isSchengen ? '90-Day Tourist' : 'Visa-Free',
+        isSchengen,
+        monthlyBurnRateUSD: monthlyBurn,
+        notes: `Test coastal/lifestyle living in ${city3} and meet expat community.`,
       },
     ];
 
-    const totalDays = 75;
-    const schengenDays = 75;
-    const estimatedTotalBurnUSD = Math.round((45 / 30) * ptBurn + (30 / 30) * grBurn);
+    const totalDays = 45;
+    const schengenDays = isSchengen ? 45 : 0;
+    const estimatedTotalBurnUSD = Math.round((45 / 30) * monthlyBurn);
     const nowIso = new Date().toISOString();
 
     return {
-      id: `trip-med-scout-75d`,
+      id: `trip-${targetCountry.id}-scout-45d`,
       userId: auth.currentUser?.uid || currentUserId || 'guest',
-      title: '75-Day Mediterranean Scout (Portugal 45d + Greece 30d)',
+      title: `45-Day ${targetCountry.name} Multi-City Scout (${city1.split(' ')[0]} + ${city2.split(' ')[0]} + ${city3.split(' ')[0]})`,
       stops,
       tasks: DEFAULT_RELOCATION_TASKS.map(t => ({ ...t })),
       accommodation: {
-        propertyName: 'Príncipe Real Serviced Loft (Lisbon) + Chania Harbor Studio',
-        checkInDate: ptArrival,
-        checkOutDate: grDeparture,
-        hostContactOrDoorCode: '+351 912 345 678 · Keypad #4829*',
+        propertyName: `${city1} Turnkey Loft + ${city2} Riverview Studio`,
+        checkInDate: stop1Arrival,
+        checkOutDate: stop3Departure,
+        hostContactOrDoorCode: 'WhatsApp Host · Keypad #4829*',
         bookingLink: 'https://www.airbnb.com/',
-        cityOrNeighborhood: 'Lisbon & Chania',
+        cityOrNeighborhood: `${city1}, ${city2} & ${city3}`,
       },
       packingList: DEFAULT_PACKING_ITEMS.map(p => ({ ...p })),
       totalDays,
@@ -644,16 +737,21 @@ export const ScoutHopPlanner: React.FC = () => {
     };
   };
 
-  // Load initial draft: only restore if the user explicitly generated/saved a custom v2 draft, and shift any stale past dates forward to todayIsoDate
+  // Load initial draft: enforce single-country consistency and shift any stale past dates forward to todayIsoDate
   const [tripDraft, setTripDraft] = useState<ScoutTrip>(() => {
     try {
       const savedV2 = localStorage.getItem(DISCOVERY_STORAGE_KEY);
       if (savedV2) {
         const parsed = JSON.parse(savedV2) as ScoutTrip;
-        if (parsed && Array.isArray(parsed.stops)) {
+        if (parsed && Array.isArray(parsed.stops) && parsed.stops.length > 0) {
+          // Enforce single-country rule: keep stops belonging to the primary chosen country
+          const primaryCountryId = parsed.stops[0].countryId;
+          const singleCountryStops = parsed.stops.filter(
+            s => s.countryId.toLowerCase() === primaryCountryId.toLowerCase()
+          );
           let cursor = todayIsoDate;
-          const sanitizedStops = parsed.stops.map((s, idx) => {
-            const durationDays = Math.max(1, calculateStopDays(s.arrivalDate, s.departureDate) || 21);
+          const sanitizedStops = singleCountryStops.map((s, idx) => {
+            const durationDays = Math.max(1, calculateStopDays(s.arrivalDate, s.departureDate) || 14);
             const arr =
               idx === 0
                 ? clampToMinIsoDate(s.arrivalDate, todayIsoDate)
@@ -672,7 +770,10 @@ export const ScoutHopPlanner: React.FC = () => {
             parsed.accommodation?.checkInDate || sanitizedStops[0]?.arrivalDate || todayIsoDate,
             todayIsoDate
           );
-          const checkOutRaw = parsed.accommodation?.checkOutDate || sanitizedStops[sanitizedStops.length - 1]?.departureDate || addDaysToIsoDate(checkIn, 20);
+          const checkOutRaw =
+            parsed.accommodation?.checkOutDate ||
+            sanitizedStops[sanitizedStops.length - 1]?.departureDate ||
+            addDaysToIsoDate(checkIn, 20);
           const checkOut = checkOutRaw >= checkIn ? checkOutRaw : addDaysToIsoDate(checkIn, 20);
           return {
             ...parsed,
@@ -689,13 +790,27 @@ export const ScoutHopPlanner: React.FC = () => {
     return createBlankDiscoveryDraft();
   });
 
-  // Step-by-Step Guided Wizard State:
-  // Step 1: Region & Dates -> Step 2: Countries & Map -> Step 3: Interests & Hobbies -> Step 4: Generated Itinerary & Workspace
+  // Single-Country Selection State (Restricted to 1 country at a time)
+  const [selectedCountryId, setSelectedCountryId] = useState<string>(() => {
+    return tripDraft.stops[0]?.countryId || 'portugal';
+  });
+
+  // Keep selectedCountryId synced when tripDraft.stops changes
+  useEffect(() => {
+    if (tripDraft.stops.length > 0 && tripDraft.stops[0].countryId !== selectedCountryId) {
+      setSelectedCountryId(tripDraft.stops[0].countryId);
+    }
+  }, [tripDraft.stops]);
+
+  // Unified 3-Step Guided Wizard State:
+  // 'step-1-region' (or 'step-2-countries') -> Merged Step 1: Choose 1 Country, Expat Cities & Map
+  // 'step-3-interests' -> Step 2: Experience Style, Budget Tier & Personal Interests
+  // 'step-4-itinerary' -> Step 3: Generated Chronological Multi-Week Itinerary & 3-Column Workspace
   const [wizardStep, setWizardStep] = useState<WizardStepId>(() =>
     tripDraft.stops.length > 0 ? 'step-4-itinerary' : 'step-1-region'
   );
 
-  // Sub-view inside Step 4 so the generated result is clean and clutter-free
+  // Sub-view inside Final Step so the generated result is clean and clutter-free
   const [activeStageTab, setActiveStageTab] = useState<PlannerStageTab>('map-itinerary');
 
   // Weekly Itinerary State & Filter
@@ -753,15 +868,31 @@ export const ScoutHopPlanner: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
 
-  // Curated Venue & Operator Catalog for all selected country stops (mixed weeks per stop)
+  // Active Selected Country Object & Its 4–8 Expat City Hubs
+  const activeCountryObj = useMemo(() => {
+    return (
+      countries.find(c => c.id.toLowerCase() === selectedCountryId.toLowerCase()) ||
+      countries.find(c => c.id === 'portugal') ||
+      countries[0]
+    );
+  }, [countries, selectedCountryId]);
+
+  const activeCountryCityHubs = useMemo(() => {
+    if (!activeCountryObj) return [];
+    return getCityHubsForCountry(activeCountryObj);
+  }, [activeCountryObj, customCityRevision]);
+
+  // Curated Venue & Operator Catalog for all selected city stops (chronologically sorted & tailored to budgetTier + experienceLenses)
   const venueCatalog = useMemo(() => {
     return buildDefaultScheduledItineraryForStops(
       tripDraft.stops,
       countries,
       selectedInterests,
-      customHobbies
+      customHobbies,
+      budgetTier,
+      experienceLenses
     );
-  }, [tripDraft.stops, countries, selectedInterests, customHobbies]);
+  }, [tripDraft.stops, countries, selectedInterests, customHobbies, budgetTier, experienceLenses]);
 
   // Ensure tripDraft.selectedItineraryItems is populated with concrete default venues when stops exist
   useEffect(() => {
@@ -770,7 +901,6 @@ export const ScoutHopPlanner: React.FC = () => {
       const existing = prev.selectedItineraryItems || [];
       const validStopIds = new Set(prev.stops.map(s => s.id));
       const filteredExisting = existing.filter(item => validStopIds.has(item.stopId));
-      // For any stop that doesn't yet have scheduled items, seed its curated recommendations
       const stopsWithItems = new Set(filteredExisting.map(item => item.stopId));
       const missingDefaults = venueCatalog.defaultSelectedItems.filter(
         item => !stopsWithItems.has(item.stopId)
@@ -797,6 +927,9 @@ export const ScoutHopPlanner: React.FC = () => {
         };
         if (parsed && parsed.trip && Array.isArray(parsed.trip.stops)) {
           setTripDraft(parsed.trip);
+          if (parsed.trip.stops[0]?.countryId) {
+            setSelectedCountryId(parsed.trip.stops[0].countryId);
+          }
           if (Array.isArray(parsed.trip.selectedInterests) && parsed.trip.selectedInterests.length > 0) {
             setSelectedInterests(parsed.trip.selectedInterests as ScoutInterestId[]);
           }
@@ -828,7 +961,6 @@ export const ScoutHopPlanner: React.FC = () => {
       customHobbies
     );
     setWeeklyBlocks(prev => {
-      // Preserve completed status of matching activity IDs
       const completedSet = new Set<string>();
       prev.forEach(b =>
         b.activities.forEach(a => {
@@ -845,18 +977,25 @@ export const ScoutHopPlanner: React.FC = () => {
     });
   }, [tripDraft.stops, countries, scoutingFocus, selectedInterests, customHobbies]);
 
+  // Toggle an experience lens pill/card
+  const handleToggleExperienceLens = (lensId: ScoutExperienceLensId) => {
+    setExperienceLenses(prev =>
+      prev.includes(lensId) ? prev.filter(id => id !== lensId) : [...prev, lensId]
+    );
+  };
+
   // Toggle an interest pill/card
   const handleToggleInterest = (interestId: ScoutInterestId) => {
     setSelectedInterests(prev => {
       if (prev.includes(interestId)) {
-        if (prev.length === 1) return prev; // Keep at least 1 interest active
+        if (prev.length === 1) return prev;
         return prev.filter(id => id !== interestId);
       }
       return [...prev, interestId];
     });
   };
 
-  // Add a custom user hobby (e.g. "Padel Tennis", "Scuba Diving", "Salsa Dancing")
+  // Add a custom user hobby
   const handleAddCustomHobby = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleaned = customHobbyInput.trim();
@@ -871,16 +1010,25 @@ export const ScoutHopPlanner: React.FC = () => {
     setCustomHobbies(prev => prev.filter(h => h !== hobby));
   };
 
-  // Live computed metrics for the current itinerary
+  // Live computed metrics for the current itinerary — Stops ALWAYS sorted chronologically by arrivalDate ascending!
   const computedMetrics = useMemo(() => {
     let totalDays = 0;
     let schengenDays = 0;
     let estimatedTotalBurnUSD = 0;
 
-    const enrichedStops = tripDraft.stops.map(stop => {
+    // Sort stops chronologically by arrivalDate ascending
+    const sortedStops = [...tripDraft.stops].sort((a, b) =>
+      (a.arrivalDate || '').localeCompare(b.arrivalDate || '')
+    );
+
+    const budgetMultiplier =
+      budgetTier === 'economic' ? 0.82 : budgetTier === 'luxury' ? 1.45 : 1.0;
+
+    const enrichedStops = sortedStops.map(stop => {
       const days = calculateStopDays(stop.arrivalDate, stop.departureDate);
       const isSchengen = isCountrySchengen(stop.countryId, stop.countryName);
-      const monthlyRate = getCountryMonthlyRateUSD(stop.countryId, burnBasisMode);
+      const baseMonthlyRate = getCountryMonthlyRateUSD(stop.countryId, burnBasisMode);
+      const monthlyRate = Math.round(baseMonthlyRate * budgetMultiplier);
       const stopBurnUSD = Math.round((days / 30) * monthlyRate);
 
       totalDays += days;
@@ -912,9 +1060,9 @@ export const ScoutHopPlanner: React.FC = () => {
       avgMonthlyBurnUSD,
       schengenStatus,
     };
-  }, [tripDraft.stops, burnBasisMode, countries]);
+  }, [tripDraft.stops, burnBasisMode, countries, budgetTier]);
 
-  // Persist changes to `localStorage` under both `refirely_scout_draft` and `refirely_scout_discovery_v2`
+  // Persist changes to `localStorage`
   useEffect(() => {
     try {
       const syncedDraft: ScoutTrip = {
@@ -983,14 +1131,16 @@ export const ScoutHopPlanner: React.FC = () => {
     loadUserSavedTrips();
   }, [isAuthenticated, currentUserId, firebaseUser]);
 
-  // Enriched Country Discovery List with Nomad Score, Fiber Speed, and Continent Grouping
+  // Enriched Country Discovery List with ALL "Explore Havens" Filter & Sorting Parameters
   const enrichedDiscoveryCountries = useMemo(() => {
+    const americasSubRegions = new Set(['Americas', 'North & Central America', 'South America']);
+
     return countries
       .map(c => {
         const nomadProfile = getCountryNomadProfile(c);
         const continentGroup = mapRegionToContinentGroup(c.region);
         const monthlyRate = getCountryMonthlyRateUSD(c.id, burnBasisMode);
-        const hubs = COUNTRY_HUB_COORDINATES[c.id.toLowerCase()] || [];
+        const hubs = getCityHubsForCountry(c);
 
         // Calculate composite Digital Nomad Score (0 - 100)
         const speedScore = Math.min(100, Math.round((nomadProfile.verifiedInternetMbps / 220) * 100));
@@ -1005,74 +1155,142 @@ export const ScoutHopPlanner: React.FC = () => {
           speedScore * 0.35 + coworkScore * 0.35 + costScore * 0.15 + c.lifestyle.safetyScore * 0.15
         );
 
+        const compositeRetireeScore =
+          c.lifestyle.healthcareScore * 0.35 +
+          c.lifestyle.safetyScore * 0.35 +
+          (6 - c.visa.difficultyTier) * 6;
+
         return {
           country: c,
           nomadProfile,
           continentGroup,
           monthlyRate,
           nomadOverallScore,
+          compositeRetireeScore,
           hubs,
           isSchengen: isCountrySchengen(c.id, c.name),
         };
       })
       .filter(item => {
-        if (selectedContinent !== 'all' && item.continentGroup !== selectedContinent) {
+        // Region / Continent Filter (supports both continent groups and granular Explore Havens regions)
+        if (exploreRegionFilter !== 'All') {
+          if (exploreRegionFilter === 'Americas') {
+            if (!americasSubRegions.has(item.country.region)) return false;
+          } else if (item.country.region !== exploreRegionFilter) {
+            return false;
+          }
+        } else if (selectedContinent !== 'all' && item.continentGroup !== selectedContinent) {
           return false;
         }
-        if (item.monthlyRate > maxMonthlyBudgetUSD) {
+
+        // Max Monthly Budget filter
+        if (maxMonthlyBudgetUSD < 3500 && item.monthlyRate > maxMonthlyBudgetUSD) {
           return false;
         }
+
+        // Visa Ease Tier filter
+        if (item.country.visa.difficultyTier > maxVisaDifficultyTier) {
+          return false;
+        }
+
+        // Max Visa Income Requirement filter
+        if (
+          maxVisaIncomeReq < 3500 &&
+          item.country.visa.minMonthlyIncomeUSD > maxVisaIncomeReq
+        ) {
+          return false;
+        }
+
+        // Climate Zone filter
         if (
           climatePreference !== 'Any' &&
           item.country.climate.category.toLowerCase() !== climatePreference.toLowerCase()
         ) {
           return false;
         }
+
+        // Search query (country, region, expat cities, visa name, lifestyle tags)
         if (countrySearchQuery.trim()) {
           const q = countrySearchQuery.trim().toLowerCase();
           const matchName = item.country.name.toLowerCase().includes(q);
           const matchRegion = item.country.region.toLowerCase().includes(q);
           const matchCity =
+            item.hubs.some(h => h.cityName.toLowerCase().includes(q)) ||
             item.country.topCities?.some(tc => tc.name.toLowerCase().includes(q)) ||
             item.nomadProfile.topNomadCities?.some(nc => nc.toLowerCase().includes(q));
           const matchVisa =
             item.nomadProfile.remoteWorkVisaName.toLowerCase().includes(q) ||
             item.country.visa.retirementVisaName.toLowerCase().includes(q);
-          if (!matchName && !matchRegion && !matchCity && !matchVisa) return false;
+          const matchTag = item.country.tags?.some(tag => tag.toLowerCase().includes(q));
+          if (!matchName && !matchRegion && !matchCity && !matchVisa && !matchTag) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        if (browseMode === 'nomad-top' || scoutingFocus === 'nomad-fiber') {
-          return b.nomadOverallScore - a.nomadOverallScore;
+        switch (exploreSortBy) {
+          case 'budget-asc':
+            return a.country.costOfLiving.monthlyBudgetSingleUSD - b.country.costOfLiving.monthlyBudgetSingleUSD;
+          case 'nomad-burn-asc':
+            return a.nomadProfile.monthlyNomadBurnUSD - b.nomadProfile.monthlyNomadBurnUSD;
+          case 'internet-speed-desc':
+            return b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
+          case 'coworking-friendly': {
+            const rank = (d: string) =>
+              d === 'World-Class Nomad Hub' ? 3 : d === 'Abundant & Vibrant' ? 2 : 1;
+            const diff = rank(b.nomadProfile.coworkingDensity) - rank(a.nomadProfile.coworkingDensity);
+            return diff !== 0 ? diff : b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
+          }
+          case 'dnv-friendly': {
+            const easeRank = (e: string) => (e === 'Easy / Streamlined' ? 2 : 1);
+            const diff = easeRank(b.nomadProfile.remoteVisaEase) - easeRank(a.nomadProfile.remoteVisaEase);
+            return diff !== 0 ? diff : a.nomadProfile.remoteVisaMinIncomeUSD - b.nomadProfile.remoteVisaMinIncomeUSD;
+          }
+          case 'dating-nightlife-desc':
+            return b.nomadProfile.datingNightlifeScore - a.nomadProfile.datingNightlifeScore;
+          case 'female-ratio-desc':
+            return b.nomadProfile.femalePopulationPct - a.nomadProfile.femalePopulationPct;
+          case 'healthcare-desc':
+            return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
+          case 'travel-leisure-desc':
+            return b.country.lifestyle.travelLeisureScore - a.country.lifestyle.travelLeisureScore;
+          case 'sunny-desc':
+            return b.country.climate.annualSunnyDays - a.country.climate.annualSunnyDays;
+          case 'safety-desc':
+            return b.country.lifestyle.safetyScore - a.country.lifestyle.safetyScore;
+          case 'visa-difficulty-asc':
+            return a.country.visa.difficultyTier - b.country.visa.difficultyTier;
+          case 'visa-income-asc':
+            return a.country.visa.minMonthlyIncomeUSD - b.country.visa.minMonthlyIncomeUSD;
+          case 'alpha-asc':
+            return a.country.name.localeCompare(b.country.name);
+          case 'alpha-desc':
+            return b.country.name.localeCompare(a.country.name);
+          case 'recommended':
+          default:
+            if (burnBasisMode === 'nomad') {
+              return b.nomadOverallScore - a.nomadOverallScore;
+            }
+            return b.compositeRetireeScore - a.compositeRetireeScore;
         }
-        if (scoutingFocus === 'healthcare-retirement') {
-          return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
-        }
-        if (scoutingFocus === 'coastal-lifestyle') {
-          return b.country.climate.annualSunnyDays - a.country.climate.annualSunnyDays;
-        }
-        return a.monthlyRate - b.monthlyRate;
       });
   }, [
     countries,
     burnBasisMode,
     selectedContinent,
+    exploreRegionFilter,
+    exploreSortBy,
     maxMonthlyBudgetUSD,
+    maxVisaDifficultyTier,
+    maxVisaIncomeReq,
     climatePreference,
     countrySearchQuery,
-    browseMode,
-    scoutingFocus,
+    customCityRevision,
   ]);
 
-  // Candidate pins formatted for interactive selection on the Google Map preview
+  // Candidate pins formatted for the Google Map preview (focused on the single selected country)
   const candidateMapCountries: CandidateMapCountry[] = useMemo(() => {
     return enrichedDiscoveryCountries.map(item => {
-      const availableCities =
-        item.hubs.length > 0
-          ? item.hubs.map(h => h.cityName)
-          : item.country.topCities?.slice(0, 3).map(tc => tc.name) || [item.country.capital];
-
+      const availableCities = item.hubs.map(h => h.cityName);
       const coord = getHubCoordinatesForCountry(
         item.country.id,
         item.country.name,
@@ -1097,7 +1315,7 @@ export const ScoutHopPlanner: React.FC = () => {
     });
   }, [enrichedDiscoveryCountries]);
 
-  // Continent cards summary
+  // Multi-colored Region / Continent summary cards
   const continentStats = useMemo(() => {
     const groups: {
       id: ContinentFilter;
@@ -1111,35 +1329,35 @@ export const ScoutHopPlanner: React.FC = () => {
         label: 'All Global Havens',
         emoji: '🌐',
         tagline: 'Explore every retirement & digital nomad haven worldwide',
-        gradient: 'from-indigo-500 to-teal-500',
+        gradient: 'from-amber-500 via-rose-500 to-violet-600',
       },
       {
         id: 'Europe',
         label: 'Europe & Mediterranean',
         emoji: '🇪🇺',
         tagline: 'Portugal, Spain, Greece, Italy, Albania & Adriatic hubs',
-        gradient: 'from-blue-600 to-indigo-600',
+        gradient: 'from-rose-500 to-orange-500',
       },
       {
         id: 'Asia',
-        label: 'Southeast & East Asia',
+        label: 'Asia, India & Pacific',
         emoji: '🌏',
-        tagline: 'Thailand, Malaysia, Bali, Vietnam & tropical islands',
-        gradient: 'from-teal-600 to-emerald-600',
+        tagline: 'India, Thailand, Malaysia, Bali, Vietnam, Japan & islands',
+        gradient: 'from-amber-500 to-yellow-500',
       },
       {
         id: 'Americas',
         label: 'Latin America & Caribbean',
         emoji: '🌎',
         tagline: 'Costa Rica, Mexico, Panama, Colombia & South America',
-        gradient: 'from-amber-500 to-orange-600',
+        gradient: 'from-violet-600 to-fuchsia-600',
       },
       {
         id: 'Middle East & Africa',
         label: 'Middle East, Africa & Islands',
         emoji: '🏝️',
-        tagline: 'Dubai (UAE), Mauritius, Morocco & tax-free hubs',
-        gradient: 'from-violet-600 to-fuchsia-600',
+        tagline: 'Dubai (UAE), Mauritius, Morocco, South Africa & Seychelles',
+        gradient: 'from-indigo-500 to-purple-600',
       },
     ];
 
@@ -1162,78 +1380,246 @@ export const ScoutHopPlanner: React.FC = () => {
     });
   }, [countries, burnBasisMode]);
 
-  // Toggle or Add a Country / City Stop from the Discovery Grid
-  const handleAddCountryFromDiscovery = (countryId: string, preferredCity?: string) => {
-    if (tripDraft.stops.length >= 5) {
-      setSaveBannerMessage('Maximum of 5 stops reached. Remove a stop to add another haven.');
-      setTimeout(() => setSaveBannerMessage(null), 4000);
-      return;
-    }
-
+  // Helper: Select a Single Country and apply the chosen City Routing Mode ('auto-best' | 'single-city' | 'multi-city')
+  const handleSelectSingleCountry = (
+    countryId: string,
+    modeOverride?: CityRoutingMode,
+    preferredFirstCity?: string
+  ) => {
     const countryObj = countries.find(c => c.id.toLowerCase() === countryId.toLowerCase());
     if (!countryObj) return;
 
-    const lastStop = tripDraft.stops[tripDraft.stops.length - 1];
-    const arrival = lastStop ? addDaysToIsoDate(lastStop.departureDate, 1) : tentativeStartDate;
-    const departure = addDaysToIsoDate(arrival, Math.max(6, daysPerStopPreference - 1));
+    const effectiveMode = modeOverride || cityRoutingMode;
+    setSelectedCountryId(countryObj.id);
+    setFocusedMapCountryId(countryObj.id);
+    if (modeOverride) {
+      setCityRoutingMode(modeOverride);
+    }
+
+    const hubs = getCityHubsForCountry(countryObj);
     const isSchengen = isCountrySchengen(countryObj.id, countryObj.name);
-
-    const hubs = COUNTRY_HUB_COORDINATES[countryObj.id.toLowerCase()] || [];
-    const existingSameCountryCount = tripDraft.stops.filter(
-      s => s.countryId.toLowerCase() === countryObj.id.toLowerCase()
-    ).length;
-
-    const resolvedCity =
-      preferredCity ||
-      hubs[existingSameCountryCount]?.cityName ||
-      countryObj.topCities?.[existingSameCountryCount]?.name ||
-      countryObj.topCities?.[0]?.name ||
-      countryObj.capital;
-
+    const monthlyRate = getCountryMonthlyRateUSD(countryObj.id, burnBasisMode);
     const defaultVisaTag: ScoutVisaStatusTag =
-      scoutingFocus === 'nomad-fiber' || browseMode === 'nomad-top'
+      burnBasisMode === 'nomad'
         ? 'Digital Nomad Visa'
         : isSchengen
         ? '90-Day Tourist'
         : 'Visa-Free';
 
-    const newStop: ScoutTripStop = {
-      id: `stop-${countryObj.id}-${Date.now().toString().slice(-5)}-${Math.random().toString(36).slice(2, 5)}`,
-      countryId: countryObj.id,
-      countryName: countryObj.name,
-      countryFlag: countryObj.flag,
-      cityFocus: resolvedCity,
-      arrivalDate: arrival,
-      departureDate: departure,
-      visaStatusTag: defaultVisaTag,
-      isSchengen,
-      monthlyBurnRateUSD: getCountryMonthlyRateUSD(countryObj.id, burnBasisMode),
-    };
+    const baseStart = clampToMinIsoDate(tentativeStartDate, todayIsoDate);
+
+    let citiesToSchedule: string[] = [];
+    if (effectiveMode === 'single-city') {
+      citiesToSchedule = [preferredFirstCity || hubs[0]?.cityName || countryObj.capital];
+    } else if (effectiveMode === 'auto-best') {
+      const topThree = hubs.slice(0, Math.min(3, hubs.length)).map(h => h.cityName);
+      if (preferredFirstCity && !topThree.includes(preferredFirstCity)) {
+        citiesToSchedule = [preferredFirstCity, ...topThree.slice(0, 2)];
+      } else {
+        citiesToSchedule = topThree.length > 0 ? topThree : [countryObj.capital];
+      }
+    } else {
+      // 'multi-city' mode: if switching to a new country, seed top 2 cities (or preferredFirstCity); if already in this country, append or toggle
+      const currentCountryMatches =
+        tripDraft.stops.length > 0 &&
+        tripDraft.stops[0].countryId.toLowerCase() === countryObj.id.toLowerCase();
+
+      if (currentCountryMatches && preferredFirstCity) {
+        handleAddCountryFromDiscovery(countryObj.id, preferredFirstCity);
+        return;
+      }
+      citiesToSchedule = preferredFirstCity
+        ? [preferredFirstCity]
+        : hubs.slice(0, Math.min(2, hubs.length)).map(h => h.cityName);
+    }
+
+    let cursor = baseStart;
+    const newStops: ScoutTripStop[] = citiesToSchedule.map((cityName, idx) => {
+      const arr = cursor;
+      const dep = addDaysToIsoDate(arr, Math.max(6, daysPerStopPreference - 1));
+      cursor = addDaysToIsoDate(dep, 1);
+      return {
+        id: `stop-${countryObj.id}-${idx}-${Date.now().toString().slice(-4)}`,
+        countryId: countryObj.id,
+        countryName: countryObj.name,
+        countryFlag: countryObj.flag,
+        cityFocus: cityName,
+        arrivalDate: arr,
+        departureDate: dep,
+        visaStatusTag: defaultVisaTag,
+        isSchengen,
+        monthlyBurnRateUSD: monthlyRate,
+      };
+    });
+
+    const citySummary = newStops.map(s => (s.cityFocus || '').split('(')[0].trim()).join(' → ');
+    setTripDraft(prev => ({
+      ...prev,
+      title:
+        newStops.length === 1
+          ? `${countryObj.name} (${citySummary}) Immersion Scout`
+          : `${countryObj.name} Multi-City Scout (${citySummary})`,
+      stops: newStops,
+      accommodation: {
+        ...prev.accommodation,
+        propertyName: `${newStops[0]?.cityFocus} Furnished Scouting Basecamp`,
+        checkInDate: newStops[0]?.arrivalDate || baseStart,
+        checkOutDate: newStops[newStops.length - 1]?.departureDate || cursor,
+        cityOrNeighborhood: newStops.map(s => s.cityFocus).join(' · '),
+      },
+    }));
+  };
+
+  // Add or Replace a City Stop within the Single Chosen Country
+  const handleAddCountryFromDiscovery = (countryId: string, preferredCity?: string) => {
+    const countryObj = countries.find(c => c.id.toLowerCase() === countryId.toLowerCase());
+    if (!countryObj) return;
+
+    setSelectedCountryId(countryObj.id);
+    setFocusedMapCountryId(countryObj.id);
+
+    const hubs = getCityHubsForCountry(countryObj);
+    const isSchengen = isCountrySchengen(countryObj.id, countryObj.name);
+    const monthlyRate = getCountryMonthlyRateUSD(countryObj.id, burnBasisMode);
+
+    const defaultVisaTag: ScoutVisaStatusTag =
+      burnBasisMode === 'nomad'
+        ? 'Digital Nomad Visa'
+        : isSchengen
+        ? '90-Day Tourist'
+        : 'Visa-Free';
 
     setTripDraft(prev => {
-      const nextStops = [...prev.stops, newStop];
-      const names = Array.from(new Set(nextStops.map(s => s.countryName)));
-      const autoTitle =
-        names.length === 1
-          ? `${names[0]} Deep Scouting Roadmap`
-          : `${names.join(' → ')} Scouting Route`;
+      // Restrict all stops to this single country!
+      const existingSameCountryStops = prev.stops.filter(
+        s => s.countryId.toLowerCase() === countryObj.id.toLowerCase()
+      );
+
+      // If user is in Single-City mode, replace with just 1 city stop
+      if (cityRoutingMode === 'single-city') {
+        const resolvedCity =
+          preferredCity ||
+          hubs[0]?.cityName ||
+          countryObj.topCities?.[0]?.name ||
+          countryObj.capital;
+        const arr = clampToMinIsoDate(tentativeStartDate, todayIsoDate);
+        const dep = addDaysToIsoDate(arr, Math.max(6, daysPerStopPreference - 1));
+        const singleStop: ScoutTripStop = {
+          id: `stop-${countryObj.id}-${Date.now().toString().slice(-5)}`,
+          countryId: countryObj.id,
+          countryName: countryObj.name,
+          countryFlag: countryObj.flag,
+          cityFocus: resolvedCity,
+          arrivalDate: arr,
+          departureDate: dep,
+          visaStatusTag: defaultVisaTag,
+          isSchengen,
+          monthlyBurnRateUSD: monthlyRate,
+        };
+        return {
+          ...prev,
+          title: `${countryObj.name} (${resolvedCity.split('(')[0].trim()}) Single-City Scout`,
+          stops: [singleStop],
+          accommodation: {
+            ...prev.accommodation,
+            checkInDate: arr,
+            checkOutDate: dep,
+            cityOrNeighborhood: resolvedCity,
+          },
+        };
+      }
+
+      if (existingSameCountryStops.length >= 5) {
+        setSaveBannerMessage(
+          `Maximum of 5 city stops reached in ${countryObj.name}. Remove a city stop to add another.`
+        );
+        setTimeout(() => setSaveBannerMessage(null), 4000);
+        return prev;
+      }
+
+      const usedCities = new Set(
+        existingSameCountryStops.map(s => (s.cityFocus || '').toLowerCase())
+      );
+      const nextUnusedHub = hubs.find(h => !usedCities.has(h.cityName.toLowerCase()));
+
+      const resolvedCity =
+        preferredCity ||
+        nextUnusedHub?.cityName ||
+        hubs[existingSameCountryStops.length % Math.max(1, hubs.length)]?.cityName ||
+        countryObj.capital;
+
+      const lastStop = existingSameCountryStops[existingSameCountryStops.length - 1];
+      const arrival = lastStop
+        ? addDaysToIsoDate(lastStop.departureDate, 1)
+        : clampToMinIsoDate(tentativeStartDate, todayIsoDate);
+      const departure = addDaysToIsoDate(arrival, Math.max(6, daysPerStopPreference - 1));
+
+      const newStop: ScoutTripStop = {
+        id: `stop-${countryObj.id}-${Date.now().toString().slice(-5)}-${Math.random().toString(36).slice(2, 5)}`,
+        countryId: countryObj.id,
+        countryName: countryObj.name,
+        countryFlag: countryObj.flag,
+        cityFocus: resolvedCity,
+        arrivalDate: arrival,
+        departureDate: departure,
+        visaStatusTag: defaultVisaTag,
+        isSchengen,
+        monthlyBurnRateUSD: monthlyRate,
+      };
+
+      const nextStops = [...existingSameCountryStops, newStop].sort((a, b) =>
+        a.arrivalDate.localeCompare(b.arrivalDate)
+      );
+      const cityNames = nextStops.map(s => (s.cityFocus || '').split('(')[0].trim()).join(' → ');
 
       return {
         ...prev,
-        title:
-          prev.title === 'My Custom Global Scouting Roadmap' ||
-          prev.title.includes('→') ||
-          prev.title.includes('Deep Scouting')
-            ? autoTitle
-            : prev.title,
+        title: `${countryObj.name} Scouting Route (${cityNames})`,
         stops: nextStops,
         accommodation: {
           ...prev.accommodation,
           checkInDate: nextStops[0]?.arrivalDate || tentativeStartDate,
           checkOutDate: nextStops[nextStops.length - 1]?.departureDate || departure,
+          cityOrNeighborhood: nextStops.map(s => s.cityFocus).join(' · '),
         },
       };
     });
+  };
+
+  // Handler when user searches & adds a custom city via Google Places Autocomplete (restricted to the chosen country ONLY)
+  const handleAddCustomCityInSameCountry = (
+    countryId: string,
+    cityName: string,
+    lat?: number,
+    lng?: number,
+    highlight?: string
+  ) => {
+    const countryObj =
+      countries.find(c => c.id.toLowerCase() === countryId.toLowerCase()) || activeCountryObj;
+    if (!countryObj) return;
+
+    const fallbackHub = getHubCoordinatesForCountry(
+      countryObj.id,
+      countryObj.name,
+      undefined,
+      countryObj.region
+    );
+    const resolvedLat = typeof lat === 'number' && !isNaN(lat) ? lat : fallbackHub.lat + 0.35;
+    const resolvedLng = typeof lng === 'number' && !isNaN(lng) ? lng : fallbackHub.lng + 0.35;
+
+    registerCustomCityCoordinate(
+      countryObj.id,
+      cityName,
+      resolvedLat,
+      resolvedLng,
+      highlight || `Custom chosen city stop in ${countryObj.name}`
+    );
+    setCustomCityRevision(r => r + 1);
+    handleAddCountryFromDiscovery(countryObj.id, cityName);
+    setSaveBannerMessage(
+      `Added "${cityName}" (${countryObj.flag} ${countryObj.name}) to your route & interactive map!`
+    );
+    setTimeout(() => setSaveBannerMessage(null), 4500);
   };
 
   // Recalculate all stop dates sequentially when user changes Tentative Start Date or Days/Stop
@@ -1268,44 +1654,57 @@ export const ScoutHopPlanner: React.FC = () => {
     });
   };
 
-  // Auto-Suggest Top 3 Countries based on active filters & preferences
-  const handleAutoSuggestRoute = (advanceToInterests = false) => {
-    const topMatches = enrichedDiscoveryCountries.slice(0, 3);
-    if (topMatches.length === 0) return;
+  // Auto-Suggest Best City Route within the Single Chosen Country ("Let Refirely Decide Best Itinerary")
+  const handleAutoSuggestRoute = (advanceToInterests = false, overrideCountryId?: string) => {
+    const targetId =
+      overrideCountryId ||
+      selectedCountryId ||
+      enrichedDiscoveryCountries[0]?.country.id ||
+      'portugal';
+    const countryObj =
+      countries.find(c => c.id.toLowerCase() === targetId.toLowerCase()) ||
+      enrichedDiscoveryCountries[0]?.country ||
+      countries[0];
+    if (!countryObj) return;
 
-    let cursor = tentativeStartDate;
-    const autoStops: ScoutTripStop[] = topMatches.map((item, idx) => {
+    setSelectedCountryId(countryObj.id);
+    setFocusedMapCountryId(countryObj.id);
+
+    const hubs = getCityHubsForCountry(countryObj);
+    const desiredCount = cityRoutingMode === 'single-city' ? 1 : Math.min(3, hubs.length);
+    const chosenHubs = hubs.slice(0, Math.max(1, desiredCount));
+    const isSchengen = isCountrySchengen(countryObj.id, countryObj.name);
+    const monthlyRate = getCountryMonthlyRateUSD(countryObj.id, burnBasisMode);
+
+    let cursor = clampToMinIsoDate(tentativeStartDate, todayIsoDate);
+    const autoStops: ScoutTripStop[] = chosenHubs.map((hub, idx) => {
       const arr = cursor;
       const dep = addDaysToIsoDate(arr, Math.max(6, daysPerStopPreference - 1));
       cursor = addDaysToIsoDate(dep, 1);
-      const city =
-        item.hubs[0]?.cityName ||
-        item.country.topCities?.[0]?.name ||
-        item.country.capital;
 
       return {
-        id: `stop-${item.country.id}-${idx}-${Date.now().toString().slice(-4)}`,
-        countryId: item.country.id,
-        countryName: item.country.name,
-        countryFlag: item.country.flag,
-        cityFocus: city,
+        id: `stop-${countryObj.id}-${idx}-${Date.now().toString().slice(-4)}`,
+        countryId: countryObj.id,
+        countryName: countryObj.name,
+        countryFlag: countryObj.flag,
+        cityFocus: hub.cityName,
         arrivalDate: arr,
         departureDate: dep,
         visaStatusTag:
-          scoutingFocus === 'nomad-fiber' || browseMode === 'nomad-top'
+          burnBasisMode === 'nomad'
             ? 'Digital Nomad Visa'
-            : item.isSchengen
+            : isSchengen
             ? '90-Day Tourist'
             : 'Visa-Free',
-        isSchengen: item.isSchengen,
-        monthlyBurnRateUSD: item.monthlyRate,
+        isSchengen,
+        monthlyBurnRateUSD: monthlyRate,
       };
     });
 
-    const routeNames = autoStops.map(s => s.countryName).join(' → ');
+    const cityRouteNames = autoStops.map(s => (s.cityFocus || '').split('(')[0].trim()).join(' → ');
     setTripDraft(prev => ({
       ...prev,
-      title: `${routeNames} Scouting Route`,
+      title: `${countryObj.name} Curated Scout (${cityRouteNames})`,
       stops: autoStops,
       accommodation: {
         ...prev.accommodation,
@@ -1318,27 +1717,26 @@ export const ScoutHopPlanner: React.FC = () => {
 
     if (advanceToInterests) {
       setWizardStep('step-3-interests');
-    } else {
-      setWizardStep('step-2-countries');
     }
     setSaveBannerMessage(
-      `Selected top 3 matches: ${routeNames}! Now review them on the map or pick your interests to generate your custom weekly itinerary.`
+      `✨ Curated optimal ${countryObj.name} itinerary: ${cityRouteNames}!`
     );
     setTimeout(() => setSaveBannerMessage(null), 5000);
   };
 
-  // CTA handler for Step 3 -> Step 4 ("Generate My Custom Itinerary & Show Me")
+  // CTA handler for Step 2 -> Step 3 ("Generate My Custom Itinerary & Show Me")
   const handleGenerateCustomItinerary = () => {
     if (tripDraft.stops.length === 0) {
-      handleAutoSuggestRoute(false);
+      handleAutoSuggestRoute(false, selectedCountryId);
     }
-    // Sync default recommended venues for active interests while keeping any user-customized items
     setTripDraft(prev => {
       const freshCatalog = buildDefaultScheduledItineraryForStops(
         prev.stops,
         countries,
         selectedInterests,
-        customHobbies
+        customHobbies,
+        budgetTier,
+        experienceLenses
       );
       const customItems = (prev.selectedItineraryItems || []).filter(item =>
         (item.recommendationId || '').startsWith('custom-')
@@ -1352,10 +1750,9 @@ export const ScoutHopPlanner: React.FC = () => {
     });
     setWizardStep('step-4-itinerary');
     setActiveStageTab('map-itinerary');
+    const tierMeta = SCOUT_BUDGET_TIERS.find(t => t.id === budgetTier);
     setSaveBannerMessage(
-      `✨ Generated your unified multi-week itinerary with curated bars, dating spots, trails & operators tailored to ${selectedInterests.length} interests${
-        customHobbies.length > 0 ? ` + ${customHobbies.join(', ')}` : ''
-      }!`
+      `✨ Generated your ${activeCountryObj?.name || ''} itinerary (${tierMeta?.shortLabel || 'Medium'} tier) with verified local venues sorted chronologically by date!`
     );
     setTimeout(() => setSaveBannerMessage(null), 6000);
   };
@@ -1409,7 +1806,7 @@ export const ScoutHopPlanner: React.FC = () => {
     setTimeout(() => setSaveBannerMessage(null), 4000);
   };
 
-  // Remove a scheduled item from the itinerary (by item ID or by stopId + recommendationId)
+  // Remove a scheduled item from the itinerary
   const handleRemoveScheduledItem = (itemId: string) => {
     setTripDraft(prev => ({
       ...prev,
@@ -1465,7 +1862,7 @@ export const ScoutHopPlanner: React.FC = () => {
       priceRange: '$$',
       photoUrl:
         'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
-      fallbackGradient: 'from-indigo-700 via-teal-700 to-slate-900',
+      fallbackGradient: 'from-amber-700 via-rose-700 to-violet-900',
       googleMapsUrl: buildGoogleMapsSearchUrl(
         `${cleanTitle} ${cleanNeighborhood} ${city} ${stop.countryName}`
       ),
@@ -1570,7 +1967,7 @@ export const ScoutHopPlanner: React.FC = () => {
 
   const handleSaveTripClick = async () => {
     if (tripDraft.stops.length === 0) {
-      setSaveBannerMessage('Please select at least 1 country stop before saving your scouting trip.');
+      setSaveBannerMessage('Please select at least 1 city stop before saving your scouting trip.');
       setTimeout(() => setSaveBannerMessage(null), 4500);
       return;
     }
@@ -1624,7 +2021,7 @@ export const ScoutHopPlanner: React.FC = () => {
             .replace(/[._\-]+/g, ' ')
             .replace(/\b\w/g, l => l.toUpperCase());
 
-        const primaryStopCountry = tripDraft.stops[0]?.countryName || 'Portugal';
+        const primaryStopCountry = tripDraft.stops[0]?.countryName || activeCountryObj?.name || 'Portugal';
         const signupRes = signup({
           name: displayName,
           email: cleanEmail,
@@ -1678,11 +2075,14 @@ export const ScoutHopPlanner: React.FC = () => {
   };
 
   const handleLoadSamplePreset = () => {
-    const preset = createMediterraneanPresetDraft();
+    const preset = createSingleCountryPresetDraft(selectedCountryId || 'portugal');
     setTripDraft(preset);
+    setSelectedCountryId(preset.stops[0]?.countryId || 'portugal');
     setWizardStep('step-4-itinerary');
     setActiveStageTab('map-itinerary');
-    setSaveBannerMessage('Loaded Sample 75-Day Mediterranean Scout (Portugal 45d + Greece 30d)!');
+    setSaveBannerMessage(
+      `Loaded Sample 45-Day ${preset.stops[0]?.countryName || 'Portugal'} Multi-City Scout!`
+    );
     setTimeout(() => setSaveBannerMessage(null), 5000);
   };
 
@@ -1692,34 +2092,42 @@ export const ScoutHopPlanner: React.FC = () => {
     setWizardStep('step-1-region');
   };
 
+  // Add another city stop within the SAME selected country
   const handleAddStop = (prefillCountryId?: string, prefillVisaTag?: ScoutVisaStatusTag) => {
+    const targetCountryId = prefillCountryId || selectedCountryId || tripDraft.stops[0]?.countryId || 'portugal';
+    const countryObj =
+      countries.find(c => c.id.toLowerCase() === targetCountryId.toLowerCase()) ||
+      activeCountryObj ||
+      countries[0];
+    if (!countryObj) return;
+
+    // If user clicked a Non-Schengen Hop suggestion, switch the single-country scout to that country
+    if (prefillCountryId && prefillCountryId.toLowerCase() !== selectedCountryId.toLowerCase()) {
+      handleSelectSingleCountry(prefillCountryId, 'multi-city');
+      return;
+    }
+
     if (tripDraft.stops.length >= 5) return;
     const lastStop = tripDraft.stops[tripDraft.stops.length - 1];
     const nextArrival = lastStop ? addDaysToIsoDate(lastStop.departureDate, 1) : tentativeStartDate;
     const nextDeparture = addDaysToIsoDate(nextArrival, Math.max(6, daysPerStopPreference - 1));
 
-    const defaultCountryCandidates = ['portugal', 'spain', 'thailand', 'greece', 'costa-rica', 'albania'];
-    const usedIds = new Set(tripDraft.stops.map(s => s.countryId));
-    const chosenId =
-      prefillCountryId ||
-      defaultCountryCandidates.find(id => !usedIds.has(id)) ||
-      countries[0]?.id ||
-      'portugal';
-
-    const countryObj =
-      countries.find(c => c.id.toLowerCase() === chosenId.toLowerCase()) || countries[0];
     const isSchengen = isCountrySchengen(countryObj.id, countryObj.name);
     const visaTag: ScoutVisaStatusTag =
       prefillVisaTag || (isSchengen ? '90-Day Tourist' : 'Visa-Free');
 
-    const hubs = COUNTRY_HUB_COORDINATES[countryObj.id.toLowerCase()] || [];
+    const hubs = getCityHubsForCountry(countryObj);
+    const usedCities = new Set(tripDraft.stops.map(s => (s.cityFocus || '').toLowerCase()));
+    const nextHub =
+      hubs.find(h => !usedCities.has(h.cityName.toLowerCase())) ||
+      hubs[tripDraft.stops.length % Math.max(1, hubs.length)];
 
     const newStop: ScoutTripStop = {
       id: `stop-${Date.now()}`,
       countryId: countryObj.id,
       countryName: countryObj.name,
       countryFlag: countryObj.flag,
-      cityFocus: hubs[0]?.cityName || countryObj.topCities?.[0]?.name || countryObj.capital,
+      cityFocus: nextHub?.cityName || countryObj.capital,
       arrivalDate: nextArrival,
       departureDate: nextDeparture,
       visaStatusTag: visaTag,
@@ -1734,6 +2142,12 @@ export const ScoutHopPlanner: React.FC = () => {
   };
 
   const handleUpdateStop = (stopId: string, updates: Partial<ScoutTripStop>) => {
+    // If user changes the country dropdown in Column 1, switch the entire single-country route to that country
+    if (updates.countryId && updates.countryId.toLowerCase() !== selectedCountryId.toLowerCase()) {
+      handleSelectSingleCountry(updates.countryId, cityRoutingMode);
+      return;
+    }
+
     setTripDraft(prev => ({
       ...prev,
       stops: prev.stops.map(stop => {
@@ -1751,23 +2165,6 @@ export const ScoutHopPlanner: React.FC = () => {
           sanitizedUpdates.departureDate = effectiveArrival;
         }
 
-        if (sanitizedUpdates.countryId && sanitizedUpdates.countryId !== stop.countryId) {
-          const matched = countries.find(c => c.id === sanitizedUpdates.countryId);
-          if (matched) {
-            const schengen = isCountrySchengen(matched.id, matched.name);
-            const hubs = COUNTRY_HUB_COORDINATES[matched.id.toLowerCase()] || [];
-            return {
-              ...stop,
-              ...sanitizedUpdates,
-              countryId: matched.id,
-              countryName: matched.name,
-              countryFlag: matched.flag,
-              cityFocus: hubs[0]?.cityName || matched.topCities?.[0]?.name || matched.capital,
-              isSchengen: schengen,
-              monthlyBurnRateUSD: getCountryMonthlyRateUSD(matched.id, burnBasisMode),
-            };
-          }
-        }
         return { ...stop, ...sanitizedUpdates };
       }),
     }));
@@ -1777,7 +2174,7 @@ export const ScoutHopPlanner: React.FC = () => {
     setTripDraft(prev => {
       const nextStops = prev.stops.filter(s => s.id !== stopId);
       if (nextStops.length === 0 && wizardStep === 'step-4-itinerary') {
-        setWizardStep('step-2-countries');
+        setWizardStep('step-1-region');
       }
       return {
         ...prev,
@@ -1953,35 +2350,39 @@ export const ScoutHopPlanner: React.FC = () => {
     [continentStats, selectedContinent]
   );
 
+  // Merged Step 1 active check (handles both 'step-1-region' and 'step-2-countries')
+  const isStep1DiscoveryActive =
+    wizardStep === 'step-1-region' || wizardStep === 'step-2-countries';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 overflow-x-hidden">
       {/* =================================================================== */}
       {/* 1. PAGE HEADER & PRIMARY ACTIONS BAR                                */}
       {/* =================================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50/95 via-white to-teal-50/90 border border-indigo-200/80 p-6 sm:p-8 shadow-md">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
-        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50/90 via-white to-rose-50/85 border border-amber-200/80 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-rose-500 via-50% to-violet-600" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-300/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-rose-300/20 blur-3xl" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-teal-100/90 to-indigo-100/90 border border-teal-300/80 text-teal-950 text-xs font-bold uppercase tracking-wider shadow-2xs">
-              <Plane className="w-3.5 h-3.5 text-teal-700" />
-              <span>Guided 4-Step Sabbatical, Nomad &amp; Relocation Studio</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-400/90 text-slate-950 text-[10px] font-extrabold">
-                ✨ New
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-100/90 via-rose-100/80 to-violet-100/90 border border-amber-300/80 text-amber-950 text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <Plane className="w-3.5 h-3.5 text-rose-600" />
+              <span>Single-Country Dossier &amp; Expat City Hopping Studio</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">
+                ✨ Revamped
               </span>
             </div>
 
             <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
               Scout &amp; Hop:{' '}
-              <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                Sabbatical &amp; Visa Route Planner
+              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-violet-600 bg-clip-text text-transparent">
+                Single-Country City &amp; Sabbatical Planner
               </span>
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Design your ideal scouting trip step by step: choose your region &amp; dates, watch your stops connect on an interactive Google Map, pick your personal interests (hiking, surfing, nightlife, architecture, dating, volunteering &amp; more), and generate a bespoke visual weekly itinerary.
+              Choose <strong>1 target country</strong> using all Explore Havens filters, explore its top expat cities (or let Refirely auto-design a 1-city or multi-city route inside that country), customize your budget &amp; experience style, and generate a date-sorted local playbook.
             </p>
           </div>
 
@@ -1990,10 +2391,10 @@ export const ScoutHopPlanner: React.FC = () => {
             <button
               type="button"
               onClick={handleLoadSamplePreset}
-              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-indigo-50/80 text-indigo-950 border border-indigo-200/90 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-amber-50/80 text-slate-900 border border-amber-200/90 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>Load Sample 75-Day Mediterranean Scout</span>
+              <span>Load Sample 45-Day Portugal Multi-City Scout</span>
             </button>
 
             {hasStopsSelected && (
@@ -2003,7 +2404,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Start Over</span>
+                <span>Reset Cities</span>
               </button>
             )}
 
@@ -2011,7 +2412,7 @@ export const ScoutHopPlanner: React.FC = () => {
               type="button"
               onClick={handleSaveTripClick}
               disabled={isSavingTrip}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 cursor-pointer shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-rose-500/15 cursor-pointer shrink-0"
             >
               <Save className="w-4 h-4 shrink-0" />
               <span>{isSavingTrip ? 'Saving Roadmap...' : '💾 Save Trip to My Dashboard'}</span>
@@ -2020,7 +2421,7 @@ export const ScoutHopPlanner: React.FC = () => {
         </div>
 
         {/* Editable Trip Title & Burn Mode Bar */}
-        <div className="relative mt-5 pt-4 border-t border-indigo-100/90 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="relative mt-5 pt-4 border-t border-amber-200/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
             <label
               htmlFor="scout-trip-title"
@@ -2033,8 +2434,8 @@ export const ScoutHopPlanner: React.FC = () => {
               type="text"
               value={tripDraft.title}
               onChange={e => setTripDraft(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g., Autumn 2026 Southern Europe Scouting Loop"
-              className="w-full sm:max-w-md px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g., Portugal Multi-City Scouting Loop"
+              className="w-full sm:max-w-md px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
             />
             <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -2047,7 +2448,7 @@ export const ScoutHopPlanner: React.FC = () => {
           </div>
 
           {/* Living Burn Calculation Basis Selector */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold self-start md:self-auto shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-white/90 p-1 rounded-xl border border-amber-200/80 text-[11px] font-bold self-start md:self-auto shrink-0">
             <span className="px-2 text-slate-500">Cost Basis:</span>
             {[
               { id: 'retiree-single', label: 'Single Retiree' },
@@ -2060,7 +2461,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 onClick={() => setBurnBasisMode(mode.id as any)}
                 className={`px-2.5 py-1 rounded-lg transition-all duration-300 cursor-pointer ${
                   burnBasisMode === mode.id
-                    ? 'bg-white text-indigo-950 font-extrabold shadow-2xs border border-indigo-200/80'
+                    ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -2101,16 +2502,16 @@ export const ScoutHopPlanner: React.FC = () => {
 
       {/* Saved Trips Drawer (for Authenticated Members with Saved Trips) */}
       {isAuthenticated && currentUserId !== 'guest' && savedTrips.length > 0 && (
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+        <div className="p-4 rounded-2xl bg-white border border-amber-200/90 shadow-2xs space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-              <FolderOpen className="w-4 h-4 text-indigo-600" />
+              <FolderOpen className="w-4 h-4 text-rose-600" />
               <span>My Saved Scouting Roadmaps ({savedTrips.length})</span>
             </div>
             <button
               type="button"
               onClick={handleClearRouteAndStartFresh}
-              className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-bold text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Start Fresh Custom Route</span>
@@ -2124,7 +2525,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   key={t.id}
                   className={`p-3 rounded-xl border transition-all duration-300 flex items-center justify-between gap-2 ${
                     isCurrent
-                      ? 'bg-indigo-50/70 border-indigo-300 shadow-2xs'
+                      ? 'bg-amber-50/70 border-amber-300 shadow-2xs'
                       : 'bg-slate-50/70 border-slate-200 hover:bg-white'
                   }`}
                 >
@@ -2132,6 +2533,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setTripDraft(t);
+                      if (t.stops?.[0]?.countryId) setSelectedCountryId(t.stops[0].countryId);
                       setWizardStep('step-4-itinerary');
                     }}
                     className="text-left min-w-0 flex-1 cursor-pointer"
@@ -2157,59 +2559,47 @@ export const ScoutHopPlanner: React.FC = () => {
       )}
 
       {/* =================================================================== */}
-      {/* CLEAN 4-STEP INTERACTIVE WIZARD PROGRESS BAR                        */}
+      {/* MERGED 3-STEP INTERACTIVE WIZARD PROGRESS BAR                       */}
       {/* =================================================================== */}
-      <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-indigo-200/80 shadow-sm">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-amber-200/80 shadow-xs">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           {[
             {
               id: 'step-1-region' as WizardStepId,
-              stepNum: 'Step 1',
-              title: 'Region & Dates',
-              subtitle:
-                selectedContinent === 'all'
-                  ? `Global · ${daysPerStopPreference}d/stop`
-                  : `${activeContinentObj.label} · ${daysPerStopPreference}d/stop`,
-              icon: Globe,
-              done: true,
-            },
-            {
-              id: 'step-2-countries' as WizardStepId,
-              stepNum: 'Step 2',
-              title: 'Countries & Places',
-              subtitle: hasStopsSelected
-                ? `${tripDraft.stops.length} ${tripDraft.stops.length === 1 ? 'Stop' : 'Stops'} Selected`
-                : 'Pick on Interactive Map',
+              stepNum: 'Step 1 (Merged)',
+              title: '1 Country, Expat Cities & Map',
+              subtitle: activeCountryObj
+                ? `${activeCountryObj.flag} ${activeCountryObj.name} · ${tripDraft.stops.length} ${tripDraft.stops.length === 1 ? 'City' : 'Cities'}`
+                : 'Filter Country & Pick Cities',
               icon: MapIcon,
-              done: hasStopsSelected,
+              activeColor: 'from-amber-500 via-orange-500 to-rose-500',
+              isCurrent: isStep1DiscoveryActive,
+              isCompleted: !isStep1DiscoveryActive && hasStopsSelected,
             },
             {
               id: 'step-3-interests' as WizardStepId,
-              stepNum: 'Step 3',
-              title: 'Interests & Hobbies',
-              subtitle: `${selectedInterests.length} Interests${
-                customHobbies.length > 0 ? ` + ${customHobbies.length} Hobbies` : ''
-              }`,
+              stepNum: 'Step 2',
+              title: 'Experience Style & Interests',
+              subtitle: `${SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label || 'Balanced'} · ${selectedInterests.length} Interests`,
               icon: Sparkles,
-              done: selectedInterests.length > 0,
+              activeColor: 'from-rose-500 via-fuchsia-600 to-violet-600',
+              isCurrent: wizardStep === 'step-3-interests',
+              isCompleted: wizardStep === 'step-4-itinerary',
             },
             {
               id: 'step-4-itinerary' as WizardStepId,
-              stepNum: 'Step 4',
-              title: 'My Custom Itinerary',
+              stepNum: 'Step 3',
+              title: 'Date-Sorted Itinerary & Venues',
               subtitle: hasStopsSelected
                 ? `${weeklyBlocks.length} Weeks · $${computedMetrics.estimatedTotalBurnUSD.toLocaleString()} Burn`
                 : 'Ready to Generate',
               icon: CalendarDays,
-              done: wizardStep === 'step-4-itinerary' && hasStopsSelected,
+              activeColor: 'from-violet-600 via-indigo-600 to-emerald-600',
+              isCurrent: wizardStep === 'step-4-itinerary',
+              isCompleted: false,
             },
-          ].map((step, index) => {
+          ].map(step => {
             const Icon = step.icon;
-            const isCurrent = wizardStep === step.id;
-            const stepOrder = ['step-1-region', 'step-2-countries', 'step-3-interests', 'step-4-itinerary'];
-            const currentIdx = stepOrder.indexOf(wizardStep);
-            const isCompleted = index < currentIdx;
-
             return (
               <button
                 key={step.id}
@@ -2221,46 +2611,38 @@ export const ScoutHopPlanner: React.FC = () => {
                     setWizardStep(step.id);
                   }
                 }}
-                className={`p-3 rounded-2xl border text-left transition-all duration-300 flex items-center gap-3 cursor-pointer relative overflow-hidden ${
-                  isCurrent
-                    ? 'bg-gradient-to-r from-indigo-950 via-indigo-900 to-teal-900 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/25'
-                    : isCompleted
-                    ? 'bg-emerald-50/70 hover:bg-emerald-50 border-emerald-200/90 text-slate-900'
-                    : 'bg-slate-50/80 hover:bg-white border-slate-200/90 text-slate-700'
+                className={`p-3.5 rounded-2xl border text-left transition-all duration-300 flex items-center gap-3 cursor-pointer relative overflow-hidden ${
+                  step.isCurrent
+                    ? `bg-gradient-to-r ${step.activeColor} text-white border-transparent shadow-md`
+                    : step.isCompleted
+                    ? 'bg-emerald-50/80 hover:bg-emerald-50 border-emerald-200 text-slate-900'
+                    : 'bg-amber-50/40 hover:bg-white border-amber-200/70 text-slate-700'
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-mono text-xs font-extrabold transition-colors ${
-                    isCurrent
-                      ? 'bg-gradient-to-br from-teal-400 to-emerald-400 text-slate-950 shadow-xs'
-                      : isCompleted
+                    step.isCurrent
+                      ? 'bg-white/95 text-slate-900 shadow-xs'
+                      : step.isCompleted
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-white border border-slate-200 text-indigo-700'
+                      : 'bg-white border border-amber-200 text-rose-600'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Icon className="w-4 h-4" />}
+                  {step.isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Icon className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`text-[10px] font-mono font-extrabold uppercase tracking-wider ${
-                        isCurrent ? 'text-teal-300' : isCompleted ? 'text-emerald-700' : 'text-indigo-600'
+                        step.isCurrent ? 'text-amber-100' : step.isCompleted ? 'text-emerald-700' : 'text-rose-600'
                       }`}
                     >
                       {step.stepNum}
                     </span>
-                    {isCurrent && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                    )}
+                    {step.isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
                   </div>
-                  <p className="font-heading text-xs sm:text-sm font-extrabold truncate">
-                    {step.title}
-                  </p>
-                  <p
-                    className={`text-[11px] truncate font-medium ${
-                      isCurrent ? 'text-slate-300' : 'text-slate-500'
-                    }`}
-                  >
+                  <p className="font-heading text-xs sm:text-sm font-extrabold truncate">{step.title}</p>
+                  <p className={`text-[11px] truncate font-medium ${step.isCurrent ? 'text-white/90' : 'text-slate-500'}`}>
                     {step.subtitle}
                   </p>
                 </div>
@@ -2271,201 +2653,158 @@ export const ScoutHopPlanner: React.FC = () => {
       </div>
 
       {/* =================================================================== */}
-      {/* WIZARD STEP 1: CHOOSE GEOGRAPHICAL REGION, TENTATIVE DATES & BUDGET */}
+      {/* MERGED STEP 1: EXPLORE HAVENS FILTERS + SINGLE COUNTRY & CITIES     */}
       {/* =================================================================== */}
-      {wizardStep === 'step-1-region' && (
+      {isStep1DiscoveryActive && (
         <motion.div
-          key="wizard-step-1"
+          key="wizard-merged-step-1"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-3xl bg-white border border-indigo-200/90 shadow-md overflow-hidden"
+          className="rounded-3xl bg-white border border-amber-200/90 shadow-sm overflow-hidden"
         >
-          {/* Step 1 Top Hero Banner */}
-          <div className="p-5 sm:p-7 bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Light Multi-Colored Step 1 Header */}
+          <div className="p-5 sm:p-7 bg-gradient-to-r from-amber-50 via-rose-50/80 to-violet-50/90 border-b border-amber-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-extrabold uppercase tracking-wider">
-                <Globe className="w-3 h-3" />
-                <span>Step 1 of 4 · Geographical Region &amp; Schedule</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider">
+                <Globe className="w-3 h-3 text-rose-600" />
+                <span>Step 1 of 3 · Single-Country Filter, Expat Cities &amp; Live Map</span>
               </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-extrabold">
-                Where in the World Do You Want to Scout, and When?
+              <h2 className="font-heading text-xl sm:text-2xl font-extrabold text-slate-900">
+                1. Filter &amp; Select 1 Target Country + Choose Expat Cities
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-                Pick a continent or Digital Nomad lens, set your tentative start date, duration per stop, and monthly budget target.
+              <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
+                Since Refirely features dedicated single-country dossiers, Scout &amp; Hop focuses cleanly on <strong>1 country at a time</strong>. Filter countries with all Explore Havens parameters below, pick a country, and choose <strong>1 city</strong>, <strong>multiple cities</strong>, or let Refirely auto-build the best route.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setWizardStep('step-2-countries')}
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg cursor-pointer shrink-0 transition-transform active:scale-98"
-            >
-              <span>Next: Choose Countries on Map</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleAutoSuggestRoute(false)}
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 font-extrabold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>✨ Let Website Pick Best Cities in {activeCountryObj?.name || 'Country'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWizardStep('step-3-interests')}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>Next: Experience Style &amp; Interests ({tripDraft.stops.length} {tripDraft.stops.length === 1 ? 'City' : 'Cities'})</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="p-5 sm:p-7 space-y-6">
-            {/* 1A. Discovery Lens Selector */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                1. Choose Your Scouting Style
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    id: 'continents',
-                    title: '🌍 Explore by Continent / Region',
-                    desc: 'Mediterranean Europe, Southeast Asia, Latin America, or Islands',
-                    icon: Globe,
-                    accent: 'from-blue-600 to-indigo-600',
-                  },
-                  {
-                    id: 'nomad-top',
-                    title: '💻 Top Digital Nomad Havens',
-                    desc: 'Ranked by fast fiber Mbps, coworking hubs & remote work visas',
-                    icon: Laptop,
-                    accent: 'from-teal-600 to-emerald-600',
-                  },
-                  {
-                    id: 'search-all',
-                    title: '🔍 All Retirement & Lifestyle Havens',
-                    desc: 'Compare all global havens by healthcare, sunshine & low tax burn',
-                    icon: Search,
-                    accent: 'from-violet-600 to-indigo-600',
-                  },
-                ].map(lens => {
-                  const Icon = lens.icon;
-                  const active = browseMode === lens.id;
-                  return (
+            {/* A. FULL "EXPLORE HAVENS" FILTER & SORT CONSOLE */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-50/50 via-white to-rose-50/40 border border-amber-200/80 space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-4 h-4 text-rose-600" />
+                    <span>Explore Havens Country Filter &amp; Sort Parameters</span>
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-200 text-[11px] font-bold">
+                    {enrichedDiscoveryCountries.length} matching countries
+                  </span>
+                </div>
+
+                {/* Scouting Lens Switcher */}
+                <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-amber-200/80 text-[11px] font-bold">
+                  {[
+                    { id: 'balanced', label: '🌐 Blended Score', active: 'bg-amber-500 text-white' },
+                    { id: 'low-tax', label: '🌴 Retiree & Low Tax', active: 'bg-rose-500 text-white' },
+                    { id: 'nomad-fiber', label: '💻 Digital Nomad & Fiber', active: 'bg-violet-600 text-white' },
+                  ].map(lens => (
                     <button
                       key={lens.id}
                       type="button"
                       onClick={() => {
-                        setBrowseMode(lens.id as DiscoveryBrowseMode);
-                        if (lens.id === 'nomad-top') {
-                          setBurnBasisMode('nomad');
-                          setScoutingFocus('nomad-fiber');
-                        }
+                        setScoutingFocus(lens.id as any);
+                        if (lens.id === 'nomad-fiber') setBurnBasisMode('nomad');
                       }}
-                      className={`p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer flex items-start gap-3.5 ${
-                        active
-                          ? 'bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/80 border-indigo-400 shadow-sm ring-2 ring-indigo-500/20'
-                          : 'bg-slate-50/70 hover:bg-white border-slate-200/90'
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        scoutingFocus === lens.id ? `${lens.active} font-extrabold shadow-2xs` : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <div
-                        className={`w-10 h-10 rounded-xl bg-gradient-to-br ${lens.accent} text-white flex items-center justify-center shrink-0 shadow-xs`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-heading text-xs sm:text-sm font-extrabold text-slate-900">
-                          {lens.title}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{lens.desc}</p>
-                      </div>
+                      {lens.label}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* 1B. Continent / Geographical Region Cards */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                  2. Select Continent or Geographical Region
-                </span>
-                <span className="text-xs font-bold text-indigo-700">
-                  {enrichedDiscoveryCountries.length} matching havens available
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                {continentStats.map(cont => {
-                  const isSelected = selectedContinent === cont.id;
-                  return (
-                    <button
-                      key={cont.id}
-                      type="button"
-                      onClick={() => setSelectedContinent(cont.id)}
-                      className={`p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden flex flex-col justify-between ${
-                        isSelected
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-indigo-500/30'
-                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200/90'
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${cont.gradient}`}
-                      />
-                      <div>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-2xl">{cont.emoji}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {cont.count} countries
-                          </span>
-                        </div>
-                        <p className="font-heading text-sm font-extrabold mt-2">{cont.label}</p>
-                        <p
-                          className={`text-[11px] mt-1 leading-snug ${
-                            isSelected ? 'text-slate-300' : 'text-slate-500'
-                          }`}
-                        >
-                          {cont.tagline}
-                        </p>
-                      </div>
-                      <p
-                        className={`text-xs font-mono mt-3 pt-2 border-t ${
-                          isSelected
-                            ? 'border-white/15 text-teal-300 font-bold'
-                            : 'border-slate-100 text-emerald-700 font-bold'
-                        }`}
-                      >
-                        Avg ~${cont.avgBurn.toLocaleString()}/mo
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 1C. Tentative Dates, Duration Per Stop, Budget & Climate */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-indigo-50/35 to-teal-50/35 border border-indigo-200/70 space-y-4">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 block">
-                3. Set Tentative Dates, Stop Duration &amp; Monthly Budget
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Tentative Start Date */}
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 mb-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Tentative Start Date</span>
-                  </label>
+              {/* Search + Sort By + Tentative Start Date & Pace */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div className="md:col-span-5 relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type="date"
-                    min={todayIsoDate}
-                    value={tentativeStartDate}
-                    onChange={e =>
-                      handleRecalculateDatesFromPreferences(
-                        clampToMinIsoDate(e.target.value, todayIsoDate),
-                        daysPerStopPreference
-                      )
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    type="text"
+                    value={countrySearchQuery}
+                    onChange={e => setCountrySearchQuery(e.target.value)}
+                    placeholder="Search country or city (e.g., India, Goa, Bengaluru, Portugal, Lisbon)..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
+                  {countrySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setCountrySearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
-                {/* Tentative Duration per Stop */}
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 mb-1.5">
-                    <Clock className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Duration Per Stop (Weeks)</span>
-                  </label>
+                {/* All 16 Explore Havens Sort Options */}
+                <div className="md:col-span-4 flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 shrink-0">
+                    Sort By:
+                  </span>
+                  <select
+                    value={exploreSortBy}
+                    onChange={e => setExploreSortBy(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
+                  >
+                    <option value="score">Overall Match Score</option>
+                    <option value="cost-asc">Cost of Living: Low to High</option>
+                    <option value="cost-desc">Cost of Living: High to Low</option>
+                    <option value="nomad-cost-asc">Nomad Monthly Burn: Low to High</option>
+                    <option value="safety-desc">Safety Index: High to Low</option>
+                    <option value="healthcare-desc">Healthcare Quality: High to Low</option>
+                    <option value="internet-desc">Internet Speed (Mbps): High to Low</option>
+                    <option value="visa-ease">Visa Accessibility: Easiest First</option>
+                    <option value="visa-income-asc">Min. Visa Income: Low to High</option>
+                    <option value="schengen-non">Non-Schengen Havens First</option>
+                    <option value="english-desc">English Proficiency: High to Low</option>
+                    <option value="expat-desc">Expat Community: Largest First</option>
+                    <option value="air-quality-asc">Air Quality (PM2.5): Cleanest First</option>
+                    <option value="tax-friendly">Foreign Income Tax: 0% &amp; Territorial First</option>
+                    <option value="flight-us-asc">Flight Time from US East: Shortest First</option>
+                    <option value="walkability-desc">Walkability &amp; Transit: High to Low</option>
+                  </select>
+                </div>
+
+                {/* Tentative Start Date & Days per City */}
+                <div className="md:col-span-3 flex items-center gap-2">
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      min={todayIsoDate}
+                      value={tentativeStartDate < todayIsoDate ? todayIsoDate : tentativeStartDate}
+                      onChange={e =>
+                        handleRecalculateDatesFromPreferences(
+                          clampToMinIsoDate(e.target.value, todayIsoDate),
+                          daysPerStopPreference
+                        )
+                      }
+                      title="Tentative Start Date (Future dates only)"
+                      className="w-full px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
                   <select
                     value={daysPerStopPreference}
                     onChange={e =>
@@ -2474,465 +2813,368 @@ export const ScoutHopPlanner: React.FC = () => {
                         Number(e.target.value)
                       )
                     }
-                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    title="Days per City Stop"
+                    className="px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-slate-800 cursor-pointer"
                   >
-                    <option value={7}>1 Week (7 Days / Stop)</option>
-                    <option value={14}>2 Weeks (14 Days / Stop)</option>
-                    <option value={21}>3 Weeks (21 Days / Stop)</option>
-                    <option value={30}>1 Month (30 Days / Stop)</option>
-                    <option value={45}>6 Weeks (45 Days / Stop)</option>
+                    {[7, 10, 14, 21, 30, 45, 60].map(d => (
+                      <option key={d} value={d}>
+                        {d}d/city
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
 
-                {/* Monthly Living Budget Target Slider */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Max Monthly Budget</span>
-                    </label>
-                    <span className="text-xs font-mono font-extrabold text-emerald-800">
-                      Up to ${maxMonthlyBudgetUSD.toLocaleString()}/mo
-                    </span>
+              {/* Region Filter Pills (Matching Explore Havens) */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  'All',
+                  'Europe',
+                  'Americas',
+                  'North & Central America',
+                  'South America',
+                  'Southeast Asia',
+                  'Asia & Middle East',
+                  'Africa',
+                  'Oceania',
+                ].map(reg => (
+                  <button
+                    key={reg}
+                    type="button"
+                    onClick={() => {
+                      setExploreRegionFilter(reg);
+                      setSelectedContinent('all');
+                    }}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      exploreRegionFilter === reg
+                        ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white border-transparent shadow-2xs'
+                        : 'bg-white hover:bg-amber-50/70 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    {reg}
+                  </button>
+                ))}
+              </div>
+
+              {/* 4 Granular Multi-Colored Filter Cards (Matching Explore Havens) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                {/* 1. Max Monthly Cost */}
+                <div className="p-3 rounded-2xl bg-rose-50/60 border border-rose-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-rose-950">
+                    <span>Max Monthly Budget</span>
+                    <span className="font-mono text-rose-700">${maxMonthlyBudgetUSD.toLocaleString()}/mo</span>
                   </div>
                   <input
                     type="range"
                     min={1200}
-                    max={5000}
-                    step={100}
+                    max={6000}
+                    step={200}
                     value={maxMonthlyBudgetUSD}
                     onChange={e => setMaxMonthlyBudgetUSD(Number(e.target.value))}
-                    className="w-full accent-indigo-600 cursor-pointer mt-1"
+                    className="w-full accent-rose-600 cursor-pointer"
                   />
                 </div>
 
-                {/* Climate Preference */}
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5 mb-1.5">
-                    <Sun className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Preferred Climate</span>
-                  </label>
+                {/* 2. Climate Zone */}
+                <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-amber-950">
+                    <span>Climate Preference</span>
+                    <Sun className="w-3.5 h-3.5 text-amber-600" />
+                  </div>
                   <select
                     value={climatePreference}
                     onChange={e => setClimatePreference(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-xs font-bold text-slate-800 cursor-pointer"
                   >
-                    <option value="Any">Any Climate</option>
-                    <option value="Mediterranean">Mediterranean (Warm &amp; Sunny)</option>
-                    <option value="Tropical">Tropical (Beach &amp; Island)</option>
-                    <option value="Subtropical">Subtropical</option>
-                    <option value="Temperate">Temperate</option>
-                    <option value="Highlands / Mild">Highlands / Eternal Spring</option>
+                    <option value="Any">All Climates</option>
+                    <option value="Mediterranean">🌤️ Mediterranean</option>
+                    <option value="Tropical">☀️ Tropical</option>
+                    <option value="Subtropical">🌴 Subtropical</option>
+                    <option value="Temperate">🍂 Temperate</option>
+                    <option value="Highlands / Mild">⛰️ Highlands / Eternal Spring</option>
                   </select>
+                </div>
+
+                {/* 3. Visa Ease Tier */}
+                <div className="p-3 rounded-2xl bg-violet-50/60 border border-violet-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-violet-950">
+                    <span>Max Visa Difficulty</span>
+                    <span className="font-mono text-violet-700">
+                      {maxVisaDifficultyTier === 5 ? 'Any Tier' : `Tier ≤ ${maxVisaDifficultyTier}`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={maxVisaDifficultyTier}
+                    onChange={e => setMaxVisaDifficultyTier(Number(e.target.value))}
+                    className="w-full accent-violet-600 cursor-pointer"
+                  />
+                </div>
+
+                {/* 4. Max Visa Income Requirement */}
+                <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-sky-950">
+                    <span>Max Visa Min. Income</span>
+                    <span className="font-mono text-sky-700">
+                      {maxVisaIncomeReq >= 6000 ? 'Any Income' : `≤ $${maxVisaIncomeReq.toLocaleString()}/mo`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1000}
+                    max={6000}
+                    step={250}
+                    value={maxVisaIncomeReq}
+                    onChange={e => setMaxVisaIncomeReq(Number(e.target.value))}
+                    className="w-full accent-sky-600 cursor-pointer"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Step 1 Bottom Action Bar */}
-            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => handleAutoSuggestRoute(true)}
-                className="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span>✨ Auto-Pick Top 3 Matches &amp; Jump to Interests</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setWizardStep('step-2-countries')}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
-              >
-                <span>Continue to Step 2: Choose Countries &amp; Places ({enrichedDiscoveryCountries.length} Havens)</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* =================================================================== */}
-      {/* WIZARD STEP 2: CHOOSE COUNTRIES & PLACES WITH LIVE GOOGLE MAP       */}
-      {/* =================================================================== */}
-      {wizardStep === 'step-2-countries' && (
-        <motion.div
-          key="wizard-step-2"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-3xl bg-white border border-indigo-200/90 shadow-md overflow-hidden"
-        >
-          {/* Step 2 Header Banner */}
-          <div className="p-5 sm:p-7 bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-extrabold uppercase tracking-wider">
-                <MapIcon className="w-3 h-3" />
-                <span>Step 2 of 4 · Visual Country &amp; City Hub Selection</span>
+            {/* B. VISUAL COUNTRY SELECTOR GRID (1 COUNTRY ONLY) */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-heading text-sm sm:text-base font-extrabold text-slate-900">
+                    Select 1 Target Country Dossier ({enrichedDiscoveryCountries.length} Available)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Click any country below to switch your single-country focus and explore all top expat &amp; nomad cities inside that country.
+                  </p>
+                </div>
+                {activeCountryObj && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-xs font-extrabold text-amber-950">
+                    <span>Selected Country:</span>
+                    <span className="text-base">{activeCountryObj.flag}</span>
+                    <span>{activeCountryObj.name}</span>
+                  </div>
+                )}
               </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-extrabold">
-                Pick Your Countries &amp; Cities on the Interactive Route Map
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-                Click any country pin on the Google Map—or click a city hub button below—to build a 1 to 5 stop route. Watch the animated polyline connect your stops in real time.
-              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 max-h-72 overflow-y-auto pr-1">
+                {enrichedDiscoveryCountries.map(({ country, hubs, monthlyRate, nomadOverallScore }) => {
+                  const isSelectedCountry = country.id.toLowerCase() === selectedCountryId.toLowerCase();
+                  return (
+                    <button
+                      key={country.id}
+                      type="button"
+                      onClick={() => handleSelectSingleCountry(country.id, cityRoutingMode)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                        isSelectedCountry
+                          ? 'bg-gradient-to-br from-amber-50 via-rose-50 to-violet-50 border-rose-400 ring-2 ring-rose-400/30 shadow-sm'
+                          : 'bg-white hover:bg-amber-50/40 border-slate-200/90'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xl leading-none shrink-0">{country.flag}</span>
+                          <span className="font-heading text-xs font-extrabold text-slate-900 truncate">
+                            {country.name}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-extrabold shrink-0 ${
+                            isSelectedCountry ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {nomadOverallScore}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-600 pt-1 border-t border-slate-100">
+                        <span className="font-bold text-slate-800">${monthlyRate.toLocaleString()}/mo</span>
+                        <span className="text-rose-700 font-bold">{hubs.length} cities</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setWizardStep('step-1-region')}
-                className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 border border-white/20 text-xs font-bold cursor-pointer"
-              >
-                ← Back to Region
-              </button>
+            {/* C. SELECTED COUNTRY EXPAT CITIES STUDIO & ROUTING MODE */}
+            {activeCountryObj && (
+              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-amber-50/70 via-white to-violet-50/60 border-2 border-amber-300/80 shadow-xs space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-amber-200/70">
+                  <div className="flex items-start gap-3.5">
+                    <span className="text-4xl leading-none">{activeCountryObj.flag}</span>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-heading text-lg sm:text-xl font-extrabold text-slate-900">
+                          {activeCountryObj.name} Expat &amp; Nomad City Planner
+                        </h3>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-extrabold">
+                          {activeCountryCityHubs.length} Suggested Cities Available
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Choose whether you want to immerse in <strong>1 city</strong>, hop across <strong>multiple cities in {activeCountryObj.name}</strong>, or let Refirely auto-select the best city route.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3 Routing Mode Options */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[
+                      {
+                        id: 'auto-best' as const,
+                        label: '✨ Let Website Decide Best Route',
+                        desc: 'Top 3 cities auto-sequenced',
+                        activeClass: 'bg-gradient-to-r from-amber-500 to-rose-500 text-white border-transparent shadow-xs',
+                      },
+                      {
+                        id: 'single-city' as const,
+                        label: '🏙️ 1 City Only (Deep Immersion)',
+                        desc: 'Focus 100% on 1 city',
+                        activeClass: 'bg-gradient-to-r from-rose-500 to-violet-600 text-white border-transparent shadow-xs',
+                      },
+                      {
+                        id: 'multi-city' as const,
+                        label: `🚆 Multi-City in ${activeCountryObj.name}`,
+                        desc: 'Pick up to 5 cities',
+                        activeClass: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-transparent shadow-xs',
+                      },
+                    ].map(mode => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => handleSelectSingleCountry(activeCountryObj.id, mode.id)}
+                        className={`px-3.5 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                          cityRoutingMode === mode.id
+                            ? mode.activeClass
+                            : 'bg-white hover:bg-amber-50 text-slate-800 border-amber-200'
+                        }`}
+                      >
+                        <div className="text-xs font-extrabold">{mode.label}</div>
+                        <div className={`text-[10px] ${cityRoutingMode === mode.id ? 'text-white/90' : 'text-slate-500'}`}>
+                          {mode.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Suggested Top Expat Cities Grid in Chosen Country */}
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                      Suggested Top Expat &amp; Nomad Cities in {activeCountryObj.name} (Click to Toggle / Select):
+                    </span>
+                    <span className="text-[11px] font-semibold text-rose-700">
+                      City not listed? Use the Google Places city search bar on the map below to add any city in {activeCountryObj.name}!
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    {activeCountryCityHubs.map((hub, idx) => {
+                      const stopMatch = tripDraft.stops.find(
+                        s =>
+                          s.countryId.toLowerCase() === activeCountryObj.id.toLowerCase() &&
+                          s.cityFocus === hub.cityName
+                      );
+                      const isCitySelected = Boolean(stopMatch);
+                      const stopOrderIndex = computedMetrics.enrichedStops.findIndex(
+                        s =>
+                          s.countryId.toLowerCase() === activeCountryObj.id.toLowerCase() &&
+                          s.cityFocus === hub.cityName
+                      );
+
+                      return (
+                        <div
+                          key={`${activeCountryObj.id}-${hub.cityName}`}
+                          onClick={() => {
+                            if (isCitySelected && stopMatch) {
+                              if (tripDraft.stops.length > 1) {
+                                handleRemoveStop(stopMatch.id);
+                              }
+                            } else {
+                              handleAddCountryFromDiscovery(activeCountryObj.id, hub.cityName);
+                            }
+                          }}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                            isCitySelected
+                              ? 'bg-gradient-to-br from-rose-50 via-amber-50/80 to-white border-rose-400 ring-2 ring-rose-400/25 shadow-xs'
+                              : 'bg-white hover:bg-amber-50/40 border-slate-200/90'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className={`w-3.5 h-3.5 shrink-0 ${isCitySelected ? 'text-rose-600' : 'text-slate-400'}`} />
+                                <p className="font-heading text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                                  {hub.cityName}
+                                </p>
+                              </div>
+                              <p className="text-[11px] text-slate-600 line-clamp-2 mt-1">{hub.highlight}</p>
+                            </div>
+                            {isCitySelected ? (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-mono text-[10px] font-extrabold shrink-0">
+                                Stop #{stopOrderIndex + 1}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono text-[10px] font-bold shrink-0">
+                                + Add
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] font-bold pt-1.5 border-t border-slate-100">
+                            <span className="text-slate-500">Hub #{idx + 1}</span>
+                            <span className={isCitySelected ? 'text-rose-700 font-extrabold' : 'text-indigo-600'}>
+                              {isCitySelected ? '✓ In Route (Click to Remove)' : 'Click to Add City'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Clutter-Free Single-Country Interactive Google Map + Google Places Autocomplete City Search */}
+                <ScoutRouteMap
+                  stops={computedMetrics.enrichedStops}
+                  selectedCountryId={selectedCountryId}
+                  selectedCountryName={activeCountryObj.name}
+                  selectedCountryFlag={activeCountryObj.flag}
+                  countryCityHubs={activeCountryCityHubs}
+                  isDiscoveryPreview={true}
+                  onAddCountryFromMap={(countryId, cityName) => {
+                    handleAddCountryFromDiscovery(countryId, cityName);
+                  }}
+                  onAddCustomCityInCountry={(cityName, lat, lng, formattedAddress) => {
+                    handleAddCustomCityInSameCountry(cityName, lat, lng, formattedAddress);
+                  }}
+                  onRemoveStopFromMap={stopId => handleRemoveStop(stopId)}
+                  onUpdateStopDatesFromMap={(stopId, updates) => handleUpdateStop(stopId, updates)}
+                />
+              </div>
+            )}
+
+            {/* Step 1 Bottom CTA Bar */}
+            <div className="pt-3 border-t border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs text-slate-600">
+                {activeCountryObj && hasStopsSelected ? (
+                  <span>
+                    <strong className="text-slate-900">
+                      {activeCountryObj.flag} {activeCountryObj.name} ({tripDraft.stops.length}{' '}
+                      {tripDraft.stops.length === 1 ? 'city' : 'cities'}):
+                    </strong>{' '}
+                    {computedMetrics.enrichedStops.map(s => s.cityFocus || s.countryName).join(' → ')}
+                  </span>
+                ) : (
+                  <span>Select a country and at least 1 city above to personalize your experience style &amp; interests.</span>
+                )}
+              </div>
 
               <button
                 type="button"
                 onClick={() => setWizardStep('step-3-interests')}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer shrink-0"
               >
-                <span>Next: Choose Interests &amp; Hobbies ({tripDraft.stops.length}/5 Stops)</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="p-5 sm:p-7 space-y-6">
-            {/* Selected Route Tray */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950 via-indigo-950 to-slate-900 text-white space-y-3 shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-teal-300 block">
-                    Active Route Sequence ({tripDraft.stops.length}/5 Stops · {computedMetrics.totalDays} Days Total)
-                  </span>
-                  <p className="text-xs text-slate-300">
-                    {hasStopsSelected
-                      ? 'Click any stop pill to focus it on the map, or add up to 5 stops before choosing your interests.'
-                      : 'No stops selected yet — click a country pin on the map below, pick a card, or click "Auto-Pick Top 3".'}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {!hasStopsSelected && (
-                    <button
-                      type="button"
-                      onClick={() => handleAutoSuggestRoute(false)}
-                      className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Auto-Pick Top 3 Matches</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowDiscoveryMapPreview(prev => !prev)}
-                    className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-xs font-bold text-teal-200 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MapIcon className="w-3.5 h-3.5" />
-                    <span>{showDiscoveryMapPreview ? 'Hide Map' : 'Show Live Map'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {hasStopsSelected && (
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {computedMetrics.enrichedStops.map((stop, idx) => (
-                    <React.Fragment key={stop.id}>
-                      <div
-                        onClick={() => setFocusedMapCountryId(stop.countryId)}
-                        className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 flex items-center gap-2.5 cursor-pointer transition-colors"
-                      >
-                        <span
-                          className={`w-5 h-5 rounded-full text-[10px] font-mono font-extrabold flex items-center justify-center ${
-                            idx === 0
-                              ? 'bg-emerald-500 text-white'
-                              : idx === computedMetrics.enrichedStops.length - 1 &&
-                                computedMetrics.enrichedStops.length > 1
-                              ? 'bg-amber-400 text-slate-950'
-                              : 'bg-indigo-500 text-white'
-                          }`}
-                        >
-                          {idx + 1}
-                        </span>
-                        <span className="text-base">{stop.countryFlag}</span>
-                        <div className="text-left">
-                          <div className="flex items-center gap-1.5 text-xs font-extrabold">
-                            <span>{stop.countryName}</span>
-                            <span className="text-[10px] font-mono text-teal-300">
-                              ({stop.days}d)
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-300 block font-mono">
-                            {stop.cityFocus} · {stop.arrivalDate} → {stop.departureDate}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleRemoveStop(stop.id);
-                          }}
-                          className="p-1 rounded-lg text-slate-300 hover:text-rose-400 hover:bg-white/10 cursor-pointer"
-                          title="Remove stop"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      {idx < computedMetrics.enrichedStops.length - 1 && (
-                        <ArrowRight className="w-4 h-4 text-teal-400 shrink-0" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Interactive Google Maps Route & Candidate Pin Selector */}
-            {showDiscoveryMapPreview && (
-              <ScoutRouteMap
-                stops={computedMetrics.enrichedStops}
-                candidateCountries={candidateMapCountries}
-                focusedCountryId={focusedMapCountryId}
-                isDiscoveryPreview={true}
-                onAddCountryFromMap={(countryId, city) => {
-                  handleAddCountryFromDiscovery(countryId, city);
-                  setFocusedMapCountryId(countryId);
-                }}
-                onRemoveStopFromMap={handleRemoveStop}
-                onUpdateStopDatesFromMap={(stopId, updates) => handleUpdateStop(stopId, updates)}
-              />
-            )}
-
-            {/* Quick Search & Continent Filter Bar inside Step 2 */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2 border-t border-slate-100">
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={countrySearchQuery}
-                  onChange={e => setCountrySearchQuery(e.target.value)}
-                  placeholder="Search country or city hub (e.g., Lisbon, Chiang Mai, Valencia, Bali)..."
-                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                {countrySearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setCountrySearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {continentStats.map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSelectedContinent(c.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                      selectedContinent === c.id
-                        ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    <span>{c.emoji}</span>
-                    <span>{c.id === 'all' ? 'All' : c.id}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Visual Country & City Hub Cards with Scenic Thumbnails */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[680px] overflow-y-auto pr-1">
-              {enrichedDiscoveryCountries.map(item => {
-                const { country, nomadProfile, monthlyRate, nomadOverallScore, hubs, isSchengen } =
-                  item;
-                const selectedStopsForCountry = tripDraft.stops.filter(
-                  s => s.countryId.toLowerCase() === country.id.toLowerCase()
-                );
-                const isSelected = selectedStopsForCountry.length > 0;
-                const isMapFocused =
-                  focusedMapCountryId?.toLowerCase() === country.id.toLowerCase();
-
-                return (
-                  <motion.div
-                    key={country.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.25 }}
-                    className={`group rounded-2xl border overflow-hidden transition-all duration-300 flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/80 border-indigo-400 shadow-md ring-2 ring-indigo-500/20'
-                        : isMapFocused
-                        ? 'bg-teal-50/40 border-teal-400 shadow-xs ring-2 ring-teal-500/20'
-                        : 'bg-white hover:border-indigo-300 border-slate-200/90 hover:shadow-sm'
-                    }`}
-                  >
-                    <div>
-                      {/* Scenic Country Thumbnail Header */}
-                      <div className="relative h-32 w-full overflow-hidden">
-                        <CountryThumbnail
-                          country={country}
-                          className="w-full h-full"
-                          hideLandmarkLabel
-                        />
-                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-950/75 backdrop-blur-md text-white text-[10px] font-bold border border-white/15">
-                            {isSchengen ? '🇪🇺 Schengen' : '🌍 Non-Schengen'}
-                          </span>
-                          {isSelected && (
-                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500 text-slate-950 font-mono text-[10px] font-extrabold shadow-xs">
-                              ✓ Stop #{tripDraft.stops.findIndex(s => s.countryId === country.id) + 1}
-                            </span>
-                          )}
-                        </div>
-                        <div className="absolute top-2.5 right-2.5">
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md text-emerald-300 font-mono text-xs font-extrabold border border-emerald-400/30">
-                            ${monthlyRate.toLocaleString()}/mo
-                          </span>
-                        </div>
-                        <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-white">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <CountryFlag
-                              countryName={country.name}
-                              fallbackEmoji={country.flag}
-                              size="sm"
-                            />
-                            <h3 className="font-heading font-extrabold text-base text-white drop-shadow-xs truncate">
-                              {country.name}
-                            </h3>
-                          </div>
-                          <span className="text-[10px] font-mono font-bold text-teal-200 bg-slate-950/60 px-2 py-0.5 rounded-md">
-                            ⚡ Nomad {nomadOverallScore}/100
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-3">
-                        {/* Key Metrics Pills */}
-                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
-                          <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200/80 flex items-center gap-1">
-                            <Wifi className="w-3 h-3 text-teal-600" />
-                            <span>{nomadProfile.verifiedInternetMbps} Mbps Fiber</span>
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200/80 truncate max-w-[175px]">
-                            {nomadProfile.remoteWorkVisaName}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/80">
-                            ☀️ {country.climate.annualSunnyDays}d sun
-                          </span>
-                        </div>
-
-                        {/* Quick City Hub Selector Pills */}
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                            Pick a City Hub to Plot on Map:
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(hubs.length > 0
-                              ? hubs.map(h => h.cityName)
-                              : country.topCities?.slice(0, 2).map(tc => tc.name) || [country.capital]
-                            ).map(cityName => (
-                              <button
-                                key={cityName}
-                                type="button"
-                                onClick={() => {
-                                  handleAddCountryFromDiscovery(country.id, cityName);
-                                  setFocusedMapCountryId(country.id);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
-                              >
-                                <MapPin className="w-2.5 h-2.5" />
-                                <span>+ {cityName}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Footer Buttons */}
-                    <div className="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowDiscoveryMapPreview(true);
-                          setFocusedMapCountryId(country.id);
-                        }}
-                        className="px-2.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200/80 text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
-                      >
-                        <MapPin className="w-3 h-3 text-teal-700" />
-                        <span>Preview Pin</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleAddCountryFromDiscovery(country.id);
-                          setFocusedMapCountryId(country.id);
-                        }}
-                        disabled={tripDraft.stops.length >= 5}
-                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                          isSelected
-                            ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950'
-                            : 'bg-slate-900 hover:bg-indigo-600 text-white'
-                        }`}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>
-                          {isSelected ? `+ 2nd Hub in ${country.name}` : `+ Add ${country.name}`}
-                        </span>
-                      </button>
-
-                      {isSelected && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const lastMatch =
-                              selectedStopsForCountry[selectedStopsForCountry.length - 1];
-                            if (lastMatch) handleRemoveStop(lastMatch.id);
-                          }}
-                          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
-                          title="Remove from route"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Step 2 Bottom CTA Bar */}
-            <div className="pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs text-slate-600">
-                {hasStopsSelected ? (
-                  <span>
-                    <strong className="text-slate-900">{tripDraft.stops.length} stops selected</strong> (
-                    {tripDraft.stops.map(s => s.cityFocus || s.countryName).join(' → ')}). Ready to personalize your activities!
-                  </span>
-                ) : (
-                  <span>Select at least 1 country stop above (or click Next and we will auto-pick your top 3 matches).</span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!hasStopsSelected) {
-                    handleAutoSuggestRoute(true);
-                  } else {
-                    setWizardStep('step-3-interests');
-                  }
-                }}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer shrink-0"
-              >
-                <span>Continue to Step 3: Pick Your Interests &amp; Hobbies</span>
+                <span>Continue to Step 2: Experience Style, Budget Tier &amp; Interests</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -2949,36 +3191,36 @@ export const ScoutHopPlanner: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-3xl bg-white border border-indigo-200/90 shadow-md overflow-hidden"
+          className="rounded-3xl bg-white border border-rose-200/90 shadow-sm overflow-hidden"
         >
-          {/* Step 3 Header Banner */}
-          <div className="p-5 sm:p-7 bg-gradient-to-r from-indigo-950 via-violet-950 to-teal-950 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Light Multi-Colored Step 2 Header Banner */}
+          <div className="p-5 sm:p-7 bg-gradient-to-r from-rose-50 via-amber-50/85 to-violet-50/90 border-b border-rose-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
-                <span>Step 3 of 4 · Personalize Your Weekly Playbook</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-extrabold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-rose-600" />
+                <span>Step 2 of 3 · Budget Tier, Experience Lenses &amp; Interests</span>
               </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-extrabold">
-                What Are Your Interests, Passions &amp; Lifestyle Priorities?
+              <h2 className="font-heading text-xl sm:text-2xl font-extrabold text-slate-900">
+                What Type of Experiences, Budget Tier &amp; Interests Are You Seeking?
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-                Select everything you love—from hiking, surfing, architecture, and culture to nightlife, dating, volunteering, nature reserves, and hobbies. We will craft a custom week-by-week itinerary for your chosen stops.
+              <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
+                Choose your preferred budget tier (Economic, Medium, or Luxury), select specialized experience lenses (Solo Women Safe Places, Good for Content Creators, Rich/Exclusive/Private VIP), and pick your favorite activities.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button
                 type="button"
-                onClick={() => setWizardStep('step-2-countries')}
-                className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 border border-white/20 text-xs font-bold cursor-pointer"
+                onClick={() => setWizardStep('step-1-region')}
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 text-xs font-bold cursor-pointer"
               >
-                ← Back to Countries
+                ← Back to Country &amp; Cities
               </button>
 
               <button
                 type="button"
                 onClick={handleGenerateCustomItinerary}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-transform active:scale-98"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform active:scale-98"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Generate My Custom Itinerary &amp; Show Me →</span>
@@ -2987,6 +3229,93 @@ export const ScoutHopPlanner: React.FC = () => {
           </div>
 
           <div className="p-5 sm:p-7 space-y-6">
+            {/* A. BUDGET TIER & EXPERIENCE LENSES (Economic, Medium, Luxury, Solo Women Safe, Content Creators, Rich/VIP) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-50/60 via-white to-violet-50/50 border border-amber-200/80">
+              {/* 1. Budget Tier Selector (3 Columns) */}
+              <div className="lg:col-span-5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    1. Select Your Experience Budget Tier
+                  </span>
+                  <span className="text-[11px] font-bold text-rose-700">Tailors venues &amp; pricing</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2.5">
+                  {SCOUT_BUDGET_TIERS.map(tier => {
+                    const isSelected = budgetTier === tier.id;
+                    return (
+                      <button
+                        key={tier.id}
+                        type="button"
+                        onClick={() => setBudgetTier(tier.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                          isSelected
+                            ? `${tier.badgeBg} ring-2 ring-rose-400/30 shadow-xs`
+                            : 'bg-white hover:bg-amber-50/40 border-slate-200/90 text-slate-800'
+                        }`}
+                      >
+                        <span className="text-2xl leading-none shrink-0">{tier.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-heading text-xs sm:text-sm font-extrabold">{tier.label}</p>
+                            {isSelected && (
+                              <span className="px-2 py-0.5 rounded-full bg-white/90 text-slate-900 text-[10px] font-extrabold">
+                                ✓ Active
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] opacity-85 mt-0.5 leading-snug">{tier.subtitle}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Specialized Traveler & Experience Lenses (Multi-Select) */}
+              <div className="lg:col-span-7 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    2. Specialized Experience Lenses (Select All That Apply)
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-violet-700">
+                    {experienceLenses.length} active
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {SCOUT_EXPERIENCE_LENSES.map(lens => {
+                    const isActive = experienceLenses.includes(lens.id);
+                    return (
+                      <button
+                        key={lens.id}
+                        type="button"
+                        onClick={() => handleToggleExperienceLens(lens.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                          isActive
+                            ? `${lens.badgeClass} ring-2 ring-violet-400/30 shadow-xs`
+                            : 'bg-white hover:bg-rose-50/30 border-slate-200/90 text-slate-800'
+                        }`}
+                      >
+                        <span className="text-2xl leading-none shrink-0">{lens.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <p className="font-heading text-xs font-extrabold leading-snug">{lens.label}</p>
+                            <span
+                              className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-extrabold ${
+                                isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              {isActive ? '✓' : '+'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] opacity-85 mt-1 leading-snug">{lens.shortDesc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             {/* Quick Interest Bundle Presets */}
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -3015,14 +3344,14 @@ export const ScoutHopPlanner: React.FC = () => {
                     key={bundle.label}
                     type="button"
                     onClick={() => setSelectedInterests(bundle.ids)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 border border-slate-200/80 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-amber-50/70 hover:bg-rose-50 text-slate-800 hover:text-rose-900 border border-amber-200/80 text-xs font-bold transition-colors cursor-pointer"
                   >
                     {bundle.label}
                   </button>
                 ))}
               </div>
 
-              <span className="text-xs font-mono font-extrabold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+              <span className="text-xs font-mono font-extrabold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
                 {selectedInterests.length} of {SCOUT_INTEREST_CATALOG.length} selected
               </span>
             </div>
@@ -3040,8 +3369,8 @@ export const ScoutHopPlanner: React.FC = () => {
                     onClick={() => handleToggleInterest(interest.id)}
                     className={`group rounded-2xl border text-left overflow-hidden transition-all duration-300 flex flex-col justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/80 border-indigo-500 shadow-md ring-2 ring-indigo-500/25'
-                        : 'bg-white hover:border-indigo-300 border-slate-200/90 opacity-90 hover:opacity-100'
+                        ? 'bg-gradient-to-br from-amber-50/90 via-white to-rose-50/80 border-rose-400 shadow-sm ring-2 ring-rose-400/25'
+                        : 'bg-white hover:border-amber-300 border-slate-200/90 opacity-95 hover:opacity-100'
                     }`}
                   >
                     <div className="w-full">
@@ -3054,14 +3383,14 @@ export const ScoutHopPlanner: React.FC = () => {
                       >
                         <div className="p-3 h-full flex flex-col justify-between">
                           <div className="flex items-center justify-between">
-                            <span className="w-8 h-8 rounded-xl bg-slate-950/65 backdrop-blur-md border border-white/20 flex items-center justify-center text-base shadow-2xs">
+                            <span className="w-8 h-8 rounded-xl bg-white/90 backdrop-blur-md border border-white/50 flex items-center justify-center text-base shadow-2xs">
                               {interest.emoji}
                             </span>
                             <div
                               className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                                 isSelected
-                                  ? 'bg-emerald-500 text-slate-950 shadow-sm scale-105'
-                                  : 'bg-slate-950/50 text-white/70 border border-white/30'
+                                  ? 'bg-rose-500 text-white shadow-sm scale-105'
+                                  : 'bg-white/80 text-slate-700 border border-white'
                               }`}
                             >
                               {isSelected ? (
@@ -3086,7 +3415,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     <div className="px-3.5 pb-3 pt-1 flex items-center justify-between">
                       <span
                         className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                          isSelected ? 'text-indigo-700' : 'text-slate-400'
+                          isSelected ? 'text-rose-700' : 'text-slate-400'
                         }`}
                       >
                         {isSelected ? '✓ Included in Playbook' : 'Click to Include'}
@@ -3098,11 +3427,11 @@ export const ScoutHopPlanner: React.FC = () => {
             </div>
 
             {/* Custom Hobby / Personal Passion Input */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-indigo-50/40 to-teal-50/40 border border-indigo-200/80 space-y-3">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/50 via-white to-rose-50/50 border border-amber-200/80 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-heading text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    <Sparkles className="w-4 h-4 text-rose-600" />
                     <span>Add Your Specific Hobbies or Passions (Optional)</span>
                   </h3>
                   <p className="text-xs text-slate-600">
@@ -3117,18 +3446,17 @@ export const ScoutHopPlanner: React.FC = () => {
                   value={customHobbyInput}
                   onChange={e => setCustomHobbyInput(e.target.value)}
                   placeholder="e.g., Padel Tennis, Scuba Diving, Salsa, Pottery, Trail Running..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
                 <button
                   type="button"
                   onClick={() => handleAddCustomHobby()}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shrink-0"
                 >
                   + Add Hobby Tag
                 </button>
               </form>
 
-              {/* Quick One-Click Hobby Suggestions + Active Custom Hobby Pills */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">
                   Popular Hobbies:
@@ -3157,8 +3485,8 @@ export const ScoutHopPlanner: React.FC = () => {
                       }}
                       className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                         isAdded
-                          ? 'bg-teal-600 text-white shadow-2xs'
-                          : 'bg-white text-slate-700 border border-slate-200 hover:border-teal-400'
+                          ? 'bg-rose-600 text-white shadow-2xs'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:border-rose-400'
                       }`}
                     >
                       <span>{isAdded ? '✓' : '+'}</span>
@@ -3169,20 +3497,20 @@ export const ScoutHopPlanner: React.FC = () => {
               </div>
 
               {customHobbies.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-indigo-200/50">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200/50">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800">
                     Your Custom Hobbies:
                   </span>
                   {customHobbies.map(hobby => (
                     <span
                       key={hobby}
-                      className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                      className="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
                     >
                       <span>🎯 {hobby}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomHobby(hobby)}
-                        className="hover:text-rose-200 cursor-pointer"
+                        className="hover:text-amber-200 cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -3192,27 +3520,33 @@ export const ScoutHopPlanner: React.FC = () => {
               )}
             </div>
 
-            {/* Prominent Final Call to Action Banner */}
-            <div className="p-6 rounded-3xl bg-gradient-to-r from-indigo-950 via-indigo-900 to-teal-950 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-lg">
+            {/* Light Multi-Colored Final Call to Action Banner */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 border-2 border-rose-200/90 text-slate-900 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xs">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-teal-300 block">
-                  Ready to Build Your Bespoke Scouting Masterplan
+                <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-rose-700 block">
+                  Ready to Build Your Date-Sorted Single-Country Masterplan
                 </span>
-                <h3 className="font-heading text-lg sm:text-xl font-extrabold">
+                <h3 className="font-heading text-lg sm:text-xl font-extrabold text-slate-900">
                   {hasStopsSelected
-                    ? `${tripDraft.stops.map(s => s.cityFocus || s.countryName).join(' → ')} (${computedMetrics.totalDays} Days)`
-                    : 'Auto-Match Top 3 Havens + Custom Weekly Playbook'}
+                    ? `${computedMetrics.enrichedStops.map(s => s.cityFocus || s.countryName).join(' → ')} (${computedMetrics.totalDays} Days)`
+                    : `Auto-Match Best Cities in ${activeCountryObj?.name || 'Selected Country'}`}
                 </h3>
-                <p className="text-xs text-slate-300">
-                  Tailored to {selectedInterests.length} selected interests
-                  {customHobbies.length > 0 ? ` and ${customHobbies.join(', ')}` : ''} with interactive Google Maps route &amp; magazine-style weekly cards.
+                <p className="text-xs text-slate-600">
+                  Tailored to <strong>{SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}</strong>
+                  {experienceLenses.length > 0
+                    ? ` · ${experienceLenses
+                        .map(l => SCOUT_EXPERIENCE_LENSES.find(x => x.id === l)?.shortLabel)
+                        .filter(Boolean)
+                        .join(', ')}`
+                    : ''}{' '}
+                  · {selectedInterests.length} interests.
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={handleGenerateCustomItinerary}
-                className="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-heading font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl cursor-pointer shrink-0 transition-transform active:scale-98"
+                className="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-heading font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer shrink-0 transition-transform active:scale-98"
               >
                 <Sparkles className="w-5 h-5" />
                 <span>Generate My Custom Itinerary &amp; Show Me</span>
@@ -3235,54 +3569,55 @@ export const ScoutHopPlanner: React.FC = () => {
           className="space-y-6"
         >
           {/* Step 4 Control & Sub-View Switcher Bar (Clutter-Free Mode Toggle) */}
-          <div className="p-4 rounded-3xl bg-white border border-indigo-200/90 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="p-4 rounded-3xl bg-white border border-amber-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Active Interests & Route Summary */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1.5 rounded-xl bg-indigo-950 text-white font-mono text-xs font-extrabold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 text-white font-mono text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-100" />
                 <span>
-                  {tripDraft.stops.length} Stops · {weeklyBlocks.length} Weeks · $
+                  {activeCountryObj ? `${activeCountryObj.flag} ${activeCountryObj.name} · ` : ''}
+                  {tripDraft.stops.length} {tripDraft.stops.length === 1 ? 'City' : 'Cities'} · {weeklyBlocks.length} Weeks · $
                   {computedMetrics.estimatedTotalBurnUSD.toLocaleString()} Est. Burn
                 </span>
               </span>
 
-              {selectedInterests.slice(0, 5).map(intId => {
-                const meta = SCOUT_INTEREST_CATALOG.find(item => item.id === intId);
-                if (!meta) return null;
+              <span className="px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-[11px] font-extrabold">
+                {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.emoji}{' '}
+                {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}
+              </span>
+
+              {experienceLenses.map(lensId => {
+                const lensMeta = SCOUT_EXPERIENCE_LENSES.find(l => l.id === lensId);
+                if (!lensMeta) return null;
                 return (
                   <span
-                    key={intId}
-                    className="px-2.5 py-1 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-950 text-[11px] font-bold flex items-center gap-1"
+                    key={lensId}
+                    className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${lensMeta.badgeClass}`}
                   >
-                    <span>{meta.emoji}</span>
-                    <span>{meta.shortLabel}</span>
+                    <span>{lensMeta.emoji}</span>
+                    <span>{lensMeta.shortLabel}</span>
                   </span>
                 );
               })}
-              {selectedInterests.length > 5 && (
-                <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-bold">
-                  +{selectedInterests.length - 5} more
-                </span>
-              )}
 
               <button
                 type="button"
                 onClick={() => setWizardStep('step-3-interests')}
-                className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+                className="px-2.5 py-1 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"
               >
-                ✎ Edit Interests
+                ✎ Edit Style &amp; Interests
               </button>
               <button
                 type="button"
-                onClick={() => setWizardStep('step-2-countries')}
-                className="px-2.5 py-1 rounded-xl text-xs font-bold text-teal-700 hover:bg-teal-50 cursor-pointer"
+                onClick={() => setWizardStep('step-1-region')}
+                className="px-2.5 py-1 rounded-xl text-xs font-bold text-violet-700 hover:bg-violet-50 cursor-pointer"
               >
-                ✎ Edit Stops
+                ✎ Edit Country &amp; Cities
               </button>
             </div>
 
             {/* Clean Sub-View Tabs so Step 4 is never cluttered */}
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90 shrink-0">
+            <div className="flex flex-wrap items-center gap-1.5 bg-amber-50/60 p-1.5 rounded-2xl border border-amber-200/80 shrink-0">
               {[
                 {
                   id: 'map-itinerary' as PlannerStageTab,
@@ -3314,7 +3649,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     onClick={() => setActiveStageTab(tab.id)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       active
-                        ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-xs'
+                        ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -3329,47 +3664,59 @@ export const ScoutHopPlanner: React.FC = () => {
           {/* 4A. INTERACTIVE GOOGLE MAPS WIDGET & UNIFIED MULTI-WEEK VENUE EXPLORER */}
           {(activeStageTab === 'map-itinerary' || activeStageTab === 'all-in-one') && (
             <div className="space-y-6">
-              {/* Interactive Google Maps Route & Directions Widget */}
+              {/* Clutter-Free Single-Country Interactive Google Maps Route & City Search Widget */}
               <ScoutRouteMap
                 stops={computedMetrics.enrichedStops}
-                candidateCountries={candidateMapCountries}
+                selectedCountryId={selectedCountryId}
+                selectedCountryName={activeCountryObj?.name}
+                selectedCountryFlag={activeCountryObj?.flag}
+                countryCityHubs={activeCountryCityHubs}
                 focusedCountryId={focusedMapCountryId}
                 onAddCountryFromMap={(countryId, city) => {
                   handleAddCountryFromDiscovery(countryId, city);
                   setFocusedMapCountryId(countryId);
+                }}
+                onAddCustomCityInCountry={(cityName, lat, lng, formattedAddress) => {
+                  handleAddCustomCityInSameCountry(cityName, lat, lng, formattedAddress);
                 }}
                 onRemoveStopFromMap={handleRemoveStop}
                 onUpdateStopDatesFromMap={(stopId, updates) => handleUpdateStop(stopId, updates)}
               />
 
               {/* UNIFIED MULTI-WEEK STOP CARDS WITH FAMOUS BARS, DATING SPOTS, TRAILS & OPERATORS */}
-              <div className="rounded-3xl bg-white border border-indigo-200/90 p-5 sm:p-7 shadow-md space-y-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+              <div className="rounded-3xl bg-white border border-amber-200/90 p-5 sm:p-7 shadow-sm space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-amber-100">
                   <div className="space-y-1.5">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-50 to-teal-50 border border-indigo-200 text-indigo-900 text-[10px] font-extrabold uppercase tracking-wider">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Mixed Multi-Week Stop Cards · Verified Local Venues &amp; Operators</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 border border-rose-200 text-rose-900 text-[10px] font-extrabold uppercase tracking-wider">
+                        <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Mixed Multi-Week Stop Cards · Verified Local Venues &amp; Operators</span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 text-[10px] font-extrabold">
+                        <Calendar className="w-3 h-3 text-emerald-600" />
+                        <span>Sorted Chronologically by Date ({computedMetrics.enrichedStops[0]?.arrivalDate || 'Start'} → {computedMetrics.enrichedStops[computedMetrics.enrichedStops.length - 1]?.departureDate || 'End'})</span>
+                      </span>
                     </div>
                     <h2 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
-                      Famous Bars, Dating Spots, Hikes &amp; Local Operators by Country Stop
+                      Famous Bars, Dating Spots, Hikes &amp; Local Operators by City Stop
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-600 max-w-3xl">
-                      All weeks for each country stop are combined into a single unified card below. Inspect real venues, rooftop bars, paragliding/adventure companies, and social spots with Google ★ ratings and direct Google Maps links—then assign any spot to a specific Week &amp; Day in your itinerary.
+                      Cards are sorted chronologically by your itinerary dates. Each card clearly shows the <strong>number of suggested places</strong> inside &ldquo;Google Maps &amp; Reviews&rdquo; (with individual links when multiple places are recommended) and is tailored to your <strong>{SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}</strong> profile.
                     </p>
                   </div>
 
-                  {/* Filter by Country Stop + Quick Jump to Complete Chosen Itinerary */}
+                  {/* Filter by City Stop + Quick Jump to Complete Chosen Itinerary */}
                   <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => setSelectedItineraryStopFilter('all')}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         selectedItineraryStopFilter === 'all'
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-xs'
+                          : 'bg-amber-50/70 text-slate-700 hover:bg-amber-100/80 border border-amber-200/70'
                       }`}
                     >
-                      All Stops ({computedMetrics.enrichedStops.length})
+                      All Cities ({computedMetrics.enrichedStops.length})
                     </button>
                     {computedMetrics.enrichedStops.map((stop, idx) => (
                       <button
@@ -3378,13 +3725,13 @@ export const ScoutHopPlanner: React.FC = () => {
                         onClick={() => setSelectedItineraryStopFilter(stop.id)}
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                           selectedItineraryStopFilter === stop.id
-                            ? 'bg-indigo-600 text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'bg-white text-slate-700 hover:bg-rose-50 border border-slate-200'
                         }`}
                       >
                         <span>{stop.countryFlag}</span>
                         <span>
-                          Stop {idx + 1}: {stop.cityFocus || stop.countryName}
+                          #{idx + 1} {stop.cityFocus || stop.countryName} ({stop.arrivalDate})
                         </span>
                       </button>
                     ))}
@@ -3401,7 +3748,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Unified Stop Cards Stack (1 Card per Country Stop, mixing all weeks of that stop) */}
+                {/* Unified Stop Cards Stack (Chronologically Sorted by arrivalDate) */}
                 <div className="space-y-8">
                   {computedMetrics.enrichedStops
                     .filter(
@@ -3429,7 +3776,6 @@ export const ScoutHopPlanner: React.FC = () => {
                         item => item.stopId === stop.id
                       );
 
-                      // Filter recommendations by selected week (or show all weeks mixed) and category
                       const visibleRecs = allStopRecs.filter(rec => {
                         const scheduledMatch = scheduledForThisStop.find(
                           s => s.recommendationId === rec.recommendationId
@@ -3456,7 +3802,7 @@ export const ScoutHopPlanner: React.FC = () => {
                       const heroGradient =
                         heroBlock?.gradientFallback ||
                         allStopRecs[0]?.fallbackGradient ||
-                        'from-indigo-900 via-teal-900 to-slate-900';
+                        'from-amber-700 via-rose-700 to-violet-800';
 
                       const uniqueCategories: string[] = Array.from(
                         new Set(
@@ -3481,9 +3827,9 @@ export const ScoutHopPlanner: React.FC = () => {
                           initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                          className="rounded-3xl bg-white border-2 border-indigo-200/90 overflow-hidden shadow-md hover:shadow-xl transition-all duration-500"
+                          className="rounded-3xl bg-white border-2 border-amber-200/90 overflow-hidden shadow-sm hover:shadow-md transition-all duration-500"
                         >
-                          {/* Unified Multi-Week Country Stop Hero Banner */}
+                          {/* Unified Multi-Week City Stop Hero Banner */}
                           <ResilientScenicBanner
                             primaryUrl={heroPhoto}
                             fallbackUrl={heroBlock?.fallbackPhotoUrl}
@@ -3495,7 +3841,10 @@ export const ScoutHopPlanner: React.FC = () => {
                               {/* Top Badges */}
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="px-3.5 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md text-teal-300 font-mono text-xs font-extrabold border border-teal-400/40 shadow-xs">
+                                  <span className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-mono text-xs font-extrabold shadow-xs">
+                                    STOP #{stopIdx + 1} · {stop.arrivalDate} → {stop.departureDate}
+                                  </span>
+                                  <span className="px-3.5 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-rose-900 font-mono text-xs font-extrabold border border-rose-200 shadow-xs">
                                     {weekRangeMeta.numWeeks > 1
                                       ? `WEEKS ${weekRangeMeta.startWeek}–${weekRangeMeta.endWeek} MIXED (${stop.days} DAYS)`
                                       : `WEEK ${weekRangeMeta.startWeek} (${stop.days} DAYS)`}
@@ -3504,25 +3853,22 @@ export const ScoutHopPlanner: React.FC = () => {
                                     <span>{stop.countryFlag}</span>
                                     <span>{stop.countryName}</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                                    <span className="text-indigo-700">
+                                    <span className="text-rose-700">
                                       {stop.cityFocus || stop.countryName}
                                     </span>
                                   </span>
-                                  <span className="px-3 py-1 rounded-xl bg-emerald-500/90 text-slate-950 font-mono text-xs font-extrabold shadow-xs">
+                                  <span className="px-3 py-1 rounded-xl bg-emerald-500 text-white font-mono text-xs font-extrabold shadow-xs">
                                     {scheduledForThisStop.length} Places Scheduled
                                   </span>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <span className="px-3 py-1.5 rounded-xl bg-slate-950/75 backdrop-blur-md text-white/95 font-mono text-xs font-bold border border-white/15">
-                                    {stop.arrivalDate} → {stop.departureDate}
-                                  </span>
                                   <button
                                     type="button"
                                     onClick={() => setFocusedMapCountryId(stop.countryId)}
-                                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs cursor-pointer transition-colors shadow-xs"
+                                    className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-amber-50 text-slate-900 font-extrabold text-xs cursor-pointer transition-colors shadow-xs"
                                   >
-                                    Focus on Map
+                                    📍 Focus City on Map
                                   </button>
                                 </div>
                               </div>
@@ -3533,22 +3879,22 @@ export const ScoutHopPlanner: React.FC = () => {
                                   {stopWeeklyBlocks.map(wb => (
                                     <span
                                       key={wb.id}
-                                      className="px-2.5 py-0.5 rounded-lg bg-slate-950/75 backdrop-blur-md text-teal-200 border border-teal-400/25 text-[11px] font-bold"
+                                      className="px-2.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 border border-amber-200 text-[11px] font-bold"
                                     >
                                       Wk {wb.weekNumber}: {wb.themeTitle}
                                     </span>
                                   ))}
                                 </div>
                                 <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight drop-shadow-xs">
-                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — Unified Multi-Week Playbook &amp; Curated Hotspots
+                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — Date-Sorted Multi-Week Playbook
                                 </h3>
                               </div>
                             </div>
                           </ResilientScenicBanner>
 
                           {/* Internal Filter Bar: Mix All Weeks vs Individual Week + Category Filter */}
-                          <div className="px-5 sm:px-7 py-4 bg-gradient-to-r from-slate-50 via-indigo-50/40 to-teal-50/30 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                            {/* Week Selector Pills (Mix All Weeks vs Specific Week) */}
+                          <div className="px-5 sm:px-7 py-4 bg-gradient-to-r from-amber-50/70 via-rose-50/50 to-violet-50/50 border-b border-amber-200/70 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            {/* Week Selector Pills */}
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
                                 Week View:
@@ -3560,8 +3906,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                 }
                                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                                   activeWeekFilter === 'all'
-                                    ? 'bg-indigo-950 text-white shadow-2xs'
-                                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                                    ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-2xs'
+                                    : 'bg-white text-slate-700 border border-amber-200 hover:bg-amber-50'
                                 }`}
                               >
                                 ✨ All Weeks Mixed (Wks {weekRangeMeta.startWeek}–{weekRangeMeta.endWeek})
@@ -3575,8 +3921,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                   }
                                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     activeWeekFilter === wkNum
-                                      ? 'bg-teal-600 text-white shadow-2xs'
-                                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                                      ? 'bg-rose-600 text-white shadow-2xs'
+                                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-rose-50'
                                   }`}
                                 >
                                   Week {wkNum}
@@ -3593,7 +3939,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                 }
                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                                   activeCatFilter === 'all'
-                                    ? 'bg-indigo-600 text-white'
+                                    ? 'bg-violet-600 text-white'
                                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                                 }`}
                               >
@@ -3613,7 +3959,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                     }
                                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                                       activeCatFilter === catId
-                                        ? 'bg-indigo-600 text-white'
+                                        ? 'bg-violet-600 text-white'
                                         : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                                     }`}
                                   >
@@ -3642,18 +3988,30 @@ export const ScoutHopPlanner: React.FC = () => {
                                   timeOfDay: scheduledItem?.timeOfDay || rec.timeOfDay,
                                 };
 
+                                const placesList =
+                                  rec.placesIncluded && rec.placesIncluded.length > 0
+                                    ? rec.placesIncluded
+                                    : [
+                                        {
+                                          name: rec.title,
+                                          neighborhood: rec.neighborhood,
+                                          googleMapsUrl: rec.googleMapsUrl,
+                                        },
+                                      ];
+                                const placesCount = placesList.length;
+
                                 return (
                                   <motion.div
                                     key={rec.recommendationId}
                                     layout
                                     className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-300 ${
                                       isAdded
-                                        ? 'bg-emerald-50/35 border-emerald-400/90 shadow-sm ring-1 ring-emerald-400/40'
-                                        : 'bg-white border-slate-200/90 hover:border-indigo-300 hover:shadow-md'
+                                        ? 'bg-emerald-50/40 border-emerald-400/90 shadow-sm ring-1 ring-emerald-400/40'
+                                        : 'bg-amber-50/15 border-amber-200/80 hover:border-rose-300 hover:shadow-md'
                                     }`}
                                   >
                                     <div>
-                                      {/* Venue Photo + Star Rating + Google Maps Quick Badge */}
+                                      {/* Venue Photo + Star Rating + Places Count Badge */}
                                       <ResilientScenicBanner
                                         primaryUrl={rec.photoUrl}
                                         gradientFallback={rec.fallbackGradient}
@@ -3662,7 +4020,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                       >
                                         <div className="p-3.5 h-full flex flex-col justify-between">
                                           <div className="flex items-center justify-between gap-2">
-                                            <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-extrabold border border-white/15 truncate">
+                                            <span className="px-2.5 py-1 rounded-lg bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-extrabold border border-white/50 truncate shadow-2xs">
                                               {rec.categoryLabel}
                                             </span>
                                             <div className="flex items-center gap-1.5 shrink-0">
@@ -3673,16 +4031,31 @@ export const ScoutHopPlanner: React.FC = () => {
                                                   ({rec.reviewCount.toLocaleString()})
                                                 </span>
                                               </span>
-                                              <span className="px-2 py-0.5 rounded-lg bg-slate-950/80 text-teal-300 font-mono text-[10px] font-bold">
+                                              <span className="px-2 py-0.5 rounded-lg bg-white/90 text-rose-800 font-mono text-[10px] font-extrabold">
                                                 {rec.priceRange}
                                               </span>
                                             </div>
                                           </div>
 
-                                          <div className="space-y-0.5">
-                                            <div className="flex items-center gap-1 text-[11px] font-semibold text-teal-200">
-                                              <MapPin className="w-3 h-3 text-teal-400 shrink-0" />
-                                              <span className="truncate">{rec.neighborhood}</span>
+                                          <div className="space-y-1">
+                                            <div className="flex flex-wrap items-center justify-between gap-1">
+                                              <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-200">
+                                                <MapPin className="w-3 h-3 text-amber-300 shrink-0" />
+                                                <span className="truncate">{rec.neighborhood}</span>
+                                              </div>
+                                              {/* Prominent Number of Suggested Places Badge */}
+                                              <span
+                                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold shadow-2xs ${
+                                                  placesCount > 1
+                                                    ? 'bg-rose-500 text-white border border-rose-300'
+                                                    : 'bg-white/90 text-slate-900'
+                                                }`}
+                                              >
+                                                📍 {placesCount}{' '}
+                                                {placesCount === 1
+                                                  ? 'Suggested Place'
+                                                  : 'Suggested Places'}
+                                              </span>
                                             </div>
                                             <h4 className="font-heading text-sm sm:text-base font-extrabold text-white leading-snug line-clamp-2">
                                               {rec.title}
@@ -3691,8 +4064,22 @@ export const ScoutHopPlanner: React.FC = () => {
                                         </div>
                                       </ResilientScenicBanner>
 
-                                      {/* Venue Description, Insider Tip & Direct Google Maps Link */}
-                                      <div className="p-4 space-y-3">
+                                      {/* Venue Description, Experience Badges, Insider Tip & Direct Google Maps Links */}
+                                      <div className="p-4 space-y-3 bg-white">
+                                        {/* Experience & Budget Badges */}
+                                        {rec.experienceBadges && rec.experienceBadges.length > 0 && (
+                                          <div className="flex flex-wrap items-center gap-1">
+                                            {rec.experienceBadges.map(badge => (
+                                              <span
+                                                key={badge}
+                                                className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/80 text-rose-900 text-[10px] font-bold"
+                                              >
+                                                {badge}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+
                                         <p className="text-xs text-slate-600 leading-relaxed">
                                           {rec.description}
                                         </p>
@@ -3704,32 +4091,61 @@ export const ScoutHopPlanner: React.FC = () => {
                                           {rec.insiderTip}
                                         </div>
 
-                                        {/* Direct Google Maps Link + Add to Relocation Tasks */}
-                                        <div className="flex items-center justify-between gap-2 pt-1">
-                                          <a
-                                            href={rec.googleMapsUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/80 text-[11px] font-extrabold flex items-center gap-1.5 transition-colors"
-                                          >
-                                            <MapPin className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                            <span>Google Maps &amp; Reviews</span>
-                                            <ExternalLink className="w-3 h-3 text-indigo-500 shrink-0" />
-                                          </a>
+                                        {/* Direct Google Maps & Reviews Button with Explicit Place Count + Individual Place Links when >1 */}
+                                        <div className="space-y-2 pt-1">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <a
+                                              href={rec.googleMapsUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-200 text-[11px] font-extrabold flex items-center gap-1.5 transition-colors"
+                                            >
+                                              <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                              <span>
+                                                Google Maps &amp; Reviews ({placesCount}{' '}
+                                                {placesCount === 1 ? 'Place' : 'Places'})
+                                              </span>
+                                              <ExternalLink className="w-3 h-3 text-rose-500 shrink-0" />
+                                            </a>
 
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              handlePushWeeklyActivityToTasks(
-                                                `${rec.title} (${rec.neighborhood})`,
-                                                stop.countryName
-                                              )
-                                            }
-                                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-extrabold cursor-pointer transition-colors"
-                                            title="Also add as a Relocation Task in Column 2"
-                                          >
-                                            + Task List
-                                          </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handlePushWeeklyActivityToTasks(
+                                                  `${rec.title} (${rec.neighborhood})`,
+                                                  stop.countryName
+                                                )
+                                              }
+                                              className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-[10px] font-extrabold cursor-pointer transition-colors"
+                                              title="Also add as a Relocation Task in Column 2"
+                                            >
+                                              + Task List
+                                            </button>
+                                          </div>
+
+                                          {/* Individual Clickable Google Maps Links when Multiple Places are in this Card */}
+                                          {placesCount > 1 && (
+                                            <div className="p-2 rounded-xl bg-violet-50/60 border border-violet-200/80 space-y-1">
+                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-900 block">
+                                                📍 {placesCount} Suggested Places in This Card (Click Any Place to Open Map):
+                                              </span>
+                                              <div className="flex flex-wrap gap-1.5">
+                                                {placesList.map((pl, pIdx) => (
+                                                  <a
+                                                    key={`${rec.recommendationId}-pl-${pIdx}`}
+                                                    href={pl.googleMapsUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-2 py-1 rounded-lg bg-white hover:bg-violet-100 text-violet-950 border border-violet-200 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                                                  >
+                                                    <span className="font-mono text-violet-600">#{pIdx + 1}</span>
+                                                    <span className="truncate max-w-[160px]">{pl.name}</span>
+                                                    <ExternalLink className="w-2.5 h-2.5 text-violet-500 shrink-0" />
+                                                  </a>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
