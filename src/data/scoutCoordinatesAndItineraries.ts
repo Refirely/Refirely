@@ -1579,17 +1579,20 @@ export function registerCustomCityCoordinate(
   region?: string,
   highlight?: string
 ): GeoHubCoordinate {
-  const cleanId = countryId.toLowerCase().trim();
-  const cleanCity = cityName.trim();
+  const cleanId = String(countryId || '').toLowerCase().trim();
+  const cleanCountryName = String(countryName || countryId || '').trim();
+  const cleanCity = String(cityName || cleanCountryName).trim();
+  const safeLat = typeof lat === 'number' && !isNaN(lat) ? lat : 0;
+  const safeLng = typeof lng === 'number' && !isNaN(lng) ? lng : 0;
   const coord: GeoHubCoordinate = {
     countryId: cleanId,
-    countryName,
+    countryName: cleanCountryName,
     cityName: cleanCity,
-    lat,
-    lng,
+    lat: safeLat,
+    lng: safeLng,
     continentGroup: mapRegionToContinentGroup(region || 'Europe'),
     airportCode: cleanCity.slice(0, 3).toUpperCase(),
-    highlight: highlight || `Custom selected city hub in ${cleanCity}, ${countryName}`,
+    highlight: highlight || `Custom selected city hub in ${cleanCity}, ${cleanCountryName}`,
   };
   const key = `${cleanId}::${cleanCity.toLowerCase()}`;
   CUSTOM_CITY_COORDINATE_REGISTRY[key] = coord;
@@ -2414,8 +2417,8 @@ export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
     emoji: '🪙',
     tagline: 'Authentic street markets, community coworking, public trails & local bistros',
     priceMultiplierLabel: '$ · Value Local Pricing',
-    cardBg: 'from-amber-50/90 via-white to-orange-50/70',
-    activeBorder: 'border-amber-400 ring-amber-400/30',
+    cardBg: 'from-emerald-50/80 via-white to-teal-50/60',
+    activeBorder: 'border-emerald-300 ring-emerald-300/30',
   },
   {
     id: 'medium',
@@ -2423,8 +2426,8 @@ export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
     emoji: '⚖️',
     tagline: 'Boutique cafes, verified rooftop lounges, guided adventures & turnkey rentals',
     priceMultiplierLabel: '$$ · Balanced Expat Standard',
-    cardBg: 'from-rose-50/90 via-white to-pink-50/70',
-    activeBorder: 'border-rose-400 ring-rose-400/30',
+    cardBg: 'from-sky-50/80 via-white to-indigo-50/60',
+    activeBorder: 'border-sky-300 ring-sky-300/30',
   },
   {
     id: 'luxury',
@@ -2432,8 +2435,8 @@ export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
     emoji: '💎',
     tagline: '5-star beach clubs, private yacht/helicopter charters, Michelin dining & VIP clinics',
     priceMultiplierLabel: '$$$ · Executive & Luxury',
-    cardBg: 'from-violet-50/90 via-white to-fuchsia-50/70',
-    activeBorder: 'border-violet-500 ring-violet-500/30',
+    cardBg: 'from-violet-50/80 via-white to-purple-50/60',
+    activeBorder: 'border-violet-300 ring-violet-300/30',
   },
 ];
 
@@ -2454,7 +2457,7 @@ export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
     emoji: '🛡️',
     description:
       'Prioritizes well-lit walkable neighborhoods, vetted daytime/early-evening venues, female-friendly social mixers & high-security transport.',
-    colorClasses: 'bg-rose-50 text-rose-900 border-rose-300',
+    colorClasses: 'bg-sky-50/90 text-sky-900 border-sky-200',
   },
   {
     id: 'content-creator',
@@ -2463,7 +2466,7 @@ export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
     emoji: '📸',
     description:
       'Highlights golden-hour viewpoints, photogenic architecture, drone-friendly scenic lookouts, design cafes & fast upload fiber.',
-    colorClasses: 'bg-amber-50 text-amber-900 border-amber-300',
+    colorClasses: 'bg-violet-50/90 text-violet-900 border-violet-200',
   },
   {
     id: 'vip-exclusive',
@@ -2472,7 +2475,7 @@ export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
     emoji: '👑',
     description:
       'Curates members-only clubs, private marinas, gated luxury enclaves, bespoke concierge tours & wealth/tax advisory consultations.',
-    colorClasses: 'bg-violet-50 text-violet-900 border-violet-300',
+    colorClasses: 'bg-purple-50/90 text-purple-900 border-purple-200',
   },
   {
     id: 'retiree-accessible',
@@ -2481,7 +2484,7 @@ export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
     emoji: '🌿',
     description:
       'Focuses on flat waterfront promenades, quiet residential blocks, JCI private hospital tours & relaxed cultural mornings.',
-    colorClasses: 'bg-orange-50 text-orange-900 border-orange-300',
+    colorClasses: 'bg-emerald-50/90 text-emerald-900 border-emerald-200',
   },
   {
     id: 'nomad-social',
@@ -2490,7 +2493,7 @@ export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
     emoji: '⚡',
     description:
       'Centers on 250+ Mbps coworking campuses, Thursday expat mixers, padel/surf clubs & fast social integration.',
-    colorClasses: 'bg-indigo-50 text-indigo-900 border-indigo-300',
+    colorClasses: 'bg-indigo-50/90 text-indigo-900 border-indigo-200',
   },
 ];
 

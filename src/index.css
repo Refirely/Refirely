@@ -50,7 +50,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: #ea580c;
+  background: #6366f1;
   border: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   margin-top: -5px;
@@ -69,7 +69,7 @@ input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: #ea580c;
+  background: #6366f1;
   border: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   cursor: pointer;

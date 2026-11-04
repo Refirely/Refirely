@@ -12,15 +12,13 @@ export default defineConfig(({mode}) => {
     env.GOOGLE_MAPS_PLATFORM_KEY ||
     process.env.GOOGLE_MAPS_API_KEY ||
     env.GOOGLE_MAPS_API_KEY ||
-    '';
+    'AIzaSyDWar9KLvqVzMgkNto10ODFbW6npbZDmgc';
 
   return {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GOOGLE_MAPS_PLATFORM_KEY': JSON.stringify(resolvedMapsKey),
-      ...(resolvedMapsKey
-        ? {'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(resolvedMapsKey)}
-        : {}),
+      'import.meta.env.VITE_GOOGLE_MAPS_API_KEY': JSON.stringify(resolvedMapsKey),
     },
     resolve: {
       alias: {

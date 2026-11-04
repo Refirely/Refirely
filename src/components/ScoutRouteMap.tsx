@@ -315,7 +315,14 @@ const SingleCountryPlacesCitySearch: React.FC<{
         const loc = place.location;
         const lat = typeof loc?.lat === 'function' ? loc.lat() : loc?.lat;
         const lng = typeof loc?.lng === 'function' ? loc.lng() : loc?.lng;
-        const cityLabel = place.displayName || item.mainText;
+        const rawDisplayName = (place as any).displayName;
+        const cityLabel = String(
+          (typeof rawDisplayName === 'string'
+            ? rawDisplayName
+            : typeof rawDisplayName?.text === 'string'
+            ? rawDisplayName.text
+            : item.mainText) || item.mainText
+        ).trim();
 
         // Reset session token after place details fetch
         const AutocompleteSessionToken = (placesLib as any)?.AutocompleteSessionToken;
@@ -367,7 +374,7 @@ const SingleCountryPlacesCitySearch: React.FC<{
     <div className="relative w-full max-w-md">
       <form onSubmit={handleManualAdd} className="relative flex items-center gap-1.5">
         <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 text-rose-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-indigo-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={query}
@@ -378,7 +385,7 @@ const SingleCountryPlacesCitySearch: React.FC<{
               setIsOpen(true);
             }}
             placeholder={`Search any city in ${countryFlag} ${countryName} (Google Places)...`}
-            className="w-full pl-8 pr-7 py-2 rounded-xl bg-white border border-amber-300/90 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-2xs"
+            className="w-full pl-8 pr-7 py-2 rounded-xl bg-white border border-slate-200/90 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-2xs"
           />
           {query && (
             <button
@@ -396,19 +403,19 @@ const SingleCountryPlacesCitySearch: React.FC<{
         <button
           type="submit"
           disabled={!query.trim() || disabled}
-          className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 disabled:opacity-40 text-white text-xs font-extrabold cursor-pointer shrink-0 shadow-2xs"
+          className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-extrabold cursor-pointer shrink-0 shadow-2xs transition-colors"
         >
           + Add City
         </button>
       </form>
 
       {isOpen && query.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 mt-1.5 z-40 rounded-2xl bg-white border border-amber-200 shadow-xl overflow-hidden">
-          <div className="px-3 py-1.5 bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 border-b border-amber-100 flex items-center justify-between text-[10px] font-extrabold text-slate-600">
+        <div className="absolute left-0 right-0 mt-1.5 z-40 rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+          <div className="px-3 py-1.5 bg-gradient-to-r from-slate-50 via-sky-50/70 to-indigo-50/70 border-b border-slate-100 flex items-center justify-between text-[10px] font-extrabold text-slate-600">
             <span>
               {countryFlag} Cities in {countryName} Only (Google Places)
             </span>
-            {isLoading && <span className="text-rose-600 animate-pulse">Searching...</span>}
+            {isLoading && <span className="text-indigo-600 animate-pulse">Searching...</span>}
           </div>
 
           {suggestions.length > 0 ? (
@@ -418,18 +425,18 @@ const SingleCountryPlacesCitySearch: React.FC<{
                   key={item.id}
                   type="button"
                   onClick={() => handlePickSuggestion(item)}
-                  className="w-full px-3 py-2 text-left hover:bg-amber-50/70 flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 text-left hover:bg-sky-50/60 flex items-center justify-between gap-2 transition-colors cursor-pointer"
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                      <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
                       <span className="truncate">{item.mainText}</span>
                     </p>
                     <p className="text-[10px] text-slate-500 truncate pl-4">
                       {item.secondaryText}
                     </p>
                   </div>
-                  <span className="px-2 py-0.5 rounded-lg bg-rose-100 text-rose-900 text-[10px] font-extrabold shrink-0">
+                  <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200/70 text-[10px] font-extrabold shrink-0">
                     + Add to {countryName}
                   </span>
                 </button>
@@ -439,12 +446,12 @@ const SingleCountryPlacesCitySearch: React.FC<{
             <button
               type="button"
               onClick={handleManualAdd}
-              className="w-full px-3 py-2.5 text-left hover:bg-amber-50/70 flex items-center justify-between text-xs font-bold text-slate-800 cursor-pointer"
+              className="w-full px-3 py-2.5 text-left hover:bg-sky-50/60 flex items-center justify-between text-xs font-bold text-slate-800 cursor-pointer"
             >
               <span>
                 Add <strong>"{query.trim()}"</strong> as a city stop in {countryFlag} {countryName}
               </span>
-              <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-950 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-[10px] font-extrabold">
                 + Add Custom City
               </span>
             </button>
@@ -607,7 +614,7 @@ const RouteDirectionsAndAnimator: React.FC<{
                   const routePolys: any[] = primaryRoute.createPolylines();
                   routePolys.forEach(poly => {
                     poly.setOptions({
-                      strokeColor: '#e11d48', // Vibrant Rose-600 road path
+                      strokeColor: '#6366f1', // Soft Indigo-500 road path
                       strokeOpacity: 0.45,
                       strokeWeight: 6,
                       map,
@@ -640,7 +647,7 @@ const RouteDirectionsAndAnimator: React.FC<{
                 const roadFlowPolyline = new gMaps.Polyline({
                   path: sampled,
                   geodesic: false,
-                  strokeColor: '#7c3aed', // Violet-600 animated flow
+                  strokeColor: '#4f46e5', // Indigo-600 animated flow
                   strokeOpacity: 0.85,
                   strokeWeight: 3.5,
                   icons: [
@@ -650,7 +657,7 @@ const RouteDirectionsAndAnimator: React.FC<{
                         scale: 3.2,
                         strokeColor: '#ffffff',
                         strokeWeight: 1.5,
-                        fillColor: '#f59e0b',
+                        fillColor: '#0ea5e9',
                         fillOpacity: 1,
                       },
                       offset: '0%',
@@ -688,7 +695,7 @@ const RouteDirectionsAndAnimator: React.FC<{
           const baseFlightPoly = new gMaps.Polyline({
             path: [originPt, destPt],
             geodesic: true,
-            strokeColor: '#f97316',
+            strokeColor: '#38bdf8',
             strokeOpacity: 0.35,
             strokeWeight: 6,
             map,
@@ -698,7 +705,7 @@ const RouteDirectionsAndAnimator: React.FC<{
           const dashSymbol = {
             path: 'M 0,-1 0,1',
             strokeOpacity: 0.95,
-            strokeColor: '#e11d48',
+            strokeColor: '#6366f1',
             scale: 3.5,
           };
           const arrowSymbol = {
@@ -876,8 +883,8 @@ const RouteDirectionsAndAnimator: React.FC<{
   return (
     <AdvancedMarker position={travelerPos} zIndex={999} title="Active Scouting Traveler">
       <div className="relative flex items-center justify-center">
-        <span className="animate-ping absolute inline-flex h-10 w-10 rounded-full bg-rose-400 opacity-60" />
-        <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 border-2 border-white shadow-lg flex items-center justify-center text-white">
+        <span className="animate-ping absolute inline-flex h-10 w-10 rounded-full bg-indigo-400 opacity-50" />
+        <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-500 border-2 border-white shadow-lg flex items-center justify-center text-white">
           {activeTravelMode === 'DRIVING' ? (
             <Navigation className="w-4 h-4" />
           ) : (
@@ -907,7 +914,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
   const apiKey =
     (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string) ||
     (typeof process !== 'undefined' && (process as any).env?.GOOGLE_MAPS_PLATFORM_KEY) ||
-    '';
+    'AIzaSyDWar9KLvqVzMgkNto10ODFbW6npbZDmgc';
 
   const [mapsAuthFailed, setMapsAuthFailed] = useState(false);
   const [fallbackCanvasMode, setFallbackCanvasMode] = useState<'atlas' | 'google-embed'>('atlas');
@@ -1137,13 +1144,13 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
   }, [enrichedStops.length, computedFallbackLegs, progressPct]);
 
   return (
-    <div className="rounded-3xl bg-white border-2 border-amber-200/90 shadow-md overflow-hidden">
-      {/* Light, Multi-Colored Top Route Studio Header & Google Places City Search */}
-      <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-50/90 via-rose-50/80 to-violet-50/90 border-b border-amber-200/80 text-slate-900 space-y-3.5">
+    <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md overflow-hidden">
+      {/* Soft Pastel Top Route Studio Header & Google Places City Search */}
+      <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-50 via-sky-50/70 to-indigo-50/70 border-b border-slate-200/80 text-slate-900 space-y-3.5">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white border border-rose-200 text-rose-800 text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
-              <Sparkles className="w-3 h-3 text-amber-500" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white border border-indigo-200/80 text-indigo-800 text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+              <Sparkles className="w-3 h-3 text-indigo-500" />
               <span>
                 {activeCountryMeta.countryFlag} {activeCountryMeta.countryName} Single-Country City Map &amp; Route Animator
               </span>
@@ -1152,19 +1159,19 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
             {enrichedStops.length > 0 ? (
               <h3 className="font-heading text-base sm:text-xl font-extrabold tracking-tight text-slate-900 flex flex-wrap items-center gap-2">
                 <span>{activeCountryMeta.countryFlag} {activeCountryMeta.countryName} Route:</span>
-                <span className="text-rose-700">
+                <span className="text-indigo-700">
                   {enrichedStops[0]?.coord.cityName.split('(')[0].trim()}
                 </span>
-                <span className="text-[11px] font-mono text-amber-900 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md">
+                <span className="text-[11px] font-mono text-sky-900 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md">
                   {formatShortIsoDate(enrichedStops[0]?.arrivalDate)}
                 </span>
                 {enrichedStops.length > 1 && (
                   <>
-                    <ChevronRight className="w-4 h-4 text-rose-400" />
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                     <span className="text-violet-700">
                       {enrichedStops[enrichedStops.length - 1]?.coord.cityName.split('(')[0].trim()}
                     </span>
-                    <span className="text-[11px] font-mono text-violet-900 bg-violet-100 border border-violet-200 px-2 py-0.5 rounded-md">
+                    <span className="text-[11px] font-mono text-violet-900 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-md">
                       {formatShortIsoDate(enrichedStops[enrichedStops.length - 1]?.departureDate)}
                     </span>
                   </>
@@ -1175,7 +1182,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                 <span>
                   Explore {activeCountryMeta.countryFlag} {activeCountryMeta.countryName} Expat Cities on the Map
                 </span>
-                <span className="text-xs font-mono text-violet-800 bg-violet-100 border border-violet-200 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
                   {countryCityHubs.length} Cities Plotted
                 </span>
               </h3>
@@ -1221,14 +1228,14 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   onClick={() => setShowCandidatePins(prev => !prev)}
                   className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
                     showCandidatePins
-                      ? 'bg-white border-violet-300 text-violet-900 shadow-2xs'
+                      ? 'bg-white border-indigo-200 text-indigo-900 shadow-2xs'
                       : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
                   }`}
                   title={`Toggle other expat city pins in ${activeCountryMeta.countryName}`}
                 >
                   {showCandidatePins ? (
                     <>
-                      <Eye className="w-3.5 h-3.5 text-violet-600" />
+                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Other {activeCountryMeta.countryName} Cities ({unselectedCityHubPins.length})</span>
                     </>
                   ) : (
@@ -1247,8 +1254,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                     onClick={() => setIsPlaying(prev => !prev)}
                     className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all duration-300 cursor-pointer shadow-xs ${
                       isPlaying
-                        ? 'bg-amber-400 hover:bg-amber-500 text-slate-950'
-                        : 'bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white'
+                        ? 'bg-sky-100 hover:bg-sky-200 text-sky-900 border border-sky-300'
+                        : 'bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white'
                     }`}
                   >
                     {isPlaying ? (
@@ -1271,7 +1278,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   <button
                     type="button"
                     onClick={() => setPlaybackSpeed(prev => (prev === 1 ? 2 : 1))}
-                    className="px-2.5 py-2 rounded-xl bg-white hover:bg-amber-50 border border-amber-300 text-xs font-mono font-extrabold text-amber-900 cursor-pointer transition-colors"
+                    className="px-2.5 py-2 rounded-xl bg-white hover:bg-sky-50 border border-slate-200 text-xs font-mono font-extrabold text-indigo-900 cursor-pointer transition-colors"
                     title="Toggle animation speed"
                   >
                     {playbackSpeed}x
@@ -1280,7 +1287,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   <button
                     type="button"
                     onClick={handleResetAnimation}
-                    className="p-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 cursor-pointer transition-colors"
+                    className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 cursor-pointer transition-colors"
                     title="Reset to Starting Point"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -1312,17 +1319,17 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                       }}
                       className={`px-3 py-1.5 rounded-xl border text-left transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                         isCurrent
-                          ? 'bg-white text-slate-900 border-rose-400 shadow-sm ring-2 ring-rose-400/30 scale-[1.01]'
-                          : 'bg-white/80 hover:bg-white text-slate-700 border-amber-200/90'
+                          ? 'bg-white text-slate-900 border-indigo-400 shadow-sm ring-2 ring-indigo-300/40 scale-[1.01]'
+                          : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200/90'
                       }`}
                     >
                       <span
                         className={`w-5 h-5 rounded-full text-[10px] font-mono font-extrabold flex items-center justify-center ${
                           isStart
-                            ? 'bg-amber-500 text-white'
+                            ? 'bg-emerald-600 text-white'
                             : isEnd
-                            ? 'bg-rose-600 text-white'
-                            : 'bg-violet-600 text-white'
+                            ? 'bg-violet-600 text-white'
+                            : 'bg-sky-600 text-white'
                         }`}
                       >
                         {idx + 1}
@@ -1334,12 +1341,12 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                             {stop.coord.cityName.split('&')[0].split('(')[0].trim()}
                           </span>
                           {isStart && (
-                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 font-extrabold">
+                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold">
                               Start
                             </span>
                           )}
                           {isEnd && (
-                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-rose-100 text-rose-900 font-extrabold">
+                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-violet-50 text-violet-800 border border-violet-200 font-extrabold">
                               End
                             </span>
                           )}
@@ -1352,12 +1359,12 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                     </button>
 
                     {idx < enrichedStops.length - 1 && (
-                      <div className="flex flex-col items-center shrink-0 px-1 text-[10px] font-mono text-rose-700 font-bold">
+                      <div className="flex flex-col items-center shrink-0 px-1 text-[10px] font-mono text-indigo-700 font-bold">
                         <div className="flex items-center gap-1">
                           {effectiveRouteLegs[idx]?.mode === 'DRIVING' ? (
-                            <Car className="w-3 h-3 text-rose-600" />
+                            <Car className="w-3 h-3 text-indigo-600" />
                           ) : (
-                            <Plane className="w-3 h-3 text-violet-600" />
+                            <Plane className="w-3 h-3 text-sky-600" />
                           )}
                           <span>
                             {effectiveRouteLegs[idx]
@@ -1376,11 +1383,11 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
             </div>
 
             {enrichedStops.length > 1 && (
-              <div className="w-full h-2 rounded-full bg-amber-100 overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-slate-200/80 overflow-hidden">
                 <motion.div
                   animate={{ width: `${progressPct}%` }}
                   transition={{ duration: 0.15 }}
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600"
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-violet-500"
                 />
               </div>
             )}
@@ -1390,7 +1397,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
 
       {/* Main Map Canvas + Active City Stop Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-4">
-        <div className="lg:col-span-3 h-[390px] sm:h-[450px] w-full relative bg-amber-50/30">
+        <div className="lg:col-span-3 h-[390px] sm:h-[450px] w-full relative bg-sky-50/30">
           {apiKey && !mapsAuthFailed ? (
             <APIProvider apiKey={apiKey}>
               <Map
@@ -1438,8 +1445,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <div
                           className={`px-2.5 py-1 rounded-full border shadow-md flex items-center gap-1.5 backdrop-blur-xs transition-colors ${
                             isFocused
-                              ? 'bg-violet-700 border-amber-300 text-white ring-2 ring-amber-300/60'
-                              : 'bg-white/95 hover:bg-violet-700 text-slate-800 hover:text-white border-amber-300'
+                              ? 'bg-indigo-600 border-sky-200 text-white ring-2 ring-indigo-300/60'
+                              : 'bg-white/95 hover:bg-indigo-600 text-slate-800 hover:text-white border-slate-300'
                           }`}
                         >
                           <span className="text-xs leading-none">{activeCountryMeta.countryFlag}</span>
@@ -1447,7 +1454,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                             {cityHub.cityName.split('&')[0].split('(')[0].trim()}
                           </span>
                           {onAddCountryFromMap && stops.length < 5 && (
-                            <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
+                            <span className="w-3.5 h-3.5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-bold">
                               +
                             </span>
                           )}
@@ -1484,10 +1491,10 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <div
                           className={`px-2.5 py-1.5 rounded-2xl border-2 shadow-xl flex items-center gap-1.5 ${
                             isStart
-                              ? 'bg-amber-500 border-white text-slate-950'
+                              ? 'bg-emerald-600 border-white text-white'
                               : isEnd
-                              ? 'bg-rose-600 border-white text-white'
-                              : 'bg-violet-600 border-white text-white'
+                              ? 'bg-violet-600 border-white text-white'
+                              : 'bg-sky-600 border-white text-white'
                           }`}
                         >
                           <span className="w-5 h-5 rounded-full bg-black/20 text-white font-mono text-[11px] font-extrabold flex items-center justify-center">
@@ -1498,11 +1505,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                             <span className="text-xs font-extrabold whitespace-nowrap block">
                               {stop.coord.cityName.split('&')[0].split('(')[0].trim()}
                             </span>
-                            <span
-                              className={`text-[9px] font-mono font-bold whitespace-nowrap block ${
-                                isStart ? 'text-slate-900' : 'text-white/90'
-                              }`}
-                            >
+                            <span className="text-[9px] font-mono font-bold whitespace-nowrap block text-white/90">
                               {formatShortIsoDate(stop.arrivalDate)} –{' '}
                               {formatShortIsoDate(stop.departureDate)} · {stop.days}d
                             </span>
@@ -1511,10 +1514,10 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <div
                           className={`w-2.5 h-2.5 rotate-45 -mt-1 border-r-2 border-b-2 border-white ${
                             isStart
-                              ? 'bg-amber-500'
+                              ? 'bg-emerald-600'
                               : isEnd
-                              ? 'bg-rose-600'
-                              : 'bg-violet-600'
+                              ? 'bg-violet-600'
+                              : 'bg-sky-600'
                           }`}
                         />
                       </div>
@@ -1534,7 +1537,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   >
                     <div className="p-1.5 space-y-2 text-slate-900">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-900 font-mono text-[10px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200 font-mono text-[10px] font-extrabold">
                           City Stop #{selectedMarkerIdx + 1}{' '}
                           {selectedMarkerIdx === 0
                             ? '· START'
@@ -1543,7 +1546,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                             ? '· END'
                             : ''}
                         </span>
-                        <span className="text-[11px] font-mono font-bold text-amber-800">
+                        <span className="text-[11px] font-mono font-bold text-sky-800">
                           {enrichedStops[selectedMarkerIdx].days} Days · $
                           {enrichedStops[selectedMarkerIdx].stopBurnUSD.toLocaleString()}
                         </span>
@@ -1611,7 +1614,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                               setSelectedMarkerIdx(null);
                               onRemoveStopFromMap(idToRemove);
                             }}
-                            className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1 cursor-pointer"
                           >
                             <Trash2 className="w-3 h-3" />
                             <span>Remove City</span>
@@ -1634,10 +1637,10 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   >
                     <div className="p-1.5 space-y-2 text-slate-900">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-950 font-mono text-[10px] font-extrabold">
+                        <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-900 border border-sky-200 font-mono text-[10px] font-extrabold">
                           {activeCountryMeta.countryFlag} {activeCountryMeta.countryName} Expat Hub
                         </span>
-                        <span className="text-xs font-mono font-extrabold text-rose-700">
+                        <span className="text-xs font-mono font-extrabold text-indigo-700">
                           {selectedCityHubObj.airportCode}
                         </span>
                       </div>
@@ -1662,7 +1665,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                             setSelectedCityHubName(null);
                           }}
                           disabled={stops.length >= 5}
-                          className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          className="w-full py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>
@@ -1677,16 +1680,16 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
               </Map>
             </APIProvider>
           ) : (
-            /* Light, Multi-Colored Single-Country Atlas + Live Google Maps City Embed Engine */
-            <div className="w-full h-full relative bg-gradient-to-br from-amber-50/70 via-sky-50/60 to-rose-50/60 overflow-hidden select-none">
+            /* Soft Pastel Single-Country Atlas + Live Google Maps City Embed Engine */
+            <div className="w-full h-full relative bg-gradient-to-br from-slate-50 via-sky-50/70 to-indigo-50/60 overflow-hidden select-none">
               <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-amber-200 pointer-events-auto shadow-md">
+                <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-md">
                   <button
                     type="button"
                     onClick={() => setFallbackCanvasMode('atlas')}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
                       fallbackCanvasMode === 'atlas'
-                        ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-xs'
+                        ? 'bg-indigo-600 text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
@@ -1698,7 +1701,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                     onClick={() => setFallbackCanvasMode('google-embed')}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
                       fallbackCanvasMode === 'google-embed'
-                        ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-xs'
+                        ? 'bg-indigo-600 text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
@@ -1715,11 +1718,11 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                 </div>
 
                 {fallbackCanvasMode === 'atlas' && (
-                  <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-amber-200 pointer-events-auto shadow-md">
+                  <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 pointer-events-auto shadow-md">
                     <button
                       type="button"
                       onClick={() => setAtlasZoom(z => Math.min(9, Number((z * 1.35).toFixed(2))))}
-                      className="p-1.5 rounded-lg text-slate-700 hover:bg-amber-50 cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-700 hover:bg-sky-50 cursor-pointer"
                       title="Zoom In"
                     >
                       <ZoomIn className="w-3.5 h-3.5" />
@@ -1727,7 +1730,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                     <button
                       type="button"
                       onClick={() => setAtlasZoom(z => Math.max(1.5, Number((z / 1.35).toFixed(2))))}
-                      className="p-1.5 rounded-lg text-slate-700 hover:bg-amber-50 cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-700 hover:bg-sky-50 cursor-pointer"
                       title="Zoom Out"
                     >
                       <ZoomOut className="w-3.5 h-3.5" />
@@ -1738,7 +1741,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         setAtlasZoom(4.2);
                         setAtlasCenter([defaultCenter.lng, defaultCenter.lat]);
                       }}
-                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"
+                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-indigo-700 hover:bg-indigo-50 cursor-pointer"
                     >
                       Center {activeCountryMeta.countryName}
                     </button>
@@ -1782,13 +1785,13 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                           <Geography
                             key={geo.rsmKey}
                             geography={geo}
-                            fill="#fef3c7"
-                            stroke="#f59e0b"
+                            fill="#f1f5f9"
+                            stroke="#cbd5e1"
                             strokeWidth={0.45}
                             style={
                               {
                                 default: { outline: 'none' },
-                                hover: { fill: '#fde68a', outline: 'none' },
+                                hover: { fill: '#e0f2fe', outline: 'none' },
                                 pressed: { outline: 'none' },
                               } as any
                             }
@@ -1803,7 +1806,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <Line
                           from={[leg.fromStop.coord.lng, leg.fromStop.coord.lat]}
                           to={[leg.toStop.coord.lng, leg.toStop.coord.lat]}
-                          stroke="#e11d48"
+                          stroke="#6366f1"
                           strokeWidth={3.2 / Math.sqrt(atlasZoom)}
                           strokeLinecap="round"
                           strokeOpacity={0.45}
@@ -1811,7 +1814,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <Line
                           from={[leg.fromStop.coord.lng, leg.fromStop.coord.lat]}
                           to={[leg.toStop.coord.lng, leg.toStop.coord.lat]}
-                          stroke="#7c3aed"
+                          stroke="#4f46e5"
                           strokeWidth={1.8 / Math.sqrt(atlasZoom)}
                           strokeDasharray="5 4"
                           strokeLinecap="round"
@@ -1835,8 +1838,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                           <g className="cursor-pointer group">
                             <circle
                               r={(isFocused ? 7 : 5) / Math.sqrt(atlasZoom)}
-                              fill={isFocused ? '#7c3aed' : '#ffffff'}
-                              stroke="#e11d48"
+                              fill={isFocused ? '#4f46e5' : '#ffffff'}
+                              stroke="#6366f1"
                               strokeWidth={1.3 / Math.sqrt(atlasZoom)}
                             />
                             <text
@@ -1846,7 +1849,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                                 fontFamily: 'Plus Jakarta Sans, sans-serif',
                                 fontSize: `${Math.max(6, 10 / Math.sqrt(atlasZoom))}px`,
                                 fontWeight: 800,
-                                fill: '#881337',
+                                fill: '#334155',
                                 pointerEvents: 'none',
                               }}
                             >
@@ -1861,7 +1864,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                     {enrichedStops.map((stop, idx) => {
                       const isStart = idx === 0;
                       const isEnd = idx === enrichedStops.length - 1 && enrichedStops.length > 1;
-                      const fillHex = isStart ? '#f59e0b' : isEnd ? '#e11d48' : '#7c3aed';
+                      const fillHex = isStart ? '#059669' : isEnd ? '#7c3aed' : '#0284c7';
                       return (
                         <Marker
                           key={`atlas-stop-${stop.id}`}
@@ -1923,12 +1926,12 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <g>
                           <circle
                             r={10 / Math.sqrt(atlasZoom)}
-                            fill="#e11d48"
+                            fill="#4f46e5"
                             fillOpacity={0.35}
                           />
                           <circle
                             r={5.5 / Math.sqrt(atlasZoom)}
-                            fill="#e11d48"
+                            fill="#4f46e5"
                             stroke="#ffffff"
                             strokeWidth={1.5 / Math.sqrt(atlasZoom)}
                           />
@@ -1941,36 +1944,36 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
             </div>
           )}
 
-          {/* Light Multi-Colored Floating Map Legend Badge */}
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-xl border border-amber-200 text-[10px] font-bold shadow-md">
+          {/* Soft Pastel Floating Map Legend Badge */}
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-bold shadow-md">
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block" />
               <span>Start City</span>
             </span>
             <span>·</span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-violet-600 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-600 inline-block" />
               <span>Mid Stop</span>
             </span>
             <span>·</span>
             <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-violet-600 inline-block" />
               <span>Final City</span>
             </span>
             <span>·</span>
-            <span className="text-rose-700 font-extrabold">
+            <span className="text-indigo-700 font-extrabold">
               Focused on {activeCountryMeta.countryFlag} {activeCountryMeta.countryName}
             </span>
           </div>
         </div>
 
-        {/* Right Side: Light Multi-Colored Active City Stop & Directions Leg Inspector */}
-        <div className="p-4 sm:p-5 bg-gradient-to-b from-amber-50/50 via-white to-rose-50/40 border-t lg:border-t-0 lg:border-l border-amber-200/80 flex flex-col justify-between space-y-4">
+        {/* Right Side: Soft Pastel Active City Stop & Directions Leg Inspector */}
+        <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50/80 via-white to-sky-50/40 border-t lg:border-t-0 lg:border-l border-slate-200/80 flex flex-col justify-between space-y-4">
           {activeStop ? (
             <>
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 font-mono text-[10px] font-extrabold uppercase tracking-wider">
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200/80 font-mono text-[10px] font-extrabold uppercase tracking-wider">
                     City {activeStopIdx + 1} of {enrichedStops.length}
                     {activeStopIdx === 0
                       ? ' · Start'
@@ -1978,7 +1981,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                       ? ' · Finale'
                       : ''}
                   </span>
-                  <span className="text-xs font-mono font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-mono font-bold text-sky-800 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md">
                     {activeStop.coord.airportCode} Hub
                   </span>
                 </div>
@@ -1991,7 +1994,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                         <h4 className="font-heading text-base font-extrabold text-slate-900">
                           {activeStop.coord.cityName}
                         </h4>
-                        <p className="text-xs font-bold text-rose-700">
+                        <p className="text-xs font-bold text-indigo-700">
                           {activeStop.countryName}
                         </p>
                       </div>
@@ -2001,7 +2004,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                       <button
                         type="button"
                         onClick={() => onRemoveStopFromMap(activeStop.id)}
-                        className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
                         title="Remove this city stop"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -2015,9 +2018,9 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
 
                 {/* Live Connected Date Pickers for Active City Stop */}
                 {onUpdateStopDatesFromMap ? (
-                  <div className="p-2.5 rounded-xl bg-white border border-amber-200/90 space-y-2 shadow-2xs">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-amber-600" />
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200/90 space-y-2 shadow-2xs">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-indigo-600" />
                       <span>City Stay Dates ({activeStop.days} Days)</span>
                     </span>
                     <div className="grid grid-cols-2 gap-2">
@@ -2034,7 +2037,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                               arrivalDate: e.target.value,
                             })
                           }
-                          className="w-full px-2 py-1 rounded-lg bg-amber-50/40 border border-amber-200 text-[11px] font-mono font-bold text-slate-900"
+                          className="w-full px-2 py-1 rounded-lg bg-slate-50/70 border border-slate-200 text-[11px] font-mono font-bold text-slate-900"
                         />
                       </div>
                       <div>
@@ -2055,16 +2058,16 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                               departureDate: e.target.value,
                             })
                           }
-                          className="w-full px-2 py-1 rounded-lg bg-amber-50/40 border border-amber-200 text-[11px] font-mono font-bold text-slate-900"
+                          className="w-full px-2 py-1 rounded-lg bg-slate-50/70 border border-slate-200 text-[11px] font-mono font-bold text-slate-900"
                         />
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 pt-1">
-                    <div className="p-2.5 rounded-xl bg-white border border-amber-200/90">
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/90">
                       <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-600" />
+                        <Clock className="w-3 h-3 text-sky-600" />
                         <span>Stay Window</span>
                       </span>
                       <p className="text-sm font-mono font-extrabold text-slate-900 mt-0.5">
@@ -2075,12 +2078,12 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-white border border-rose-200/90">
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/90">
                       <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
-                        <DollarSign className="w-3 h-3 text-rose-600" />
+                        <DollarSign className="w-3 h-3 text-emerald-600" />
                         <span>City Living Burn</span>
                       </span>
-                      <p className="text-sm font-mono font-extrabold text-rose-800 mt-0.5">
+                      <p className="text-sm font-mono font-extrabold text-emerald-800 mt-0.5">
                         ${activeStop.stopBurnUSD.toLocaleString()}
                       </p>
                       <span className="text-[10px] font-mono text-slate-500 block">
@@ -2090,17 +2093,17 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   </div>
                 )}
 
-                <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200/90 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-amber-950 flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-emerald-950 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Est. Stop Burn:</span>
                   </span>
-                  <span className="font-mono font-extrabold text-amber-900">
+                  <span className="font-mono font-extrabold text-emerald-900">
                     ${activeStop.stopBurnUSD.toLocaleString()} ({activeStop.days}d)
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-violet-50/80 border border-violet-200/90 flex items-center justify-between text-xs">
+                <div className="p-2.5 rounded-xl bg-violet-50/80 border border-violet-200/80 flex items-center justify-between text-xs">
                   <span className="font-semibold text-violet-950 flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-violet-600" />
                     <span>{activeStop.visaStatusTag}</span>
@@ -2108,8 +2111,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                       activeStop.isSchengen
-                        ? 'bg-violet-200/80 text-violet-950'
-                        : 'bg-amber-200/80 text-amber-950'
+                        ? 'bg-violet-100 text-violet-900'
+                        : 'bg-sky-100 text-sky-900'
                     }`}
                   >
                     {activeStop.isSchengen ? 'Schengen' : 'Non-Schengen'}
@@ -2117,10 +2120,10 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                 </div>
               </div>
 
-              {/* Next Hop Directions Summary (Light Multi-Colored Card) */}
+              {/* Next Hop Directions Summary (Soft Pastel Card) */}
               {nextStop && activeLeg ? (
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-violet-50 border border-rose-200 text-slate-900 space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-rose-700">
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-sky-50/80 via-indigo-50/70 to-violet-50/80 border border-indigo-200/80 text-slate-900 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">
                     <span className="flex items-center gap-1">
                       {activeLeg.mode === 'DRIVING' ? (
                         <Car className="w-3.5 h-3.5" />
@@ -2137,8 +2140,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   <p className="text-[11px] text-slate-600 font-mono">{activeLeg.durationText}</p>
                 </div>
               ) : (
-                <div className="p-3 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs font-semibold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="p-3 rounded-2xl bg-sky-50/80 border border-sky-200/80 text-sky-950 text-xs font-semibold flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
                   <span>
                     {enrichedStops.length === 1
                       ? `Single-city immersion in ${activeStop.coord.cityName.split('(')[0].trim()}, or click another ${activeStop.countryName} city pin to hop!`
@@ -2150,8 +2153,8 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
           ) : (
             /* When 0 stops are selected, show single-country city picker list */
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 text-[10px] font-extrabold uppercase tracking-wider">
-                <Globe className="w-3.5 h-3.5 text-rose-600" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200 text-[10px] font-extrabold uppercase tracking-wider">
+                <Globe className="w-3.5 h-3.5 text-indigo-600" />
                 <span>{activeCountryMeta.countryFlag} {activeCountryMeta.countryName} Cities</span>
               </div>
 
@@ -2171,7 +2174,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                   {countryCityHubs.map(cityHub => (
                     <div
                       key={cityHub.cityName}
-                      className="p-2 rounded-xl bg-white border border-amber-200/90 hover:border-rose-300 flex items-center justify-between gap-2 transition-all"
+                      className="p-2 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-300 flex items-center justify-between gap-2 transition-all"
                     >
                       <button
                         type="button"
@@ -2192,7 +2195,7 @@ export const ScoutRouteMap: React.FC<ScoutRouteMapProps> = ({
                           onClick={() =>
                             onAddCountryFromMap(activeCountryMeta.countryId, cityHub.cityName)
                           }
-                          className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-[10px] font-extrabold shrink-0 cursor-pointer transition-colors"
+                          className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-extrabold shrink-0 cursor-pointer transition-colors"
                         >
                           + Add City
                         </button>

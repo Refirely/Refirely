@@ -1594,8 +1594,12 @@ export const ScoutHopPlanner: React.FC = () => {
     lng?: number,
     highlight?: string
   ) => {
+    const safeCountryId = String(countryId || selectedCountryId || '').trim();
+    const safeCityName = String(cityName || '').trim();
+    if (!safeCityName) return;
+
     const countryObj =
-      countries.find(c => c.id.toLowerCase() === countryId.toLowerCase()) || activeCountryObj;
+      countries.find(c => c.id.toLowerCase() === safeCountryId.toLowerCase()) || activeCountryObj;
     if (!countryObj) return;
 
     const fallbackHub = getHubCoordinatesForCountry(
@@ -1609,15 +1613,17 @@ export const ScoutHopPlanner: React.FC = () => {
 
     registerCustomCityCoordinate(
       countryObj.id,
-      cityName,
+      countryObj.name,
+      safeCityName,
       resolvedLat,
       resolvedLng,
+      countryObj.region,
       highlight || `Custom chosen city stop in ${countryObj.name}`
     );
     setCustomCityRevision(r => r + 1);
-    handleAddCountryFromDiscovery(countryObj.id, cityName);
+    handleAddCountryFromDiscovery(countryObj.id, safeCityName);
     setSaveBannerMessage(
-      `Added "${cityName}" (${countryObj.flag} ${countryObj.name}) to your route & interactive map!`
+      `Added "${safeCityName}" (${countryObj.flag} ${countryObj.name}) to your route & interactive map!`
     );
     setTimeout(() => setSaveBannerMessage(null), 4500);
   };
@@ -2359,24 +2365,24 @@ export const ScoutHopPlanner: React.FC = () => {
       {/* =================================================================== */}
       {/* 1. PAGE HEADER & PRIMARY ACTIONS BAR                                */}
       {/* =================================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50/90 via-white to-rose-50/85 border border-amber-200/80 p-6 sm:p-8 shadow-sm">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-rose-500 via-50% to-violet-600" />
-        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-300/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-rose-300/20 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-50 via-sky-50/70 to-indigo-50/70 border border-slate-200/90 p-6 sm:p-8 shadow-sm">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-500" />
+        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-sky-200/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-violet-200/25 blur-3xl" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-100/90 via-rose-100/80 to-violet-100/90 border border-amber-300/80 text-amber-950 text-xs font-bold uppercase tracking-wider shadow-2xs">
-              <Plane className="w-3.5 h-3.5 text-rose-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-indigo-200/80 text-indigo-900 text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <Plane className="w-3.5 h-3.5 text-indigo-600" />
               <span>Single-Country Dossier &amp; Expat City Hopping Studio</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-extrabold">
                 ✨ Revamped
               </span>
             </div>
 
             <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
               Scout &amp; Hop:{' '}
-              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-violet-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 bg-clip-text text-transparent">
                 Single-Country City &amp; Sabbatical Planner
               </span>
             </h1>
@@ -2391,9 +2397,9 @@ export const ScoutHopPlanner: React.FC = () => {
             <button
               type="button"
               onClick={handleLoadSamplePreset}
-              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-amber-50/80 text-slate-900 border border-amber-200/90 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-sky-50/80 text-slate-800 border border-slate-200/90 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+              <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
               <span>Load Sample 45-Day Portugal Multi-City Scout</span>
             </button>
 
@@ -2401,7 +2407,7 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClearRouteAndStartFresh}
-                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Reset Cities</span>
@@ -2412,7 +2418,7 @@ export const ScoutHopPlanner: React.FC = () => {
               type="button"
               onClick={handleSaveTripClick}
               disabled={isSavingTrip}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-rose-500/15 cursor-pointer shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer shrink-0"
             >
               <Save className="w-4 h-4 shrink-0" />
               <span>{isSavingTrip ? 'Saving Roadmap...' : '💾 Save Trip to My Dashboard'}</span>
@@ -2421,7 +2427,7 @@ export const ScoutHopPlanner: React.FC = () => {
         </div>
 
         {/* Editable Trip Title & Burn Mode Bar */}
-        <div className="relative mt-5 pt-4 border-t border-amber-200/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="relative mt-5 pt-4 border-t border-slate-200/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
             <label
               htmlFor="scout-trip-title"
@@ -2435,7 +2441,7 @@ export const ScoutHopPlanner: React.FC = () => {
               value={tripDraft.title}
               onChange={e => setTripDraft(prev => ({ ...prev, title: e.target.value }))}
               placeholder="e.g., Portugal Multi-City Scouting Loop"
-              className="w-full sm:max-w-md px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              className="w-full sm:max-w-md px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -2448,7 +2454,7 @@ export const ScoutHopPlanner: React.FC = () => {
           </div>
 
           {/* Living Burn Calculation Basis Selector */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-white/90 p-1 rounded-xl border border-amber-200/80 text-[11px] font-bold self-start md:self-auto shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-white/90 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold self-start md:self-auto shrink-0">
             <span className="px-2 text-slate-500">Cost Basis:</span>
             {[
               { id: 'retiree-single', label: 'Single Retiree' },
@@ -2461,7 +2467,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 onClick={() => setBurnBasisMode(mode.id as any)}
                 className={`px-2.5 py-1 rounded-lg transition-all duration-300 cursor-pointer ${
                   burnBasisMode === mode.id
-                    ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold shadow-2xs'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -2480,7 +2486,7 @@ export const ScoutHopPlanner: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-semibold flex flex-wrap items-center justify-between gap-3 shadow-xs"
+            className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-semibold flex flex-wrap items-center justify-between gap-3 shadow-xs"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2502,16 +2508,16 @@ export const ScoutHopPlanner: React.FC = () => {
 
       {/* Saved Trips Drawer (for Authenticated Members with Saved Trips) */}
       {isAuthenticated && currentUserId !== 'guest' && savedTrips.length > 0 && (
-        <div className="p-4 rounded-2xl bg-white border border-amber-200/90 shadow-2xs space-y-2.5">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-              <FolderOpen className="w-4 h-4 text-rose-600" />
+              <FolderOpen className="w-4 h-4 text-indigo-600" />
               <span>My Saved Scouting Roadmaps ({savedTrips.length})</span>
             </div>
             <button
               type="button"
               onClick={handleClearRouteAndStartFresh}
-              className="text-[11px] font-bold text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Start Fresh Custom Route</span>
@@ -2525,7 +2531,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   key={t.id}
                   className={`p-3 rounded-xl border transition-all duration-300 flex items-center justify-between gap-2 ${
                     isCurrent
-                      ? 'bg-amber-50/70 border-amber-300 shadow-2xs'
+                      ? 'bg-sky-50/70 border-sky-300 shadow-2xs'
                       : 'bg-slate-50/70 border-slate-200 hover:bg-white'
                   }`}
                 >
@@ -2546,7 +2552,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleDeleteSavedTrip(t.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                     title="Delete saved roadmap"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -2561,7 +2567,7 @@ export const ScoutHopPlanner: React.FC = () => {
       {/* =================================================================== */}
       {/* MERGED 3-STEP INTERACTIVE WIZARD PROGRESS BAR                       */}
       {/* =================================================================== */}
-      <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-amber-200/80 shadow-xs">
+      <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-3xl border border-slate-200/90 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           {[
             {
@@ -2572,7 +2578,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 ? `${activeCountryObj.flag} ${activeCountryObj.name} · ${tripDraft.stops.length} ${tripDraft.stops.length === 1 ? 'City' : 'Cities'}`
                 : 'Filter Country & Pick Cities',
               icon: MapIcon,
-              activeColor: 'from-amber-500 via-orange-500 to-rose-500',
+              activeColor: 'from-sky-600 via-indigo-600 to-violet-600',
               isCurrent: isStep1DiscoveryActive,
               isCompleted: !isStep1DiscoveryActive && hasStopsSelected,
             },
@@ -2582,7 +2588,7 @@ export const ScoutHopPlanner: React.FC = () => {
               title: 'Experience Style & Interests',
               subtitle: `${SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label || 'Balanced'} · ${selectedInterests.length} Interests`,
               icon: Sparkles,
-              activeColor: 'from-rose-500 via-fuchsia-600 to-violet-600',
+              activeColor: 'from-indigo-600 via-violet-600 to-purple-600',
               isCurrent: wizardStep === 'step-3-interests',
               isCompleted: wizardStep === 'step-4-itinerary',
             },
@@ -2594,7 +2600,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 ? `${weeklyBlocks.length} Weeks · $${computedMetrics.estimatedTotalBurnUSD.toLocaleString()} Burn`
                 : 'Ready to Generate',
               icon: CalendarDays,
-              activeColor: 'from-violet-600 via-indigo-600 to-emerald-600',
+              activeColor: 'from-violet-600 via-indigo-600 to-teal-600',
               isCurrent: wizardStep === 'step-4-itinerary',
               isCompleted: false,
             },
@@ -2615,8 +2621,8 @@ export const ScoutHopPlanner: React.FC = () => {
                   step.isCurrent
                     ? `bg-gradient-to-r ${step.activeColor} text-white border-transparent shadow-md`
                     : step.isCompleted
-                    ? 'bg-emerald-50/80 hover:bg-emerald-50 border-emerald-200 text-slate-900'
-                    : 'bg-amber-50/40 hover:bg-white border-amber-200/70 text-slate-700'
+                    ? 'bg-emerald-50/70 hover:bg-emerald-50 border-emerald-200 text-slate-900'
+                    : 'bg-slate-50/70 hover:bg-white border-slate-200/80 text-slate-700'
                 }`}
               >
                 <div
@@ -2625,7 +2631,7 @@ export const ScoutHopPlanner: React.FC = () => {
                       ? 'bg-white/95 text-slate-900 shadow-xs'
                       : step.isCompleted
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-white border border-amber-200 text-rose-600'
+                      : 'bg-white border border-slate-200 text-indigo-600'
                   }`}
                 >
                   {step.isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Icon className="w-4 h-4" />}
@@ -2634,7 +2640,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`text-[10px] font-mono font-extrabold uppercase tracking-wider ${
-                        step.isCurrent ? 'text-amber-100' : step.isCompleted ? 'text-emerald-700' : 'text-rose-600'
+                        step.isCurrent ? 'text-sky-100' : step.isCompleted ? 'text-emerald-700' : 'text-indigo-600'
                       }`}
                     >
                       {step.stepNum}
@@ -2661,13 +2667,13 @@ export const ScoutHopPlanner: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-3xl bg-white border border-amber-200/90 shadow-sm overflow-hidden"
+          className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden"
         >
-          {/* Light Multi-Colored Step 1 Header */}
-          <div className="p-5 sm:p-7 bg-gradient-to-r from-amber-50 via-rose-50/80 to-violet-50/90 border-b border-amber-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Soft Pastel Step 1 Header */}
+          <div className="p-5 sm:p-7 bg-gradient-to-r from-slate-50 via-sky-50/70 to-indigo-50/70 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider">
-                <Globe className="w-3 h-3 text-rose-600" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-indigo-200/80 text-indigo-900 text-[10px] font-extrabold uppercase tracking-wider">
+                <Globe className="w-3 h-3 text-indigo-600" />
                 <span>Step 1 of 3 · Single-Country Filter, Expat Cities &amp; Live Map</span>
               </div>
               <h2 className="font-heading text-xl sm:text-2xl font-extrabold text-slate-900">
@@ -2682,16 +2688,16 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleAutoSuggestRoute(false)}
-                className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 font-extrabold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-sky-50 text-indigo-900 border border-indigo-200 font-extrabold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                 <span>✨ Let Website Pick Best Cities in {activeCountryObj?.name || 'Country'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setWizardStep('step-3-interests')}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <span>Next: Experience Style &amp; Interests ({tripDraft.stops.length} {tripDraft.stops.length === 1 ? 'City' : 'Cities'})</span>
                 <ArrowRight className="w-4 h-4" />
@@ -2701,23 +2707,23 @@ export const ScoutHopPlanner: React.FC = () => {
 
           <div className="p-5 sm:p-7 space-y-6">
             {/* A. FULL "EXPLORE HAVENS" FILTER & SORT CONSOLE */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-50/50 via-white to-rose-50/40 border border-amber-200/80 space-y-4">
+            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-slate-50/80 via-white to-sky-50/40 border border-slate-200/80 space-y-4">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-4 h-4 text-rose-600" />
+                    <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
                     <span>Explore Havens Country Filter &amp; Sort Parameters</span>
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-200 text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 border border-indigo-200/80 text-[11px] font-bold">
                     {enrichedDiscoveryCountries.length} matching countries
                   </span>
                 </div>
 
                 {/* Scouting Lens Switcher */}
-                <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-amber-200/80 text-[11px] font-bold">
+                <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200/90 text-[11px] font-bold">
                   {[
-                    { id: 'balanced', label: '🌐 Blended Score', active: 'bg-amber-500 text-white' },
-                    { id: 'low-tax', label: '🌴 Retiree & Low Tax', active: 'bg-rose-500 text-white' },
+                    { id: 'balanced', label: '🌐 Blended Score', active: 'bg-indigo-600 text-white' },
+                    { id: 'low-tax', label: '🌴 Retiree & Low Tax', active: 'bg-emerald-600 text-white' },
                     { id: 'nomad-fiber', label: '💻 Digital Nomad & Fiber', active: 'bg-violet-600 text-white' },
                   ].map(lens => (
                     <button
@@ -2746,7 +2752,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     value={countrySearchQuery}
                     onChange={e => setCountrySearchQuery(e.target.value)}
                     placeholder="Search country or city (e.g., India, Goa, Bengaluru, Portugal, Lisbon)..."
-                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
                   {countrySearchQuery && (
                     <button
@@ -2767,7 +2773,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   <select
                     value={exploreSortBy}
                     onChange={e => setExploreSortBy(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer"
                   >
                     <option value="score">Overall Match Score</option>
                     <option value="cost-asc">Cost of Living: Low to High</option>
@@ -2802,7 +2808,7 @@ export const ScoutHopPlanner: React.FC = () => {
                         )
                       }
                       title="Tentative Start Date (Future dates only)"
-                      className="w-full px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      className="w-full px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     />
                   </div>
                   <select
@@ -2847,8 +2853,8 @@ export const ScoutHopPlanner: React.FC = () => {
                     }}
                     className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                       exploreRegionFilter === reg
-                        ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white border-transparent shadow-2xs'
-                        : 'bg-white hover:bg-amber-50/70 text-slate-700 border-slate-200'
+                        ? 'bg-indigo-600 text-white border-transparent shadow-2xs'
+                        : 'bg-white hover:bg-sky-50/70 text-slate-700 border-slate-200'
                     }`}
                   >
                     {reg}
@@ -2856,13 +2862,13 @@ export const ScoutHopPlanner: React.FC = () => {
                 ))}
               </div>
 
-              {/* 4 Granular Multi-Colored Filter Cards (Matching Explore Havens) */}
+              {/* 4 Granular Soft Pastel Filter Cards (Matching Explore Havens) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                 {/* 1. Max Monthly Cost */}
-                <div className="p-3 rounded-2xl bg-rose-50/60 border border-rose-200/80 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-extrabold text-rose-950">
+                <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-200/70 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-emerald-950">
                     <span>Max Monthly Budget</span>
-                    <span className="font-mono text-rose-700">${maxMonthlyBudgetUSD.toLocaleString()}/mo</span>
+                    <span className="font-mono text-emerald-700">${maxMonthlyBudgetUSD.toLocaleString()}/mo</span>
                   </div>
                   <input
                     type="range"
@@ -2871,20 +2877,20 @@ export const ScoutHopPlanner: React.FC = () => {
                     step={200}
                     value={maxMonthlyBudgetUSD}
                     onChange={e => setMaxMonthlyBudgetUSD(Number(e.target.value))}
-                    className="w-full accent-rose-600 cursor-pointer"
+                    className="w-full accent-emerald-600 cursor-pointer"
                   />
                 </div>
 
                 {/* 2. Climate Zone */}
-                <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-extrabold text-amber-950">
+                <div className="p-3 rounded-2xl bg-sky-50/50 border border-sky-200/70 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-sky-950">
                     <span>Climate Preference</span>
-                    <Sun className="w-3.5 h-3.5 text-amber-600" />
+                    <Sun className="w-3.5 h-3.5 text-sky-600" />
                   </div>
                   <select
                     value={climatePreference}
                     onChange={e => setClimatePreference(e.target.value)}
-                    className="w-full px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-xs font-bold text-slate-800 cursor-pointer"
+                    className="w-full px-2.5 py-1 rounded-lg bg-white border border-sky-200 text-xs font-bold text-slate-800 cursor-pointer"
                   >
                     <option value="Any">All Climates</option>
                     <option value="Mediterranean">🌤️ Mediterranean</option>
@@ -2896,7 +2902,7 @@ export const ScoutHopPlanner: React.FC = () => {
                 </div>
 
                 {/* 3. Visa Ease Tier */}
-                <div className="p-3 rounded-2xl bg-violet-50/60 border border-violet-200/80 space-y-1.5">
+                <div className="p-3 rounded-2xl bg-violet-50/50 border border-violet-200/70 space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] font-extrabold text-violet-950">
                     <span>Max Visa Difficulty</span>
                     <span className="font-mono text-violet-700">
@@ -2915,10 +2921,10 @@ export const ScoutHopPlanner: React.FC = () => {
                 </div>
 
                 {/* 4. Max Visa Income Requirement */}
-                <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-extrabold text-sky-950">
+                <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-200/70 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold text-indigo-950">
                     <span>Max Visa Min. Income</span>
-                    <span className="font-mono text-sky-700">
+                    <span className="font-mono text-indigo-700">
                       {maxVisaIncomeReq >= 6000 ? 'Any Income' : `≤ $${maxVisaIncomeReq.toLocaleString()}/mo`}
                     </span>
                   </div>
@@ -2929,7 +2935,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     step={250}
                     value={maxVisaIncomeReq}
                     onChange={e => setMaxVisaIncomeReq(Number(e.target.value))}
-                    className="w-full accent-sky-600 cursor-pointer"
+                    className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
               </div>
@@ -2947,7 +2953,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   </p>
                 </div>
                 {activeCountryObj && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-xs font-extrabold text-amber-950">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-xs font-extrabold text-sky-950">
                     <span>Selected Country:</span>
                     <span className="text-base">{activeCountryObj.flag}</span>
                     <span>{activeCountryObj.name}</span>
@@ -2965,8 +2971,8 @@ export const ScoutHopPlanner: React.FC = () => {
                       onClick={() => handleSelectSingleCountry(country.id, cityRoutingMode)}
                       className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                         isSelectedCountry
-                          ? 'bg-gradient-to-br from-amber-50 via-rose-50 to-violet-50 border-rose-400 ring-2 ring-rose-400/30 shadow-sm'
-                          : 'bg-white hover:bg-amber-50/40 border-slate-200/90'
+                          ? 'bg-gradient-to-br from-sky-50 via-indigo-50/70 to-violet-50/70 border-indigo-400 ring-2 ring-indigo-300/30 shadow-sm'
+                          : 'bg-white hover:bg-slate-50/80 border-slate-200/90'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-1.5">
@@ -2978,7 +2984,7 @@ export const ScoutHopPlanner: React.FC = () => {
                         </div>
                         <span
                           className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-extrabold shrink-0 ${
-                            isSelectedCountry ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'
+                            isSelectedCountry ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'
                           }`}
                         >
                           {nomadOverallScore}
@@ -2987,7 +2993,7 @@ export const ScoutHopPlanner: React.FC = () => {
 
                       <div className="flex items-center justify-between text-[10px] font-mono text-slate-600 pt-1 border-t border-slate-100">
                         <span className="font-bold text-slate-800">${monthlyRate.toLocaleString()}/mo</span>
-                        <span className="text-rose-700 font-bold">{hubs.length} cities</span>
+                        <span className="text-indigo-700 font-bold">{hubs.length} cities</span>
                       </div>
                     </button>
                   );
@@ -2997,8 +3003,8 @@ export const ScoutHopPlanner: React.FC = () => {
 
             {/* C. SELECTED COUNTRY EXPAT CITIES STUDIO & ROUTING MODE */}
             {activeCountryObj && (
-              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-amber-50/70 via-white to-violet-50/60 border-2 border-amber-300/80 shadow-xs space-y-5">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-amber-200/70">
+              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-50/80 via-white to-sky-50/50 border border-slate-200/90 shadow-xs space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
                   <div className="flex items-start gap-3.5">
                     <span className="text-4xl leading-none">{activeCountryObj.flag}</span>
                     <div>
@@ -3006,7 +3012,7 @@ export const ScoutHopPlanner: React.FC = () => {
                         <h3 className="font-heading text-lg sm:text-xl font-extrabold text-slate-900">
                           {activeCountryObj.name} Expat &amp; Nomad City Planner
                         </h3>
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-extrabold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px] font-extrabold">
                           {activeCountryCityHubs.length} Suggested Cities Available
                         </span>
                       </div>
@@ -3023,19 +3029,19 @@ export const ScoutHopPlanner: React.FC = () => {
                         id: 'auto-best' as const,
                         label: '✨ Let Website Decide Best Route',
                         desc: 'Top 3 cities auto-sequenced',
-                        activeClass: 'bg-gradient-to-r from-amber-500 to-rose-500 text-white border-transparent shadow-xs',
+                        activeClass: 'bg-indigo-600 text-white border-transparent shadow-xs',
                       },
                       {
                         id: 'single-city' as const,
                         label: '🏙️ 1 City Only (Deep Immersion)',
                         desc: 'Focus 100% on 1 city',
-                        activeClass: 'bg-gradient-to-r from-rose-500 to-violet-600 text-white border-transparent shadow-xs',
+                        activeClass: 'bg-sky-600 text-white border-transparent shadow-xs',
                       },
                       {
                         id: 'multi-city' as const,
                         label: `🚆 Multi-City in ${activeCountryObj.name}`,
                         desc: 'Pick up to 5 cities',
-                        activeClass: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-transparent shadow-xs',
+                        activeClass: 'bg-violet-600 text-white border-transparent shadow-xs',
                       },
                     ].map(mode => (
                       <button
@@ -3045,7 +3051,7 @@ export const ScoutHopPlanner: React.FC = () => {
                         className={`px-3.5 py-2 rounded-xl border text-left transition-all cursor-pointer ${
                           cityRoutingMode === mode.id
                             ? mode.activeClass
-                            : 'bg-white hover:bg-amber-50 text-slate-800 border-amber-200'
+                            : 'bg-white hover:bg-sky-50/70 text-slate-800 border-slate-200'
                         }`}
                       >
                         <div className="text-xs font-extrabold">{mode.label}</div>
@@ -3063,7 +3069,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
                       Suggested Top Expat &amp; Nomad Cities in {activeCountryObj.name} (Click to Toggle / Select):
                     </span>
-                    <span className="text-[11px] font-semibold text-rose-700">
+                    <span className="text-[11px] font-semibold text-indigo-700">
                       City not listed? Use the Google Places city search bar on the map below to add any city in {activeCountryObj.name}!
                     </span>
                   </div>
@@ -3096,14 +3102,14 @@ export const ScoutHopPlanner: React.FC = () => {
                           }}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                             isCitySelected
-                              ? 'bg-gradient-to-br from-rose-50 via-amber-50/80 to-white border-rose-400 ring-2 ring-rose-400/25 shadow-xs'
-                              : 'bg-white hover:bg-amber-50/40 border-slate-200/90'
+                              ? 'bg-gradient-to-br from-sky-50/90 via-indigo-50/60 to-white border-indigo-400 ring-2 ring-indigo-300/30 shadow-xs'
+                              : 'bg-white hover:bg-slate-50/80 border-slate-200/90'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <MapPin className={`w-3.5 h-3.5 shrink-0 ${isCitySelected ? 'text-rose-600' : 'text-slate-400'}`} />
+                                <MapPin className={`w-3.5 h-3.5 shrink-0 ${isCitySelected ? 'text-indigo-600' : 'text-slate-400'}`} />
                                 <p className="font-heading text-xs sm:text-sm font-extrabold text-slate-900 truncate">
                                   {hub.cityName}
                                 </p>
@@ -3111,7 +3117,7 @@ export const ScoutHopPlanner: React.FC = () => {
                               <p className="text-[11px] text-slate-600 line-clamp-2 mt-1">{hub.highlight}</p>
                             </div>
                             {isCitySelected ? (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-mono text-[10px] font-extrabold shrink-0">
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white font-mono text-[10px] font-extrabold shrink-0">
                                 Stop #{stopOrderIndex + 1}
                               </span>
                             ) : (
@@ -3123,7 +3129,7 @@ export const ScoutHopPlanner: React.FC = () => {
 
                           <div className="flex items-center justify-between text-[10px] font-bold pt-1.5 border-t border-slate-100">
                             <span className="text-slate-500">Hub #{idx + 1}</span>
-                            <span className={isCitySelected ? 'text-rose-700 font-extrabold' : 'text-indigo-600'}>
+                            <span className={isCitySelected ? 'text-indigo-700 font-extrabold' : 'text-sky-700'}>
                               {isCitySelected ? '✓ In Route (Click to Remove)' : 'Click to Add City'}
                             </span>
                           </div>
@@ -3144,8 +3150,8 @@ export const ScoutHopPlanner: React.FC = () => {
                   onAddCountryFromMap={(countryId, cityName) => {
                     handleAddCountryFromDiscovery(countryId, cityName);
                   }}
-                  onAddCustomCityInCountry={(cityName, lat, lng, formattedAddress) => {
-                    handleAddCustomCityInSameCountry(cityName, lat, lng, formattedAddress);
+                  onAddCustomCityInCountry={(countryId, cityName, lat, lng, highlight) => {
+                    handleAddCustomCityInSameCountry(countryId, cityName, lat, lng, highlight);
                   }}
                   onRemoveStopFromMap={stopId => handleRemoveStop(stopId)}
                   onUpdateStopDatesFromMap={(stopId, updates) => handleUpdateStop(stopId, updates)}
@@ -3154,7 +3160,7 @@ export const ScoutHopPlanner: React.FC = () => {
             )}
 
             {/* Step 1 Bottom CTA Bar */}
-            <div className="pt-3 border-t border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="text-xs text-slate-600">
                 {activeCountryObj && hasStopsSelected ? (
                   <span>
@@ -3172,7 +3178,7 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setWizardStep('step-3-interests')}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer shrink-0"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer shrink-0"
               >
                 <span>Continue to Step 2: Experience Style, Budget Tier &amp; Interests</span>
                 <ArrowRight className="w-4 h-4" />
@@ -3191,13 +3197,13 @@ export const ScoutHopPlanner: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-3xl bg-white border border-rose-200/90 shadow-sm overflow-hidden"
+          className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden"
         >
-          {/* Light Multi-Colored Step 2 Header Banner */}
-          <div className="p-5 sm:p-7 bg-gradient-to-r from-rose-50 via-amber-50/85 to-violet-50/90 border-b border-rose-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Soft Pastel Step 2 Header Banner */}
+          <div className="p-5 sm:p-7 bg-gradient-to-r from-slate-50 via-indigo-50/70 to-violet-50/70 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-extrabold uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-rose-600" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-indigo-200/80 text-indigo-900 text-[10px] font-extrabold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-indigo-600" />
                 <span>Step 2 of 3 · Budget Tier, Experience Lenses &amp; Interests</span>
               </div>
               <h2 className="font-heading text-xl sm:text-2xl font-extrabold text-slate-900">
@@ -3212,7 +3218,7 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setWizardStep('step-1-region')}
-                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 text-xs font-bold cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold cursor-pointer"
               >
                 ← Back to Country &amp; Cities
               </button>
@@ -3220,7 +3226,7 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={handleGenerateCustomItinerary}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform active:scale-98"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-transform active:scale-98"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Generate My Custom Itinerary &amp; Show Me →</span>
@@ -3230,14 +3236,14 @@ export const ScoutHopPlanner: React.FC = () => {
 
           <div className="p-5 sm:p-7 space-y-6">
             {/* A. BUDGET TIER & EXPERIENCE LENSES (Economic, Medium, Luxury, Solo Women Safe, Content Creators, Rich/VIP) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-50/60 via-white to-violet-50/50 border border-amber-200/80">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-slate-50/70 via-white to-violet-50/40 border border-slate-200/80">
               {/* 1. Budget Tier Selector (3 Columns) */}
               <div className="lg:col-span-5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
                     1. Select Your Experience Budget Tier
                   </span>
-                  <span className="text-[11px] font-bold text-rose-700">Tailors venues &amp; pricing</span>
+                  <span className="text-[11px] font-bold text-indigo-700">Tailors venues &amp; pricing</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2.5">
                   {SCOUT_BUDGET_TIERS.map(tier => {
@@ -3249,8 +3255,8 @@ export const ScoutHopPlanner: React.FC = () => {
                         onClick={() => setBudgetTier(tier.id)}
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                           isSelected
-                            ? `${tier.badgeBg} ring-2 ring-rose-400/30 shadow-xs`
-                            : 'bg-white hover:bg-amber-50/40 border-slate-200/90 text-slate-800'
+                            ? `${tier.badgeBg} ring-2 ring-indigo-300/40 shadow-xs`
+                            : 'bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800'
                         }`}
                       >
                         <span className="text-2xl leading-none shrink-0">{tier.emoji}</span>
@@ -3291,8 +3297,8 @@ export const ScoutHopPlanner: React.FC = () => {
                         onClick={() => handleToggleExperienceLens(lens.id)}
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                           isActive
-                            ? `${lens.badgeClass} ring-2 ring-violet-400/30 shadow-xs`
-                            : 'bg-white hover:bg-rose-50/30 border-slate-200/90 text-slate-800'
+                            ? `${lens.badgeClass} ring-2 ring-violet-300/40 shadow-xs`
+                            : 'bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800'
                         }`}
                       >
                         <span className="text-2xl leading-none shrink-0">{lens.emoji}</span>
@@ -3301,7 +3307,7 @@ export const ScoutHopPlanner: React.FC = () => {
                             <p className="font-heading text-xs font-extrabold leading-snug">{lens.label}</p>
                             <span
                               className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-extrabold ${
-                                isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
+                                isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
                               }`}
                             >
                               {isActive ? '✓' : '+'}
@@ -3344,14 +3350,14 @@ export const ScoutHopPlanner: React.FC = () => {
                     key={bundle.label}
                     type="button"
                     onClick={() => setSelectedInterests(bundle.ids)}
-                    className="px-3 py-1.5 rounded-xl bg-amber-50/70 hover:bg-rose-50 text-slate-800 hover:text-rose-900 border border-amber-200/80 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-sky-50 text-slate-800 hover:text-indigo-900 border border-slate-200/80 text-xs font-bold transition-colors cursor-pointer"
                   >
                     {bundle.label}
                   </button>
                 ))}
               </div>
 
-              <span className="text-xs font-mono font-extrabold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+              <span className="text-xs font-mono font-extrabold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
                 {selectedInterests.length} of {SCOUT_INTEREST_CATALOG.length} selected
               </span>
             </div>
@@ -3369,8 +3375,8 @@ export const ScoutHopPlanner: React.FC = () => {
                     onClick={() => handleToggleInterest(interest.id)}
                     className={`group rounded-2xl border text-left overflow-hidden transition-all duration-300 flex flex-col justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-br from-amber-50/90 via-white to-rose-50/80 border-rose-400 shadow-sm ring-2 ring-rose-400/25'
-                        : 'bg-white hover:border-amber-300 border-slate-200/90 opacity-95 hover:opacity-100'
+                        ? 'bg-gradient-to-br from-sky-50/90 via-white to-indigo-50/70 border-indigo-400 shadow-sm ring-2 ring-indigo-300/30'
+                        : 'bg-white hover:border-indigo-300 border-slate-200/90 opacity-95 hover:opacity-100'
                     }`}
                   >
                     <div className="w-full">
@@ -3389,7 +3395,7 @@ export const ScoutHopPlanner: React.FC = () => {
                             <div
                               className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                                 isSelected
-                                  ? 'bg-rose-500 text-white shadow-sm scale-105'
+                                  ? 'bg-indigo-600 text-white shadow-sm scale-105'
                                   : 'bg-white/80 text-slate-700 border border-white'
                               }`}
                             >
@@ -3415,7 +3421,7 @@ export const ScoutHopPlanner: React.FC = () => {
                     <div className="px-3.5 pb-3 pt-1 flex items-center justify-between">
                       <span
                         className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                          isSelected ? 'text-rose-700' : 'text-slate-400'
+                          isSelected ? 'text-indigo-700' : 'text-slate-400'
                         }`}
                       >
                         {isSelected ? '✓ Included in Playbook' : 'Click to Include'}
@@ -3427,11 +3433,11 @@ export const ScoutHopPlanner: React.FC = () => {
             </div>
 
             {/* Custom Hobby / Personal Passion Input */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/50 via-white to-rose-50/50 border border-amber-200/80 space-y-3">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-50/70 via-white to-sky-50/50 border border-slate-200/80 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-heading text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-rose-600" />
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
                     <span>Add Your Specific Hobbies or Passions (Optional)</span>
                   </h3>
                   <p className="text-xs text-slate-600">
@@ -3446,12 +3452,12 @@ export const ScoutHopPlanner: React.FC = () => {
                   value={customHobbyInput}
                   onChange={e => setCustomHobbyInput(e.target.value)}
                   placeholder="e.g., Padel Tennis, Scuba Diving, Salsa, Pottery, Trail Running..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
                 <button
                   type="button"
                   onClick={() => handleAddCustomHobby()}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer shrink-0"
                 >
                   + Add Hobby Tag
                 </button>
@@ -3485,8 +3491,8 @@ export const ScoutHopPlanner: React.FC = () => {
                       }}
                       className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                         isAdded
-                          ? 'bg-rose-600 text-white shadow-2xs'
-                          : 'bg-white text-slate-700 border border-slate-200 hover:border-rose-400'
+                          ? 'bg-indigo-600 text-white shadow-2xs'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:border-indigo-400'
                       }`}
                     >
                       <span>{isAdded ? '✓' : '+'}</span>
@@ -3497,20 +3503,20 @@ export const ScoutHopPlanner: React.FC = () => {
               </div>
 
               {customHobbies.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200/50">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800">
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/70">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">
                     Your Custom Hobbies:
                   </span>
                   {customHobbies.map(hobby => (
                     <span
                       key={hobby}
-                      className="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                      className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
                     >
                       <span>🎯 {hobby}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomHobby(hobby)}
-                        className="hover:text-amber-200 cursor-pointer"
+                        className="hover:text-sky-200 cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -3520,10 +3526,10 @@ export const ScoutHopPlanner: React.FC = () => {
               )}
             </div>
 
-            {/* Light Multi-Colored Final Call to Action Banner */}
-            <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 border-2 border-rose-200/90 text-slate-900 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xs">
+            {/* Soft Pastel Final Call to Action Banner */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-50 via-sky-50/80 to-indigo-50/80 border border-indigo-200/90 text-slate-900 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xs">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-rose-700 block">
+                <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-indigo-700 block">
                   Ready to Build Your Date-Sorted Single-Country Masterplan
                 </span>
                 <h3 className="font-heading text-lg sm:text-xl font-extrabold text-slate-900">
@@ -3546,7 +3552,7 @@ export const ScoutHopPlanner: React.FC = () => {
               <button
                 type="button"
                 onClick={handleGenerateCustomItinerary}
-                className="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 text-white font-heading font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer shrink-0 transition-transform active:scale-98"
+                className="px-7 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white font-heading font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer shrink-0 transition-transform active:scale-98"
               >
                 <Sparkles className="w-5 h-5" />
                 <span>Generate My Custom Itinerary &amp; Show Me</span>
@@ -3568,56 +3574,60 @@ export const ScoutHopPlanner: React.FC = () => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="space-y-6"
         >
-          {/* Step 4 Control & Sub-View Switcher Bar (Clutter-Free Mode Toggle) */}
-          <div className="p-4 rounded-3xl bg-white border border-amber-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Active Interests & Route Summary */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 text-white font-mono text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-amber-100" />
-                <span>
-                  {activeCountryObj ? `${activeCountryObj.flag} ${activeCountryObj.name} · ` : ''}
-                  {tripDraft.stops.length} {tripDraft.stops.length === 1 ? 'City' : 'Cities'} · {weeklyBlocks.length} Weeks · $
-                  {computedMetrics.estimatedTotalBurnUSD.toLocaleString()} Est. Burn
-                </span>
-              </span>
-
-              <span className="px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-[11px] font-extrabold">
-                {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.emoji}{' '}
-                {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}
-              </span>
-
-              {experienceLenses.map(lensId => {
-                const lensMeta = SCOUT_EXPERIENCE_LENSES.find(l => l.id === lensId);
-                if (!lensMeta) return null;
-                return (
-                  <span
-                    key={lensId}
-                    className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${lensMeta.badgeClass}`}
-                  >
-                    <span>{lensMeta.emoji}</span>
-                    <span>{lensMeta.shortLabel}</span>
+          {/* Step 4 Control & Sub-View Switcher Bar (Clutter-Free Two-Tier Desktop Layout) */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-3.5">
+            {/* Tier 1: Active Interests & Route Summary + Quick Edit Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 text-white font-mono text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-100" />
+                  <span>
+                    {activeCountryObj ? `${activeCountryObj.flag} ${activeCountryObj.name} · ` : ''}
+                    {tripDraft.stops.length} {tripDraft.stops.length === 1 ? 'City' : 'Cities'} · {weeklyBlocks.length} Weeks · $
+                    {computedMetrics.estimatedTotalBurnUSD.toLocaleString()} Est. Burn
                   </span>
-                );
-              })}
+                </span>
 
-              <button
-                type="button"
-                onClick={() => setWizardStep('step-3-interests')}
-                className="px-2.5 py-1 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 cursor-pointer"
-              >
-                ✎ Edit Style &amp; Interests
-              </button>
-              <button
-                type="button"
-                onClick={() => setWizardStep('step-1-region')}
-                className="px-2.5 py-1 rounded-xl text-xs font-bold text-violet-700 hover:bg-violet-50 cursor-pointer"
-              >
-                ✎ Edit Country &amp; Cities
-              </button>
+                <span className="px-2.5 py-1 rounded-xl bg-sky-50 border border-sky-200 text-sky-950 text-[11px] font-extrabold">
+                  {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.emoji}{' '}
+                  {SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}
+                </span>
+
+                {experienceLenses.map(lensId => {
+                  const lensMeta = SCOUT_EXPERIENCE_LENSES.find(l => l.id === lensId);
+                  if (!lensMeta) return null;
+                  return (
+                    <span
+                      key={lensId}
+                      className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${lensMeta.badgeClass}`}
+                    >
+                      <span>{lensMeta.emoji}</span>
+                      <span>{lensMeta.shortLabel}</span>
+                    </span>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep('step-3-interests')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200/80 transition-colors cursor-pointer"
+                >
+                  ✎ Edit Style &amp; Interests
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep('step-1-region')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-violet-700 bg-violet-50/70 hover:bg-violet-100 border border-violet-200/80 transition-colors cursor-pointer"
+                >
+                  ✎ Edit Country &amp; Cities
+                </button>
+              </div>
             </div>
 
-            {/* Clean Sub-View Tabs so Step 4 is never cluttered */}
-            <div className="flex flex-wrap items-center gap-1.5 bg-amber-50/60 p-1.5 rounded-2xl border border-amber-200/80 shrink-0">
+            {/* Tier 2: Full-Width Clean Sub-View Tabs so desktop text is never squeezed */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80">
               {[
                 {
                   id: 'map-itinerary' as PlannerStageTab,
@@ -3647,14 +3657,14 @@ export const ScoutHopPlanner: React.FC = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveStageTab(tab.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       active
-                        ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white/70 text-slate-600 hover:text-slate-900 hover:bg-white'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{tab.label}</span>
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{tab.label}</span>
                   </button>
                 );
               })}
@@ -3676,44 +3686,66 @@ export const ScoutHopPlanner: React.FC = () => {
                   handleAddCountryFromDiscovery(countryId, city);
                   setFocusedMapCountryId(countryId);
                 }}
-                onAddCustomCityInCountry={(cityName, lat, lng, formattedAddress) => {
-                  handleAddCustomCityInSameCountry(cityName, lat, lng, formattedAddress);
+                onAddCustomCityInCountry={(countryId, cityName, lat, lng, highlight) => {
+                  handleAddCustomCityInSameCountry(countryId, cityName, lat, lng, highlight);
                 }}
                 onRemoveStopFromMap={handleRemoveStop}
                 onUpdateStopDatesFromMap={(stopId, updates) => handleUpdateStop(stopId, updates)}
               />
 
               {/* UNIFIED MULTI-WEEK STOP CARDS WITH FAMOUS BARS, DATING SPOTS, TRAILS & OPERATORS */}
-              <div className="rounded-3xl bg-white border border-amber-200/90 p-5 sm:p-7 shadow-sm space-y-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-amber-100">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 border border-rose-200 text-rose-900 text-[10px] font-extrabold uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Mixed Multi-Week Stop Cards · Verified Local Venues &amp; Operators</span>
+              <div className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-7 shadow-sm space-y-6">
+                <div className="space-y-4 pb-5 border-b border-slate-100">
+                  {/* Top Row: Full-Width Title & Description on Left + Single Action CTA on Right */}
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-sky-50 via-indigo-50 to-violet-50 border border-indigo-200 text-indigo-900 text-[10px] font-extrabold uppercase tracking-wider">
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Mixed Multi-Week Stop Cards · Verified Local Venues &amp; Operators</span>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 text-[10px] font-extrabold">
+                          <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>
+                            Sorted Chronologically by Date ({computedMetrics.enrichedStops[0]?.arrivalDate || 'Start'} →{' '}
+                            {computedMetrics.enrichedStops[computedMetrics.enrichedStops.length - 1]?.departureDate || 'End'})
+                          </span>
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 text-[10px] font-extrabold">
-                        <Calendar className="w-3 h-3 text-emerald-600" />
-                        <span>Sorted Chronologically by Date ({computedMetrics.enrichedStops[0]?.arrivalDate || 'Start'} → {computedMetrics.enrichedStops[computedMetrics.enrichedStops.length - 1]?.departureDate || 'End'})</span>
-                      </span>
+                      <h2 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 leading-tight">
+                        Famous Bars, Dating Spots, Hikes &amp; Local Operators by City Stop
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-600 max-w-4xl leading-relaxed">
+                        Cards are sorted chronologically by your itinerary dates. Each card clearly shows the{' '}
+                        <strong>number of suggested places</strong> inside &ldquo;Google Maps &amp; Reviews&rdquo; (with individual links when multiple places are recommended) and is tailored to your{' '}
+                        <strong>{SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}</strong> profile.
+                      </p>
                     </div>
-                    <h2 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
-                      Famous Bars, Dating Spots, Hikes &amp; Local Operators by City Stop
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-600 max-w-3xl">
-                      Cards are sorted chronologically by your itinerary dates. Each card clearly shows the <strong>number of suggested places</strong> inside &ldquo;Google Maps &amp; Reviews&rdquo; (with individual links when multiple places are recommended) and is tailored to your <strong>{SCOUT_BUDGET_TIERS.find(b => b.id === budgetTier)?.label}</strong> profile.
-                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveStageTab('complete-itinerary')}
+                      className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 self-start"
+                    >
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>
+                        View Complete Itinerary ({(tripDraft.selectedItineraryItems || []).length})
+                      </span>
+                    </button>
                   </div>
 
-                  {/* Filter by City Stop + Quick Jump to Complete Chosen Itinerary */}
-                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                  {/* Dedicated Full-Width City Stop Filter Tabs Bar */}
+                  <div className="p-3 rounded-2xl bg-slate-50/90 border border-slate-200/80 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-1.5">
+                      Filter City Stop:
+                    </span>
                     <button
                       type="button"
                       onClick={() => setSelectedItineraryStopFilter('all')}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         selectedItineraryStopFilter === 'all'
-                          ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-xs'
-                          : 'bg-amber-50/70 text-slate-700 hover:bg-amber-100/80 border border-amber-200/70'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
                       }`}
                     >
                       All Cities ({computedMetrics.enrichedStops.length})
@@ -3725,8 +3757,8 @@ export const ScoutHopPlanner: React.FC = () => {
                         onClick={() => setSelectedItineraryStopFilter(stop.id)}
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                           selectedItineraryStopFilter === stop.id
-                            ? 'bg-rose-600 text-white shadow-xs'
-                            : 'bg-white text-slate-700 hover:bg-rose-50 border border-slate-200'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
                         }`}
                       >
                         <span>{stop.countryFlag}</span>
@@ -3735,16 +3767,6 @@ export const ScoutHopPlanner: React.FC = () => {
                         </span>
                       </button>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => setActiveStageTab('complete-itinerary')}
-                      className="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>
-                        View Complete Itinerary ({(tripDraft.selectedItineraryItems || []).length})
-                      </span>
-                    </button>
                   </div>
                 </div>
 
@@ -3802,7 +3824,7 @@ export const ScoutHopPlanner: React.FC = () => {
                       const heroGradient =
                         heroBlock?.gradientFallback ||
                         allStopRecs[0]?.fallbackGradient ||
-                        'from-amber-700 via-rose-700 to-violet-800';
+                        'from-indigo-700 via-violet-700 to-sky-800';
 
                       const uniqueCategories: string[] = Array.from(
                         new Set(
@@ -3827,7 +3849,7 @@ export const ScoutHopPlanner: React.FC = () => {
                           initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                          className="rounded-3xl bg-white border-2 border-amber-200/90 overflow-hidden shadow-sm hover:shadow-md transition-all duration-500"
+                          className="rounded-3xl bg-white border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-md transition-all duration-500"
                         >
                           {/* Unified Multi-Week City Stop Hero Banner */}
                           <ResilientScenicBanner
@@ -3841,10 +3863,10 @@ export const ScoutHopPlanner: React.FC = () => {
                               {/* Top Badges */}
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-mono text-xs font-extrabold shadow-xs">
+                                  <span className="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-950 border border-sky-200 font-mono text-xs font-extrabold shadow-xs">
                                     STOP #{stopIdx + 1} · {stop.arrivalDate} → {stop.departureDate}
                                   </span>
-                                  <span className="px-3.5 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-rose-900 font-mono text-xs font-extrabold border border-rose-200 shadow-xs">
+                                  <span className="px-3.5 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-indigo-900 font-mono text-xs font-extrabold border border-indigo-200 shadow-xs">
                                     {weekRangeMeta.numWeeks > 1
                                       ? `WEEKS ${weekRangeMeta.startWeek}–${weekRangeMeta.endWeek} MIXED (${stop.days} DAYS)`
                                       : `WEEK ${weekRangeMeta.startWeek} (${stop.days} DAYS)`}
@@ -3853,11 +3875,11 @@ export const ScoutHopPlanner: React.FC = () => {
                                     <span>{stop.countryFlag}</span>
                                     <span>{stop.countryName}</span>
                                     <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                                    <span className="text-rose-700">
+                                    <span className="text-indigo-700">
                                       {stop.cityFocus || stop.countryName}
                                     </span>
                                   </span>
-                                  <span className="px-3 py-1 rounded-xl bg-emerald-500 text-white font-mono text-xs font-extrabold shadow-xs">
+                                  <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-mono text-xs font-extrabold shadow-xs">
                                     {scheduledForThisStop.length} Places Scheduled
                                   </span>
                                 </div>
@@ -3866,7 +3888,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => setFocusedMapCountryId(stop.countryId)}
-                                    className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-amber-50 text-slate-900 font-extrabold text-xs cursor-pointer transition-colors shadow-xs"
+                                    className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-sky-50 text-slate-900 font-extrabold text-xs cursor-pointer transition-colors shadow-xs"
                                   >
                                     📍 Focus City on Map
                                   </button>
@@ -3879,7 +3901,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                   {stopWeeklyBlocks.map(wb => (
                                     <span
                                       key={wb.id}
-                                      className="px-2.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 border border-amber-200 text-[11px] font-bold"
+                                      className="px-2.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 border border-slate-200 text-[11px] font-bold"
                                     >
                                       Wk {wb.weekNumber}: {wb.themeTitle}
                                     </span>
@@ -3893,8 +3915,8 @@ export const ScoutHopPlanner: React.FC = () => {
                           </ResilientScenicBanner>
 
                           {/* Internal Filter Bar: Mix All Weeks vs Individual Week + Category Filter */}
-                          <div className="px-5 sm:px-7 py-4 bg-gradient-to-r from-amber-50/70 via-rose-50/50 to-violet-50/50 border-b border-amber-200/70 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                            {/* Week Selector Pills */}
+                          <div className="px-5 sm:px-7 py-4 bg-gradient-to-r from-slate-50 via-sky-50/60 to-indigo-50/50 border-b border-slate-200/80 space-y-3">
+                            {/* Row 1: Week Selector Pills */}
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
                                 Week View:
@@ -3906,8 +3928,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                 }
                                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                                   activeWeekFilter === 'all'
-                                    ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-2xs'
-                                    : 'bg-white text-slate-700 border border-amber-200 hover:bg-amber-50'
+                                    ? 'bg-indigo-600 text-white shadow-2xs'
+                                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-sky-50'
                                 }`}
                               >
                                 ✨ All Weeks Mixed (Wks {weekRangeMeta.startWeek}–{weekRangeMeta.endWeek})
@@ -3921,8 +3943,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                   }
                                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     activeWeekFilter === wkNum
-                                      ? 'bg-rose-600 text-white shadow-2xs'
-                                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-rose-50'
+                                      ? 'bg-indigo-600 text-white shadow-2xs'
+                                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-sky-50'
                                   }`}
                                 >
                                   Week {wkNum}
@@ -3930,8 +3952,11 @@ export const ScoutHopPlanner: React.FC = () => {
                               ))}
                             </div>
 
-                            {/* Category / Activity Type Filter */}
-                            <div className="flex flex-wrap items-center gap-1.5">
+                            {/* Row 2: Category / Activity Type Filter */}
+                            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/60">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
+                                Category:
+                              </span>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -4006,8 +4031,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                     layout
                                     className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-300 ${
                                       isAdded
-                                        ? 'bg-emerald-50/40 border-emerald-400/90 shadow-sm ring-1 ring-emerald-400/40'
-                                        : 'bg-amber-50/15 border-amber-200/80 hover:border-rose-300 hover:shadow-md'
+                                        ? 'bg-emerald-50/40 border-emerald-300 shadow-sm ring-1 ring-emerald-300/40'
+                                        : 'bg-slate-50/30 border-slate-200/90 hover:border-indigo-300 hover:shadow-md'
                                     }`}
                                   >
                                     <div>
@@ -4024,14 +4049,14 @@ export const ScoutHopPlanner: React.FC = () => {
                                               {rec.categoryLabel}
                                             </span>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                              <span className="px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-mono text-[11px] font-extrabold flex items-center gap-1 shadow-2xs">
-                                                <Star className="w-3 h-3 fill-slate-950 text-slate-950" />
+                                              <span className="px-2 py-0.5 rounded-lg bg-white/95 text-slate-900 font-mono text-[11px] font-extrabold flex items-center gap-1 shadow-2xs">
+                                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                                                 <span>{rec.rating.toFixed(1)}</span>
-                                                <span className="text-[10px] opacity-80">
+                                                <span className="text-[10px] text-slate-500">
                                                   ({rec.reviewCount.toLocaleString()})
                                                 </span>
                                               </span>
-                                              <span className="px-2 py-0.5 rounded-lg bg-white/90 text-rose-800 font-mono text-[10px] font-extrabold">
+                                              <span className="px-2 py-0.5 rounded-lg bg-sky-50/95 text-sky-900 font-mono text-[10px] font-extrabold">
                                                 {rec.priceRange}
                                               </span>
                                             </div>
@@ -4039,15 +4064,15 @@ export const ScoutHopPlanner: React.FC = () => {
 
                                           <div className="space-y-1">
                                             <div className="flex flex-wrap items-center justify-between gap-1">
-                                              <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-200">
-                                                <MapPin className="w-3 h-3 text-amber-300 shrink-0" />
+                                              <div className="flex items-center gap-1 text-[11px] font-semibold text-sky-100">
+                                                <MapPin className="w-3 h-3 text-sky-200 shrink-0" />
                                                 <span className="truncate">{rec.neighborhood}</span>
                                               </div>
                                               {/* Prominent Number of Suggested Places Badge */}
                                               <span
                                                 className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold shadow-2xs ${
                                                   placesCount > 1
-                                                    ? 'bg-rose-500 text-white border border-rose-300'
+                                                    ? 'bg-indigo-600 text-white border border-indigo-300'
                                                     : 'bg-white/90 text-slate-900'
                                                 }`}
                                               >
@@ -4072,7 +4097,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                             {rec.experienceBadges.map(badge => (
                                               <span
                                                 key={badge}
-                                                className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/80 text-rose-900 text-[10px] font-bold"
+                                                className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200/80 text-indigo-900 text-[10px] font-bold"
                                               >
                                                 {badge}
                                               </span>
@@ -4084,8 +4109,8 @@ export const ScoutHopPlanner: React.FC = () => {
                                           {rec.description}
                                         </p>
 
-                                        <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-950 leading-snug">
-                                          <span className="font-extrabold uppercase tracking-wider text-[10px] text-amber-800 block mb-0.5">
+                                        <div className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-200/80 text-[11px] text-sky-950 leading-snug">
+                                          <span className="font-extrabold uppercase tracking-wider text-[10px] text-sky-800 block mb-0.5">
                                             💡 Insider Scouting Tip
                                           </span>
                                           {rec.insiderTip}
@@ -4098,14 +4123,14 @@ export const ScoutHopPlanner: React.FC = () => {
                                               href={rec.googleMapsUrl}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-200 text-[11px] font-extrabold flex items-center gap-1.5 transition-colors"
+                                              className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[11px] font-extrabold flex items-center gap-1.5 transition-colors"
                                             >
-                                              <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                              <MapPin className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                                               <span>
                                                 Google Maps &amp; Reviews ({placesCount}{' '}
                                                 {placesCount === 1 ? 'Place' : 'Places'})
                                               </span>
-                                              <ExternalLink className="w-3 h-3 text-rose-500 shrink-0" />
+                                              <ExternalLink className="w-3 h-3 text-indigo-500 shrink-0" />
                                             </a>
 
                                             <button
@@ -4116,7 +4141,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                                   stop.countryName
                                                 )
                                               }
-                                              className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 text-[10px] font-extrabold cursor-pointer transition-colors"
+                                              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-[10px] font-extrabold cursor-pointer transition-colors"
                                               title="Also add as a Relocation Task in Column 2"
                                             >
                                               + Task List
