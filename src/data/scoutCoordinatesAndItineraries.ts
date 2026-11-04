@@ -2024,9 +2024,13 @@ function buildInterestActivityForCity(
   countryName: string,
   countryObj?: Country
 ): WeeklyScoutingActivity {
+  const cleanCityFocus = cityFocus.split('&')[0].split('(')[0].trim() || cityFocus;
+  const rawCountryDistrict = countryObj?.adultEntertainment?.topVenuesOrDistricts?.[0] || '';
   const topDistrict =
-    countryObj?.adultEntertainment?.topVenuesOrDistricts?.[0] ||
-    `the historic center of ${cityFocus}`;
+    rawCountryDistrict &&
+    rawCountryDistrict.toLowerCase().includes(cleanCityFocus.toLowerCase())
+      ? rawCountryDistrict
+      : `${cleanCityFocus}’s premier social & dining district`;
   const internetMbps = countryObj ? getCountryNomadProfile(countryObj).verifiedInternetMbps : 160;
   const visaName = countryObj?.visa.retirementVisaName || 'long-term residency';
 
@@ -2216,10 +2220,7 @@ export function generateWeeklyItineraryForStops(
       nomadProfile?.topNomadCities?.[0] ||
       countryObj?.capital ||
       stop.countryName;
-    const secondaryCity =
-      countryObj?.topCities?.[1]?.name ||
-      nomadProfile?.topNomadCities?.[1] ||
-      `Coastal & Regional Hub in ${stop.countryName}`;
+    const cleanPrimaryCity = primaryCity.split('&')[0].split('(')[0].trim() || primaryCity;
 
     for (let w = 0; w < numWeeksForStop; w++) {
       const weekStart = new Date(startObj.getTime());
@@ -2238,7 +2239,8 @@ export function generateWeeklyItineraryForStops(
         : stop.departureDate;
 
       const accent = accentPalette[(globalWeekCounter - 1) % accentPalette.length];
-      const activeCityForWeek = w === 2 && numWeeksForStop >= 3 ? secondaryCity : primaryCity;
+      // Strictly keep every week of this stop focused on its chosen city (primaryCity)
+      const activeCityForWeek = primaryCity;
 
       // Rotate through the user's selected interests across weeks so every week feels fresh and personalized
       const weekInterest1 = activeInterests[(w * 2) % activeInterests.length];
@@ -2252,12 +2254,12 @@ export function generateWeeklyItineraryForStops(
       const interestObj1 = SCOUT_INTEREST_CATALOG.find(i => i.id === weekInterest1);
       const interestObj2 = SCOUT_INTEREST_CATALOG.find(i => i.id === weekInterest2);
 
-      // Select visual photo for this week (alternating country landmark photo, fallback country photo, and interest photo)
+      // Select visual photo for this week
       const heroPhotoUrl =
-        w === 0
-          ? countryPhotos.photoUrl
-          : w === 1 && interestObj1
+        w === 0 && interestObj1
           ? interestObj1.photoUrl
+          : w === 1
+          ? countryPhotos.photoUrl
           : w === 2
           ? countryPhotos.fallbackPhotoUrl
           : interestObj2?.photoUrl || countryPhotos.photoUrl;
@@ -2293,17 +2295,17 @@ export function generateWeeklyItineraryForStops(
       } else if (w === 2) {
         activities.push({
           id: `wk-${globalWeekCounter}-core-1`,
-          title: `Secondary Hub Contrast in ${activeCityForWeek}: take regional rail/ferry to compare pace, rent & community feel`,
+          title: `Outer Neighborhood & Surrounding Microclimate Audit in ${activeCityForWeek}: compare central vs. residential districts`,
           category: 'Neighborhood & Vibe',
           durationHint: 'Days 1–3',
-          interestTag: 'Hub Comparison',
-          spotlightDetail: `Comparing ${primaryCity} vs. ${secondaryCity}`,
+          interestTag: 'District Comparison',
+          spotlightDetail: `Comparing central vs. residential pockets of ${activeCityForWeek}`,
           completed: false,
         });
       } else {
         activities.push({
           id: `wk-${globalWeekCounter}-core-1`,
-          title: `Resident Routine Simulation & Final ${stop.countryName} Scorecard: reconcile 30-day budget & verify visa/healthcare contacts`,
+          title: `Resident Routine Simulation & Final ${activeCityForWeek} Scorecard: reconcile 30-day budget & verify visa/healthcare contacts`,
           category: 'Housing & Legal',
           durationHint: 'Full Week Rhythm',
           interestTag: 'Final Verdict',
@@ -2335,7 +2337,7 @@ export function generateWeeklyItineraryForStops(
           category: 'Community & Hobbies',
           durationHint: 'Weekend / Evening',
           interestTag: hobbyForWeek,
-          spotlightDetail: `Custom lifestyle priority tailored for your ${stop.countryName} scout`,
+          spotlightDetail: `Custom lifestyle priority tailored for your ${activeCityForWeek} scout`,
           completed: false,
         });
       }
@@ -2351,15 +2353,16 @@ export function generateWeeklyItineraryForStops(
           : w === 1
           ? `Living Like a Local in ${activeCityForWeek}: ${interestHeadline}`
           : w === 2
-          ? `Regional Discovery in ${activeCityForWeek}: ${interestHeadline}`
+          ? `Neighborhood Deep-Dive in ${activeCityForWeek}: ${interestHeadline}`
           : `Deep Residency Rhythm in ${activeCityForWeek}: ${interestHeadline}`;
 
-      const themeSubtitle = `Curated around your interests (${matchedLabels.slice(0, 3).join(', ')}) while auditing real living costs and neighborhood quality in ${stop.countryName}.`;
+      const themeSubtitle = `Curated around your interests (${matchedLabels.slice(0, 3).join(', ')}) while auditing real living costs and neighborhood quality in ${activeCityForWeek}, ${stop.countryName}.`;
 
+      const matchingTopCity = countryObj?.topCities?.find(tc =>
+        tc.name.toLowerCase().includes(cleanPrimaryCity.toLowerCase())
+      );
       const localHighlightSpot =
-        countryObj?.topCities?.[w % (countryObj?.topCities?.length || 1)]?.highlight ||
-        countryObj?.adultEntertainment?.topVenuesOrDistricts?.[0] ||
-        countryPhotos.landmarkLabel;
+        matchingTopCity?.highlight || `${cleanPrimaryCity} Historic & Lifestyle Hub`;
 
       blocks.push({
         id: `week-block-${stop.id}-${w + 1}`,
@@ -2378,7 +2381,7 @@ export function generateWeeklyItineraryForStops(
         heroPhotoUrl,
         fallbackPhotoUrl: countryPhotos.fallbackPhotoUrl,
         gradientFallback: interestObj1?.fallbackGradient || countryPhotos.gradientFallback,
-        landmarkCaption: `${activeCityForWeek} · ${countryPhotos.landmarkLabel}`,
+        landmarkCaption: `${activeCityForWeek} · ${stop.countryName}`,
         matchedInterests: matchedLabels,
         localHighlightSpot,
         activities,

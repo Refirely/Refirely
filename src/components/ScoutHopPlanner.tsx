@@ -821,6 +821,7 @@ export const ScoutHopPlanner: React.FC = () => {
   // Unified Multi-Week Stop Card Filters & Scheduling Controls
   const [stopWeekFilter, setStopWeekFilter] = useState<Record<string, 'all' | number>>({});
   const [stopCategoryFilter, setStopCategoryFilter] = useState<Record<string, string>>({});
+  const [globalCategoryFilter, setGlobalCategoryFilter] = useState<string>('all');
   const [pendingScheduleSlot, setPendingScheduleSlot] = useState<
     Record<string, { weekNumber: number; daySlot: string; timeOfDay: string }>
   >({});
@@ -894,13 +895,18 @@ export const ScoutHopPlanner: React.FC = () => {
     );
   }, [tripDraft.stops, countries, selectedInterests, customHobbies, budgetTier, experienceLenses]);
 
-  // Ensure tripDraft.selectedItineraryItems is populated with concrete default venues when stops exist
+  // Ensure tripDraft.selectedItineraryItems is populated with strictly city-specific default venues when stops exist
   useEffect(() => {
     if (tripDraft.stops.length === 0) return;
     setTripDraft(prev => {
       const existing = prev.selectedItineraryItems || [];
       const validStopIds = new Set(prev.stops.map(s => s.id));
-      const filteredExisting = existing.filter(item => validStopIds.has(item.stopId));
+      const filteredExisting = existing.filter(item => {
+        if (!validStopIds.has(item.stopId)) return false;
+        if ((item.recommendationId || '').startsWith('custom-')) return true;
+        const validRecsForStop = venueCatalog.allRecommendationsByStop[item.stopId] || [];
+        return validRecsForStop.some(r => r.recommendationId === item.recommendationId);
+      });
       const stopsWithItems = new Set(filteredExisting.map(item => item.stopId));
       const missingDefaults = venueCatalog.defaultSelectedItems.filter(
         item => !stopsWithItems.has(item.stopId)
@@ -913,7 +919,7 @@ export const ScoutHopPlanner: React.FC = () => {
         selectedItineraryItems: [...filteredExisting, ...missingDefaults],
       };
     });
-  }, [tripDraft.stops, venueCatalog.defaultSelectedItems]);
+  }, [tripDraft.stops, venueCatalog.defaultSelectedItems, venueCatalog.allRecommendationsByStop]);
 
   // Check if user clicked "Edit Itinerary in Scout & Hop" from UserDashboard
   useEffect(() => {
@@ -3734,43 +3740,91 @@ export const ScoutHopPlanner: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Dedicated Full-Width City Stop Filter Tabs Bar */}
-                  <div className="p-3 rounded-2xl bg-slate-50/90 border border-slate-200/80 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-1.5">
-                      Filter City Stop:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedItineraryStopFilter('all')}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        selectedItineraryStopFilter === 'all'
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
-                      }`}
-                    >
-                      All Cities ({computedMetrics.enrichedStops.length})
-                    </button>
-                    {computedMetrics.enrichedStops.map((stop, idx) => (
+                  {/* Dedicated Full-Width City Stop & Global Category Filter Bars */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
+                    {/* Row 1: Filter by City Stop */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-1.5">
+                        Filter City Stop:
+                      </span>
                       <button
-                        key={stop.id}
                         type="button"
-                        onClick={() => setSelectedItineraryStopFilter(stop.id)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                          selectedItineraryStopFilter === stop.id
+                        onClick={() => setSelectedItineraryStopFilter('all')}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          selectedItineraryStopFilter === 'all'
                             ? 'bg-indigo-600 text-white shadow-xs'
                             : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
                         }`}
                       >
-                        <span>{stop.countryFlag}</span>
-                        <span>
-                          #{idx + 1} {stop.cityFocus || stop.countryName} ({stop.arrivalDate})
-                        </span>
+                        All Cities ({computedMetrics.enrichedStops.length})
                       </button>
-                    ))}
+                      {computedMetrics.enrichedStops.map((stop, idx) => (
+                        <button
+                          key={stop.id}
+                          type="button"
+                          onClick={() => setSelectedItineraryStopFilter(stop.id)}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                            selectedItineraryStopFilter === stop.id
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
+                          }`}
+                        >
+                          <span>{stop.countryFlag}</span>
+                          <span>
+                            #{idx + 1} {stop.cityFocus || stop.countryName} ({stop.arrivalDate})
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Row 2: Global Category Filter Across Each City */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/70">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-1.5">
+                        Filter Category in Each City:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGlobalCategoryFilter('all');
+                          setStopCategoryFilter({});
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          globalCategoryFilter === 'all' && Object.keys(stopCategoryFilter).length === 0
+                            ? 'bg-violet-600 text-white shadow-2xs'
+                            : 'bg-white text-slate-700 hover:bg-violet-50 border border-slate-200'
+                        }`}
+                      >
+                        All Categories
+                      </button>
+                      {SCOUT_INTEREST_CATALOG.map(catMeta => {
+                        const isGlobalActive =
+                          globalCategoryFilter === catMeta.id &&
+                          Object.keys(stopCategoryFilter).length === 0;
+                        return (
+                          <button
+                            key={catMeta.id}
+                            type="button"
+                            onClick={() => {
+                              setGlobalCategoryFilter(catMeta.id);
+                              setStopCategoryFilter({});
+                              setStopWeekFilter({});
+                            }}
+                            className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                              isGlobalActive
+                                ? 'bg-violet-600 text-white shadow-2xs'
+                                : 'bg-white text-slate-700 hover:bg-violet-50 border border-slate-200'
+                            }`}
+                          >
+                            <span>{catMeta.emoji}</span>
+                            <span>{catMeta.shortLabel}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
-                {/* Unified Stop Cards Stack (Chronologically Sorted by arrivalDate) */}
+                {/* Unified Stop Cards Stack (Chronologically Sorted by arrivalDate, Strictly Scoped per City) */}
                 <div className="space-y-8">
                   {computedMetrics.enrichedStops
                     .filter(
@@ -3792,13 +3846,20 @@ export const ScoutHopPlanner: React.FC = () => {
                       );
                       const allStopRecs = venueCatalog.allRecommendationsByStop[stop.id] || [];
                       const activeWeekFilter = stopWeekFilter[stop.id] ?? 'all';
-                      const activeCatFilter = stopCategoryFilter[stop.id] ?? 'all';
+                      const activeCatFilter = stopCategoryFilter[stop.id] ?? globalCategoryFilter;
 
                       const scheduledForThisStop = (tripDraft.selectedItineraryItems || []).filter(
                         item => item.stopId === stop.id
                       );
 
-                      const visibleRecs = allStopRecs.filter(rec => {
+                      // First filter by the active category for this city stop
+                      const categoryMatchedRecs = allStopRecs.filter(rec =>
+                        activeCatFilter === 'all' ? true : rec.interestId === activeCatFilter
+                      );
+
+                      // Then apply the week filter if a specific week is selected
+                      const weekFilteredRecs = categoryMatchedRecs.filter(rec => {
+                        if (activeWeekFilter === 'all') return true;
                         const scheduledMatch = scheduledForThisStop.find(
                           s => s.recommendationId === rec.recommendationId
                         );
@@ -3806,15 +3867,12 @@ export const ScoutHopPlanner: React.FC = () => {
                         const effectiveWeek = scheduledMatch
                           ? scheduledMatch.weekNumber
                           : recDefaultWeek;
-
-                        if (activeWeekFilter !== 'all' && effectiveWeek !== activeWeekFilter) {
-                          return false;
-                        }
-                        if (activeCatFilter !== 'all' && rec.interestId !== activeCatFilter) {
-                          return false;
-                        }
-                        return true;
+                        return effectiveWeek === activeWeekFilter;
                       });
+
+                      // If a single week was active that didn't contain this category, show all weeks of this category in this city so it's never blank
+                      const visibleRecs =
+                        weekFilteredRecs.length > 0 ? weekFilteredRecs : categoryMatchedRecs;
 
                       const heroBlock = stopWeeklyBlocks[0];
                       const heroPhoto =
@@ -3908,7 +3966,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                   ))}
                                 </div>
                                 <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight drop-shadow-xs">
-                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — Date-Sorted Multi-Week Playbook
+                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — City-Specific Venues &amp; Playbook
                                 </h3>
                               </div>
                             </div>
@@ -3952,10 +4010,10 @@ export const ScoutHopPlanner: React.FC = () => {
                               ))}
                             </div>
 
-                            {/* Row 2: Category / Activity Type Filter */}
+                            {/* Row 2: Category / Activity Type Filter for this City Stop */}
                             <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/60">
                               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
-                                Category:
+                                {stop.cityFocus || stop.countryName} Category:
                               </span>
                               <button
                                 type="button"
@@ -3968,20 +4026,25 @@ export const ScoutHopPlanner: React.FC = () => {
                                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                                 }`}
                               >
-                                All Hotspots ({allStopRecs.length})
+                                All in { (stop.cityFocus || stop.countryName).split('(')[0].trim() } ({allStopRecs.length})
                               </button>
                               {uniqueCategories.map(catId => {
                                 const meta = SCOUT_INTEREST_CATALOG.find(i => i.id === catId);
+                                const catCount = allStopRecs.filter(r => r.interestId === catId).length;
                                 return (
                                   <button
                                     key={catId}
                                     type="button"
-                                    onClick={() =>
+                                    onClick={() => {
                                       setStopCategoryFilter(prev => ({
                                         ...prev,
                                         [stop.id]: catId,
-                                      }))
-                                    }
+                                      }));
+                                      setStopWeekFilter(prev => ({
+                                        ...prev,
+                                        [stop.id]: 'all',
+                                      }));
+                                    }}
                                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                                       activeCatFilter === catId
                                         ? 'bg-violet-600 text-white'
@@ -3989,7 +4052,9 @@ export const ScoutHopPlanner: React.FC = () => {
                                     }`}
                                   >
                                     <span>{meta?.emoji || '🎯'}</span>
-                                    <span>{meta?.shortLabel || catId}</span>
+                                    <span>
+                                      {meta?.shortLabel || catId} ({catCount})
+                                    </span>
                                   </button>
                                 );
                               })}
