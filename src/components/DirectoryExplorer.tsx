@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { CountryCard } from './CountryCard';
+import { CountryFlag } from './CountryFlag';
 import { WorldHavenMap } from './WorldHavenMap';
 import { HavenMatcherPromoCard } from './HavenMatcherPromoCard';
+import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import {
   Search, SlidersHorizontal, Compass, RotateCcw,
   Sun, Shield, DollarSign, Scale, ArrowRight, Map, X,
-  Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp
+  Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp, ChevronRight
 } from 'lucide-react';
 
 export const DirectoryExplorer: React.FC = () => {
   const {
     filteredCountries,
     countries,
+    navigateToCountry,
     searchQuery,
     setSearchQuery,
     selectedRegion,
@@ -69,26 +72,105 @@ export const DirectoryExplorer: React.FC = () => {
 
   const climates = ['All', 'Mediterranean', 'Tropical', 'Subtropical', 'Temperate', 'Highlands / Mild'];
 
-  const quickSearchKeywords =
+  // Most searched countries (resolved from live country directory) + high-intent keywords shown before user types
+  const mostSearchedCountries = useMemo(() => {
+    const targetNames =
+      currentPersona === 'nomad'
+        ? ['Spain', 'Thailand', 'Portugal', 'Indonesia', 'Colombia', 'Malaysia', 'Mexico', 'Croatia']
+        : ['Portugal', 'Spain', 'Thailand', 'Costa Rica', 'Malaysia', 'Panama', 'Mexico', 'Greece'];
+    return targetNames
+      .map(name => countries.find(c => c.name.toLowerCase() === name.toLowerCase()))
+      .filter((c): c is NonNullable<typeof c> => Boolean(c));
+  }, [countries, currentPersona]);
+
+  const mostSearchedKeywords =
     currentPersona === 'nomad'
       ? [
-          { label: 'World-Class Nomad Hub', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
-          { label: 'Legendary Laptop Friendly', color: 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100/80', activeColor: 'bg-amber-600 text-white border-amber-600' },
           { label: 'Digital Nomad Visa', color: 'bg-indigo-50 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80', activeColor: 'bg-indigo-600 text-white border-indigo-600' },
+          { label: 'World-Class Nomad Hub', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
           { label: '0% tax', color: 'bg-rose-50 text-rose-900 border-rose-200/90 hover:bg-rose-100/80', activeColor: 'bg-rose-600 text-white border-rose-600' },
-          { label: 'Chiang Mai', color: 'bg-emerald-50 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
-          { label: 'Lisbon', color: 'bg-sky-50 text-sky-900 border-sky-200/90 hover:bg-sky-100/80', activeColor: 'bg-sky-600 text-white border-sky-600' },
           { label: 'Bali', color: 'bg-violet-50 text-violet-900 border-violet-200/90 hover:bg-violet-100/80', activeColor: 'bg-violet-600 text-white border-violet-600' },
         ]
       : [
-          { label: 'Portugal', color: 'bg-teal-50 text-teal-900 border-teal-200/90 hover:bg-teal-100/80', activeColor: 'bg-teal-600 text-white border-teal-600' },
           { label: 'Mediterranean', color: 'bg-amber-50 text-amber-900 border-amber-200/90 hover:bg-amber-100/80', activeColor: 'bg-amber-600 text-white border-amber-600' },
-          { label: 'Tropical', color: 'bg-emerald-50 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
           { label: 'Pensionado', color: 'bg-sky-50 text-sky-900 border-sky-200/90 hover:bg-sky-100/80', activeColor: 'bg-sky-600 text-white border-sky-600' },
           { label: 'D7 Passive Income', color: 'bg-indigo-50 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80', activeColor: 'bg-indigo-600 text-white border-indigo-600' },
           { label: '0% tax', color: 'bg-rose-50 text-rose-900 border-rose-200/90 hover:bg-rose-100/80', activeColor: 'bg-rose-600 text-white border-rose-600' },
-          { label: 'Permanent Residency', color: 'bg-violet-50 text-violet-900 border-violet-200/90 hover:bg-violet-100/80', activeColor: 'bg-violet-600 text-white border-violet-600' },
         ];
+
+  // Auto-loaded countries as the user types in the Explore Lens search bar
+  const autoLoadedSearchCountries = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+
+    // First use filteredCountries, and if a region/slider filter hid direct country name matches, include them too
+    const seenIds = new Set<string>();
+    const results: Array<{
+      country: typeof countries[number];
+      nomadProfile: ReturnType<typeof getCountryNomadProfile>;
+      matchedContext: string;
+      isHiddenByOtherFilters: boolean;
+      rank: number;
+    }> = [];
+
+    const evaluateCountry = (c: typeof countries[number], isFilteredIn: boolean) => {
+      if (seenIds.has(c.id)) return;
+      const nomadProf = getCountryNomadProfile(c);
+      const nameLower = c.name.toLowerCase();
+      let rank = 0;
+      let matchedContext = c.capital;
+
+      if (nameLower === q) {
+        rank = 5;
+        matchedContext = `${c.capital} · ${c.region}`;
+      } else if (nameLower.startsWith(q)) {
+        rank = 4;
+        matchedContext = `${c.capital} · ${c.region}`;
+      } else if (nameLower.includes(q)) {
+        rank = 3;
+        matchedContext = `${c.capital} · ${c.region}`;
+      } else {
+        const matchedTopCity = c.topCities.find(tc => tc.name.toLowerCase().includes(q));
+        const matchedNomadCity = nomadProf.topNomadCities.find(nc => nc.toLowerCase().includes(q));
+        if (c.capital.toLowerCase().includes(q)) {
+          rank = 2;
+          matchedContext = `Capital: ${c.capital}`;
+        } else if (matchedTopCity) {
+          rank = 2;
+          matchedContext = `Hub: ${matchedTopCity.name}`;
+        } else if (matchedNomadCity) {
+          rank = 2;
+          matchedContext = `Hub: ${matchedNomadCity}`;
+        } else if (isFilteredIn) {
+          rank = 1;
+          matchedContext =
+            currentPersona === 'nomad' ? nomadProf.remoteWorkVisaName : c.visa.retirementVisaName;
+        }
+      }
+
+      if (rank > 0) {
+        seenIds.add(c.id);
+        results.push({
+          country: c,
+          nomadProfile: nomadProf,
+          matchedContext,
+          isHiddenByOtherFilters: !isFilteredIn,
+          rank,
+        });
+      }
+    };
+
+    filteredCountries.forEach(c => evaluateCountry(c, true));
+    countries.forEach(c => evaluateCountry(c, false));
+
+    return results.sort((a, b) => {
+      if (a.isHiddenByOtherFilters !== b.isHiddenByOtherFilters) {
+        return a.isHiddenByOtherFilters ? 1 : -1;
+      }
+      if (b.rank !== a.rank) return b.rank - a.rank;
+      return a.country.name.localeCompare(b.country.name);
+    });
+  }, [searchQuery, filteredCountries, countries, currentPersona]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
@@ -322,29 +404,173 @@ export const DirectoryExplorer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Popular Multi-Color Quick Filter Keywords */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span>Quick Tags:</span>
-                </span>
-                {quickSearchKeywords.map(kw => {
-                  const isActive = searchQuery.toLowerCase() === kw.label.toLowerCase();
-                  return (
-                    <motion.button
-                      key={kw.label}
-                      whileHover={{ y: -1.5 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => setSearchQuery(isActive ? '' : kw.label)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 border cursor-pointer ${
-                        isActive ? `${kw.activeColor} shadow-xs` : kw.color
-                      }`}
-                    >
-                      {kw.label}
-                    </motion.button>
-                  );
-                })}
-              </div>
+              {/* Dynamic Strip Below Search Bar: Auto-Loaded Countries While Typing OR Most Searched Countries & Keywords When Idle */}
+              {searchQuery.trim() !== '' ? (
+                <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/80 via-indigo-50/65 to-sky-50/80 border border-indigo-200/80 space-y-2.5 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                        <span>
+                          Auto-Loaded Search Results ({autoLoadedSearchCountries.length}{' '}
+                          {autoLoadedSearchCountries.length === 1 ? 'Country' : 'Countries'})
+                        </span>
+                      </span>
+                      {filteredCountries.length !== autoLoadedSearchCountries.length &&
+                        autoLoadedSearchCountries.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100/90 text-amber-900 border border-amber-300/80 font-bold text-[10px]">
+                            Click any country to include across all regions/filters
+                          </span>
+                        )}
+                    </div>
+                    <span className="text-slate-500 font-medium hidden sm:inline">
+                      Click a country to spotlight its card below or open its full Dossier
+                    </span>
+                  </div>
+
+                  {autoLoadedSearchCountries.length > 0 ? (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+                      {autoLoadedSearchCountries.slice(0, 12).map(
+                        ({ country, nomadProfile, matchedContext, isHiddenByOtherFilters }) => {
+                          const isExactMatch =
+                            searchQuery.trim().toLowerCase() === country.name.toLowerCase();
+                          return (
+                            <div
+                              key={country.id}
+                              className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all shadow-2xs ${
+                                isExactMatch
+                                  ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white border-indigo-500'
+                                  : isHiddenByOtherFilters
+                                  ? 'bg-amber-50/90 hover:bg-amber-100/80 text-slate-800 border-amber-300/90'
+                                  : 'bg-white/95 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isHiddenByOtherFilters) {
+                                    resetFilters();
+                                  }
+                                  setSearchQuery(country.name);
+                                }}
+                                className="inline-flex items-center gap-1.5 cursor-pointer text-left"
+                                title={`Filter Explore Havens to ${country.name}`}
+                              >
+                                <CountryFlag
+                                  countryName={country.name}
+                                  countryCode={country.code}
+                                  fallbackEmoji={country.flag}
+                                  className="w-4 h-4 rounded-xs shrink-0"
+                                />
+                                <span>{country.name}</span>
+                                <span
+                                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md hidden md:inline ${
+                                    isExactMatch
+                                      ? 'bg-white/20 text-white'
+                                      : 'bg-slate-100 text-slate-600'
+                                  }`}
+                                >
+                                  {matchedContext}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md ${
+                                    isExactMatch
+                                      ? 'bg-white/20 text-white'
+                                      : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
+                                  }`}
+                                >
+                                  $
+                                  {(currentPersona === 'nomad'
+                                    ? nomadProfile.monthlyNomadBurnUSD
+                                    : country.costOfLiving.monthlyBudgetCoupleUSD
+                                  ).toLocaleString()}
+                                  /mo
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigateToCountry(country.id)}
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition-colors cursor-pointer inline-flex items-center gap-0.5 ${
+                                  isExactMatch
+                                    ? 'bg-white text-indigo-950 hover:bg-indigo-50'
+                                    : 'bg-indigo-100/90 hover:bg-indigo-600 text-indigo-950 hover:text-white'
+                                }`}
+                                title={`Open full ${country.name} dossier`}
+                              >
+                                <span>Dossier</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs font-semibold text-rose-700 bg-rose-50/90 border border-rose-200/80 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                      <span>No countries or keywords matched &ldquo;{searchQuery.trim()}&rdquo;.</span>
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="text-[11px] font-extrabold underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-teal-600" />
+                    <span>Most Searched:</span>
+                  </span>
+                  {mostSearchedCountries.map((country, idx) => {
+                    const pillPalettes = [
+                      'bg-teal-50/90 text-teal-950 border-teal-200/90 hover:bg-teal-100/80',
+                      'bg-indigo-50/90 text-indigo-950 border-indigo-200/90 hover:bg-indigo-100/80',
+                      'bg-sky-50/90 text-sky-950 border-sky-200/90 hover:bg-sky-100/80',
+                      'bg-violet-50/90 text-violet-950 border-violet-200/90 hover:bg-violet-100/80',
+                      'bg-emerald-50/90 text-emerald-950 border-emerald-200/90 hover:bg-emerald-100/80',
+                    ];
+                    const palette = pillPalettes[idx % pillPalettes.length];
+                    return (
+                      <motion.button
+                        key={country.id}
+                        type="button"
+                        whileHover={{ y: -1.5 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setSearchQuery(country.name)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 border cursor-pointer inline-flex items-center gap-1.5 shadow-2xs ${palette}`}
+                      >
+                        <CountryFlag
+                          countryName={country.name}
+                          countryCode={country.code}
+                          fallbackEmoji={country.flag}
+                          className="w-3.5 h-3.5 rounded-xs shrink-0"
+                        />
+                        <span>{country.name}</span>
+                      </motion.button>
+                    );
+                  })}
+                  {mostSearchedKeywords.map(kw => {
+                    const isActive = searchQuery.toLowerCase() === kw.label.toLowerCase();
+                    return (
+                      <motion.button
+                        key={kw.label}
+                        type="button"
+                        whileHover={{ y: -1.5 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setSearchQuery(isActive ? '' : kw.label)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 border cursor-pointer ${
+                          isActive ? `${kw.activeColor} shadow-xs` : kw.color
+                        }`}
+                      >
+                        {kw.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Hairline Divider */}

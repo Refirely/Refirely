@@ -3910,6 +3910,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return true;
   }).sort((a, b) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const getRelevance = (country: Country): number => {
+        const nameLower = country.name.toLowerCase();
+        if (nameLower === q) return 5;
+        if (nameLower.startsWith(q)) return 4;
+        if (nameLower.includes(q)) return 3;
+        const nomadProf = getCountryNomadProfile(country);
+        if (
+          country.capital.toLowerCase().includes(q) ||
+          country.topCities.some(tc => tc.name.toLowerCase().includes(q)) ||
+          nomadProf.topNomadCities.some(nc => nc.toLowerCase().includes(q))
+        ) {
+          return 2;
+        }
+        return 1;
+      };
+      const relDiff = getRelevance(b) - getRelevance(a);
+      if (relDiff !== 0) return relDiff;
+    }
+
     if (sortBy === 'alpha-asc') {
       return a.name.localeCompare(b.name);
     }
