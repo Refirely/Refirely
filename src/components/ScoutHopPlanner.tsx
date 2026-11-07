@@ -1164,7 +1164,7 @@ export const ScoutHopPlanner: React.FC = () => {
         const compositeRetireeScore =
           c.lifestyle.healthcareScore * 0.35 +
           c.lifestyle.safetyScore * 0.35 +
-          (6 - c.visa.difficultyTier) * 6;
+          (6 - c.visa.difficultyRating) * 6;
 
         return {
           country: c,
@@ -1195,14 +1195,14 @@ export const ScoutHopPlanner: React.FC = () => {
         }
 
         // Visa Ease Tier filter
-        if (item.country.visa.difficultyTier > maxVisaDifficultyTier) {
+        if (item.country.visa.difficultyRating > maxVisaDifficultyTier) {
           return false;
         }
 
         // Max Visa Income Requirement filter
         if (
           maxVisaIncomeReq < 3500 &&
-          item.country.visa.minMonthlyIncomeUSD > maxVisaIncomeReq
+          item.country.visa.minimumIncomeUSD > maxVisaIncomeReq
         ) {
           return false;
         }
@@ -1227,7 +1227,7 @@ export const ScoutHopPlanner: React.FC = () => {
           const matchVisa =
             item.nomadProfile.remoteWorkVisaName.toLowerCase().includes(q) ||
             item.country.visa.retirementVisaName.toLowerCase().includes(q);
-          const matchTag = item.country.tags?.some(tag => tag.toLowerCase().includes(q));
+          const matchTag = (item.country.pros || []).some((tag: string) => tag.toLowerCase().includes(q));
           if (!matchName && !matchRegion && !matchCity && !matchVisa && !matchTag) return false;
         }
         return true;
@@ -1247,26 +1247,35 @@ export const ScoutHopPlanner: React.FC = () => {
             return diff !== 0 ? diff : b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
           }
           case 'dnv-friendly': {
-            const easeRank = (e: string) => (e === 'Easy / Streamlined' ? 2 : 1);
-            const diff = easeRank(b.nomadProfile.remoteVisaEase) - easeRank(a.nomadProfile.remoteVisaEase);
-            return diff !== 0 ? diff : a.nomadProfile.remoteVisaMinIncomeUSD - b.nomadProfile.remoteVisaMinIncomeUSD;
+            const easeRankB = b.nomadProfile.hasCuratedData ? 2 : 1;
+            const easeRankA = a.nomadProfile.hasCuratedData ? 2 : 1;
+            const diff = easeRankB - easeRankA;
+            return diff !== 0 ? diff : a.nomadProfile.remoteWorkVisaIncomeUSD - b.nomadProfile.remoteWorkVisaIncomeUSD;
           }
           case 'dating-nightlife-desc':
-            return b.nomadProfile.datingNightlifeScore - a.nomadProfile.datingNightlifeScore;
+            return (
+              b.country.adultEntertainment.nightlifeScore +
+              b.country.demographics.datingRating -
+              (a.country.adultEntertainment.nightlifeScore + a.country.demographics.datingRating)
+            );
           case 'female-ratio-desc':
-            return b.nomadProfile.femalePopulationPct - a.nomadProfile.femalePopulationPct;
+            return b.country.demographics.femalesPer100Males - a.country.demographics.femalesPer100Males;
           case 'healthcare-desc':
             return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
           case 'travel-leisure-desc':
-            return b.country.lifestyle.travelLeisureScore - a.country.lifestyle.travelLeisureScore;
+            return (
+              b.country.lifestyle.walkabilityScore +
+              b.country.lifestyle.safetyScore -
+              (a.country.lifestyle.walkabilityScore + a.country.lifestyle.safetyScore)
+            );
           case 'sunny-desc':
             return b.country.climate.annualSunnyDays - a.country.climate.annualSunnyDays;
           case 'safety-desc':
             return b.country.lifestyle.safetyScore - a.country.lifestyle.safetyScore;
           case 'visa-difficulty-asc':
-            return a.country.visa.difficultyTier - b.country.visa.difficultyTier;
+            return a.country.visa.difficultyRating - b.country.visa.difficultyRating;
           case 'visa-income-asc':
-            return a.country.visa.minMonthlyIncomeUSD - b.country.visa.minMonthlyIncomeUSD;
+            return a.country.visa.minimumIncomeUSD - b.country.visa.minimumIncomeUSD;
           case 'alpha-asc':
             return a.country.name.localeCompare(b.country.name);
           case 'alpha-desc':
@@ -2778,7 +2787,7 @@ export const ScoutHopPlanner: React.FC = () => {
                   </span>
                   <select
                     value={exploreSortBy}
-                    onChange={e => setExploreSortBy(e.target.value)}
+                    onChange={e => setExploreSortBy(e.target.value as ExploreSortOption)}
                     className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer"
                   >
                     <option value="score">Overall Match Score</option>

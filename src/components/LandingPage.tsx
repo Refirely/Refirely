@@ -15,7 +15,7 @@ import {
   ShieldCheck, Sun, Globe, Users, CheckCircle2,
   SlidersHorizontal, ChevronRight,
   LogIn, UserPlus, RotateCcw, Wallet, HeartPulse, Plane, Layers,
-  Zap, Wifi, Laptop, Coffee, FileBadge
+  Zap, Wifi, Laptop, Coffee, FileBadge, Search, X
 } from 'lucide-react';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 
@@ -56,6 +56,7 @@ export const LandingPage: React.FC = () => {
   const [matchPriority, setMatchPriority] = useState<'value' | 'healthcare' | 'safety' | 'leisure'>('leisure');
   const [nomadPriority, setNomadPriority] = useState<NomadMatchPriority>('high_speed_internet');
   const [previewContinent, setPreviewContinent] = useState<ContinentFilter>('All');
+  const [matchSearchQuery, setMatchSearchQuery] = useState<string>('');
 
   // Continent counts across all countries
   const continentCounts = useMemo(() => {
@@ -220,8 +221,45 @@ export const LandingPage: React.FC = () => {
       return { country, matchScore: normalizedScore, travelScore, nomadProfile };
     });
 
-    // Apply Continent and Strict Budget / Burn filters
+    const normalizedQuery = matchSearchQuery.trim().toLowerCase();
+
+    const getSearchMatchRank = (country: typeof countries[number], nomadProfile: ReturnType<typeof getCountryNomadProfile>): number => {
+      if (!normalizedQuery) return 1;
+      const nameLower = country.name.toLowerCase();
+      if (nameLower === normalizedQuery) return 5;
+      if (nameLower.startsWith(normalizedQuery)) return 4;
+      if (nameLower.includes(normalizedQuery)) return 3;
+
+      const capitalMatch = country.capital.toLowerCase().includes(normalizedQuery);
+      const codeMatch = country.code.toLowerCase() === normalizedQuery;
+      const topCityMatch = (country.topCities || []).some(c => c.name.toLowerCase().includes(normalizedQuery));
+      const nomadCityMatch = nomadProfile.topNomadCities.some(c => c.toLowerCase().includes(normalizedQuery));
+      if (capitalMatch || codeMatch || topCityMatch || nomadCityMatch) return 2;
+
+      const regionMatch = country.region.toLowerCase().includes(normalizedQuery);
+      const continentMatch = getCountryContinentLabel(country).toLowerCase().includes(normalizedQuery);
+      const taglineMatch = country.tagline.toLowerCase().includes(normalizedQuery);
+      const visaMatch =
+        country.visa.retirementVisaName.toLowerCase().includes(normalizedQuery) ||
+        nomadProfile.remoteWorkVisaName.toLowerCase().includes(normalizedQuery);
+      if (regionMatch || continentMatch || taglineMatch || visaMatch) return 1;
+
+      return 0;
+    };
+
+    // Apply Search Query, Continent, and Strict Budget / Burn filters
     const filtered = scored.filter(({ country, nomadProfile }) => {
+      if (normalizedQuery) {
+        const searchRank = getSearchMatchRank(country, nomadProfile);
+        if (searchRank === 0) return false;
+        // If user explicitly types a country name, auto-load it across all continents & budget tiers
+        // unless the query is a general region/vibe keyword, in which case respect active continent tab
+        if (searchRank < 2 && !matchesContinentFilter(country, previewContinent)) {
+          return false;
+        }
+        return true;
+      }
+
       if (!matchesContinentFilter(country, previewContinent)) {
         return false;
       }
@@ -235,8 +273,14 @@ export const LandingPage: React.FC = () => {
       return true;
     });
 
-    // Always rank by live Match Score (with Persona & Priority metric tie-breaker)
+    // Rank by search relevance first (when searching), then by live Match Score (with Persona & Priority metric tie-breaker)
     filtered.sort((a, b) => {
+      if (normalizedQuery) {
+        const rankA = getSearchMatchRank(a.country, a.nomadProfile);
+        const rankB = getSearchMatchRank(b.country, b.nomadProfile);
+        if (rankB !== rankA) return rankB - rankA;
+      }
+
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
 
       if (currentPersona === 'nomad') {
@@ -298,6 +342,7 @@ export const LandingPage: React.FC = () => {
     matchPriority,
     nomadPriority,
     previewContinent,
+    matchSearchQuery,
   ]);
 
   const displayedCountries = sortedMatchedCountries.slice(0, 12);
@@ -310,12 +355,13 @@ export const LandingPage: React.FC = () => {
     setMatchPriority('leisure');
     setNomadPriority('high_speed_internet');
     setPreviewContinent('All');
+    setMatchSearchQuery('');
   };
 
   const handleOpenAdvancedExplorer = () => {
     setSelectedRegion(previewContinent);
     setSelectedClimate('All');
-    setSearchQuery('');
+    setSearchQuery(matchSearchQuery.trim());
     if (currentPersona === 'nomad') {
       if (nomadPriority === 'high_speed_internet') setSortBy('internet-speed-desc');
       else if (nomadPriority === 'coworking_cafe') setSortBy('coworking-friendly');
@@ -861,6 +907,168 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Row 0: Live Country & Hub Instant Search Bar (Auto-loads country names & cards as you type) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50/85 via-sky-50/70 to-teal-50/80 border border-indigo-200/80 shadow-xs space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label
+                  htmlFor="match-engine-country-search"
+                  className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-2"
+                >
+                  <span className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-teal-600 text-white shadow-xs">
+                    <Search className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Instant Country &amp; Hub Search</span>
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-semibold text-indigo-800 bg-white/90 border border-indigo-200/70 px-2.5 py-0.5 rounded-full">
+                    Auto-loads matching country names &amp; cards below as you type
+                  </span>
+                  {matchSearchQuery.trim() !== '' && (
+                    <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2.5 py-0.5 rounded-full">
+                      {sortedMatchedCountries.length} {sortedMatchedCountries.length === 1 ? 'country' : 'countries'} matched
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-indigo-500 absolute left-3.5 pointer-events-none" />
+                <input
+                  id="match-engine-country-search"
+                  type="text"
+                  value={matchSearchQuery}
+                  onChange={e => setMatchSearchQuery(e.target.value)}
+                  placeholder={
+                    currentPersona === 'nomad'
+                      ? 'Type any country, nomad hub, or visa (e.g., Spain, Thailand, Portugal, Bali, Medellín)...'
+                      : 'Type any country, capital, or expat city (e.g., Portugal, Costa Rica, Thailand, Malaysia)...'
+                  }
+                  className="w-full pl-10 pr-28 py-3 rounded-xl bg-white/95 border border-indigo-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-2xs"
+                />
+                {matchSearchQuery.trim() !== '' ? (
+                  <button
+                    type="button"
+                    onClick={() => setMatchSearchQuery('')}
+                    className="absolute right-2.5 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Clear</span>
+                  </button>
+                ) : (
+                  <span className="hidden sm:inline-flex items-center gap-1 absolute right-3 px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-500 text-[10px] font-bold border border-slate-200/70 pointer-events-none">
+                    {countries.length} Havens Indexed
+                  </span>
+                )}
+              </div>
+
+              {/* Auto-Loaded Country Name Pills (Live Matches when typing, or Quick-Pick Spotlight when idle) */}
+              {matchSearchQuery.trim() !== '' ? (
+                <div className="pt-1 space-y-2">
+                  <div className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="font-extrabold uppercase tracking-wider text-indigo-900">
+                      Auto-Loaded Country Matches ({sortedMatchedCountries.length}):
+                    </span>
+                    <span className="text-slate-500 font-medium hidden sm:inline">
+                      Click any country pill to filter card or open full dossier
+                    </span>
+                  </div>
+                  {sortedMatchedCountries.length > 0 ? (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+                      {sortedMatchedCountries.slice(0, 10).map(({ country, matchScore, nomadProfile }) => {
+                        const isExactQuery = matchSearchQuery.trim().toLowerCase() === country.name.toLowerCase();
+                        return (
+                          <div
+                            key={country.id}
+                            className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all shadow-2xs ${
+                              isExactQuery
+                                ? 'bg-gradient-to-r from-indigo-600 to-teal-600 text-white border-indigo-500'
+                                : 'bg-white/95 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80'
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setMatchSearchQuery(country.name)}
+                              className="inline-flex items-center gap-1.5 cursor-pointer text-left"
+                              title={`Focus ${country.name} card in Match Engine`}
+                            >
+                              <CountryFlag
+                                countryName={country.name}
+                                countryCode={country.code}
+                                fallbackEmoji={country.flag}
+                                className="w-4 h-4 rounded-xs shrink-0"
+                              />
+                              <span>{country.name}</span>
+                              <span
+                                className={`text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md ${
+                                  isExactQuery
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
+                                }`}
+                              >
+                                {matchScore}%
+                              </span>
+                              <span
+                                className={`text-[10px] font-mono ${
+                                  isExactQuery ? 'text-indigo-100' : 'text-slate-500'
+                                }`}
+                              >
+                                $
+                                {(currentPersona === 'nomad'
+                                  ? nomadProfile.monthlyNomadBurnUSD
+                                  : country.costOfLiving.monthlyBudgetCoupleUSD
+                                ).toLocaleString()}
+                                /mo
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigateToCountry(country.id)}
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition-colors cursor-pointer inline-flex items-center gap-0.5 ${
+                                isExactQuery
+                                  ? 'bg-white text-indigo-900 hover:bg-indigo-50'
+                                  : 'bg-indigo-100/90 hover:bg-indigo-600 text-indigo-900 hover:text-white'
+                              }`}
+                              title={`Open full ${country.name} dossier`}
+                            >
+                              <span>Dossier</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-xs font-semibold text-rose-700 bg-rose-50/90 border border-rose-200/80 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                      <span>No country or city matches &ldquo;{matchSearchQuery}&rdquo;.</span>
+                      <button
+                        type="button"
+                        onClick={() => setMatchSearchQuery('')}
+                        className="text-[11px] font-extrabold underline cursor-pointer"
+                      >
+                        Reset search
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[11px] font-bold text-indigo-900/75 mr-1">Popular Quick-Find:</span>
+                  {['Portugal', 'Spain', 'Thailand', 'Costa Rica', 'Malaysia', 'Mexico', 'Panama', 'Greece'].map(
+                    quickName => (
+                      <button
+                        key={quickName}
+                        type="button"
+                        onClick={() => setMatchSearchQuery(quickName)}
+                        className="px-2.5 py-1 rounded-lg bg-white/90 hover:bg-indigo-600 text-slate-700 hover:text-white border border-indigo-200/70 hover:border-indigo-600 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                      >
+                        {quickName}
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Row 1: Two-Column Core Match Parameters (Budget/Burn + Priority) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               
@@ -1343,6 +1551,20 @@ export const LandingPage: React.FC = () => {
                     Region: {previewContinent}
                   </span>
                 )}
+                {matchSearchQuery.trim() !== '' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold shadow-2xs">
+                    <Search className="w-3 h-3" />
+                    <span>Search: &ldquo;{matchSearchQuery.trim()}&rdquo;</span>
+                    <button
+                      type="button"
+                      onClick={() => setMatchSearchQuery('')}
+                      className="ml-0.5 p-0.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                      title="Clear search query"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
                 {strictBudgetFilter && (
                   <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
                     Strict ≤ ${(currentPersona === 'nomad' ? nomadMatchBurn : matchBudget).toLocaleString()}/mo
@@ -1360,7 +1582,7 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Empty State if filters are too restrictive */}
+            {/* Empty State if filters or search are too restrictive */}
             {displayedCountries.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -1371,17 +1593,21 @@ export const LandingPage: React.FC = () => {
                   <Compass className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  No {currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match this strict budget &amp; region combination
+                  {matchSearchQuery.trim() !== ''
+                    ? `No ${currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match "${matchSearchQuery.trim()}"`
+                    : `No ${currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match this strict budget & region combination`}
                 </h3>
                 <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                  Try increasing your {currentPersona === 'nomad' ? 'Monthly Nomad Living Burn' : 'Monthly Couple Budget'} slider, switching from &ldquo;Strict ≤ {currentPersona === 'nomad' ? 'Burn' : 'Budget'}&rdquo; to &ldquo;Score All&rdquo;, or selecting &ldquo;All Continents&rdquo;.
+                  {matchSearchQuery.trim() !== ''
+                    ? 'Try searching for another country name, capital city, or expat hub (such as Portugal, Spain, Thailand, Costa Rica, or Malaysia), or clear the search filter.'
+                    : `Try increasing your ${currentPersona === 'nomad' ? 'Monthly Nomad Living Burn' : 'Monthly Couple Budget'} slider, switching from “Strict ≤ ${currentPersona === 'nomad' ? 'Burn' : 'Budget'}” to “Score All”, or selecting “All Continents”.`}
                 </p>
                 <button
                   type="button"
                   onClick={handleResetMatchEngine}
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
                 >
-                  Reset Match Engine Filters
+                  Reset Match Engine &amp; Search
                 </button>
               </motion.div>
             ) : (

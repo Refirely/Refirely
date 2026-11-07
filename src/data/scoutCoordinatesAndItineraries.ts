@@ -1570,6 +1570,15 @@ export const COUNTRY_HUB_COORDINATES: Record<string, GeoHubCoordinate[]> = {
  */
 const CUSTOM_CITY_COORDINATE_REGISTRY: Record<string, GeoHubCoordinate> = {};
 
+function mapRegionToContinentGroup(region: string): GeoHubCoordinate['continentGroup'] {
+  const r = (region || '').toLowerCase();
+  if (r.includes('america')) return 'Americas';
+  if (r.includes('asia')) return 'Asia';
+  if (r.includes('africa') || r.includes('middle east')) return 'Middle East & Africa';
+  if (r.includes('oceania')) return 'Oceania';
+  return 'Europe';
+}
+
 export function registerCustomCityCoordinate(
   countryId: string,
   countryName: string,
@@ -2406,10 +2415,13 @@ export type ScoutExperienceLensId =
 export interface ScoutBudgetTierMeta {
   id: ScoutBudgetTier;
   label: string;
+  shortLabel: string;
   emoji: string;
   tagline: string;
+  subtitle: string;
   priceMultiplierLabel: string;
   cardBg: string;
+  badgeBg: string;
   activeBorder: string;
 }
 
@@ -2417,28 +2429,37 @@ export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
   {
     id: 'economic',
     label: 'Economic & High-Value',
+    shortLabel: 'Economic',
     emoji: '🪙',
     tagline: 'Authentic street markets, community coworking, public trails & local bistros',
+    subtitle: 'Authentic street markets, community coworking, public trails & local bistros',
     priceMultiplierLabel: '$ · Value Local Pricing',
     cardBg: 'from-emerald-50/80 via-white to-teal-50/60',
+    badgeBg: 'bg-emerald-50/90 text-emerald-950 border-emerald-300',
     activeBorder: 'border-emerald-300 ring-emerald-300/30',
   },
   {
     id: 'medium',
     label: 'Medium Comfort & Balanced',
+    shortLabel: 'Medium Comfort',
     emoji: '⚖️',
     tagline: 'Boutique cafes, verified rooftop lounges, guided adventures & turnkey rentals',
+    subtitle: 'Boutique cafes, verified rooftop lounges, guided adventures & turnkey rentals',
     priceMultiplierLabel: '$$ · Balanced Expat Standard',
     cardBg: 'from-sky-50/80 via-white to-indigo-50/60',
+    badgeBg: 'bg-sky-50/90 text-sky-950 border-sky-300',
     activeBorder: 'border-sky-300 ring-sky-300/30',
   },
   {
     id: 'luxury',
     label: 'Luxury, Fine Dining & Concierge',
+    shortLabel: 'Luxury & VIP',
     emoji: '💎',
     tagline: '5-star beach clubs, private yacht/helicopter charters, Michelin dining & VIP clinics',
+    subtitle: '5-star beach clubs, private yacht/helicopter charters, Michelin dining & VIP clinics',
     priceMultiplierLabel: '$$$ · Executive & Luxury',
     cardBg: 'from-violet-50/80 via-white to-purple-50/60',
+    badgeBg: 'bg-violet-50/90 text-violet-950 border-violet-300',
     activeBorder: 'border-violet-300 ring-violet-300/30',
   },
 ];
@@ -2446,57 +2467,80 @@ export const SCOUT_BUDGET_TIERS: ScoutBudgetTierMeta[] = [
 export interface ScoutExperienceLensMeta {
   id: ScoutExperienceLensId;
   label: string;
+  shortLabel: string;
   shortBadge: string;
   emoji: string;
   description: string;
+  shortDesc: string;
   colorClasses: string;
+  badgeClass: string;
 }
 
 export const SCOUT_EXPERIENCE_LENSES: ScoutExperienceLensMeta[] = [
   {
     id: 'solo-women-safe',
     label: 'Solo Women Safe Places',
+    shortLabel: 'Solo Female Safe',
     shortBadge: '🛡️ Solo Female Safe',
     emoji: '🛡️',
     description:
       'Prioritizes well-lit walkable neighborhoods, vetted daytime/early-evening venues, female-friendly social mixers & high-security transport.',
+    shortDesc:
+      'Prioritizes well-lit walkable neighborhoods, vetted daytime/early-evening venues, female-friendly social mixers & high-security transport.',
     colorClasses: 'bg-sky-50/90 text-sky-900 border-sky-200',
+    badgeClass: 'bg-sky-50/90 text-sky-900 border-sky-200',
   },
   {
     id: 'content-creator',
     label: 'Good for Content Creators',
+    shortLabel: 'Creator & Aesthetic',
     shortBadge: '📸 Creator & Aesthetic',
     emoji: '📸',
     description:
       'Highlights golden-hour viewpoints, photogenic architecture, drone-friendly scenic lookouts, design cafes & fast upload fiber.',
+    shortDesc:
+      'Highlights golden-hour viewpoints, photogenic architecture, drone-friendly scenic lookouts, design cafes & fast upload fiber.',
     colorClasses: 'bg-violet-50/90 text-violet-900 border-violet-200',
+    badgeClass: 'bg-violet-50/90 text-violet-900 border-violet-200',
   },
   {
     id: 'vip-exclusive',
     label: 'Rich / Exclusive / Private VIP',
+    shortLabel: 'Exclusive & Private VIP',
     shortBadge: '👑 Exclusive & Private VIP',
     emoji: '👑',
     description:
       'Curates members-only clubs, private marinas, gated luxury enclaves, bespoke concierge tours & wealth/tax advisory consultations.',
+    shortDesc:
+      'Curates members-only clubs, private marinas, gated luxury enclaves, bespoke concierge tours & wealth/tax advisory consultations.',
     colorClasses: 'bg-purple-50/90 text-purple-900 border-purple-200',
+    badgeClass: 'bg-purple-50/90 text-purple-900 border-purple-200',
   },
   {
     id: 'retiree-accessible',
     label: 'Calm, Flat & Retiree Accessible',
+    shortLabel: 'Step-Free & Calm Pace',
     shortBadge: '🌿 Step-Free & Calm Pace',
     emoji: '🌿',
     description:
       'Focuses on flat waterfront promenades, quiet residential blocks, JCI private hospital tours & relaxed cultural mornings.',
+    shortDesc:
+      'Focuses on flat waterfront promenades, quiet residential blocks, JCI private hospital tours & relaxed cultural mornings.',
     colorClasses: 'bg-emerald-50/90 text-emerald-900 border-emerald-200',
+    badgeClass: 'bg-emerald-50/90 text-emerald-900 border-emerald-200',
   },
   {
     id: 'nomad-social',
     label: 'High-Energy Nomad & Founder Community',
+    shortLabel: 'Nomad & Founder Hub',
     shortBadge: '⚡ Nomad & Founder Hub',
     emoji: '⚡',
     description:
       'Centers on 250+ Mbps coworking campuses, Thursday expat mixers, padel/surf clubs & fast social integration.',
+    shortDesc:
+      'Centers on 250+ Mbps coworking campuses, Thursday expat mixers, padel/surf clubs & fast social integration.',
     colorClasses: 'bg-indigo-50/90 text-indigo-900 border-indigo-200',
+    badgeClass: 'bg-indigo-50/90 text-indigo-900 border-indigo-200',
   },
 ];
 
