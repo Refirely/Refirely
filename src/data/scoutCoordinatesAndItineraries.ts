@@ -87,7 +87,7 @@ export const SCOUT_INTEREST_CATALOG: ScoutInterestOption[] = [
     emoji: '🏛️',
     shortDesc: 'UNESCO historic quarters, baroque plazas, tiled facades & design',
     sampleActivityHint: 'Architectural walking audit of historic residential quarters',
-    photoUrl: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=800&q=80',
+    photoUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
     fallbackGradient: 'from-stone-800 via-amber-950 to-slate-900',
     svgMotif: 'architecture',
   },

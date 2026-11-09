@@ -951,17 +951,31 @@ export const ScoutHopPlanner: React.FC = () => {
     setTripDraft(prev => {
       const existing = prev.selectedItineraryItems || [];
       const validStopIds = new Set(prev.stops.map(s => s.id));
-      const filteredExisting = existing.filter(item => {
-        if (!validStopIds.has(item.stopId)) return false;
-        if ((item.recommendationId || '').startsWith('custom-')) return true;
-        const validRecsForStop = venueCatalog.allRecommendationsByStop[item.stopId] || [];
-        return validRecsForStop.some(r => r.recommendationId === item.recommendationId);
-      });
+      let photoUpdated = false;
+      const filteredExisting = existing
+        .filter(item => {
+          if (!validStopIds.has(item.stopId)) return false;
+          if ((item.recommendationId || '').startsWith('custom-')) return true;
+          const validRecsForStop = venueCatalog.allRecommendationsByStop[item.stopId] || [];
+          return validRecsForStop.some(r => r.recommendationId === item.recommendationId);
+        })
+        .map(item => {
+          const validRecsForStop = venueCatalog.allRecommendationsByStop[item.stopId] || [];
+          const matchedRec = validRecsForStop.find(r => r.recommendationId === item.recommendationId);
+          if (matchedRec && matchedRec.photoUrl && matchedRec.photoUrl !== item.photoUrl) {
+            photoUpdated = true;
+            return {
+              ...item,
+              photoUrl: matchedRec.photoUrl,
+            };
+          }
+          return item;
+        });
       const stopsWithItems = new Set(filteredExisting.map(item => item.stopId));
       const missingDefaults = venueCatalog.defaultSelectedItems.filter(
         item => !stopsWithItems.has(item.stopId)
       );
-      if (missingDefaults.length === 0 && filteredExisting.length === existing.length) {
+      if (!photoUpdated && missingDefaults.length === 0 && filteredExisting.length === existing.length) {
         return prev;
       }
       return {
@@ -4773,17 +4787,28 @@ export const ScoutHopPlanner: React.FC = () => {
                                     {item.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                                   </button>
 
-                                  {item.photoUrl && (
-                                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 bg-slate-100">
-                                      <img
-                                        src={item.photoUrl}
-                                        alt={item.title}
-                                        loading="lazy"
-                                        referrerPolicy="no-referrer"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const freshStopRecs =
+                                      venueCatalog.allRecommendationsByStop[item.stopId] || [];
+                                    const matchedRec = freshStopRecs.find(
+                                      r =>
+                                        r.recommendationId === item.recommendationId ||
+                                        r.title === item.title
+                                    );
+                                    const resolvedThumbUrl = matchedRec?.photoUrl || item.photoUrl;
+                                    if (!resolvedThumbUrl) return null;
+                                    return (
+                                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 bg-slate-100">
+                                        <img
+                                          src={resolvedThumbUrl}
+                                          alt={item.title}
+                                          loading="lazy"
+                                          referrerPolicy="no-referrer"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    );
+                                  })()}
 
                                   <div className="min-w-0 flex-1 space-y-1">
                                     <div className="flex flex-wrap items-center justify-between gap-1.5">
