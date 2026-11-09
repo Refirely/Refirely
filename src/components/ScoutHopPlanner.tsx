@@ -31,6 +31,10 @@ import {
   buildDefaultScheduledItineraryForStops,
   buildGoogleMapsSearchUrl,
 } from '../data/scoutVenueRecommendations';
+import {
+  fetchSpecificPlacePhotoFromCommons,
+  resolveUniqueVenuePhotoUrl,
+} from '../utils/placeThumbnailResolver';
 import { ScoutRouteMap, CandidateMapCountry } from './ScoutRouteMap';
 import { CountryFlag } from './CountryFlag';
 import { CountryThumbnail } from './CountryThumbnail';
@@ -407,22 +411,66 @@ const BUDGET_TIER_STORAGE_KEY = 'refirely_scout_budget_tier_v1';
 const EXP_LENSES_STORAGE_KEY = 'refirely_scout_exp_lenses_v1';
 const ACTIVE_EDIT_TRIP_STORAGE_KEY = 'refirely_active_edit_trip';
 
-// Resilient Magazine-Grade Photo Banner for Interest Cards & Weekly Itinerary Cards
+// Resilient Magazine-Grade Photo Banner for Interest Cards, City Stop Banners & Place Recommendation Cards
 const ResilientScenicBanner: React.FC<{
   primaryUrl: string;
   fallbackUrl?: string;
   gradientFallback: string;
   alt: string;
   className?: string;
+  placeLookupContext?: {
+    title: string;
+    neighborhood?: string;
+    cityName?: string;
+    countryName?: string;
+  };
   children?: React.ReactNode;
-}> = ({ primaryUrl, fallbackUrl, gradientFallback, alt, className = 'h-48', children }) => {
-  const [stage, setStage] = useState<'primary' | 'fallback' | 'art'>('primary');
+}> = ({
+  primaryUrl,
+  fallbackUrl,
+  gradientFallback,
+  alt,
+  className = 'h-48',
+  placeLookupContext,
+  children,
+}) => {
+  const [livePlaceUrl, setLivePlaceUrl] = useState<string | null>(null);
+  const [stage, setStage] = useState<'live' | 'primary' | 'fallback' | 'art'>('primary');
 
   useEffect(() => {
+    let isMounted = true;
+    setLivePlaceUrl(null);
     setStage('primary');
-  }, [primaryUrl, fallbackUrl]);
 
-  const activeSrc = stage === 'primary' ? primaryUrl : stage === 'fallback' ? fallbackUrl : null;
+    if (placeLookupContext?.title && (placeLookupContext.cityName || placeLookupContext.countryName)) {
+      fetchSpecificPlacePhotoFromCommons(placeLookupContext).then(resolvedUrl => {
+        if (isMounted && resolvedUrl) {
+          setLivePlaceUrl(resolvedUrl);
+          setStage('live');
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    primaryUrl,
+    fallbackUrl,
+    placeLookupContext?.title,
+    placeLookupContext?.neighborhood,
+    placeLookupContext?.cityName,
+    placeLookupContext?.countryName,
+  ]);
+
+  const activeSrc =
+    stage === 'live' && livePlaceUrl
+      ? livePlaceUrl
+      : stage === 'primary'
+      ? primaryUrl
+      : stage === 'fallback'
+      ? fallbackUrl
+      : null;
 
   return (
     <div
@@ -455,7 +503,9 @@ const ResilientScenicBanner: React.FC<{
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => {
-            if (stage === 'primary' && fallbackUrl && fallbackUrl !== primaryUrl) {
+            if (stage === 'live') {
+              setStage('primary');
+            } else if (stage === 'primary' && fallbackUrl && fallbackUrl !== primaryUrl) {
               setStage('fallback');
             } else {
               setStage('art');
@@ -1861,6 +1911,16 @@ export const ScoutHopPlanner: React.FC = () => {
     const daySlot = draft?.daySlot || 'Day 5 (Fri)';
     const recId = `custom-${Date.now()}`;
 
+    const { primaryPhotoUrl } = resolveUniqueVenuePhotoUrl({
+      interestId: 'culture',
+      title: cleanTitle,
+      neighborhood: cleanNeighborhood,
+      cityName: city,
+      countryId: stop.countryId,
+      countryName: stop.countryName,
+      idSuffix: recId,
+    });
+
     const customItem: ScoutScheduledItineraryItem = {
       id: `sched-${stop.id}-${recId}`,
       recommendationId: recId,
@@ -1881,9 +1941,8 @@ export const ScoutHopPlanner: React.FC = () => {
       rating: 4.8,
       reviewCount: 150,
       priceRange: '$$',
-      photoUrl:
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
-      fallbackGradient: 'from-amber-700 via-rose-700 to-violet-900',
+      photoUrl: primaryPhotoUrl,
+      fallbackGradient: 'from-indigo-800 via-violet-800 to-slate-900',
       googleMapsUrl: buildGoogleMapsSearchUrl(
         `${cleanTitle} ${cleanNeighborhood} ${city} ${stop.countryName}`
       ),
@@ -3925,6 +3984,11 @@ export const ScoutHopPlanner: React.FC = () => {
                             gradientFallback={heroGradient}
                             alt={`${stop.cityFocus || stop.countryName}, ${stop.countryName}`}
                             className="h-56 sm:h-64"
+                            placeLookupContext={{
+                              title: stop.cityFocus || stop.countryName,
+                              cityName: stop.cityFocus || stop.countryName,
+                              countryName: stop.countryName,
+                            }}
                           >
                             <div className="p-5 sm:p-7 h-full flex flex-col justify-between">
                               {/* Top Badges */}
@@ -4113,9 +4177,16 @@ export const ScoutHopPlanner: React.FC = () => {
                                       {/* Venue Photo + Star Rating + Places Count Badge */}
                                       <ResilientScenicBanner
                                         primaryUrl={rec.photoUrl}
+                                        fallbackUrl={rec.genericFallbackPhotoUrl}
                                         gradientFallback={rec.fallbackGradient}
                                         alt={rec.title}
                                         className="h-44"
+                                        placeLookupContext={{
+                                          title: rec.title,
+                                          neighborhood: rec.neighborhood,
+                                          cityName: rec.cityName,
+                                          countryName: rec.countryName,
+                                        }}
                                       >
                                         <div className="p-3.5 h-full flex flex-col justify-between">
                                           <div className="flex items-center justify-between gap-2">
@@ -4701,6 +4772,18 @@ export const ScoutHopPlanner: React.FC = () => {
                                   >
                                     {item.completed && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                                   </button>
+
+                                  {item.photoUrl && (
+                                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200/80 bg-slate-100">
+                                      <img
+                                        src={item.photoUrl}
+                                        alt={item.title}
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )}
 
                                   <div className="min-w-0 flex-1 space-y-1">
                                     <div className="flex flex-wrap items-center justify-between gap-1.5">

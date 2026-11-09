@@ -7,6 +7,7 @@ import {
 } from './scoutCoordinatesAndItineraries';
 import { getCountryNomadProfile } from './countryNomadProfiles';
 import { getCountryPhotoConfig } from '../components/CountryThumbnail';
+import { resolveUniqueVenuePhotoUrl } from '../utils/placeThumbnailResolver';
 
 export interface CuratedVenueSeed {
   idSuffix: string;
@@ -2621,6 +2622,7 @@ export interface StopCuratedRecommendationCard extends ScoutScheduledItineraryIt
   isPreselectedSuggestion: boolean;
   placesIncluded: IncludedVenuePlace[];
   experienceBadges: string[];
+  genericFallbackPhotoUrl?: string;
 }
 
 /**
@@ -2688,6 +2690,8 @@ function tailorVenueForExperienceProfile(
  * 1. Every venue card in `stop` belongs strictly to `stop.cityFocus` (never mixes venues from other cities).
  * 2. Every user-selected interest + core lifestyle category is present for `stop.cityFocus` so clicking any
  *    category filter pill filters cleanly in each city.
+ * 3. Every venue card receives a unique, place/city/country-tailored thumbnail URL (`photoUrl`) plus a
+ *    generic category fallback (`genericFallbackPhotoUrl`).
  */
 export function getRecommendationsForStop(
   stop: ScoutTripStop,
@@ -2697,7 +2701,8 @@ export function getRecommendationsForStop(
   startWeekNumber: number,
   numWeeksForStop: number,
   budgetTier: ScoutBudgetTier = 'medium',
-  experienceLenses: ScoutExperienceLensId[] = []
+  experienceLenses: ScoutExperienceLensId[] = [],
+  sharedUsedPhotoUrls?: Set<string>
 ): StopCuratedRecommendationCard[] {
   const cleanId = stop.countryId.toLowerCase().trim();
   const cityName =
@@ -2707,6 +2712,7 @@ export function getRecommendationsForStop(
     stop.countryName;
   const cleanPrimaryCity = cityName.split('&')[0].split('(')[0].trim();
   const countryPhotos = getCountryPhotoConfig(cleanId, countryObj?.imageUrl);
+  const usedUrlsTracker = sharedUsedPhotoUrls || new Set<string>();
 
   // 1. Load ONLY curated seeds that strictly match this stop's specific city
   const cityMatchedSeeds = getMatchingCityCuratedSeeds(cleanId, cityName);
@@ -2818,6 +2824,19 @@ export function getRecommendationsForStop(
       stop.countryName
     );
 
+    const { primaryPhotoUrl, genericCategoryFallbackUrl } = resolveUniqueVenuePhotoUrl({
+      interestId: seed.interestId,
+      title: seed.title,
+      neighborhood: seed.neighborhood,
+      cityName,
+      countryId: cleanId,
+      countryName: stop.countryName,
+      idSuffix: seed.idSuffix,
+      seedPhotoUrl: seed.photoUrl,
+      countryPhotoUrl: countryPhotos.photoUrl,
+      usedUrlsTracker,
+    });
+
     return {
       id: recId,
       recommendationId: recId,
@@ -2838,7 +2857,8 @@ export function getRecommendationsForStop(
       rating: seed.rating,
       reviewCount: seed.reviewCount,
       priceRange: tailored.priceRange,
-      photoUrl: seed.photoUrl || countryPhotos.photoUrl,
+      photoUrl: primaryPhotoUrl,
+      genericFallbackPhotoUrl: genericCategoryFallbackUrl,
       fallbackGradient: seed.fallbackGradient || countryPhotos.gradientFallback,
       googleMapsUrl: buildGoogleMapsSearchUrl(seed.googleMapsQuery),
       completed: false,
@@ -2880,13 +2900,15 @@ export function buildDefaultScheduledItineraryForStops(
   stopWeekRanges: Record<string, { startWeek: number; endWeek: number; numWeeks: number; totalDays: number }>;
 } {
   const allRecommendationsByStop: Record<string, StopCuratedRecommendationCard[]> = {};
-  const defaultSelectedItems: ScoutScheduledItineraryItem[] = [];
+  const scheduledAccum: ScoutScheduledItineraryItem[] = [];
   const stopWeekRanges: Record<
     string,
     { startWeek: number; endWeek: number; numWeeks: number; totalDays: number }
   > = {};
 
   let currentWeekCursor = 1;
+  // Share a single tracker across all stops so multi-city itineraries never repeat a thumbnail across cities either
+  const globalUsedPhotoUrls = new Set<string>();
 
   // Sort stops chronologically by arrivalDate ascending
   const sortedStops = [...stops].sort((a, b) =>
@@ -2925,7 +2947,8 @@ export function buildDefaultScheduledItineraryForStops(
       startWeek,
       numWeeks,
       budgetTier,
-      experienceLenses
+      experienceLenses,
+      globalUsedPhotoUrls
     );
     allRecommendationsByStop[stop.id] = recs;
 
@@ -2936,7 +2959,7 @@ export function buildDefaultScheduledItineraryForStops(
     chosen.forEach((item, idx) => {
       const distributedWeek = startWeek + (idx % numWeeks);
       const distributedDay = DAY_SLOT_OPTIONS[(idx * 2) % DAY_SLOT_OPTIONS.length];
-      defaultSelectedItems.push({
+      scheduledAccum.push({
         ...item,
         weekNumber: distributedWeek,
         daySlot: distributedDay,
@@ -2945,6 +2968,8 @@ export function buildDefaultScheduledItineraryForStops(
 
     currentWeekCursor += numWeeks;
   });
+
+  const defaultSelectedItems = scheduledAccum;
 
   // Sort defaultSelectedItems chronologically by weekNumber and daySlot
   defaultSelectedItems.sort((a, b) => {
