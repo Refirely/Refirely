@@ -52,6 +52,9 @@ export function getViewUrl(view: AppView, countryId?: string): string {
   if (view === 'landing') {
     return '/';
   }
+  if (view === 'community') {
+    return '/?view=expats';
+  }
   return `/?view=${encodeURIComponent(view)}`;
 }
 
@@ -66,7 +69,8 @@ export function parseUrlToRoute(countries: Country[]): { view: AppView; countryI
 
   const params = new URLSearchParams(window.location.search);
   const countryParam = params.get('country')?.trim().toLowerCase();
-  const viewParam = params.get('view')?.trim().toLowerCase() as AppView | undefined;
+  const rawViewParam = params.get('view')?.trim().toLowerCase();
+  const viewParam = (rawViewParam === 'expats' ? 'community' : rawViewParam) as AppView | undefined;
 
   const findMatchingCountry = (slugOrId: string): Country | undefined => {
     const clean = decodeURIComponent(slugOrId).trim().toLowerCase();
@@ -104,9 +108,10 @@ export function parseUrlToRoute(countries: Country[]): { view: AppView; countryI
     return { view: viewParam };
   }
 
-  // 4. Check clean path /explore, /compare, /community, /meetups, /dashboard, /messages, /admin
+  // 4. Check clean path /explore, /compare, /expats, /community, /meetups, /dashboard, /messages, /admin
   if (pathSegments.length === 1) {
-    const seg = pathSegments[0] as AppView;
+    const rawSeg = pathSegments[0];
+    const seg = (rawSeg === 'expats' ? 'community' : rawSeg) as AppView;
     if (VALID_VIEWS.includes(seg)) {
       return { view: seg };
     }
@@ -443,10 +448,10 @@ export function updatePageSeo(
       'Calculate your 4% SWR FIRE target or Digital Nomad liquid cash runway across 209 countries. Model monthly cash burn, geoarbitrage savings, housing rents, and currency transfers.';
     canonicalUrl = `${origin}/?view=dashboard`;
   } else if (currentView === 'community') {
-    title = 'Expat Retirement & Digital Nomad Community Forum | ReFirely';
+    title = 'Expats Directory, Relocation Profiles & Discussion Forum | ReFirely';
     description =
-      'Connect with verified expats, early retirees, and digital nomads living abroad. Discuss DNV & retirement visas, coworking hubs, apartment leases, and healthcare.';
-    canonicalUrl = `${origin}/?view=community`;
+      'Connect with verified expats, early retirees (FIRE), and digital nomads living abroad. Browse expat profiles by countries visited, languages spoken, and join forum discussions.';
+    canonicalUrl = `${origin}/?view=expats`;
   } else if (currentView === 'meetups') {
     title = 'Expat, Retiree & Digital Nomad Meetups Worldwide | ReFirely';
     description =

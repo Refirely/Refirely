@@ -766,7 +766,7 @@ export const PublicProfileModal: React.FC = () => {
                         }}
                         className="text-[11px] font-bold text-orange-700 hover:text-orange-900 flex items-center gap-1 self-start cursor-pointer"
                       >
-                        <span>View in Community Hub</span>
+                        <span>View in Expats &amp; Forum</span>
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     </motion.div>

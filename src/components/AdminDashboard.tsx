@@ -612,9 +612,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               <span aria-hidden="true">/</span>
               <span className="text-slate-900 font-semibold">
                 {activeTab === 'overview' && 'All-Modules Executive Snapshot'}
-                {activeTab === 'users' && `Registered Users Directory (${registeredAccounts.length})`}
+                {activeTab === 'users' && `Registered Users & Expats (${registeredAccounts.length})`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
-                {activeTab === 'community' && 'Forum & Meetups Moderation'}
+                {activeTab === 'community' && 'Expats Forum & Meetups Moderation'}
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
                 {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger (₹ / $)'}
                 {activeTab === 'social-promo' && 'Portrait Social Promo Studio'}
@@ -624,9 +624,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
               {activeTab === 'overview' && 'Platform Governance & All-Modules Snapshot'}
-              {activeTab === 'users' && 'Registered Users & Member Profiles'}
+              {activeTab === 'users' && 'Registered Users & Expat Profiles'}
               {activeTab === 'countries' && 'Global Country Dossier Catalog CMS'}
-              {activeTab === 'community' && 'Community Forum & Expat Meetups'}
+              {activeTab === 'community' && 'Expats Discussion Forum & Meetups'}
               {activeTab === 'feedback' && 'User Feedback, Ideas & Bug Triage'}
               {activeTab === 'accounting' && 'Accounting, Expenses & Revenue Ledger'}
               {activeTab === 'social-promo' && 'Portrait Social Promo Snapshots Studio'}
@@ -1023,13 +1023,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                       <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                         <div>
                           <span className="text-[11px] font-semibold text-indigo-600">
-                            Module 01 · User Directory &amp; Profiles
+                            Module 01 · Expats Directory &amp; User Accounts
                           </span>
                           <h2 className="text-base font-bold text-slate-900 mt-0.5">
-                            Registered Users ({registeredAccounts.length})
+                            Registered Users &amp; Expats ({registeredAccounts.length})
                           </h2>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Member profiles, relocation stages, financial portfolios &amp; direct messaging.
+                            Expat profiles, relocation stages, financial portfolios &amp; direct messaging.
                           </p>
                         </div>
                         <button
@@ -1449,13 +1449,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                       <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                         <div>
                           <span className="text-[11px] font-semibold text-violet-600">
-                            Module 05 · Discussions &amp; Events
+                            Module 05 · Expats Forum &amp; Events
                           </span>
                           <h2 className="text-base font-bold text-slate-900 mt-0.5">
-                            Forum ({threads.length}) &amp; Meetups ({meetups.length})
+                            Expats Forum ({threads.length}) &amp; Meetups ({meetups.length})
                           </h2>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Pin important community threads, remove spam, and moderate scheduled expat meetups.
+                            Pin important expat forum threads, remove spam, and moderate scheduled expat meetups.
                           </p>
                         </div>
                         <button

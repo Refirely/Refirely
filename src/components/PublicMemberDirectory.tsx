@@ -159,9 +159,9 @@ export const PublicMemberDirectory: React.FC = () => {
             <span className="p-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-2xs">
               <Users className="w-3.5 h-3.5" />
             </span>
-            <span>Verified Expat &amp; Retiree Member Directory</span>
+            <span>Verified Expats &amp; Retiree Directory</span>
             <span className="px-2.5 py-0.5 rounded-full bg-white/90 border border-teal-200 font-mono tabular-nums text-teal-800 text-[11px]">
-              {publicMemberAccounts.length} Registered Members
+              {publicMemberAccounts.length} Verified Expats
             </span>
           </div>
           <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -171,7 +171,7 @@ export const PublicMemberDirectory: React.FC = () => {
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-            Explore public community profiles of registered members and send personal messages to exchange firsthand advice. Personal financial portfolios and private country shortlists are never displayed publicly.
+            Explore public profiles of verified expats and send personal messages to exchange firsthand advice. Personal financial portfolios and private country shortlists are never displayed publicly.
           </p>
         </div>
 
@@ -197,7 +197,7 @@ export const PublicMemberDirectory: React.FC = () => {
             </div>
             <input
               type="text"
-              placeholder="Search members by name, country visited, language, or interest..."
+              placeholder="Search expats by name, country visited, language, or interest..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-3 py-2.5 text-xs font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/70 focus:bg-white transition-all"

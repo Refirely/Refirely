@@ -95,7 +95,7 @@ export const DirectMessagesAuthGate: React.FC = () => {
                 className="hover:text-orange-600 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Users className="w-3.5 h-3.5 text-slate-400" />
-                <span>Browse Public Member Directory</span>
+                <span>Browse Expats Directory</span>
               </button>
               <button
                 onClick={() => {

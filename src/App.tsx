@@ -175,7 +175,7 @@ const MainContent: React.FC = () => {
                 <li><a href={getViewUrl('explore')} onClick={(e) => handleSpaViewClick(e, 'explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</a></li>
                 <li><a href={getViewUrl('compare')} onClick={(e) => handleSpaViewClick(e, 'compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</a></li>
                 <li><a href={getViewUrl('scout')} onClick={(e) => handleSpaViewClick(e, 'scout')} className="hover:text-indigo-600 hover:underline transition-colors font-semibold text-indigo-700">Scout &amp; Hop Trip Planner ✨</a></li>
-                <li><a href={getViewUrl('community')} onClick={(e) => handleSpaViewClick(e, 'community')} className="hover:text-orange-600 hover:underline transition-colors">Expat Community Boards</a></li>
+                <li><a href={getViewUrl('community')} onClick={(e) => handleSpaViewClick(e, 'community')} className="hover:text-orange-600 hover:underline transition-colors">Expats &amp; Discussion Forum</a></li>
                 <li><a href={getViewUrl('meetups')} onClick={(e) => handleSpaViewClick(e, 'meetups')} className="hover:text-orange-600 hover:underline transition-colors">Expat Meetups &amp; Socials</a></li>
                 <li><a href={getViewUrl('messages')} onClick={(e) => handleSpaViewClick(e, 'messages')} className="hover:text-orange-600 hover:underline transition-colors">Direct Member Messaging</a></li>
                 <li><a href={getViewUrl('dashboard')} onClick={(e) => handleSpaViewClick(e, 'dashboard')} className="hover:text-orange-600 hover:underline transition-colors">FIRE Calculator &amp; Checklist</a></li>

@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
     { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
     { view: 'scout', label: 'Scout & Hop', isActive: currentView === 'scout', badge: '✨ New' },
-    { view: 'community', label: 'Community', isActive: currentView === 'community' },
+    { view: 'community', label: 'Expats', isActive: currentView === 'community' },
     { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
     ...(!canAccessAdmin
       ? [{ view: 'dashboard' as typeof currentView, label: 'My Dashboard', isActive: currentView === 'dashboard' }]
@@ -535,7 +535,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 currentView === 'community' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Community Hub
+              Expats
             </button>
             <button
               onClick={() => handleNav('meetups')}

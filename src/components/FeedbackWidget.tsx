@@ -125,7 +125,7 @@ export const FeedbackWidget: React.FC = () => {
       } else if (currentView === 'compare') {
         locationContext = 'Side-by-Side Compare Matrix';
       } else if (currentView === 'community') {
-        locationContext = 'Expat Community Boards';
+        locationContext = 'Expats & Discussion Forum';
       } else if (currentView === 'meetups') {
         locationContext = 'Expat Meetups & Socials';
       } else if (currentView === 'messages') {

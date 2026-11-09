@@ -20,7 +20,7 @@ export const CommunityHub: React.FC = () => {
     openAuthModal,
   } = useApp();
 
-  const [activeCommunityTab, setActiveCommunityTab] = useState<'discussions' | 'members'>('discussions');
+  const [activeCommunityTab, setActiveCommunityTab] = useState<'discussions' | 'members'>('members');
   const [selectedCountryFilter, setSelectedCountryFilter] = useState<string>('All');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,6 +85,7 @@ export const CommunityHub: React.FC = () => {
     setNewTitle('');
     setNewContent('');
     setIsNewModalOpen(false);
+    setActiveCommunityTab('discussions');
   };
 
   const handlePostReply = (threadId: string) => {
@@ -125,18 +126,19 @@ export const CommunityHub: React.FC = () => {
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-amber-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/20">
-                <MessageSquare className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-sm shadow-indigo-500/20">
+                <Users className="w-5 h-5" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Retiree &amp; Expat{' '}
-                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 bg-clip-text text-transparent">
-                  Community Hub
-                </span>
+                Global{' '}
+                <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                  Expats
+                </span>{' '}
+                &amp; Discussion Forum
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 mt-1.5">
-              Exchange firsthand guidance on visas, housing, healthcare, and connect directly with verified expat members.
+              Connect directly with verified expats by countries visited, languages spoken, and relocation status, or join firsthand forum discussions.
             </p>
           </div>
 
@@ -149,12 +151,17 @@ export const CommunityHub: React.FC = () => {
               }
               className="px-3.5 py-2 text-xs font-bold rounded-xl border border-teal-200 bg-teal-50/90 text-teal-950 hover:bg-teal-100 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
             >
-              <Users className="w-4 h-4 text-teal-700" />
-              <span>
-                {activeCommunityTab === 'members'
-                  ? 'Back to Discussions'
-                  : `Member Profiles (${publicMemberAccounts.length})`}
-              </span>
+              {activeCommunityTab === 'members' ? (
+                <>
+                  <MessageSquare className="w-4 h-4 text-indigo-700" />
+                  <span>Discussion Forum ({threads.length})</span>
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 text-teal-700" />
+                  <span>Expats ({publicMemberAccounts.length})</span>
+                </>
+              )}
             </motion.button>
 
             <motion.button
@@ -170,8 +177,20 @@ export const CommunityHub: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Segmented View Switcher: Discussions vs. Public Member Directory */}
+      {/* Segmented View Switcher: Expats (Default #1 Tab) vs. Discussion Forum */}
       <div className="mt-5 mb-6 flex items-center gap-1.5 p-1 bg-indigo-100/70 border border-indigo-200/70 rounded-2xl w-fit shadow-2xs">
+        <button
+          onClick={() => setActiveCommunityTab('members')}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            activeCommunityTab === 'members'
+              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
+              : 'text-slate-700 hover:text-indigo-950'
+          }`}
+        >
+          <Users className={`w-3.5 h-3.5 ${activeCommunityTab === 'members' ? 'text-amber-300' : 'text-teal-700'}`} />
+          <span>Expats ({publicMemberAccounts.length})</span>
+        </button>
+
         <button
           onClick={() => setActiveCommunityTab('discussions')}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
@@ -182,18 +201,6 @@ export const CommunityHub: React.FC = () => {
         >
           <MessageSquare className={`w-3.5 h-3.5 ${activeCommunityTab === 'discussions' ? 'text-amber-300' : 'text-indigo-600'}`} />
           <span>Discussion Forum ({threads.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveCommunityTab('members')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-            activeCommunityTab === 'members'
-              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
-              : 'text-slate-700 hover:text-indigo-950'
-          }`}
-        >
-          <Users className={`w-3.5 h-3.5 ${activeCommunityTab === 'members' ? 'text-amber-300' : 'text-teal-700'}`} />
-          <span>Public Member Profiles ({publicMemberAccounts.length})</span>
         </button>
       </div>
 

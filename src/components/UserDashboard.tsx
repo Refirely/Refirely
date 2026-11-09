@@ -305,16 +305,20 @@ export const UserDashboard: React.FC = () => {
             </motion.button>
           </div>
 
-          {/* Public Expat Member Profiles Preview (Strictly Non-Admin & Privacy-Protected) */}
+          {/* Public Expat Profiles Preview (Strictly Non-Admin & Privacy-Protected) */}
           <div className="mt-10 pt-8 border-t border-indigo-100/80 text-left relative">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-teal-700" />
-                <span>Connect with Verified Expat Members (Public Profiles):</span>
+                <span>Connect with Verified Expats:</span>
               </span>
-              <span className="text-[11px] text-slate-400">
-                Click any member to view visited countries, languages &amp; interests
-              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentView('community')}
+                className="text-[11px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+              >
+                Browse All Expats ({publicMemberAccounts.length}) →
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

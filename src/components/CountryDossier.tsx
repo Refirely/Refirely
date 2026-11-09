@@ -1733,7 +1733,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                     </div>
                   ) : (
                     <p className="text-xs text-slate-500">
-                      No scheduled meetups in {country.name} this month. Check out our Community Hub to propose one!
+                      No scheduled meetups in {country.name} this month. Visit the Expats &amp; Forum page to connect with peers or propose one!
                     </p>
                   )}
                 </div>
@@ -1749,7 +1749,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
                       onClick={() => setCurrentView('community')}
                       className="text-xs font-bold text-indigo-700 hover:text-indigo-900 hover:underline cursor-pointer"
                     >
-                      Go to Community Hub →
+                      Explore Expats &amp; Forum →
                     </button>
                   </div>
 
