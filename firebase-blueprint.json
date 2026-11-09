@@ -461,9 +461,76 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "PlatformThemeConfig": {
+      "title": "PlatformThemeConfig",
+      "description": "Global platform typography and theme configuration managed exclusively by administrators and applied to all visitors",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Configuration document identifier (e.g. typography)",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "presetId": {
+          "type": "string",
+          "description": "Active font pairing preset ID",
+          "maxLength": 64
+        },
+        "displayCss": {
+          "type": "string",
+          "description": "CSS font-family value for headings and display text",
+          "maxLength": 200
+        },
+        "bodyCss": {
+          "type": "string",
+          "description": "CSS font-family value for body and UI controls",
+          "maxLength": 200
+        },
+        "monoCss": {
+          "type": "string",
+          "description": "CSS font-family value for numeric telemetry and badges",
+          "maxLength": 200
+        },
+        "headingTracking": {
+          "type": "string",
+          "description": "CSS letter-spacing for headings",
+          "maxLength": 20
+        },
+        "bodyTracking": {
+          "type": "string",
+          "description": "CSS letter-spacing for body copy",
+          "maxLength": 20
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Admin email or UID who saved the setting",
+          "maxLength": 150
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last global save",
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "id",
+        "presetId",
+        "displayCss",
+        "bodyCss",
+        "monoCss",
+        "headingTracking",
+        "bodyTracking",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
+    "/platformSettings/{settingId}": {
+      "schema": "PlatformThemeConfig",
+      "description": "Global platform configuration (such as live website typography) readable by all visitors and writable strictly by administrators"
+    },
     "/feedbackReports/{reportId}": {
       "schema": "FeedbackReport",
       "description": "Global collection for user feedback and bug submissions"

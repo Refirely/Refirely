@@ -3997,123 +3997,123 @@ export const ScoutHopPlanner: React.FC = () => {
                             fallbackUrl={heroBlock?.fallbackPhotoUrl}
                             gradientFallback={heroGradient}
                             alt={`${stop.cityFocus || stop.countryName}, ${stop.countryName}`}
-                            className="h-56 sm:h-64"
+                            className="h-40 sm:h-44"
                             placeLookupContext={{
                               title: stop.cityFocus || stop.countryName,
                               cityName: stop.cityFocus || stop.countryName,
                               countryName: stop.countryName,
                             }}
                           >
-                            <div className="p-5 sm:p-7 h-full flex flex-col justify-between">
+                            <div className="p-4 sm:p-5 h-full flex flex-col justify-between">
                               {/* Top Badges */}
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-950 border border-sky-200 font-mono text-xs font-extrabold shadow-xs">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-950 border border-sky-200 font-mono text-[11px] font-extrabold shadow-xs">
                                     STOP #{stopIdx + 1} · {stop.arrivalDate} → {stop.departureDate}
                                   </span>
-                                  <span className="px-3.5 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-indigo-900 font-mono text-xs font-extrabold border border-indigo-200 shadow-xs">
+                                  <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-md text-indigo-900 font-mono text-[11px] font-extrabold border border-indigo-200 shadow-xs">
                                     {weekRangeMeta.numWeeks > 1
-                                      ? `WEEKS ${weekRangeMeta.startWeek}–${weekRangeMeta.endWeek} MIXED (${stop.days} DAYS)`
-                                      : `WEEK ${weekRangeMeta.startWeek} (${stop.days} DAYS)`}
+                                      ? `WKS ${weekRangeMeta.startWeek}–${weekRangeMeta.endWeek} (${stop.days}D)`
+                                      : `WK ${weekRangeMeta.startWeek} (${stop.days}D)`}
                                   </span>
-                                  <span className="px-3.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-md text-slate-950 font-heading text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shadow-xs">
+                                  <span className="px-3 py-1 rounded-lg bg-white/95 backdrop-blur-md text-slate-950 font-heading text-xs font-extrabold flex items-center gap-1 shadow-xs">
                                     <span>{stop.countryFlag}</span>
                                     <span>{stop.countryName}</span>
-                                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                                    <ChevronRight className="w-3 h-3 text-slate-400" />
                                     <span className="text-indigo-700">
                                       {stop.cityFocus || stop.countryName}
                                     </span>
                                   </span>
-                                  <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-mono text-xs font-extrabold shadow-xs">
-                                    {scheduledForThisStop.length} Places Scheduled
+                                  <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-mono text-[11px] font-extrabold shadow-xs">
+                                    {scheduledForThisStop.length} Scheduled
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setFocusedMapCountryId(stop.countryId)}
-                                    className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-sky-50 text-slate-900 font-extrabold text-xs cursor-pointer transition-colors shadow-xs"
-                                  >
-                                    📍 Focus City on Map
-                                  </button>
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setFocusedMapCountryId(stop.countryId)}
+                                  className="px-2.5 py-1 rounded-lg bg-white/95 hover:bg-sky-50 text-slate-900 font-extrabold text-[11px] cursor-pointer transition-colors shadow-xs"
+                                >
+                                  📍 Focus on Map
+                                </button>
                               </div>
 
                               {/* Bottom Title & Combined Weekly Themes */}
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   {stopWeeklyBlocks.map(wb => (
                                     <span
                                       key={wb.id}
-                                      className="px-2.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 border border-slate-200 text-[11px] font-bold"
+                                      className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-md text-slate-900 border border-slate-200 text-[10px] font-bold"
                                     >
                                       Wk {wb.weekNumber}: {wb.themeTitle}
                                     </span>
                                   ))}
                                 </div>
-                                <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight drop-shadow-xs">
-                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — City-Specific Venues &amp; Playbook
+                                <h3 className="font-heading text-lg sm:text-xl lg:text-2xl font-extrabold text-white leading-tight drop-shadow-xs">
+                                  {stop.cityFocus || stop.countryName}, {stop.countryName} — Curated Venues &amp; Experiences
                                 </h3>
                               </div>
                             </div>
                           </ResilientScenicBanner>
 
                           {/* Internal Filter Bar: Mix All Weeks vs Individual Week + Category Filter */}
-                          <div className="px-5 sm:px-7 py-4 bg-gradient-to-r from-slate-50 via-sky-50/60 to-indigo-50/50 border-b border-slate-200/80 space-y-3">
-                            {/* Row 1: Week Selector Pills */}
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
-                                Week View:
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setStopWeekFilter(prev => ({ ...prev, [stop.id]: 'all' }))
-                                }
-                                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                                  activeWeekFilter === 'all'
-                                    ? 'bg-indigo-600 text-white shadow-2xs'
-                                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-sky-50'
-                                }`}
-                              >
-                                ✨ All Weeks Mixed (Wks {weekRangeMeta.startWeek}–{weekRangeMeta.endWeek})
-                              </button>
-                              {stopWeeksArray.map(wkNum => (
+                          <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-slate-50 via-sky-50/60 to-indigo-50/50 border-b border-slate-200/80 space-y-2">
+                            {/* Row 1: Week Selector Pills + Category Filter */}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mr-0.5">
+                                  Week:
+                                </span>
                                 <button
-                                  key={wkNum}
                                   type="button"
                                   onClick={() =>
-                                    setStopWeekFilter(prev => ({ ...prev, [stop.id]: wkNum }))
+                                    setStopWeekFilter(prev => ({ ...prev, [stop.id]: 'all' }))
                                   }
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                    activeWeekFilter === wkNum
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                                    activeWeekFilter === 'all'
                                       ? 'bg-indigo-600 text-white shadow-2xs'
                                       : 'bg-white text-slate-700 border border-slate-200 hover:bg-sky-50'
                                   }`}
                                 >
-                                  Week {wkNum}
+                                  ✨ All Wks ({weekRangeMeta.startWeek}–{weekRangeMeta.endWeek})
                                 </button>
-                              ))}
+                                {stopWeeksArray.map(wkNum => (
+                                  <button
+                                    key={wkNum}
+                                    type="button"
+                                    onClick={() =>
+                                      setStopWeekFilter(prev => ({ ...prev, [stop.id]: wkNum }))
+                                    }
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                      activeWeekFilter === wkNum
+                                        ? 'bg-indigo-600 text-white shadow-2xs'
+                                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-sky-50'
+                                    }`}
+                                  >
+                                    Wk {wkNum}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
 
                             {/* Row 2: Category / Activity Type Filter for this City Stop */}
-                            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/60">
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mr-1">
-                                {stop.cityFocus || stop.countryName} Category:
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/60">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mr-0.5">
+                                Category:
                               </span>
                               <button
                                 type="button"
                                 onClick={() =>
                                   setStopCategoryFilter(prev => ({ ...prev, [stop.id]: 'all' }))
                                 }
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                                   activeCatFilter === 'all'
                                     ? 'bg-violet-600 text-white'
                                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                                 }`}
                               >
-                                All in { (stop.cityFocus || stop.countryName).split('(')[0].trim() } ({allStopRecs.length})
+                                All ({allStopRecs.length})
                               </button>
                               {uniqueCategories.map(catId => {
                                 const meta = SCOUT_INTEREST_CATALOG.find(i => i.id === catId);
@@ -4132,7 +4132,7 @@ export const ScoutHopPlanner: React.FC = () => {
                                         [stop.id]: 'all',
                                       }));
                                     }}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                    className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                                       activeCatFilter === catId
                                         ? 'bg-violet-600 text-white'
                                         : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
@@ -4149,8 +4149,8 @@ export const ScoutHopPlanner: React.FC = () => {
                           </div>
 
                           {/* Curated Real-World Venues, Bars, Dating Spots & Adventure Operators Grid */}
-                          <div className="p-5 sm:p-7 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                          <div className="p-4 sm:p-5 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                               {visibleRecs.map(rec => {
                                 const scheduledItem = scheduledForThisStop.find(
                                   item => item.recommendationId === rec.recommendationId
@@ -4183,18 +4183,18 @@ export const ScoutHopPlanner: React.FC = () => {
                                     layout
                                     className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-all duration-300 ${
                                       isAdded
-                                        ? 'bg-emerald-50/40 border-emerald-300 shadow-sm ring-1 ring-emerald-300/40'
-                                        : 'bg-slate-50/30 border-slate-200/90 hover:border-indigo-300 hover:shadow-md'
+                                        ? 'bg-emerald-50/40 border-emerald-300 shadow-xs ring-1 ring-emerald-300/40'
+                                        : 'bg-white border-slate-200/90 hover:border-indigo-300 hover:shadow-md'
                                     }`}
                                   >
                                     <div>
-                                      {/* Venue Photo + Star Rating + Places Count Badge */}
+                                      {/* Compact Venue Photo + Star Rating + Places Count Badge */}
                                       <ResilientScenicBanner
                                         primaryUrl={rec.photoUrl}
                                         fallbackUrl={rec.genericFallbackPhotoUrl}
                                         gradientFallback={rec.fallbackGradient}
                                         alt={rec.title}
-                                        className="h-44"
+                                        className="h-32"
                                         placeLookupContext={{
                                           title: rec.title,
                                           neighborhood: rec.neighborhood,
@@ -4202,234 +4202,216 @@ export const ScoutHopPlanner: React.FC = () => {
                                           countryName: rec.countryName,
                                         }}
                                       >
-                                        <div className="p-3.5 h-full flex flex-col justify-between">
-                                          <div className="flex items-center justify-between gap-2">
-                                            <span className="px-2.5 py-1 rounded-lg bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-extrabold border border-white/50 truncate shadow-2xs">
+                                        <div className="p-2.5 h-full flex flex-col justify-between">
+                                          <div className="flex items-center justify-between gap-1.5">
+                                            <span className="px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-extrabold border border-white/50 truncate shadow-2xs">
                                               {rec.categoryLabel}
                                             </span>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                              <span className="px-2 py-0.5 rounded-lg bg-white/95 text-slate-900 font-mono text-[11px] font-extrabold flex items-center gap-1 shadow-2xs">
-                                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <span className="px-1.5 py-0.5 rounded-md bg-white/95 text-slate-900 font-mono text-[10px] font-extrabold flex items-center gap-0.5 shadow-2xs">
+                                                <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                                                 <span>{rec.rating.toFixed(1)}</span>
-                                                <span className="text-[10px] text-slate-500">
-                                                  ({rec.reviewCount.toLocaleString()})
+                                                <span className="text-[9px] text-slate-500">
+                                                  ({rec.reviewCount >= 1000 ? `${(rec.reviewCount / 1000).toFixed(1)}k` : rec.reviewCount})
                                                 </span>
                                               </span>
-                                              <span className="px-2 py-0.5 rounded-lg bg-sky-50/95 text-sky-900 font-mono text-[10px] font-extrabold">
-                                                {rec.priceRange}
+                                              <span
+                                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-extrabold shadow-2xs ${
+                                                  placesCount > 1
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-white/90 text-slate-900'
+                                                }`}
+                                              >
+                                                📍 {placesCount} {placesCount === 1 ? 'Place' : 'Places'}
                                               </span>
                                             </div>
                                           </div>
 
-                                          <div className="space-y-1">
-                                            <div className="flex flex-wrap items-center justify-between gap-1">
-                                              <div className="flex items-center gap-1 text-[11px] font-semibold text-sky-100">
-                                                <MapPin className="w-3 h-3 text-sky-200 shrink-0" />
+                                          <div className="space-y-0.5">
+                                            <div className="flex items-center justify-between gap-1.5 text-[10px] font-semibold text-sky-100">
+                                              <span className="flex items-center gap-1 truncate">
+                                                <MapPin className="w-2.5 h-2.5 text-sky-200 shrink-0" />
                                                 <span className="truncate">{rec.neighborhood}</span>
-                                              </div>
-                                              {/* Prominent Number of Suggested Places Badge */}
-                                              <span
-                                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold shadow-2xs ${
-                                                  placesCount > 1
-                                                    ? 'bg-indigo-600 text-white border border-indigo-300'
-                                                    : 'bg-white/90 text-slate-900'
-                                                }`}
-                                              >
-                                                📍 {placesCount}{' '}
-                                                {placesCount === 1
-                                                  ? 'Suggested Place'
-                                                  : 'Suggested Places'}
+                                              </span>
+                                              <span className="px-1.5 py-0.2 rounded bg-black/45 text-amber-200 font-mono text-[10px] font-bold shrink-0">
+                                                {rec.timeOfDay}
                                               </span>
                                             </div>
-                                            <h4 className="font-heading text-sm sm:text-base font-extrabold text-white leading-snug line-clamp-2">
+                                            <h4
+                                              className="font-heading text-xs sm:text-sm font-extrabold text-white leading-tight line-clamp-2"
+                                              title={rec.title}
+                                            >
                                               {rec.title}
                                             </h4>
                                           </div>
                                         </div>
                                       </ResilientScenicBanner>
 
-                                      {/* Venue Description, Experience Badges, Insider Tip & Direct Google Maps Links */}
-                                      <div className="p-4 space-y-3 bg-white">
-                                        {/* Experience & Budget Badges */}
-                                        {rec.experienceBadges && rec.experienceBadges.length > 0 && (
-                                          <div className="flex flex-wrap items-center gap-1">
-                                            {rec.experienceBadges.map(badge => (
-                                              <span
-                                                key={badge}
-                                                className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200/80 text-indigo-900 text-[10px] font-bold"
-                                              >
-                                                {badge}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        )}
+                                      {/* Compact High-Signal Body: Price + Badges + Summary + Full Insider Tip + Maps Links */}
+                                      <div className="p-3 space-y-2 bg-white">
+                                        {/* Row 1: Price Range + Top Experience Badges */}
+                                        <div className="flex flex-wrap items-center justify-between gap-1">
+                                          <span className="px-2 py-0.5 rounded-md bg-sky-50 border border-sky-200/80 text-sky-900 font-mono text-[10px] font-extrabold">
+                                            {rec.priceRange}
+                                          </span>
+                                          {rec.experienceBadges && rec.experienceBadges.length > 0 && (
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              {rec.experienceBadges.slice(0, 1).map(badge => (
+                                                <span
+                                                  key={badge}
+                                                  className="px-1.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-200/70 text-indigo-900 text-[9px] font-bold"
+                                                >
+                                                  {badge}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
 
-                                        <p className="text-xs text-slate-600 leading-relaxed">
+                                        {/* Row 2: Concise Description */}
+                                        <p className="text-[11px] text-slate-600 leading-snug">
                                           {rec.description}
                                         </p>
 
-                                        <div className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-200/80 text-[11px] text-sky-950 leading-snug">
-                                          <span className="font-extrabold uppercase tracking-wider text-[10px] text-sky-800 block mb-0.5">
-                                            💡 Insider Scouting Tip
+                                        {/* Row 3: Full Inline Insider Tip (Never Truncated) */}
+                                        <div className="px-2.5 py-1.5 rounded-lg bg-sky-50/70 border border-sky-200/80 text-[10.5px] text-sky-950 leading-snug">
+                                          <span className="font-extrabold text-sky-800">
+                                            💡 Tip:{' '}
                                           </span>
-                                          {rec.insiderTip}
+                                          <span>{rec.insiderTip}</span>
                                         </div>
 
-                                        {/* Direct Google Maps & Reviews Button with Explicit Place Count + Individual Place Links when >1 */}
-                                        <div className="space-y-2 pt-1">
-                                          <div className="flex items-center justify-between gap-2">
+                                        {/* Row 4: Direct Google Maps Links (Individual Place Chips if >1, else Single Maps Button) + Task Button */}
+                                        <div className="flex flex-wrap items-center justify-between gap-1.5 pt-0.5">
+                                          {placesCount > 1 ? (
+                                            <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
+                                              {placesList.map((pl, pIdx) => (
+                                                <a
+                                                  key={`${rec.recommendationId}-pl-${pIdx}`}
+                                                  href={pl.googleMapsUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="px-2 py-0.5 rounded-md bg-indigo-50/90 hover:bg-indigo-100 text-indigo-950 border border-indigo-200 text-[10px] font-bold flex items-center gap-1 transition-colors max-w-full"
+                                                  title={`Open ${pl.name} on Google Maps`}
+                                                >
+                                                  <MapPin className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
+                                                  <span className="truncate">{pl.name}</span>
+                                                  <ExternalLink className="w-2 h-2 text-indigo-500 shrink-0" />
+                                                </a>
+                                              ))}
+                                            </div>
+                                          ) : (
                                             <a
                                               href={rec.googleMapsUrl}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[11px] font-extrabold flex items-center gap-1.5 transition-colors"
+                                              className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-extrabold flex items-center gap-1 transition-colors"
                                             >
-                                              <MapPin className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                              <span>
-                                                Google Maps &amp; Reviews ({placesCount}{' '}
-                                                {placesCount === 1 ? 'Place' : 'Places'})
-                                              </span>
-                                              <ExternalLink className="w-3 h-3 text-indigo-500 shrink-0" />
+                                              <MapPin className="w-3 h-3 text-indigo-600 shrink-0" />
+                                              <span>Google Maps &amp; Reviews</span>
+                                              <ExternalLink className="w-2.5 h-2.5 text-indigo-500 shrink-0" />
                                             </a>
-
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                handlePushWeeklyActivityToTasks(
-                                                  `${rec.title} (${rec.neighborhood})`,
-                                                  stop.countryName
-                                                )
-                                              }
-                                              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-[10px] font-extrabold cursor-pointer transition-colors"
-                                              title="Also add as a Relocation Task in Column 2"
-                                            >
-                                              + Task List
-                                            </button>
-                                          </div>
-
-                                          {/* Individual Clickable Google Maps Links when Multiple Places are in this Card */}
-                                          {placesCount > 1 && (
-                                            <div className="p-2 rounded-xl bg-violet-50/60 border border-violet-200/80 space-y-1">
-                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-900 block">
-                                                📍 {placesCount} Suggested Places in This Card (Click Any Place to Open Map):
-                                              </span>
-                                              <div className="flex flex-wrap gap-1.5">
-                                                {placesList.map((pl, pIdx) => (
-                                                  <a
-                                                    key={`${rec.recommendationId}-pl-${pIdx}`}
-                                                    href={pl.googleMapsUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-2 py-1 rounded-lg bg-white hover:bg-violet-100 text-violet-950 border border-violet-200 text-[10px] font-bold flex items-center gap-1 transition-colors"
-                                                  >
-                                                    <span className="font-mono text-violet-600">#{pIdx + 1}</span>
-                                                    <span className="truncate max-w-[160px]">{pl.name}</span>
-                                                    <ExternalLink className="w-2.5 h-2.5 text-violet-500 shrink-0" />
-                                                  </a>
-                                                ))}
-                                              </div>
-                                            </div>
                                           )}
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handlePushWeeklyActivityToTasks(
+                                                `${rec.title} (${rec.neighborhood})`,
+                                                stop.countryName
+                                              )
+                                            }
+                                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-[10px] font-extrabold cursor-pointer transition-colors shrink-0"
+                                            title="Add as a Relocation Task"
+                                          >
+                                            + Task
+                                          </button>
                                         </div>
                                       </div>
                                     </div>
 
-                                    {/* Schedule Under Week / Day Controls + Add / Remove Itinerary CTA */}
-                                    <div className="p-3.5 bg-slate-50/95 border-t border-slate-200/80 space-y-2.5">
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">
-                                            Schedule Week
-                                          </label>
-                                          <select
-                                            value={
-                                              isAdded && scheduledItem
-                                                ? scheduledItem.weekNumber
-                                                : pendingSlot.weekNumber
-                                            }
-                                            onChange={e => {
-                                              const nextWk = Number(e.target.value);
-                                              if (isAdded && scheduledItem) {
-                                                handleUpdateScheduledItem(scheduledItem.id, {
+                                    {/* Single-Row Unified Week/Day Schedule + Add/Remove Action Bar */}
+                                    <div className="px-3 py-2 bg-slate-50/95 border-t border-slate-200/80 flex items-center justify-between gap-1.5">
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <select
+                                          aria-label="Schedule Week"
+                                          value={
+                                            isAdded && scheduledItem
+                                              ? scheduledItem.weekNumber
+                                              : pendingSlot.weekNumber
+                                          }
+                                          onChange={e => {
+                                            const nextWk = Number(e.target.value);
+                                            if (isAdded && scheduledItem) {
+                                              handleUpdateScheduledItem(scheduledItem.id, {
+                                                weekNumber: nextWk,
+                                              });
+                                            } else {
+                                              setPendingScheduleSlot(prev => ({
+                                                ...prev,
+                                                [slotKey]: {
+                                                  ...pendingSlot,
                                                   weekNumber: nextWk,
-                                                });
-                                              } else {
-                                                setPendingScheduleSlot(prev => ({
-                                                  ...prev,
-                                                  [slotKey]: {
-                                                    ...pendingSlot,
-                                                    weekNumber: nextWk,
-                                                  },
-                                                }));
-                                              }
-                                            }}
-                                            className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                          >
-                                            {Array.from(
-                                              { length: Math.max(weeklyBlocks.length, weekRangeMeta.endWeek) },
-                                              (_, i) => i + 1
-                                            ).map(wk => (
-                                              <option key={wk} value={wk}>
-                                                Week {wk}
-                                                {wk >= weekRangeMeta.startWeek &&
-                                                wk <= weekRangeMeta.endWeek
-                                                  ? ` (${stop.cityFocus || stop.countryName})`
-                                                  : ''}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
-
-                                        <div>
-                                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">
-                                            Day Schedule
-                                          </label>
-                                          <select
-                                            value={
-                                              isAdded && scheduledItem
-                                                ? scheduledItem.daySlot
-                                                : pendingSlot.daySlot
+                                                },
+                                              }));
                                             }
-                                            onChange={e => {
-                                              const nextDay = e.target.value;
-                                              if (isAdded && scheduledItem) {
-                                                handleUpdateScheduledItem(scheduledItem.id, {
+                                          }}
+                                          className="px-1.5 py-1 rounded-lg bg-white border border-slate-300 text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        >
+                                          {Array.from(
+                                            { length: Math.max(weeklyBlocks.length, weekRangeMeta.endWeek) },
+                                            (_, i) => i + 1
+                                          ).map(wk => (
+                                            <option key={wk} value={wk}>
+                                              Wk {wk}
+                                            </option>
+                                          ))}
+                                        </select>
+
+                                        <select
+                                          aria-label="Day Schedule"
+                                          value={
+                                            isAdded && scheduledItem
+                                              ? scheduledItem.daySlot
+                                              : pendingSlot.daySlot
+                                          }
+                                          onChange={e => {
+                                            const nextDay = e.target.value;
+                                            if (isAdded && scheduledItem) {
+                                              handleUpdateScheduledItem(scheduledItem.id, {
+                                                daySlot: nextDay,
+                                              });
+                                            } else {
+                                              setPendingScheduleSlot(prev => ({
+                                                ...prev,
+                                                [slotKey]: {
+                                                  ...pendingSlot,
                                                   daySlot: nextDay,
-                                                });
-                                              } else {
-                                                setPendingScheduleSlot(prev => ({
-                                                  ...prev,
-                                                  [slotKey]: {
-                                                    ...pendingSlot,
-                                                    daySlot: nextDay,
-                                                  },
-                                                }));
-                                              }
-                                            }}
-                                            className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                          >
-                                            {DAY_SLOT_OPTIONS.map(dayOpt => (
-                                              <option key={dayOpt} value={dayOpt}>
-                                                {dayOpt}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
+                                                },
+                                              }));
+                                            }
+                                          }}
+                                          className="px-1.5 py-1 rounded-lg bg-white border border-slate-300 text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        >
+                                          {DAY_SLOT_OPTIONS.map(dayOpt => (
+                                            <option key={dayOpt} value={dayOpt}>
+                                              {dayOpt}
+                                            </option>
+                                          ))}
+                                        </select>
                                       </div>
 
                                       {isAdded && scheduledItem ? (
-                                        <div className="flex items-center justify-between gap-2">
-                                          <span className="px-2.5 py-1.5 rounded-xl bg-emerald-600 text-white text-[11px] font-extrabold flex items-center gap-1.5 flex-1 justify-center">
-                                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                                            <span>
-                                              In Itinerary · Wk {scheduledItem.weekNumber},{' '}
-                                              {scheduledItem.daySlot}
-                                            </span>
+                                        <div className="flex items-center gap-1 flex-1 justify-end min-w-0">
+                                          <span className="px-2 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-extrabold flex items-center gap-1 truncate">
+                                            <Check className="w-3 h-3 stroke-[2.5] shrink-0" />
+                                            <span className="truncate">Scheduled</span>
                                           </span>
                                           <button
                                             type="button"
                                             onClick={() => handleRemoveScheduledItem(scheduledItem.id)}
-                                            className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-[11px] font-extrabold transition-colors cursor-pointer shrink-0"
+                                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-[10px] font-extrabold transition-colors cursor-pointer shrink-0"
+                                            title="Remove from itinerary"
                                           >
                                             Remove
                                           </button>
@@ -4450,12 +4432,10 @@ export const ScoutHopPlanner: React.FC = () => {
                                                 | 'Full Day'
                                             )
                                           }
-                                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                                          className="flex-1 py-1 px-2.5 rounded-lg bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 text-white text-[11px] font-extrabold flex items-center justify-center gap-1 shadow-2xs cursor-pointer transition-all truncate"
                                         >
-                                          <Plus className="w-3.5 h-3.5" />
-                                          <span>
-                                            Add to Week {pendingSlot.weekNumber} · {pendingSlot.daySlot}
-                                          </span>
+                                          <Plus className="w-3 h-3 shrink-0" />
+                                          <span className="truncate">Add to Plan</span>
                                         </button>
                                       )}
                                     </div>

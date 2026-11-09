@@ -19,6 +19,7 @@ import { FirebaseConnectionModal } from './components/FirebaseConnectionModal';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { MessageNotificationToast } from './components/MessageNotificationToast';
 import { FeedbackWidget } from './components/FeedbackWidget';
+import { FontThemeStudio } from './components/FontThemeStudio';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandKitModal } from './components/BrandKitModal';
 import { downloadBrandPng } from './utils/exportBrandLogo';
@@ -125,6 +126,7 @@ const MainContent: React.FC = () => {
       <PublicProfileModal />
       <BrandKitModal isOpen={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
       <FeedbackWidget />
+      <FontThemeStudio />
 
       {/* Multi-Colored Elegant Footer */}
       <footer className="relative bg-white text-slate-600 border-t border-indigo-100 text-xs py-12 overflow-hidden">

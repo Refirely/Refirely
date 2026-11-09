@@ -270,5 +270,23 @@ service cloud.firestore {
       allow create: if isValidId(reportId) && isValidFeedbackReport(reportId, incoming());
       allow update, delete: if isBootstrappedAdmin();
     }
+
+    // 8. Top-level /platformSettings/{settingId} collection (Publicly readable theme/typography config, writable strictly by Bootstrapped Admin)
+    match /platformSettings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if false;
+      allow create, update: if isBootstrappedAdmin() &&
+        isValidId(settingId) &&
+        incoming().id == settingId &&
+        incoming().presetId is string && incoming().presetId.size() > 0 && incoming().presetId.size() <= 64 &&
+        incoming().displayCss is string && incoming().displayCss.size() > 0 && incoming().displayCss.size() <= 200 &&
+        incoming().bodyCss is string && incoming().bodyCss.size() > 0 && incoming().bodyCss.size() <= 200 &&
+        incoming().monoCss is string && incoming().monoCss.size() > 0 && incoming().monoCss.size() <= 200 &&
+        incoming().headingTracking is string && incoming().headingTracking.size() <= 20 &&
+        incoming().bodyTracking is string && incoming().bodyTracking.size() <= 20 &&
+        incoming().updatedAt is string && incoming().updatedAt.size() <= 40 &&
+        (!('updatedBy' in incoming()) || (incoming().updatedBy is string && incoming().updatedBy.size() <= 150));
+      allow delete: if isBootstrappedAdmin() && isValidId(settingId);
+    }
   }
 }
