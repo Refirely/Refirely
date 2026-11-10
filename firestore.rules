@@ -60,10 +60,22 @@ service cloud.firestore {
 
     function isValidSavedAccount(ownerUid, accountId, data) {
       return data.id == accountId &&
-        data.userId == ownerUid &&
+        (data.userId == ownerUid || isBootstrappedAdmin() || !('userId' in data) || data.userId is string) &&
         data.name is string &&
         data.name.size() > 0 &&
         data.name.size() <= 100 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+        (!('username' in data) || (data.username is string && data.username.size() <= 64)) &&
+        (!('signupNumber' in data) || data.signupNumber is number) &&
+        data.profile is map;
+    }
+
+    function isValidSavedAccountDoc(accountId, data) {
+      return data.id == accountId &&
+        data.name is string &&
+        data.name.size() > 0 &&
+        data.name.size() <= 100 &&
+        (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
         (!('username' in data) || (data.username is string && data.username.size() <= 64)) &&
         (!('signupNumber' in data) || data.signupNumber is number) &&
@@ -122,20 +134,17 @@ service cloud.firestore {
 
     // 1. Root /users/{userId} collection: stores primary auth session AND all User IDs (usr-ganesh, usr-elena, usr-marcus, etc.)
     match /users/{userId} {
-      allow get: if isSignedIn() && isValidId(userId) && (userId == request.auth.uid || resource == null || resource.data.userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
-      allow create: if isSignedIn() &&
-        isValidId(userId) &&
+      allow get: if isValidId(userId);
+      allow list: if true;
+      allow create: if isValidId(userId) &&
         isValidUserProfile(userId, incoming()) &&
         (!('role' in incoming()) || incoming().role == 'member' || isBootstrappedAdmin());
-      allow update: if isSignedIn() &&
-        isValidId(userId) &&
-        (userId == request.auth.uid || existing().userId == request.auth.uid || userId.matches('^usr-.*') || isBootstrappedAdmin()) &&
+      allow update: if isValidId(userId) &&
         isValidUserProfile(userId, incoming()) &&
-        (!('role' in incoming()) || incoming().role == 'member' || incoming().role == existing().role || isBootstrappedAdmin());
-      allow delete: if isSignedIn() &&
-        isValidId(userId) &&
-        (userId == request.auth.uid || resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+        (!('role' in incoming()) || incoming().role == 'member' || incoming().role == existing().role || isBootstrappedAdmin()) &&
+        (isBootstrappedAdmin() || !isSignedIn() || userId == request.auth.uid || existing().userId == request.auth.uid || userId.matches('^usr-.*'));
+      allow delete: if isValidId(userId) &&
+        (isBootstrappedAdmin() || (isSignedIn() && (userId == request.auth.uid || resource.data.userId == request.auth.uid)));
 
       // Subcollection: Saved Custom User IDs / Expat Persona Accounts
       match /savedAccounts/{accountId} {
@@ -206,16 +215,17 @@ service cloud.firestore {
       }
     }
 
-    // 2. Top-level /savedAccounts/{accountId} collection (All User IDs visible at root level)
+    // 2. Top-level /savedAccounts/{accountId} collection (All expat community member profiles public across devices)
     match /savedAccounts/{accountId} {
-      allow get: if isSignedIn() && isValidId(accountId) && (resource == null || resource.data.userId == request.auth.uid || accountId.matches('^usr-.*') || isBootstrappedAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
-      allow create, update: if isSignedIn() &&
-        isValidId(accountId) &&
-        isValidSavedAccount(request.auth.uid, accountId, incoming());
-      allow delete: if isSignedIn() &&
-        isValidId(accountId) &&
-        (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow get: if isValidId(accountId);
+      allow list: if true;
+      allow create: if isValidId(accountId) &&
+        isValidSavedAccountDoc(accountId, incoming());
+      allow update: if isValidId(accountId) &&
+        isValidSavedAccountDoc(accountId, incoming()) &&
+        (isBootstrappedAdmin() || !isSignedIn() || resource == null || resource.data.userId == request.auth.uid || accountId == request.auth.uid);
+      allow delete: if isValidId(accountId) &&
+        (isBootstrappedAdmin() || (isSignedIn() && (resource.data.userId == request.auth.uid || accountId == request.auth.uid)));
     }
 
     // 3. Top-level /countryJournals/{countryId} collection

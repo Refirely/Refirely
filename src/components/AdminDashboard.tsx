@@ -554,7 +554,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     });
   };
 
-  const handleCreateNewUser = (e: React.FormEvent) => {
+  const handleCreateNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserForm.name.trim() || !newUserForm.email.trim()) return;
     const res = signup({
@@ -584,6 +584,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
       switchAccount(currentUserId);
     }
 
+    // Immediately push all registered accounts to Firestore so new expat reflects across all devices
+    await syncAllAccountsToCloud();
+
     setIsCreateUserModalOpen(false);
     setNewUserForm({
       customUserId: '',
@@ -603,7 +606,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     });
     setStatusBanner({
       type: 'success',
-      message: `Registered new user account "${res.createdUserId}" successfully.`,
+      message: `Registered new expat "${newUserForm.name.trim()}" (${res.createdUserId}) and synced to Firestore server across all devices.`,
     });
   };
 

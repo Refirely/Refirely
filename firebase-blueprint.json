@@ -160,7 +160,7 @@
           "description": "Relocation checklist tasks specific to this User ID"
         }
       },
-      "required": ["id", "userId", "name", "email", "profile"]
+      "required": ["id", "name", "email", "profile"]
     },
     "CountryJournalEntry": {
       "title": "CountryJournalEntry",

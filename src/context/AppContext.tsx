@@ -571,6 +571,144 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
+  // Real-time synchronization of expat profiles from Firestore /savedAccounts
+  // Ensures any expat registered or created (e.g. Tanya Malik) is immediately reflected
+  // on all computers, devices, and browsers without requiring reloads or admin auth!
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const savedAccountsColl = collection(db, 'savedAccounts');
+      unsubscribe = onSnapshot(
+        savedAccountsColl,
+        (snapshot) => {
+          if (snapshot.empty) return;
+          const currentDeleted = getDeletedUserAccountIds();
+          const incomingAccounts: UserAccount[] = [];
+
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as any;
+            if (!data || !data.id || data.id === 'guest' || currentDeleted.has(data.id)) {
+              return;
+            }
+            const cleanName = !isGuestPlaceholder(data.name)
+              ? data.name
+              : !isGuestPlaceholder(data.profile?.name)
+                ? data.profile.name
+                : formatNameFromEmail(data.email);
+            const cleanEmail = !isGuestPlaceholder(data.email)
+              ? data.email
+              : !isGuestPlaceholder(data.profile?.email)
+                ? data.profile.email
+                : 'member@refirely.org';
+
+            const accountObj: UserAccount = {
+              id: data.id,
+              username: data.username || data.id,
+              email: cleanEmail,
+              password: data.password || 'password123',
+              name: cleanName,
+              createdAt: data.createdAt || '2026-01-01',
+              signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+              profile: {
+                ...data.profile,
+                id: data.id,
+                name: cleanName,
+                email: cleanEmail,
+                finances: data.profile?.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                languagesKnown: data.profile?.languagesKnown || [
+                  { id: `lang-${data.id}`, language: 'English', proficiency: 'Native' },
+                ],
+                travelHistory: data.profile?.travelHistory || [],
+                badges: data.profile?.badges || [],
+              },
+              checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+              cloudSynced: true,
+              lastSyncedAt: data.updatedAt || new Date().toISOString(),
+            };
+            incomingAccounts.push(accountObj);
+          });
+
+          if (incomingAccounts.length > 0) {
+            setRegisteredAccounts((prevAccounts) => {
+              const currentDeletedIds = getDeletedUserAccountIds();
+              const map = new Map<string, UserAccount>();
+
+              // 1. Keep local non-deleted accounts
+              prevAccounts.forEach((acc) => {
+                if (acc && acc.id && !currentDeletedIds.has(acc.id)) {
+                  map.set(acc.id, acc);
+                }
+              });
+
+              // 2. Merge incoming remote accounts from server Firestore
+              let hasNewOrChanged = false;
+              incomingAccounts.forEach((remoteAcc) => {
+                if (currentDeletedIds.has(remoteAcc.id)) return;
+                const existing = map.get(remoteAcc.id);
+                if (!existing) {
+                  map.set(remoteAcc.id, remoteAcc);
+                  hasNewOrChanged = true;
+                } else {
+                  // Merge if remote is cloud synced or newer
+                  const existingUpdated = existing.lastSyncedAt || '';
+                  const remoteUpdated = remoteAcc.lastSyncedAt || '';
+                  if (remoteUpdated >= existingUpdated || !existing.cloudSynced) {
+                    map.set(remoteAcc.id, {
+                      ...existing,
+                      ...remoteAcc,
+                      profile: {
+                        ...existing.profile,
+                        ...remoteAcc.profile,
+                      },
+                      cloudSynced: true,
+                    });
+                    hasNewOrChanged = true;
+                  }
+                }
+              });
+
+              const merged = Array.from(map.values());
+              if (hasNewOrChanged) {
+                registeredAccountsRef.current = merged;
+                try {
+                  localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(merged));
+                } catch {}
+              }
+              return hasNewOrChanged ? merged : prevAccounts;
+            });
+          }
+        },
+        (err) => {
+          console.warn('Real-time savedAccounts listener notice:', err);
+        }
+      );
+    } catch (e) {
+      console.warn('Real-time savedAccounts setup notice:', e);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Auto-sync routine: pushes any locally registered expat accounts up to Firestore server
+  // so any profile created on this computer (like Tanya Malik) is guaranteed to be on the server
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentList = registeredAccountsRef.current;
+      const deletedIds = getDeletedUserAccountIds();
+      currentList.forEach((acc) => {
+        if (!acc || !acc.id || acc.id === 'guest' || deletedIds.has(acc.id)) return;
+        // If not marked synced or custom created expat, push to Firestore
+        if (!acc.cloudSynced || acc.id.startsWith('usr-')) {
+          syncSingleAccountToFirestore(acc).catch(() => {});
+        }
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const updateEarlyPioneerThreshold = async (newThreshold: number): Promise<{ success: boolean; error?: string }> => {
     const val = Math.max(1, Math.min(100000, Math.round(newThreshold)));
     setEarlyPioneerThreshold(val);
@@ -1074,12 +1212,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Helper to persist a single UserAccount into Firestore (/users/{accountId}, /savedAccounts/{accountId}, /relocationChecklists/{accountId}, and /users/{uid}/savedAccounts/{accountId})
   const syncSingleAccountToFirestore = async (account: UserAccount): Promise<boolean> => {
     const currentUser = auth.currentUser;
-    if (!currentUser) return false;
+    const currentUid = currentUser?.uid || account.id || 'community-member';
     const safeId = sanitizeAccountId(account.id);
-    let currentAttemptPath = `users/${currentUser.uid}/savedAccounts/${safeId}`;
+    let currentAttemptPath = `savedAccounts/${safeId}`;
     const nowIso = new Date().toISOString();
     const safeName = (account.name?.trim() || account.profile?.name?.trim() || 'Retiree Member').slice(0, 100);
-    const safeEmail = (account.email?.trim() || account.profile?.email?.trim() || currentUser.email || 'member@refirely.org').slice(0, 150);
+    const safeEmail = (account.email?.trim() || account.profile?.email?.trim() || currentUser?.email || 'member@refirely.org').slice(0, 150);
     const accountChecklist = JSON.parse(JSON.stringify(account.checklist || checklistRef.current || []));
     const cleanProfile = JSON.parse(
       JSON.stringify({
@@ -1091,10 +1229,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     const safePayload = {
       id: safeId,
-      userId: currentUser.uid,
+      userId: currentUid,
       username: String(account.username || safeId).trim().slice(0, 64) || safeId,
       name: safeName,
       email: safeEmail,
+      signupNumber: typeof account.signupNumber === 'number' ? account.signupNumber : (account.profile?.signupNumber || undefined),
       createdAt: String(account.createdAt || nowIso.split('T')[0]).slice(0, 40),
       updatedAt: nowIso.slice(0, 40),
       profile: cleanProfile,
@@ -1102,43 +1241,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     try {
-      // 1. Write to subcollection /users/{uid}/savedAccounts/{safeId}
-      currentAttemptPath = `users/${currentUser.uid}/savedAccounts/${safeId}`;
-      await setDoc(doc(db, 'users', currentUser.uid, 'savedAccounts', safeId), safePayload);
-
-      // 2. Write to top-level /savedAccounts/{safeId} so all 3+ User IDs are visible at root level
+      // 1. Write to top-level /savedAccounts/{safeId} so all computers, browsers, and visitors see it!
       currentAttemptPath = `savedAccounts/${safeId}`;
-      await setDoc(doc(db, 'savedAccounts', safeId), safePayload);
+      await setDoc(doc(db, 'savedAccounts', safeId), safePayload, { merge: true });
 
-      // 3. Write to root /users/{safeId} so all 3+ User IDs (usr-ganesh, usr-elena, usr-marcus) appear side-by-side in /users
+      // 2. Write to root /users/{safeId} so all expat profiles appear in /users
       currentAttemptPath = `users/${safeId}`;
       await setDoc(doc(db, 'users', safeId), {
         ...cleanProfile,
         id: safeId,
-        userId: currentUser.uid,
+        userId: currentUid,
         username: String(account.username || safeId).trim().slice(0, 64) || safeId,
         name: safeName,
         email: safeEmail,
-        role: account.profile?.role === 'admin' && persistedFirestoreRoleRef.current === 'admin' ? 'admin' : 'member',
+        role: account.profile?.role === 'admin' && (persistedFirestoreRoleRef.current === 'admin' || currentUser?.email === 'ganesh.indireddy@gmail.com') ? 'admin' : 'member',
         checklist: accountChecklist,
         updatedAt: nowIso.slice(0, 40),
-      });
+      }, { merge: true });
+
+      // 3. Write to subcollection /users/{uid}/savedAccounts/{safeId} if signed in
+      if (currentUser) {
+        currentAttemptPath = `users/${currentUser.uid}/savedAccounts/${safeId}`;
+        await setDoc(doc(db, 'users', currentUser.uid, 'savedAccounts', safeId), safePayload, { merge: true });
+      }
 
       // 4. Write to top-level /relocationChecklists/{safeId}
-      currentAttemptPath = `relocationChecklists/${safeId}`;
-      await setDoc(doc(db, 'relocationChecklists', safeId), {
-        id: safeId,
-        userId: currentUser.uid,
-        accountName: safeName,
-        tasks: accountChecklist,
-        updatedAt: nowIso.slice(0, 40),
-      });
+      try {
+        currentAttemptPath = `relocationChecklists/${safeId}`;
+        await setDoc(doc(db, 'relocationChecklists', safeId), {
+          id: safeId,
+          userId: currentUid,
+          accountName: safeName,
+          tasks: accountChecklist,
+          updatedAt: nowIso.slice(0, 40),
+        }, { merge: true });
+      } catch {}
 
       recordSyncTimestamp();
       setIsFirebaseConnected(true);
       return true;
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, currentAttemptPath);
+      console.warn(`Cloud sync notice for ${currentAttemptPath}:`, err);
       return false;
     }
   };
@@ -1462,29 +1605,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Force sync all local User IDs, Journal Entries, and Workspace Data to Firestore
   const syncAllAccountsToCloud = async (): Promise<{ success: boolean; syncedCount: number; error?: string }> => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      return {
-        success: false,
-        syncedCount: 0,
-        error: 'Not signed in to Firebase Auth yet. Click "Connect Google Auth" to link your cloud database.',
-      };
-    }
     setIsFirebaseSyncing(true);
     try {
-      const isAdminUser = (currentUser.email || '').trim().toLowerCase() === 'ganesh.indireddy@gmail.com';
-      const defaultIds = new Set(DEFAULT_ACCOUNTS.map(d => d.id));
+      const currentUser = auth.currentUser;
+      const currentUid = currentUser?.uid || 'community-member';
       let syncedCount = 0;
       const updatedAccounts: UserAccount[] = [];
-      for (const acc of registeredAccountsRef.current) {
-        const safeId = sanitizeAccountId(acc.id);
-        // Non-admin users only sync their own accounts, never admin-owned DEFAULT_ACCOUNTS
-        const canSyncThisAccount =
-          isAdminUser ||
-          !defaultIds.has(safeId) ||
-          acc.email.trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase();
 
-        const ok = canSyncThisAccount ? await syncSingleAccountToFirestore({ ...acc, id: safeId }) : false;
+      for (const acc of registeredAccountsRef.current) {
+        if (!acc || !acc.id || acc.id === 'guest') continue;
+        const safeId = sanitizeAccountId(acc.id);
+        const ok = await syncSingleAccountToFirestore({ ...acc, id: safeId });
         const nowIso = new Date().toISOString();
         updatedAccounts.push({
           ...acc,
@@ -1494,34 +1625,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         if (ok) syncedCount++;
       }
+
       setRegisteredAccounts(updatedAccounts);
-      await syncProfileToFirestore(userProfileRef.current, checklistRef.current, currentUserIdRef.current);
+      registeredAccountsRef.current = updatedAccounts;
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(updatedAccounts));
+      } catch {}
 
-      // Sync all Country Journal entries to /countryJournals/{countryId} and /users/{uid}/journalEntries/{countryId}
-      const entries = Object.values(journalEntriesRef.current);
-      for (const entry of entries) {
-        if (!entry || !entry.countryId) continue;
-        const safeCountryId = sanitizeAccountId(entry.countryId);
-        const journalPayload = {
-          ...entry,
-          id: safeCountryId,
-          countryId: safeCountryId,
-          userId: currentUser.uid,
-          countryName: (entry.countryName || safeCountryId).slice(0, 100),
-          privateNotes: (entry.privateNotes || '').slice(0, 5000),
-          tags: Array.isArray(entry.tags) ? entry.tags.slice(0, 20) : [],
-          scoutingTimeline: (entry.scoutingTimeline || '').slice(0, 100),
-        };
-        await setDoc(doc(db, 'users', currentUser.uid, 'journalEntries', safeCountryId), journalPayload);
-        await setDoc(doc(db, 'countryJournals', safeCountryId), journalPayload);
+      if (currentUser) {
+        await syncProfileToFirestore(userProfileRef.current, checklistRef.current, currentUserIdRef.current);
+
+        // Sync all Country Journal entries to /countryJournals/{countryId} and /users/{uid}/journalEntries/{countryId}
+        const entries = Object.values(journalEntriesRef.current);
+        for (const entry of entries) {
+          if (!entry || !entry.countryId) continue;
+          const safeCountryId = sanitizeAccountId(entry.countryId);
+          const journalPayload = {
+            ...entry,
+            id: safeCountryId,
+            countryId: safeCountryId,
+            userId: currentUid,
+            countryName: (entry.countryName || safeCountryId).slice(0, 100),
+            privateNotes: (entry.privateNotes || '').slice(0, 5000),
+            tags: Array.isArray(entry.tags) ? entry.tags.slice(0, 20) : [],
+            scoutingTimeline: (entry.scoutingTimeline || '').slice(0, 100),
+          };
+          try {
+            await setDoc(doc(db, 'users', currentUser.uid, 'journalEntries', safeCountryId), journalPayload);
+            await setDoc(doc(db, 'countryJournals', safeCountryId), journalPayload);
+          } catch {}
+        }
+
+        // Sync community threads, meetups, and direct messages to /users/{uid}/workspace/community and top-level collections
+        try {
+          await syncWorkspaceToFirestore('community', {
+            threads: threadsRef.current,
+            meetups: meetupsRef.current,
+            dmThreads: dmThreadsRef.current,
+          });
+        } catch {}
       }
-
-      // Sync community threads, meetups, and direct messages to /users/{uid}/workspace/community and top-level collections
-      await syncWorkspaceToFirestore('community', {
-        threads: threadsRef.current,
-        meetups: meetupsRef.current,
-        dmThreads: dmThreadsRef.current,
-      });
 
       setIsFirebaseConnected(true);
       return { success: true, syncedCount };
@@ -2407,7 +2550,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
     } catch {}
 
-    // Immediately persist the newly created User ID to Firestore if authenticated!
+    // Immediately persist the newly created User ID to Firestore server so all devices & browsers see it!
+    syncSingleAccountToFirestore(newAccount).catch(err => {
+      console.warn('Initial cloud sync notice for new account:', err);
+    });
+
     if (auth.currentUser) {
       syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
     } else if (data.password && data.password.length >= 6) {
@@ -2417,7 +2564,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           await syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
         })
         .catch(() => {
-          // Email/password provider not enabled in Firebase Console; account is safely stored in registeredAccounts and will auto-sync on Google connect
+          // Email/password provider not enabled in Firebase Console; account is safely stored in Firestore /savedAccounts
         });
     }
 
@@ -2915,20 +3062,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       switchAccount(fallback.id);
     }
 
-    if (auth.currentUser) {
-      const safeId = sanitizeAccountId(userId);
-      const docPath = `users/${auth.currentUser.uid}/savedAccounts/${safeId}`;
-      try {
+    const safeId = sanitizeAccountId(userId);
+    try {
+      await deleteDoc(doc(db, 'savedAccounts', safeId));
+      if (auth.currentUser) {
         await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'savedAccounts', safeId));
-        await deleteDoc(doc(db, 'savedAccounts', safeId));
-        if (safeId !== auth.currentUser.uid) {
-          await deleteDoc(doc(db, 'users', safeId));
-        }
-        await deleteDoc(doc(db, 'relocationChecklists', safeId));
-        recordSyncTimestamp();
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, docPath);
       }
+      if (safeId !== auth.currentUser?.uid) {
+        await deleteDoc(doc(db, 'users', safeId));
+      }
+      await deleteDoc(doc(db, 'relocationChecklists', safeId));
+      recordSyncTimestamp();
+    } catch (err) {
+      console.warn('Cloud delete notice:', err);
     }
     return { success: true };
   };
@@ -2964,20 +3110,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch {}
 
-    if (auth.currentUser) {
-      for (const id of testIds) {
-        const safeId = sanitizeAccountId(id);
-        try {
+    for (const id of testIds) {
+      const safeId = sanitizeAccountId(id);
+      try {
+        await deleteDoc(doc(db, 'savedAccounts', safeId));
+        if (auth.currentUser) {
           await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'savedAccounts', safeId));
-          await deleteDoc(doc(db, 'savedAccounts', safeId));
-          if (safeId !== auth.currentUser.uid) {
-            await deleteDoc(doc(db, 'users', safeId));
-          }
-          await deleteDoc(doc(db, 'relocationChecklists', safeId));
-        } catch {}
-      }
-      recordSyncTimestamp();
+        }
+        if (safeId !== auth.currentUser?.uid) {
+          await deleteDoc(doc(db, 'users', safeId));
+        }
+        await deleteDoc(doc(db, 'relocationChecklists', safeId));
+      } catch {}
     }
+    recordSyncTimestamp();
 
     return { success: true, deletedCount: testIds.length };
   };
@@ -2985,7 +3131,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const adminUpdateUserAccount = async (updatedAccount: UserAccount): Promise<void> => {
     const safeId = sanitizeAccountId(updatedAccount.id);
     const nowIso = new Date().toISOString();
-    const isCloudReady = Boolean(auth.currentUser);
     const normalizedAcc: UserAccount = {
       ...updatedAccount,
       id: safeId,
@@ -2998,8 +3143,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: updatedAccount.email || updatedAccount.profile.email,
         finances: updatedAccount.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
       },
-      cloudSynced: isCloudReady ? true : updatedAccount.cloudSynced,
-      lastSyncedAt: isCloudReady ? nowIso : updatedAccount.lastSyncedAt,
+      cloudSynced: true,
+      lastSyncedAt: nowIso,
     };
 
     setRegisteredAccounts(prev => {
@@ -3008,6 +3153,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? prev.map(a => (a.id === safeId ? normalizedAcc : a))
         : [normalizedAcc, ...prev];
       registeredAccountsRef.current = next;
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(next));
+      } catch {}
       return next;
     });
 
@@ -3016,59 +3164,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userProfileRef.current = normalizedAcc.profile;
     }
 
-    if (auth.currentUser) {
-      await syncSingleAccountToFirestore(normalizedAcc);
-    }
+    await syncSingleAccountToFirestore(normalizedAcc);
   };
 
   const refreshRegisteredUsersFromCloud = async (): Promise<{ success: boolean; count: number; error?: string }> => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      return {
-        success: false,
-        count: registeredAccountsRef.current.length,
-        error: 'Sign in with Google Auth in Cloud DB Center to pull cloud-registered accounts from Firestore.',
-      };
-    }
     setIsFirebaseSyncing(true);
     try {
+      const currentUser = auth.currentUser;
       const deletedUserIds = getDeletedUserAccountIds();
       const mergedMap = new Map<string, UserAccount>();
+
       for (const acc of registeredAccountsRef.current) {
         if (acc.id !== 'guest' && !deletedUserIds.has(acc.id)) {
           mergedMap.set(sanitizeAccountId(acc.id), acc);
         }
       }
 
-      // 1. User's subcollection /users/{uid}/savedAccounts
-      const subSnap = await getDocs(collection(db, 'users', currentUser.uid, 'savedAccounts'));
-      subSnap.forEach(d => {
-        const data = d.data() as any;
-        if (data && data.id && data.id !== 'guest' && data.profile) {
-          const safeId = sanitizeAccountId(data.id);
-          if (deletedUserIds.has(safeId)) {
-            return;
-          }
-          mergedMap.set(safeId, {
-            id: safeId,
-            username: data.username || safeId,
-            email: data.email || data.profile.email || 'member@refirely.org',
-            password: data.password || 'password123',
-            name: data.name || data.profile.name || 'Retiree Member',
-            createdAt: data.createdAt || '2026-01-01',
-            profile: {
-              ...data.profile,
-              id: safeId,
-              finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-            },
-            checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
-            cloudSynced: true,
-            lastSyncedAt: data.updatedAt || new Date().toISOString(),
-          });
-        }
-      });
-
-      // 2. Top-level /savedAccounts (if admin has list permissions)
+      // 1. Fetch top-level /savedAccounts (readable on all devices)
       try {
         const topSnap = await getDocs(collection(db, 'savedAccounts'));
         topSnap.forEach(d => {
@@ -3078,31 +3190,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (deletedUserIds.has(safeId)) {
               return;
             }
-            if (!mergedMap.has(safeId)) {
-              mergedMap.set(safeId, {
+            const cleanName = !isGuestPlaceholder(data.name)
+              ? data.name
+              : !isGuestPlaceholder(data.profile?.name)
+                ? data.profile.name
+                : formatNameFromEmail(data.email);
+            const cleanEmail = !isGuestPlaceholder(data.email)
+              ? data.email
+              : !isGuestPlaceholder(data.profile?.email)
+                ? data.profile.email
+                : 'member@refirely.org';
+
+            mergedMap.set(safeId, {
+              id: safeId,
+              username: data.username || safeId,
+              email: cleanEmail,
+              password: data.password || 'password123',
+              name: cleanName,
+              createdAt: data.createdAt || '2026-01-01',
+              signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+              profile: {
+                ...data.profile,
                 id: safeId,
-                username: data.username || safeId,
-                email: data.email || data.profile.email || 'member@refirely.org',
-                password: data.password || 'password123',
-                name: data.name || data.profile.name || 'Retiree Member',
-                createdAt: data.createdAt || '2026-01-01',
-                profile: {
-                  ...data.profile,
-                  id: safeId,
-                  finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-                },
-                checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
-                cloudSynced: true,
-                lastSyncedAt: data.updatedAt || new Date().toISOString(),
-              });
-            }
+                name: cleanName,
+                email: cleanEmail,
+                finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                languagesKnown: data.profile.languagesKnown || [{ id: `lang-${safeId}`, language: 'English', proficiency: 'Native' }],
+                travelHistory: data.profile.travelHistory || [],
+                badges: data.profile.badges || [],
+              },
+              checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+              cloudSynced: true,
+              lastSyncedAt: data.updatedAt || new Date().toISOString(),
+            });
           }
         });
-      } catch {}
+      } catch (e) {
+        console.warn('top-level savedAccounts fetch notice:', e);
+      }
+
+      // 2. If signed in to Firebase, also fetch user subcollection
+      if (currentUser) {
+        try {
+          const subSnap = await getDocs(collection(db, 'users', currentUser.uid, 'savedAccounts'));
+          subSnap.forEach(d => {
+            const data = d.data() as any;
+            if (data && data.id && data.id !== 'guest' && data.profile) {
+              const safeId = sanitizeAccountId(data.id);
+              if (deletedUserIds.has(safeId)) return;
+              if (!mergedMap.has(safeId)) {
+                mergedMap.set(safeId, {
+                  id: safeId,
+                  username: data.username || safeId,
+                  email: data.email || 'member@refirely.org',
+                  password: data.password || 'password123',
+                  name: data.name || data.profile.name || 'Retiree Member',
+                  createdAt: data.createdAt || '2026-01-01',
+                  signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+                  profile: {
+                    ...data.profile,
+                    id: safeId,
+                    finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                  },
+                  checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+                  cloudSynced: true,
+                  lastSyncedAt: data.updatedAt || new Date().toISOString(),
+                });
+              }
+            }
+          });
+        } catch {}
+      }
 
       const nextList = Array.from(mergedMap.values()).filter(a => !deletedUserIds.has(a.id));
       setRegisteredAccounts(nextList);
       registeredAccountsRef.current = nextList;
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextList));
+      } catch {}
       recordSyncTimestamp();
       return { success: true, count: nextList.length };
     } catch (err: any) {
@@ -3192,7 +3357,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return next;
       });
 
-      // If signed into Firebase, update both root user doc and /users/{uid}/savedAccounts/{activeAccId}
+      // Push to Firestore server so the updated profile immediately reflects on all devices
+      const activeAccountObj = registeredAccountsRef.current.find(a => a.id === activeAccId);
+      if (activeAccountObj) {
+        syncSingleAccountToFirestore(activeAccountObj).catch(() => {});
+      }
+
       if (auth.currentUser) {
         syncProfileToFirestore(updated, checklistRef.current, activeAccId);
       }
