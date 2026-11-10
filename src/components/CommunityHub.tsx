@@ -110,106 +110,91 @@ export const CommunityHub: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
       
-      {/* Top Header - Multi-Colored Luminous Banner */}
+      {/* Unified Compact Header Bar: Title + Expats/Forum Tabs + Privacy Badge + Post Action */}
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-amber-50/85 border border-indigo-200/80 p-6 sm:p-8 shadow-md"
+        transition={{ duration: 0.2 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-50/90 via-white to-teal-50/85 border border-indigo-200/80 px-4 py-3 sm:px-5 sm:py-3.5 shadow-xs mb-3.5"
       >
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
-        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-amber-400/15 blur-3xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-sm shadow-indigo-500/20">
-                <Users className="w-5 h-5" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Global{' '}
-                <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                  Expats
-                </span>{' '}
-                &amp; Discussion Forum
-              </h1>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Compact Title & Subtitle */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-2xs shrink-0">
+              <Users className="w-4 h-4" />
             </div>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1.5">
-              Connect directly with verified expats by countries visited, languages spoken, and relocation status, or join firsthand forum discussions.
-            </p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
+                  Global{' '}
+                  <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                    Expats
+                  </span>{' '}
+                  &amp; Discussion Forum
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 text-[10px] font-bold">
+                  <span>🔒 Finances &amp; Shortlists Private</span>
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-600 truncate">
+                Connect with verified expats by countries visited, languages &amp; interests, or exchange firsthand advice in the forum.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() =>
-                setActiveCommunityTab(activeCommunityTab === 'members' ? 'discussions' : 'members')
-              }
-              className="px-3.5 py-2 text-xs font-bold rounded-xl border border-teal-200 bg-teal-50/90 text-teal-950 hover:bg-teal-100 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
-            >
-              {activeCommunityTab === 'members' ? (
-                <>
-                  <MessageSquare className="w-4 h-4 text-indigo-700" />
-                  <span>Discussion Forum ({threads.length})</span>
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 text-teal-700" />
-                  <span>Expats ({publicMemberAccounts.length})</span>
-                </>
-              )}
-            </motion.button>
+          {/* Right: Primary Segmented Tabs (Expats Default #1 | Discussion Forum #2) + Post Button */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 p-1 bg-indigo-100/80 border border-indigo-200/80 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setActiveCommunityTab('members')}
+                className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  activeCommunityTab === 'members'
+                    ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-2xs'
+                    : 'text-slate-700 hover:text-indigo-950'
+                }`}
+              >
+                <Users className={`w-3.5 h-3.5 ${activeCommunityTab === 'members' ? 'text-amber-300' : 'text-teal-700'}`} />
+                <span>Expats ({publicMemberAccounts.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCommunityTab('discussions')}
+                className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  activeCommunityTab === 'discussions'
+                    ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-2xs'
+                    : 'text-slate-700 hover:text-indigo-950'
+                }`}
+              >
+                <MessageSquare className={`w-3.5 h-3.5 ${activeCommunityTab === 'discussions' ? 'text-amber-300' : 'text-indigo-600'}`} />
+                <span>Discussion Forum ({threads.length})</span>
+              </button>
+            </div>
 
             <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setIsNewModalOpen(true)}
-              className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white hover:from-indigo-700 hover:to-teal-700 transition-all flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 cursor-pointer whitespace-nowrap"
+              className="px-3.5 py-2 text-xs font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white hover:from-indigo-700 hover:to-teal-700 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
-              <span>Ask a Question / Post</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Ask Question / Post</span>
             </motion.button>
           </div>
         </div>
       </motion.div>
-
-      {/* Segmented View Switcher: Expats (Default #1 Tab) vs. Discussion Forum */}
-      <div className="mt-5 mb-6 flex items-center gap-1.5 p-1 bg-indigo-100/70 border border-indigo-200/70 rounded-2xl w-fit shadow-2xs">
-        <button
-          onClick={() => setActiveCommunityTab('members')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-            activeCommunityTab === 'members'
-              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
-              : 'text-slate-700 hover:text-indigo-950'
-          }`}
-        >
-          <Users className={`w-3.5 h-3.5 ${activeCommunityTab === 'members' ? 'text-amber-300' : 'text-teal-700'}`} />
-          <span>Expats ({publicMemberAccounts.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveCommunityTab('discussions')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-            activeCommunityTab === 'discussions'
-              ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-xs'
-              : 'text-slate-700 hover:text-indigo-950'
-          }`}
-        >
-          <MessageSquare className={`w-3.5 h-3.5 ${activeCommunityTab === 'discussions' ? 'text-amber-300' : 'text-indigo-600'}`} />
-          <span>Discussion Forum ({threads.length})</span>
-        </button>
-      </div>
 
       {activeCommunityTab === 'members' ? (
         <PublicMemberDirectory />
       ) : (
         <>
           {/* Filter and Search Bar */}
-          <div className="my-6 space-y-3 bg-gradient-to-r from-white via-indigo-50/35 to-teal-50/35 p-4 sm:p-5 rounded-2xl border border-indigo-200/80 shadow-xs">
+          <div className="mb-4 space-y-2.5 bg-gradient-to-r from-white via-indigo-50/35 to-teal-50/35 p-3.5 sm:p-4 rounded-2xl border border-indigo-200/80 shadow-xs">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Search input */}
               <div className="relative flex-1">

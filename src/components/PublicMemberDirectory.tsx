@@ -146,53 +146,18 @@ export const PublicMemberDirectory: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Privacy & Directory Intro Banner */}
+    <div className="space-y-3.5">
+      {/* Compact Search & Multi-Facet Filter Toolbar */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-br from-teal-50/85 via-indigo-50/55 to-amber-50/75 rounded-3xl border border-indigo-200/80 p-5 sm:p-7 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-teal-900">
-            <span className="p-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-2xs">
-              <Users className="w-3.5 h-3.5" />
-            </span>
-            <span>Verified Expats &amp; Retiree Directory</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-white/90 border border-teal-200 font-mono tabular-nums text-teal-800 text-[11px]">
-              {publicMemberAccounts.length} Verified Expats
-            </span>
-          </div>
-          <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Connect with Fellow Expats by{' '}
-            <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
-              Countries Visited, Languages &amp; Interests
-            </span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-            Explore public profiles of verified expats and send personal messages to exchange firsthand advice. Personal financial portfolios and private country shortlists are never displayed publicly.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs font-bold text-emerald-950 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-emerald-200/90 shadow-2xs shrink-0">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Finances &amp; Shortlists Strictly Private</span>
-        </div>
-      </motion.div>
-
-      {/* Search & Multi-Facet Filter Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="relative overflow-hidden bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 space-y-4 shadow-sm"
+        className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 px-3.5 py-3 sm:px-4 sm:py-3.5 space-y-2.5 shadow-xs"
       >
         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
           {/* Search Input (5 cols) */}
           <div className="md:col-span-5 relative">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
               <Search className="w-3.5 h-3.5" />
             </div>
             <input
@@ -200,7 +165,7 @@ export const PublicMemberDirectory: React.FC = () => {
               placeholder="Search expats by name, country visited, language, or interest..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-3 py-2.5 text-xs font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/70 focus:bg-white transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/70 focus:bg-white transition-all"
             />
           </div>
 
@@ -209,7 +174,7 @@ export const PublicMemberDirectory: React.FC = () => {
             <select
               value={visitedCountryFilter}
               onChange={e => setVisitedCountryFilter(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs font-bold text-slate-800 border border-teal-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-teal-50/40 hover:bg-teal-50/70 transition-colors cursor-pointer"
+              className="w-full px-2.5 py-2 text-xs font-bold text-slate-800 border border-teal-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-teal-50/40 hover:bg-teal-50/70 transition-colors cursor-pointer"
             >
               <option value="All">Visited Country: All</option>
               {availableVisitedCountries
@@ -227,7 +192,7 @@ export const PublicMemberDirectory: React.FC = () => {
             <select
               value={languageFilter}
               onChange={e => setLanguageFilter(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs font-bold text-slate-800 border border-indigo-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/40 hover:bg-indigo-50/70 transition-colors cursor-pointer"
+              className="w-full px-2.5 py-2 text-xs font-bold text-slate-800 border border-indigo-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/40 hover:bg-indigo-50/70 transition-colors cursor-pointer"
             >
               <option value="All">Language: All</option>
               {availableLanguages
@@ -247,7 +212,7 @@ export const PublicMemberDirectory: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={handleResetFilters}
-              className="w-full px-3 py-2.5 text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200/90 hover:border-rose-600 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full px-2.5 py-2 text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200/90 hover:border-rose-600 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Filters</span>
@@ -255,43 +220,53 @@ export const PublicMemberDirectory: React.FC = () => {
           </div>
         </div>
 
-        {/* Relocation Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
-            <Sparkles className="w-3 h-3 text-amber-500" />
-            <span>Stage:</span>
-          </span>
-          {statusOptions.map(status => {
-            const isSelected = statusFilter === status;
-            return (
-              <motion.button
-                key={status}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setStatusFilter(status)}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80'
-                }`}
-              >
-                {status === 'All' ? 'All Relocation Stages' : status}
-              </motion.button>
-            );
-          })}
+        {/* Relocation Status Filter Tabs + Live Count */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-0.5 flex items-center gap-1 shrink-0">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>Stage:</span>
+            </span>
+            {statusOptions.map(status => {
+              const isSelected = statusFilter === status;
+              return (
+                <motion.button
+                  key={status}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80'
+                  }`}
+                >
+                  {status === 'All' ? 'All Stages' : status}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-slate-500 shrink-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+            <span>
+              Showing <strong className="text-slate-900 font-mono">{filteredMembers.length}</strong> of{' '}
+              <strong className="text-slate-900 font-mono">{publicMemberAccounts.length}</strong> Verified Expats
+            </span>
+          </div>
         </div>
       </motion.div>
 
-      {/* Member Cards Grid */}
+      {/* Expat Cards Grid — 3 per row on lg, 4 per row on xl */}
       {filteredMembers.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3 shadow-xs"
+          className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3 shadow-xs"
         >
           <Users className="w-8 h-8 text-indigo-400 mx-auto" />
           <h3 className="text-sm font-extrabold text-slate-900">
-            No member profiles match your filter
+            No expat profiles match your filter
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Try clearing your search or selecting a different language or visited country filter.
@@ -300,11 +275,14 @@ export const PublicMemberDirectory: React.FC = () => {
             onClick={handleResetFilters}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all cursor-pointer shadow-xs"
           >
-            Show All Public Profiles
+            Show All Expats
           </button>
         </motion.div>
       ) : (
-        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <motion.div
+          layout
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
           <AnimatePresence mode="popLayout">
             {filteredMembers.map((acc, idx) => {
               const p = acc.profile;
@@ -323,137 +301,142 @@ export const PublicMemberDirectory: React.FC = () => {
                 <motion.div
                   layout
                   key={acc.id}
-                  initial={{ opacity: 0, y: 18, scale: 0.97 }}
+                  initial={{ opacity: 0, y: 14, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.94 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{
                     type: 'spring',
-                    stiffness: 290,
+                    stiffness: 300,
                     damping: 26,
-                    delay: Math.min(idx * 0.03, 0.25),
+                    delay: Math.min(idx * 0.025, 0.2),
                   }}
-                  whileHover={{ y: -5 }}
-                  className={`relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 ${theme.borderHover} p-5 sm:p-6 flex flex-col justify-between transition-shadow shadow-sm hover:shadow-xl space-y-4`}
+                  whileHover={{ y: -4 }}
+                  className={`relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 ${theme.borderHover} p-4 flex flex-col justify-between transition-shadow shadow-xs hover:shadow-lg space-y-3`}
                 >
                   {/* Top Multi-Color Accent Bar */}
-                  <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${theme.topBar}`} />
+                  <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${theme.topBar}`} />
 
-                  <div className="space-y-4 pt-1">
+                  <div className="space-y-2.5 pt-0.5">
                     {/* Top Identity Row */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div
-                        onClick={() => openPublicProfile(acc.id)}
-                        className="flex items-center gap-3.5 cursor-pointer group min-w-0"
-                      >
-                        <div className={`p-0.5 rounded-2xl bg-gradient-to-br ${theme.avatarRing} shadow-xs shrink-0`}>
-                          {p.avatarUrl ? (
-                            <img
-                              src={p.avatarUrl}
-                              alt={p.name}
-                              referrerPolicy="no-referrer"
-                              className="w-14 h-14 rounded-xl object-cover border-2 border-white shrink-0"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-xl bg-slate-900 text-white text-lg font-extrabold flex items-center justify-center shrink-0">
-                              {p.name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-base font-extrabold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">
-                              {p.name}
-                            </h3>
-                            {isSelf && (
-                              <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 text-[10px] font-extrabold">
-                                You
-                              </span>
-                            )}
-                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/70 text-[10px] font-bold">
-                              {p.relocationStatus || 'Exploring Options'}
-                            </span>
+                    <div
+                      onClick={() => openPublicProfile(acc.id)}
+                      className="flex items-start gap-2.5 cursor-pointer group min-w-0"
+                    >
+                      <div className={`p-0.5 rounded-xl bg-gradient-to-br ${theme.avatarRing} shadow-2xs shrink-0`}>
+                        {p.avatarUrl ? (
+                          <img
+                            src={p.avatarUrl}
+                            alt={p.name}
+                            referrerPolicy="no-referrer"
+                            className="w-11 h-11 rounded-[10px] object-cover border border-white shrink-0"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-[10px] bg-slate-900 text-white text-sm font-extrabold flex items-center justify-center shrink-0">
+                            {p.name.charAt(0)}
                           </div>
-
-                          {p.occupationOrBackground && (
-                            <p className="text-xs text-slate-600 truncate flex items-center gap-1 mt-0.5 font-medium">
-                              <Briefcase className="w-3 h-3 text-amber-500 shrink-0" />
-                              <span className="truncate">{p.occupationOrBackground}</span>
-                            </p>
-                          )}
-
-                          {/* Origin & Residing */}
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-1">
-                            <span className="font-medium text-slate-700">
-                              {getWorldCountryFlag(p.originCountry)} {p.originCountry}
-                            </span>
-                            <span aria-hidden="true" className="text-slate-400">→</span>
-                            <span className="font-bold text-teal-800">
-                              {getWorldCountryFlag(p.residingCountry || p.originCountry)}{' '}
-                              {p.originCity ? `${p.originCity}, ` : ''}
-                              {p.residingCountry || p.originCountry}
-                            </span>
-                          </div>
-                        </div>
+                        )}
                       </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">
+                            {p.name}
+                          </h3>
+                          {isSelf && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-900 text-[9px] font-extrabold shrink-0">
+                              You
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-0.5">
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200/70 text-[10px] font-bold leading-tight truncate max-w-full">
+                            {p.relocationStatus || 'Exploring Options'}
+                          </span>
+                        </div>
+
+                        {p.occupationOrBackground && (
+                          <p className="text-[11px] text-slate-600 truncate flex items-center gap-1 mt-1 font-medium">
+                            <Briefcase className="w-3 h-3 text-amber-500 shrink-0" />
+                            <span className="truncate">{p.occupationOrBackground}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Origin & Residing Strip */}
+                    <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600 bg-slate-50/90 border border-slate-200/70 rounded-lg px-2.5 py-1">
+                      <span className="font-medium text-slate-700 truncate">
+                        {getWorldCountryFlag(p.originCountry)} {p.originCountry}
+                      </span>
+                      <span aria-hidden="true" className="text-slate-400">→</span>
+                      <span className="font-bold text-teal-800 truncate">
+                        {getWorldCountryFlag(p.residingCountry || p.originCountry)}{' '}
+                        {p.originCity ? `${p.originCity}, ` : ''}
+                        {p.residingCountry || p.originCountry}
+                      </span>
                     </div>
 
                     {/* Bio */}
                     {p.bio && (
-                      <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 font-medium">
+                      <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 font-medium">
                         {p.bio}
                       </p>
                     )}
 
                     {/* Countries Visited Strip */}
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-indigo-50/40 border border-teal-200/70 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-extrabold text-teal-950 flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-teal-600" />
-                          <span>Countries Visited ({visited.length})</span>
+                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-indigo-50/40 border border-teal-200/70 space-y-1.5">
+                      <div className="flex items-center justify-between gap-1 text-[11px]">
+                        <span className="font-extrabold text-teal-950 flex items-center gap-1 truncate">
+                          <Globe className="w-3 h-3 text-teal-600 shrink-0" />
+                          <span>Visited ({visited.length})</span>
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 font-bold text-[10px]">
-                          {p.preferredClimate || 'Mediterranean'} Climate
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-100/80 text-amber-900 font-bold text-[9px] shrink-0">
+                          {p.preferredClimate || 'Mediterranean'}
                         </span>
                       </div>
 
                       {visited.length === 0 ? (
-                        <p className="text-[11px] text-slate-400 italic">
+                        <p className="text-[10px] text-slate-400 italic">
                           Planning initial scouting trips
                         </p>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                          {visited.map(v => (
+                        <div className="flex flex-wrap items-center gap-1 text-[10px]">
+                          {visited.slice(0, 3).map(v => (
                             <span
                               key={v.id}
-                              className="px-2 py-0.5 rounded-lg bg-white/90 border border-teal-200/80 text-slate-800 font-semibold shadow-2xs"
+                              className="px-1.5 py-0.5 rounded-md bg-white/90 border border-teal-200/80 text-slate-800 font-semibold shadow-2xs truncate max-w-full"
                             >
                               {v.flag || getWorldCountryFlag(v.countryName)} {v.countryName}{' '}
-                              <span className="text-indigo-600 font-mono text-[10px]">
+                              <span className="text-indigo-600 font-mono text-[9px]">
                                 ({v.yearVisited})
                               </span>
                             </span>
                           ))}
+                          {visited.length > 3 && (
+                            <span className="text-[10px] font-bold text-teal-800 px-1">
+                              +{visited.length - 3}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
 
                     {/* Languages Known & Interests Summary */}
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-1.5 text-[11px]">
                       {/* Languages Known */}
-                      <div className="flex items-start gap-2">
-                        <Languages className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
-                        <div className="flex flex-wrap items-center gap-1.5 text-slate-600">
-                          <span className="font-bold text-slate-800">Languages:</span>
+                      <div className="flex items-start gap-1.5">
+                        <Languages className="w-3 h-3 text-indigo-600 shrink-0 mt-0.5" />
+                        <div className="flex flex-wrap items-center gap-1 text-slate-600 min-w-0">
                           {languages.length === 0 ? (
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 font-semibold text-[11px]">
+                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-900 font-semibold text-[10px]">
                               English
                             </span>
                           ) : (
-                            languages.map(l => (
+                            languages.slice(0, 3).map(l => (
                               <span
                                 key={l.id}
-                                className="px-2 py-0.5 rounded-md bg-indigo-50/80 border border-indigo-200/70 text-indigo-950 font-semibold text-[11px]"
+                                className="px-1.5 py-0.5 rounded-md bg-indigo-50/80 border border-indigo-200/70 text-indigo-950 font-semibold text-[10px]"
                               >
                                 {l.language}{' '}
                                 <span className="text-indigo-600 font-normal">({l.proficiency})</span>
@@ -465,21 +448,20 @@ export const PublicMemberDirectory: React.FC = () => {
 
                       {/* Interests */}
                       {interests.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                          <div className="flex flex-wrap items-center gap-1.5 text-slate-600">
-                            <span className="font-bold text-slate-800">Interests:</span>
-                            {interests.slice(0, 4).map(interest => (
+                        <div className="flex items-start gap-1.5">
+                          <Heart className="w-3 h-3 text-rose-500 shrink-0 mt-0.5" />
+                          <div className="flex flex-wrap items-center gap-1 text-slate-600 min-w-0">
+                            {interests.slice(0, 3).map(interest => (
                               <span
                                 key={interest}
-                                className="px-2 py-0.5 rounded-md bg-rose-50/80 border border-rose-200/70 text-rose-900 font-semibold text-[11px]"
+                                className="px-1.5 py-0.5 rounded-md bg-rose-50/80 border border-rose-200/70 text-rose-900 font-semibold text-[10px]"
                               >
                                 {interest}
                               </span>
                             ))}
-                            {interests.length > 4 && (
-                              <span className="text-[11px] font-bold text-slate-400">
-                                +{interests.length - 4} more
+                            {interests.length > 3 && (
+                              <span className="text-[10px] font-bold text-slate-400">
+                                +{interests.length - 3}
                               </span>
                             )}
                           </div>
@@ -489,15 +471,15 @@ export const PublicMemberDirectory: React.FC = () => {
                   </div>
 
                   {/* Action Footer: View Public Profile & Send Personal Message */}
-                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => openPublicProfile(acc.id)}
-                      className="px-3.5 py-2 rounded-xl border border-indigo-200/90 hover:border-indigo-300 bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-950 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      className="px-2.5 py-1.5 rounded-xl border border-indigo-200/90 hover:border-indigo-300 bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-950 text-[11px] font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>View Public Profile</span>
+                      <ExternalLink className="w-3 h-3 text-indigo-600 shrink-0" />
+                      <span>Profile</span>
                     </motion.button>
 
                     {!isSelf && (
@@ -521,10 +503,10 @@ export const PublicMemberDirectory: React.FC = () => {
                             }
                           );
                         }}
-                        className={`px-4 py-2 rounded-xl bg-gradient-to-r ${theme.msgBtn} text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap`}
+                        className={`flex-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r ${theme.msgBtn} text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap`}
                       >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>{hasExistingChat ? 'Continue Chat' : 'Send Personal Message'}</span>
+                        <MessageCircle className="w-3 h-3 shrink-0" />
+                        <span>{hasExistingChat ? 'Continue Chat' : 'Message'}</span>
                       </motion.button>
                     )}
                   </div>
