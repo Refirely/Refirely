@@ -334,56 +334,98 @@ export function calculateUserLanguageCount(profile?: Partial<UserProfile> | null
 }
 
 /**
- * Resolves the user's signup sequence number (1-based index)
+ * Pre-seeded system test / demo expat persona IDs.
+ * These system-created test users are excluded from the Early Pioneer / First 10 Pioneer cohorts
+ * so that founding pioneer badges are strictly reserved for real signups.
+ */
+export const SYSTEM_TEST_USER_IDS = new Set<string>([
+  'usr-elena',
+  'usr-marcus',
+  'usr-arthur',
+  'usr-margaret',
+  'usr-david',
+  'usr-carlos',
+]);
+
+export function isSystemTestAccount(
+  accountOrId?: string | Partial<UserAccount> | Partial<UserProfile> | null
+): boolean {
+  if (!accountOrId) return false;
+  if (typeof accountOrId === 'string') {
+    const cleanId = accountOrId.trim().toLowerCase();
+    return SYSTEM_TEST_USER_IDS.has(cleanId);
+  }
+  const id = (accountOrId.id || (accountOrId as any).profile?.id || '').trim().toLowerCase();
+  if (SYSTEM_TEST_USER_IDS.has(id)) return true;
+  const email = (accountOrId.email || (accountOrId as any).profile?.email || '').trim().toLowerCase();
+  if (email.endsWith('@expats.io') || email.endsWith('@nomadretiree.org')) return true;
+  return false;
+}
+
+/**
+ * Resolves the user's real signup sequence number (1-based index).
+ * System-created test accounts return 0 (ineligible for Early Pioneer / First 10 Pioneer).
  */
 export function resolveUserSignupNumber(
   accountOrProfileId?: string,
   allAccounts?: UserAccount[],
   explicitSignupNumber?: number
 ): number {
+  if (!accountOrProfileId) return 0;
+  const cleanId = accountOrProfileId.trim().toLowerCase();
+  if (cleanId === 'guest' || isSystemTestAccount(cleanId)) {
+    return 0;
+  }
+
+  // Also check if the matching account object in allAccounts is a system test user
+  if (allAccounts && allAccounts.length > 0) {
+    const matchedAcc = allAccounts.find(
+      a => a.id.toLowerCase() === cleanId || a.profile?.id?.toLowerCase() === cleanId
+    );
+    if (matchedAcc && isSystemTestAccount(matchedAcc)) {
+      return 0;
+    }
+  }
+
   if (explicitSignupNumber && explicitSignupNumber > 0) {
     return explicitSignupNumber;
   }
-  if (!accountOrProfileId) return 999;
 
-  // Preset known order for default accounts
-  const KNOWN_ORDER: Record<string, number> = {
-    'usr-ganesh': 1,
-    'usr-elena': 2,
-    'usr-marcus': 3,
-    'usr-arthur': 4,
-    'usr-margaret': 5,
-    'usr-david': 6,
-    'usr-carlos': 7,
-  };
-
-  if (KNOWN_ORDER[accountOrProfileId]) {
-    return KNOWN_ORDER[accountOrProfileId];
+  // Primary founding admin account is always Real Signup #1
+  if (cleanId === 'usr-ganesh') {
+    return 1;
   }
 
   if (allAccounts && allAccounts.length > 0) {
-    const sorted = [...allAccounts].sort((a, b) => {
+    // Only count real user signups (exclude guest and system-created test personas)
+    const realAccounts = allAccounts.filter(
+      a => a && a.id && a.id !== 'guest' && !isSystemTestAccount(a)
+    );
+    const sorted = [...realAccounts].sort((a, b) => {
+      if (a.id === 'usr-ganesh') return -1;
+      if (b.id === 'usr-ganesh') return 1;
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return dateA - dateB;
     });
     const foundIdx = sorted.findIndex(
-      a => a.id === accountOrProfileId || a.profile?.id === accountOrProfileId
+      a => a.id.toLowerCase() === cleanId || a.profile?.id?.toLowerCase() === cleanId
     );
     if (foundIdx >= 0) {
       return foundIdx + 1;
     }
+    return sorted.length + 1;
   }
 
-  return 8; // Default fallback for early custom accounts
+  return 2; // Default fallback for real custom signups
 }
 
 /**
  * Resolves the clean, non-individual cohort name (e.g. "First 10 Pioneer", "First 50 Pioneer")
- * instead of exposing raw individual numbers.
+ * instead of exposing raw individual numbers. Returns null for system test users (signupNumber <= 0).
  */
 export function getPioneerCohortLabel(signupNumber: number, earlyPioneerThreshold = 100): string | null {
-  if (signupNumber > earlyPioneerThreshold) return null;
+  if (!signupNumber || signupNumber <= 0 || signupNumber > earlyPioneerThreshold) return null;
   if (signupNumber <= 10) return 'First 10 Pioneer';
   if (signupNumber <= 50) return 'First 50 Pioneer';
   if (signupNumber <= 100) return 'First 100 Pioneer';
@@ -502,7 +544,7 @@ export function getUserEarnedBadges(
     (account as any)?.signupNumber || (profile as any)?.signupNumber
   );
 
-  if (pioneerDef?.tiers && signupNumber <= earlyPioneerThreshold) {
+  if (pioneerDef?.tiers && signupNumber > 0 && signupNumber <= earlyPioneerThreshold) {
     const qualifyingTiers = pioneerDef.tiers
       .filter(t => signupNumber <= t.threshold)
       .sort((a, b) => b.level - a.level);
@@ -620,14 +662,14 @@ export function getAllBadgesProgress(
     }
 
     if (badge.id === 'early-pioneer' && badge.tiers) {
-      const isAchieved = signupNumber <= earlyPioneerThreshold;
+      const isAchieved = signupNumber > 0 && signupNumber <= earlyPioneerThreshold;
       const qualifyingTiers = badge.tiers
-        .filter(t => signupNumber <= t.threshold)
+        .filter(t => signupNumber > 0 && signupNumber <= t.threshold)
         .sort((a, b) => b.level - a.level);
       const highestAchieved = isAchieved ? qualifyingTiers[0] : undefined;
       const nextTier = highestAchieved
         ? badge.tiers.find(t => t.level === highestAchieved.level + 1)
-        : badge.tiers.slice().reverse().find(t => signupNumber <= t.threshold) || badge.tiers[0];
+        : badge.tiers.slice().reverse().find(t => signupNumber > 0 && signupNumber <= t.threshold) || badge.tiers[0];
 
       return {
         badge,
@@ -636,14 +678,14 @@ export function getAllBadgesProgress(
         nextTier,
         currentValue: signupNumber,
         targetValue: highestAchieved ? highestAchieved.threshold : earlyPioneerThreshold,
-        progressPercent: isAchieved ? 100 : Math.min(100, Math.round((earlyPioneerThreshold / Math.max(1, signupNumber)) * 100)),
-        remainingToNextTier: isAchieved ? 0 : signupNumber - earlyPioneerThreshold,
+        progressPercent: isAchieved ? 100 : signupNumber > 0 ? Math.min(100, Math.round((earlyPioneerThreshold / Math.max(1, signupNumber)) * 100)) : 0,
+        remainingToNextTier: isAchieved ? 0 : signupNumber > 0 ? signupNumber - earlyPioneerThreshold : earlyPioneerThreshold,
         allTiersWithStatus: badge.tiers
           .slice()
           .sort((a, b) => b.level - a.level)
           .map(t => ({
             tier: t,
-            isAchieved: signupNumber <= t.threshold && signupNumber <= earlyPioneerThreshold,
+            isAchieved: signupNumber > 0 && signupNumber <= t.threshold && signupNumber <= earlyPioneerThreshold,
             isCurrent: highestAchieved?.id === t.id,
           })),
       };
