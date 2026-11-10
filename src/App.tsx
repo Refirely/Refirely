@@ -22,10 +22,11 @@ import { FeedbackWidget } from './components/FeedbackWidget';
 import { FontThemeStudio } from './components/FontThemeStudio';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandKitModal } from './components/BrandKitModal';
+import { BadgeCodexModal } from './components/BadgeCodexModal';
 import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { initGoogleAnalytics, trackPageView } from './utils/analytics';
-import { Compass, Shield, Download, Sparkles } from 'lucide-react';
+import { Compass, Shield, Download, Sparkles, Award } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const {
@@ -40,6 +41,10 @@ const MainContent: React.FC = () => {
     isAuthenticated,
     currentUserId,
     currentPersona,
+    isBadgeModalOpen,
+    setIsBadgeModalOpen,
+    openBadgeModal,
+    badgeModalCategory,
   } = useApp();
 
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -127,6 +132,11 @@ const MainContent: React.FC = () => {
       <BrandKitModal isOpen={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
       <FeedbackWidget />
       <FontThemeStudio />
+      <BadgeCodexModal
+        isOpen={isBadgeModalOpen}
+        onClose={() => setIsBadgeModalOpen(false)}
+        initialCategory={badgeModalCategory}
+      />
 
       {/* Multi-Colored Elegant Footer */}
       <footer className="relative bg-white text-slate-600 border-t border-indigo-100 text-xs py-12 overflow-hidden">
@@ -164,13 +174,22 @@ const MainContent: React.FC = () => {
               </ul>
             </div>
 
-            {/* Col 3: Features */}
+            {/* Col 3: Features & Honors */}
             <div className="space-y-2">
               <span className="font-bold text-slate-900 block mb-2 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                 <span>Platform Features</span>
               </span>
               <ul className="space-y-1.5">
+                <li>
+                  <button
+                    onClick={() => openBadgeModal('all')}
+                    className="hover:text-amber-600 hover:underline transition-colors flex items-center gap-1.5 font-bold text-amber-700 cursor-pointer"
+                  >
+                    <Award className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Expat Badges &amp; Honors Guide 🏅</span>
+                  </button>
+                </li>
                 <li><a href={getViewUrl('landing')} onClick={(e) => handleSpaViewClick(e, 'landing')} className="hover:text-orange-600 hover:underline transition-colors">Home / Overview</a></li>
                 <li><a href={getViewUrl('explore')} onClick={(e) => handleSpaViewClick(e, 'explore')} className="hover:text-orange-600 hover:underline transition-colors">Haven Directory &amp; Filters</a></li>
                 <li><a href={getViewUrl('compare')} onClick={(e) => handleSpaViewClick(e, 'compare')} className="hover:text-orange-600 hover:underline transition-colors">Side-by-Side Compare Matrix</a></li>
@@ -239,7 +258,15 @@ const MainContent: React.FC = () => {
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-3">
             <span>© 2026 ReFirely Global Relocation Intelligence. All rights reserved.</span>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => openBadgeModal('all')}
+                className="text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Award className="w-3 h-3 text-amber-500" />
+                <span>Expat Badges &amp; Honors</span>
+              </button>
+              <span aria-hidden="true">·</span>
               <span className="text-orange-600 font-medium">Verified Immigration Standards</span>
               <span aria-hidden="true">·</span>
               <span className="text-slate-600">Direct Expat Connections</span>

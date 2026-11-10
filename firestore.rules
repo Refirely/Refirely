@@ -53,7 +53,9 @@ service cloud.firestore {
         data.name.size() <= 100 &&
         (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
         (!('activeAccountId' in data) || (data.activeAccountId is string && data.activeAccountId.size() <= 128)) &&
-        (!('role' in data) || data.role in ['member', 'admin']);
+        (!('role' in data) || data.role in ['member', 'admin']) &&
+        (!('signupNumber' in data) || data.signupNumber is number) &&
+        (!('badges' in data) || (data.badges is list && data.badges.size() <= 50));
     }
 
     function isValidSavedAccount(ownerUid, accountId, data) {
@@ -64,6 +66,7 @@ service cloud.firestore {
         data.name.size() <= 100 &&
         (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
         (!('username' in data) || (data.username is string && data.username.size() <= 64)) &&
+        (!('signupNumber' in data) || data.signupNumber is number) &&
         data.profile is map;
     }
 
@@ -271,21 +274,29 @@ service cloud.firestore {
       allow update, delete: if isBootstrappedAdmin();
     }
 
-    // 8. Top-level /platformSettings/{settingId} collection (Publicly readable theme/typography config, writable strictly by Bootstrapped Admin)
+    // 8. Top-level /platformSettings/{settingId} collection (Publicly readable typography & badge config, writable strictly by Bootstrapped Admin)
     match /platformSettings/{settingId} {
       allow get: if isValidId(settingId);
       allow list: if false;
       allow create, update: if isBootstrappedAdmin() &&
         isValidId(settingId) &&
         incoming().id == settingId &&
-        incoming().presetId is string && incoming().presetId.size() > 0 && incoming().presetId.size() <= 64 &&
-        incoming().displayCss is string && incoming().displayCss.size() > 0 && incoming().displayCss.size() <= 200 &&
-        incoming().bodyCss is string && incoming().bodyCss.size() > 0 && incoming().bodyCss.size() <= 200 &&
-        incoming().monoCss is string && incoming().monoCss.size() > 0 && incoming().monoCss.size() <= 200 &&
-        incoming().headingTracking is string && incoming().headingTracking.size() <= 20 &&
-        incoming().bodyTracking is string && incoming().bodyTracking.size() <= 20 &&
         incoming().updatedAt is string && incoming().updatedAt.size() <= 40 &&
-        (!('updatedBy' in incoming()) || (incoming().updatedBy is string && incoming().updatedBy.size() <= 150));
+        (!('updatedBy' in incoming()) || (incoming().updatedBy is string && incoming().updatedBy.size() <= 150)) &&
+        (
+          (settingId == 'typography' &&
+           incoming().presetId is string && incoming().presetId.size() > 0 && incoming().presetId.size() <= 64 &&
+           incoming().displayCss is string && incoming().displayCss.size() > 0 && incoming().displayCss.size() <= 200 &&
+           incoming().bodyCss is string && incoming().bodyCss.size() > 0 && incoming().bodyCss.size() <= 200 &&
+           incoming().monoCss is string && incoming().monoCss.size() > 0 && incoming().monoCss.size() <= 200 &&
+           incoming().headingTracking is string && incoming().headingTracking.size() <= 20 &&
+           incoming().bodyTracking is string && incoming().bodyTracking.size() <= 20)
+          ||
+          (settingId == 'badges' &&
+           incoming().earlyPioneerThreshold is number &&
+           incoming().earlyPioneerThreshold >= 1 &&
+           incoming().earlyPioneerThreshold <= 100000)
+        );
       allow delete: if isBootstrappedAdmin() && isValidId(settingId);
     }
   }

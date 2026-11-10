@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
+import { getUserEarnedBadges } from '../data/badgeDefinitions';
+import { BadgePill } from './BadgePill';
 import {
   Users,
   Search,
@@ -14,6 +16,7 @@ import {
   ExternalLink,
   RotateCcw,
   Sparkles,
+  Award,
 } from 'lucide-react';
 
 const MEMBER_CARD_THEMES = [
@@ -52,6 +55,8 @@ export const PublicMemberDirectory: React.FC = () => {
     isAuthenticated,
     openAuthModal,
     dmThreads,
+    earlyPioneerThreshold,
+    openBadgeModal,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -247,12 +252,21 @@ export const PublicMemberDirectory: React.FC = () => {
             })}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-slate-500 shrink-0">
-            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-            <span>
-              Showing <strong className="text-slate-900 font-mono">{filteredMembers.length}</strong> of{' '}
-              <strong className="text-slate-900 font-mono">{publicMemberAccounts.length}</strong> Verified Expats
-            </span>
+          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 shrink-0">
+            <button
+              onClick={() => openBadgeModal('all')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition-colors cursor-pointer shadow-2xs"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-600" />
+              <span>Expat Badges</span>
+            </button>
+            <div className="hidden sm:flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+              <span>
+                Showing <strong className="text-slate-900 font-mono">{filteredMembers.length}</strong> of{' '}
+                <strong className="text-slate-900 font-mono">{publicMemberAccounts.length}</strong> Verified Expats
+              </span>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -290,6 +304,7 @@ export const PublicMemberDirectory: React.FC = () => {
               const languages = p.languagesKnown || [];
               const interests = p.interests || [];
               const isSelf = acc.id === currentUserId;
+              const earnedBadges = getUserEarnedBadges(p, acc, earlyPioneerThreshold, publicMemberAccounts);
               const hasExistingChat = dmThreads.some(
                 t =>
                   t.peerUserId === acc.id ||
@@ -363,6 +378,20 @@ export const PublicMemberDirectory: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Earned Honors & Badges Row */}
+                    {earnedBadges.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                        {earnedBadges.slice(0, 3).map(b => (
+                          <BadgePill
+                            key={b.tierId}
+                            badge={b}
+                            size="xs"
+                            onClick={() => openBadgeModal(b.category)}
+                          />
+                        ))}
+                      </div>
+                    )}
 
                     {/* Origin & Residing Strip */}
                     <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600 bg-slate-50/90 border border-slate-200/70 rounded-lg px-2.5 py-1">

@@ -1,3 +1,6 @@
+import type { EarnedBadge } from './badges';
+export * from './badges';
+
 export type Region =
   | 'Europe'
   | 'Southeast Asia'
@@ -223,6 +226,7 @@ export interface UserAccount {
   password?: string;
   name: string;
   createdAt: string;
+  signupNumber?: number;
   profile: UserProfile;
   checklist?: RelocationChecklistTask[];
   journalEntries?: Record<string, CountryJournalEntry>;
@@ -331,6 +335,8 @@ export interface UserProfile {
   travelHistory?: VisitedCountry[];
   finances?: UserFinancialPortfolio;
   role: 'member' | 'admin';
+  signupNumber?: number;
+  badges?: EarnedBadge[];
 }
 
 export interface Comment {

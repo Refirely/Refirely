@@ -91,6 +91,14 @@
           "type": "array",
           "description": "List of RSVPed meetup IDs"
         },
+        "signupNumber": {
+          "type": "number",
+          "description": "Registration sequence rank number (e.g. 1 for first member)"
+        },
+        "badges": {
+          "type": "array",
+          "description": "Earned profile honors and badges (Globetrotter, Polyglot, Early Pioneer)"
+        },
         "updatedAt": {
           "type": "string",
           "description": "ISO timestamp of last profile update"
@@ -133,6 +141,10 @@
           "type": "string",
           "description": "Creation date string",
           "maxLength": 40
+        },
+        "signupNumber": {
+          "type": "number",
+          "description": "Registration sequence rank number"
         },
         "updatedAt": {
           "type": "string",
@@ -524,6 +536,33 @@
         "bodyTracking",
         "updatedAt"
       ]
+    },
+    "PlatformBadgesConfig": {
+      "title": "PlatformBadgesConfig",
+      "description": "Global badge thresholds and configuration such as Early Pioneer cutoff, managed by administrators and publicly readable",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Configuration identifier matching 'badges'",
+          "maxLength": 64
+        },
+        "earlyPioneerThreshold": {
+          "type": "number",
+          "description": "Maximum registered user count threshold for the Early Pioneer badge (default 100)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last configuration update",
+          "maxLength": 40
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Admin identifier who updated the threshold",
+          "maxLength": 150
+        }
+      },
+      "required": ["id", "earlyPioneerThreshold", "updatedAt"]
     }
   },
   "firestore": {

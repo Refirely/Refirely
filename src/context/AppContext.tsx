@@ -4,7 +4,7 @@ import {
   RelocationChecklistTask, Region, ClimateCategory, VisitedCountry, KnownLanguage, 
   UserAccount, CountryJournalEntry, InterestLevel, UserFinancialPortfolio, SortByType,
   InAppMessageNotification, FeedbackReport, FeedbackType, FeedbackStatus, FeedbackPriority,
-  FireNumbersRating, DossierDownloadRecord, Persona
+  FireNumbersRating, DossierDownloadRecord, Persona, BadgeCategory
 } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
@@ -34,7 +34,7 @@ import {
   signInWithEmailAndPassword,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 
 export type AppView = 
   | 'landing'
@@ -112,6 +112,15 @@ interface AppContextType {
   editProfileInitialTab: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests';
   setEditProfileInitialTab: (tab: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests') => void;
   openEditProfile: (tab?: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests') => void;
+
+  // Badges & Honors
+  isBadgeModalOpen: boolean;
+  setIsBadgeModalOpen: (open: boolean) => void;
+  openBadgeModal: (category?: BadgeCategory | 'all' | 'user') => void;
+  badgeModalCategory: BadgeCategory | 'all' | 'user';
+  setBadgeModalCategory: (cat: BadgeCategory | 'all' | 'user') => void;
+  earlyPioneerThreshold: number;
+  updateEarlyPioneerThreshold: (newThreshold: number) => Promise<{ success: boolean; error?: string }>;
 
   // Public Member Profiles (Strictly Non-Admin Registered Users)
   publicMemberAccounts: UserAccount[];
@@ -509,6 +518,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openEditProfile = (tab: 'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests' = 'about') => {
     setEditProfileInitialTab(tab);
     setIsEditProfileOpen(true);
+  };
+
+  // Badges & Honors State
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
+  const [badgeModalCategory, setBadgeModalCategory] = useState<BadgeCategory | 'all' | 'user'>('all');
+  const [earlyPioneerThreshold, setEarlyPioneerThreshold] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_pioneer_threshold`);
+      return saved ? Math.max(1, parseInt(saved, 10)) : 100;
+    } catch {
+      return 100;
+    }
+  });
+
+  const openBadgeModal = (category: BadgeCategory | 'all' | 'user' = 'all') => {
+    setBadgeModalCategory(category);
+    setIsBadgeModalOpen(true);
+  };
+
+  // Listen to /platformSettings/badges from Firestore
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const docRef = doc(db, 'platformSettings', 'badges');
+      getDoc(docRef).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (typeof data.earlyPioneerThreshold === 'number' && data.earlyPioneerThreshold > 0) {
+            setEarlyPioneerThreshold(data.earlyPioneerThreshold);
+            try {
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_pioneer_threshold`, String(data.earlyPioneerThreshold));
+            } catch {}
+          }
+        }
+      }).catch(() => {});
+
+      unsubscribe = onSnapshot(docRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (typeof data.earlyPioneerThreshold === 'number' && data.earlyPioneerThreshold > 0) {
+            setEarlyPioneerThreshold(data.earlyPioneerThreshold);
+            try {
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_pioneer_threshold`, String(data.earlyPioneerThreshold));
+            } catch {}
+          }
+        }
+      }, () => {});
+    } catch {}
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const updateEarlyPioneerThreshold = async (newThreshold: number): Promise<{ success: boolean; error?: string }> => {
+    const val = Math.max(1, Math.min(100000, Math.round(newThreshold)));
+    setEarlyPioneerThreshold(val);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_pioneer_threshold`, String(val));
+    } catch {}
+
+    try {
+      const docRef = doc(db, 'platformSettings', 'badges');
+      await setDoc(
+        docRef,
+        {
+          id: 'badges',
+          earlyPioneerThreshold: val,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.currentUser?.email || userProfile.email || 'admin',
+        },
+        { merge: true }
+      );
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error saving pioneer threshold:', err);
+      return { success: false, error: err.message };
+    }
   };
 
   // Public Member Profile modal state (excludes admin role / admin user)
@@ -4064,6 +4150,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         editProfileInitialTab,
         setEditProfileInitialTab,
         openEditProfile,
+        isBadgeModalOpen,
+        setIsBadgeModalOpen,
+        openBadgeModal,
+        badgeModalCategory,
+        setBadgeModalCategory,
+        earlyPioneerThreshold,
+        updateEarlyPioneerThreshold,
         publicMemberAccounts,
         selectedPublicProfileId,
         openPublicProfile,

@@ -9,15 +9,25 @@ import {
   Database, Download, RefreshCw, Eye, UserCheck, Mail,
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
   ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus,
-  IndianRupee, MessageCircle, LogOut, Copy, Check, FlaskConical
+  IndianRupee, MessageCircle, LogOut, Copy, Check, FlaskConical, Languages,
+  Crown, Star
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 import { AdminSocialPromoStudio } from './AdminSocialPromoStudio';
 import { AdminAccountingModule } from './AdminAccountingModule';
 import { AdminDossierDownloadsModule } from './AdminDossierDownloadsModule';
+import {
+  getUserEarnedBadges,
+  BADGE_DEFINITIONS,
+  calculateUserCountryCount,
+  resolveUserSignupNumber,
+  getPioneerCohortLabel,
+} from '../data/badgeDefinitions';
+import { BadgePill } from './BadgePill';
+import { BadgeShowcaseCard } from './BadgeShowcase';
 
-type AdminTab = 'overview' | 'users' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'downloads' | 'cloud';
+type AdminTab = 'overview' | 'users' | 'badges' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'downloads' | 'cloud';
 
 interface AdminDashboardProps {
   onOpenBrandKit?: () => void;
@@ -56,9 +66,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     setActiveDmThreadId,
     switchAccount,
     dossierDownloads,
+    earlyPioneerThreshold,
+    updateEarlyPioneerThreshold,
+    openBadgeModal,
+    openPublicProfile,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [pioneerInput, setPioneerInput] = useState<string>(String(earlyPioneerThreshold));
+  const [isSavingThreshold, setIsSavingThreshold] = useState(false);
+
+  React.useEffect(() => {
+    setPioneerInput(String(earlyPioneerThreshold));
+  }, [earlyPioneerThreshold]);
+
+  const handleSavePioneerThreshold = async (valToSave?: number | string) => {
+    const rawVal = valToSave !== undefined ? valToSave : pioneerInput;
+    const parsed = typeof rawVal === 'number' ? rawVal : parseInt(String(rawVal).trim(), 10);
+    const targetVal = isNaN(parsed) || parsed < 1 ? 100 : parsed;
+
+    setIsSavingThreshold(true);
+    const res = await updateEarlyPioneerThreshold(targetVal);
+    setIsSavingThreshold(false);
+    if (res.success) {
+      setStatusBanner({
+        type: 'success',
+        message: `Updated Early Pioneer threshold to ${targetVal}. The first ${targetVal} registered accounts now qualify for the Early Pioneer badge!`,
+      });
+    } else {
+      setStatusBanner({
+        type: 'error',
+        message: res.error || 'Failed to update pioneer threshold in Firestore.',
+      });
+    }
+  };
 
   // Country CMS filter state
   const [adminSearch, setAdminSearch] = useState('');
@@ -613,6 +654,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               <span className="text-slate-900 font-semibold">
                 {activeTab === 'overview' && 'All-Modules Executive Snapshot'}
                 {activeTab === 'users' && `Registered Users & Expats (${registeredAccounts.length})`}
+                {activeTab === 'badges' && `Expat Honors & Profile Badges Hub`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
                 {activeTab === 'community' && 'Expats Forum & Meetups Moderation'}
                 {activeTab === 'feedback' && `User Feedback & Bug Reports (${feedbackReports.length})`}
@@ -625,6 +667,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
               {activeTab === 'overview' && 'Platform Governance & All-Modules Snapshot'}
               {activeTab === 'users' && 'Registered Users & Expat Profiles'}
+              {activeTab === 'badges' && 'Expat Honors, Identity Badges & Retention Governance'}
               {activeTab === 'countries' && 'Global Country Dossier Catalog CMS'}
               {activeTab === 'community' && 'Expats Discussion Forum & Meetups'}
               {activeTab === 'feedback' && 'User Feedback, Ideas & Bug Triage'}
@@ -722,7 +765,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                   activeTab === 'overview' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'
                 }`}
               >
-                8
+                9
               </span>
             </button>
 
@@ -744,6 +787,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                 }`}
               >
                 {registeredAccounts.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('badges')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'badges'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Award className="w-4 h-4 text-amber-500" />
+                <span>Honors &amp; Badges</span>
+              </span>
+              <span
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                  activeTab === 'badges' ? 'bg-white/15 text-white' : 'bg-amber-50 text-amber-800'
+                }`}
+              >
+                ≤{earlyPioneerThreshold}
               </span>
             </button>
 
@@ -2095,6 +2159,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                         const netWorth = getUserNetWorth(acc);
                         const isCurrent = acc.id === currentUserId;
                         const langs = (p?.languagesKnown || []).map(l => l.language).join(', ') || 'English';
+                        const signupNum = resolveUserSignupNumber(acc.id, registeredAccounts, acc.signupNumber || p?.signupNumber);
+                        const userBadges = getUserEarnedBadges(p, acc, earlyPioneerThreshold, registeredAccounts);
 
                         return (
                           <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
@@ -2130,8 +2196,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                                   <div className="text-[11px] text-slate-500 font-mono">
                                     {acc.id} {acc.username && acc.username !== acc.id ? `(@${acc.username})` : ''}
                                   </div>
-                                  <div className="text-[10px] text-slate-400">
-                                    Joined {acc.createdAt || '2026-01-01'} · {acc.cloudSynced ? 'Cloud Synced' : 'Local'}
+                                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                    <span>Joined {acc.createdAt || '2026-01-01'}</span>
+                                    {signupNum <= earlyPioneerThreshold && (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 inline-flex items-center gap-1">
+                                        <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                        {getPioneerCohortLabel(signupNum, earlyPioneerThreshold)}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -2177,7 +2249,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                               </div>
                             </td>
 
-                            {/* Col 5: Languages, Shortlist, Trips */}
+                            {/* Col 5: Languages, Shortlist, Trips & Badges */}
                             <td className="py-3.5 px-4">
                               <div className="text-slate-800 truncate max-w-[180px]" title={langs}>
                                 {langs}
@@ -2186,6 +2258,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                                 {p?.savedCountryIds?.length || 0} saved · {p?.appliedVisas?.length || 0} visas ·{' '}
                                 {p?.travelHistory?.length || 0} trips
                               </div>
+                              {userBadges.length > 0 && (
+                                <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                                  {userBadges.map(b => (
+                                    <BadgePill key={b.id} badge={b} size="xs" onClick={() => openBadgeModal(b.category)} />
+                                  ))}
+                                </div>
+                              )}
                             </td>
 
                             {/* Col 6: Budget & Net Worth */}
@@ -2267,6 +2346,395 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* =========================================================
+                TAB: EXPAT HONORS & PROFILE BADGES GOVERNANCE
+            ========================================================= */}
+            {activeTab === 'badges' && (
+              <div className="space-y-6">
+                {/* Header Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-600 mb-1">
+                        <Award className="w-4 h-4" />
+                        <span>Gamification & Community Retention</span>
+                      </div>
+                      <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                        Expat Honors &amp; Profile Badges Governance
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                        Refirely's profile badge ecosystem drives ego-sharing, status recognition, and organic retention across early retirees and digital nomads. Manage live thresholds and inspect member badges.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => openBadgeModal()}
+                        className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>Preview Badge Codex</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Threshold Control: Early Pioneer */}
+                <div className="bg-gradient-to-br from-amber-950 via-slate-900 to-slate-950 text-white rounded-2xl p-6 border border-amber-900/40 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                  <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div className="lg:col-span-7 space-y-3">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Live Cloud Configuration · Stored in Firebase</span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                        Early Pioneer Badge: Member Signup Threshold
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+                        Awarded to the inaugural cohort of registered user accounts and Firebase signups. As Refirely expands, admins can raise or adjust this quota without downtime. All registered users whose signup ordinal is ≤ this threshold automatically gain the Early Pioneer badge.
+                      </p>
+
+                      <div className="flex items-center gap-4 text-xs pt-1">
+                        <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
+                          <span className="text-slate-400">Current Threshold: </span>
+                          <span className="font-bold text-amber-400 font-mono text-sm">{earlyPioneerThreshold}</span>
+                        </div>
+                        <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
+                          <span className="text-slate-400">Registered Accounts: </span>
+                          <span className="font-bold text-emerald-400 font-mono text-sm">{registeredAccounts.length}</span>
+                        </div>
+                        <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
+                          <span className="text-slate-400">Remaining Slots: </span>
+                          <span className="font-bold text-sky-400 font-mono text-sm">
+                            {Math.max(0, earlyPioneerThreshold - registeredAccounts.length)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-5 bg-white/5 border border-white/15 backdrop-blur-md rounded-2xl p-5 space-y-4">
+                      <label className="block text-xs font-bold text-slate-200">
+                        Adjust Early Pioneer Quota
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="100000"
+                          value={pioneerInput}
+                          onChange={e => setPioneerInput(e.target.value)}
+                          className="w-full bg-slate-900 border border-white/20 rounded-xl px-3.5 py-2 text-sm font-mono text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          placeholder="e.g. 100"
+                        />
+                        <button
+                          onClick={() => handleSavePioneerThreshold()}
+                          disabled={isSavingThreshold}
+                          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-black text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {isSavingThreshold ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          )}
+                          <span>Save &amp; Deploy</span>
+                        </button>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] text-slate-400 font-medium">Quick Presets: </span>
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                          {[50, 100, 250, 500, 1000, 2500].map(val => (
+                            <button
+                              key={val}
+                              onClick={() => setPioneerInput(val.toString())}
+                              className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-colors cursor-pointer ${
+                                pioneerInput === val.toString()
+                                  ? 'bg-amber-400 text-slate-950'
+                                  : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                              }`}
+                            >
+                              {val}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge Category Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Globetrotter */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-xs transition-shadow">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold">
+                          <Globe className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">Globetrotter</h4>
+                          <p className="text-[11px] text-slate-500">Tiered (Bronze, Silver, Gold)</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                        3 Tiers
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                      Awarded based on total verified countries visited, lived in, or scouted on Refirely.
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-amber-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-700"></span> Bronze (5+ Countries)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => calculateUserCountryCount(acc.profile) >= 5).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-400"></span> Silver (15+ Countries)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => calculateUserCountryCount(acc.profile) >= 15).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-amber-600 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span> Gold (30+ Countries)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => calculateUserCountryCount(acc.profile) >= 30).length} members
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Polyglot */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-xs transition-shadow">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold">
+                          <Languages className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">Polyglot</h4>
+                          <p className="text-[11px] text-slate-500">Tiered (Bilingual, Tri, Hyper)</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                        3 Tiers
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                      Honors linguistic versatility essential for smooth expatriation, cross-cultural immersion, and local negotiation.
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-blue-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-blue-600"></span> Bilingual (2 Languages)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => (acc.profile?.languagesKnown?.length || 0) === 2).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-purple-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-purple-600"></span> Trilingual (3 Languages)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => (acc.profile?.languagesKnown?.length || 0) === 3).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-indigo-900 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span> Hyperpolyglot (4+ Languages)
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => (acc.profile?.languagesKnown?.length || 0) >= 4).length} members
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Early Pioneer */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-xs transition-shadow">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">Early Pioneer</h4>
+                          <p className="text-[11px] text-slate-500">Inaugural Cohort Exclusive</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                        Special
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                      Honors founding cohorts who joined Refirely in its early growth phases (First 10, First 50, First 100, First 500, First 1,000) preserving member privacy while recognizing early adoption.
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-amber-900 flex items-center gap-1.5">
+                          <Crown className="w-3.5 h-3.5 text-amber-600" /> First 10 Cohort
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => resolveUserSignupNumber(acc.id, registeredAccounts, acc.signupNumber || acc.profile?.signupNumber) <= 10).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-purple-900 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-purple-600" /> First 50 Cohort
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => resolveUserSignupNumber(acc.id, registeredAccounts, acc.signupNumber || acc.profile?.signupNumber) <= 50).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                          <Star className="w-3.5 h-3.5 text-emerald-600" /> First 100 Cohort
+                        </span>
+                        <span className="font-mono font-bold text-slate-700">
+                          {registeredAccounts.filter(acc => resolveUserSignupNumber(acc.id, registeredAccounts, acc.signupNumber || acc.profile?.signupNumber) <= 100).length} members
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="text-slate-600">Active Admin Ceiling</span>
+                        <span className="font-mono font-bold text-amber-800">First {earlyPioneerThreshold} Signups</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Member Honors & Badges Registry Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                  <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                        Member Honors &amp; Badge Portfolio Directory ({registeredAccounts.length} Accounts)
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Live evaluation of member stats against badge requirements, with founding cohort categorization.
+                      </p>
+                    </div>
+                    <div className="text-xs text-slate-500 font-medium">
+                      Live sync with Firestore
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="py-3 px-4">Pioneer Cohort</th>
+                          <th className="py-3 px-4">Expat Member</th>
+                          <th className="py-3 px-4">Countries Visited</th>
+                          <th className="py-3 px-4">Languages Spoken</th>
+                          <th className="py-3 px-4">Active Earned Badges</th>
+                          <th className="py-3 px-4 text-right">Inspect</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {registeredAccounts.map(acc => {
+                          const p = acc.profile;
+                          const signupNum = resolveUserSignupNumber(acc.id, registeredAccounts, acc.signupNumber || p?.signupNumber);
+                          const userBadges = getUserEarnedBadges(p, acc, earlyPioneerThreshold, registeredAccounts);
+                          const countryCount = calculateUserCountryCount(p);
+                          const langs = p?.languagesKnown || [];
+                          const cohortLabel = getPioneerCohortLabel(signupNum, earlyPioneerThreshold);
+
+                          return (
+                            <tr key={acc.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="py-3 px-4">
+                                {cohortLabel ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-950 border border-amber-300 text-[11px] font-bold shadow-2xs">
+                                    <Sparkles className="w-3 h-3 text-amber-600" />
+                                    {cohortLabel}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[11px]">General Member</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-2.5">
+                                  {p?.avatarUrl ? (
+                                    <img
+                                      src={p.avatarUrl}
+                                      alt={acc.name}
+                                      className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                      {acc.name.charAt(0)}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className="font-bold text-slate-900">{acc.name}</div>
+                                    <div className="text-[11px] text-slate-500 font-mono">
+                                      {acc.id} · {acc.profile?.role === 'admin' ? 'Admin' : 'Member'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-mono font-bold text-slate-900">{countryCount}</span>
+                                <span className="text-slate-500 text-[11px] ml-1">countries</span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-mono font-bold text-slate-900">{langs.length}</span>
+                                <span className="text-slate-500 text-[11px] ml-1">
+                                  ({langs.map(l => l.language).slice(0, 2).join(', ')}{langs.length > 2 ? '...' : ''})
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {userBadges.map(b => (
+                                    <BadgePill key={b.id} badge={b} size="sm" onClick={() => openBadgeModal(b.category)} />
+                                  ))}
+                                  {userBadges.length === 0 && (
+                                    <span className="text-slate-400 text-[11px] italic">In progress...</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <button
+                                  onClick={() => openUserInspector(acc, false)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[11px] transition-colors cursor-pointer"
+                                >
+                                  View Dossier
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Future Roadmap & Open Schema Callout */}
+                <div className="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Future Badges Ready for Launch · Open Schema Architecture</span>
+                  </div>
+                  <h4 className="text-base font-bold text-white">
+                    Extensible Gamification Engine
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+                    The Refirely badge system is designed with an open schema in <code className="bg-white/10 px-1 py-0.5 rounded text-amber-300">firebase-blueprint.json</code> and <code className="bg-white/10 px-1 py-0.5 rounded text-amber-300">firestore.rules</code>. Upcoming badges such as <strong>FIRE Vanguard</strong> (for members reaching financial independence targets) and <strong>Scout Master</strong> (for contributors filing destination field reports) are registered in the centralized badge registry and ready for deployment.
+                  </p>
                 </div>
               </div>
             )}
@@ -3088,6 +3556,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                     </div>
                   </div>
                 </div>
+
+                {/* Expat Honors & Profile Badges Showcase */}
+                {(() => {
+                  const dSignupNum = resolveUserSignupNumber(selectedUserAccount.id, registeredAccounts, selectedUserAccount.signupNumber || selectedUserAccount.profile?.signupNumber);
+                  const dBadges = getUserEarnedBadges(selectedUserAccount.profile, selectedUserAccount, earlyPioneerThreshold, registeredAccounts);
+                  return (
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50/70 to-orange-50/40 border border-amber-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-amber-600" />
+                          <span>Expat Honors &amp; Profile Badges ({dBadges.length})</span>
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSelectedUserAccount(null);
+                            openBadgeModal();
+                          }}
+                          className="text-amber-800 hover:text-amber-950 font-semibold text-[11px] underline cursor-pointer"
+                        >
+                          View Badge Codex
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        {dBadges.map(b => (
+                          <BadgePill
+                            key={b.id}
+                            badge={b}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUserAccount(null);
+                              openBadgeModal(b.category);
+                            }}
+                          />
+                        ))}
+                        {dBadges.length === 0 && (
+                          <span className="text-slate-400 text-xs italic">No badges earned yet.</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Travel History Log */}
                 {selectedUserAccount.profile?.travelHistory &&

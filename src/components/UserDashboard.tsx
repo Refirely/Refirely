@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ScoutTrip, ScoutScheduledItineraryItem } from '../types';
 import { DAY_SLOT_OPTIONS, buildGoogleMapsSearchUrl } from '../data/scoutVenueRecommendations';
@@ -9,12 +9,16 @@ import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
 import { FireCalculatorTracker } from './FireCalculatorTracker';
 import { WORLD_COUNTRIES, getWorldCountryFlag, ALL_INTEREST_SUGGESTIONS } from '../data/userAccounts';
+import { getUserEarnedBadges, getAllBadgesProgress } from '../data/badgeDefinitions';
+import { BadgePill } from './BadgePill';
+import { BadgeShowcaseCard, BadgeProgressRow } from './BadgeShowcase';
 import { CountryFlag } from './CountryFlag';
 import {
   User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
   Globe, Languages, Star, MapPin, Camera, Check, Trash2, ExternalLink, BookOpen,
-  TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins, LayoutDashboard, Layers
+  TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins, LayoutDashboard, Layers,
+  Award
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -55,7 +59,15 @@ export const UserDashboard: React.FC = () => {
     toggleInterest,
     currentPersona,
     setCurrentPersona,
+    earlyPioneerThreshold,
+    openBadgeModal,
+    registeredAccounts,
   } = useApp();
+
+  const activeAccount = useMemo(
+    () => registeredAccounts.find(a => a.id === currentUserId) || null,
+    [registeredAccounts, currentUserId]
+  );
 
   // Active dashboard module tab (persisted for smooth navigation)
   const [activeTab, setActiveTab] = useState<UserDashboardTab>(() => {
@@ -410,6 +422,16 @@ export const UserDashboard: React.FC = () => {
   // My RSVP'd meetups
   const rsvpedMeetups = meetups.filter(m => userProfile.rsvpMeetupIds.includes(m.id));
   const journalEntryList = Object.values(journalEntries || {});
+
+  // Badges & Honors Calculations
+  const earnedBadges = React.useMemo(
+    () => getUserEarnedBadges(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts),
+    [userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
+  );
+  const badgesProgress = React.useMemo(
+    () => getAllBadgesProgress(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts),
+    [userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
+  );
 
   // Checklist calculations
   const completedTasks = checklist.filter(t => t.completed).length;
@@ -829,18 +851,18 @@ export const UserDashboard: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => handleSelectTab('profile')}
-              className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-white to-purple-50/70 border border-violet-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+              onClick={() => openBadgeModal('all')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-rose-50/70 border border-amber-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
             >
-              <div className="flex items-center justify-between text-xs text-violet-800 font-bold mb-1">
-                <span>Visited &amp; Profile</span>
-                <Globe className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              <div className="flex items-center justify-between text-xs text-amber-900 font-bold mb-1">
+                <span>Honors &amp; Badges</span>
+                <Award className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
               </div>
               <p className="text-lg font-extrabold text-slate-900 font-mono">
-                {userProfile.travelHistory?.length || 0} Trips
+                {earnedBadges.length} Badges
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                {userProfile.languagesKnown?.length || 0} languages · {userProfile.interests?.length || 0} interests
+                {earnedBadges[0]?.tierName || `${userProfile.travelHistory?.length || 0} Trips · ${userProfile.languagesKnown?.length || 1} Langs`}
               </p>
             </button>
 
@@ -904,6 +926,98 @@ export const UserDashboard: React.FC = () => {
               <span>Open Scout &amp; Hop Planner</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
+          </div>
+
+          {/* Expat Honors & Profile Badges Portfolio */}
+          <div className="bg-white rounded-3xl border border-amber-200/90 p-5 sm:p-7 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-2xs">
+                    <Award className="w-4 h-4" />
+                  </span>
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800">
+                    Community Identity &amp; Prestige Portfolio
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[11px] font-extrabold">
+                    {earnedBadges.length} Earned
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                  Your Expat Honors &amp; Profile Badges
+                </h3>
+                <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                  Badges celebrate your authentic international tenure, visited countries, and multilingual versatility. Your unlocked badges appear on your public directory card and discussion posts.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openBadgeModal('all')}
+                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Open Honors Codex</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEditProfile('travel')}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Log Countries / Langs</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Showcase Grid of Earned Badges */}
+            {earnedBadges.length === 0 ? (
+              <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center space-y-2">
+                <Award className="w-8 h-8 text-amber-500 mx-auto" />
+                <h4 className="text-sm font-extrabold text-slate-900">
+                  Ready to unlock your first Expat Honor?
+                </h4>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Log at least 5 visited countries to earn <strong>Bronze Globetrotter</strong>, or add 2 languages to your profile to unlock <strong>Bilingual Polyglot</strong>!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openEditProfile('travel')}
+                  className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs mt-2"
+                >
+                  Log Scouting Trips
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {earnedBadges.map(badge => (
+                  <BadgeShowcaseCard
+                    key={badge.tierId}
+                    badge={badge}
+                    onOpenCodex={() => openBadgeModal(badge.category)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Active Progression to Next Tiers */}
+            <div className="pt-2 border-t border-slate-100 space-y-2.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                Next Tier Milestones &amp; Progression
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {badgesProgress
+                  .filter(p => !p.badge.comingSoon && p.nextTier)
+                  .map(p => (
+                    <BadgeProgressRow
+                      key={p.badge.id}
+                      progress={p}
+                      onOpenCodex={() => openBadgeModal(p.badge.category)}
+                    />
+                  ))}
+              </div>
+            </div>
           </div>
 
           {/* 6 Interactive Module Summary Cards */}

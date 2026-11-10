@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
+import { getUserEarnedBadges } from '../data/badgeDefinitions';
+import { BadgePill } from './BadgePill';
+import { BadgeShowcaseCard } from './BadgeShowcase';
 import {
   X,
   MapPin,
@@ -24,6 +27,7 @@ import {
   LogIn,
   UserPlus,
   Sparkles,
+  Award,
 } from 'lucide-react';
 
 const VISIT_CARD_ACCENTS = [
@@ -66,6 +70,8 @@ export const PublicProfileModal: React.FC = () => {
     meetups,
     isAuthenticated,
     openAuthModal,
+    earlyPioneerThreshold,
+    openBadgeModal,
   } = useApp();
 
   const [personalMessage, setPersonalMessage] = useState('');
@@ -82,6 +88,12 @@ export const PublicProfileModal: React.FC = () => {
   const visitedCountries = profile.travelHistory || [];
   const languagesKnown = profile.languagesKnown || [];
   const interests = profile.interests || [];
+  const earnedBadges = getUserEarnedBadges(
+    profile,
+    memberAccount,
+    earlyPioneerThreshold,
+    publicMemberAccounts
+  );
 
   // Shared interests with current user
   const viewerInterests = new Set((userProfile.interests || []).map(i => i.toLowerCase()));
@@ -298,6 +310,27 @@ export const PublicProfileModal: React.FC = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Earned Profile Honors & Badges in Header */}
+                  {earnedBadges.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {earnedBadges.map(b => (
+                        <BadgePill
+                          key={b.tierId}
+                          badge={b}
+                          size="sm"
+                          onClick={() => openBadgeModal(b.category)}
+                        />
+                      ))}
+                      <button
+                        onClick={() => openBadgeModal('all')}
+                        className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline ml-1 cursor-pointer flex items-center gap-1"
+                      >
+                        <Award className="w-3 h-3 text-amber-300" />
+                        <span>Honors Codex</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -450,6 +483,50 @@ export const PublicProfileModal: React.FC = () => {
                 </div>
               </div>
             </motion.section>
+
+            {/* Honors & Profile Badges Showcase */}
+            {earnedBadges.length > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
+                className="relative overflow-hidden bg-white rounded-2xl border border-amber-200/90 p-5 sm:p-6 space-y-4 shadow-xs"
+              >
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-rose-500 via-purple-600 to-teal-500" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-2xs">
+                      <Award className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900">
+                        Honors &amp; Profile Badges ({earnedBadges.length})
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Prestige achievements earned through global scouting, multilingual mastery, and founding tenure
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => openBadgeModal('all')}
+                    className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>View Badge Codex</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {earnedBadges.map(badge => (
+                    <BadgeShowcaseCard
+                      key={badge.tierId}
+                      badge={badge}
+                      onOpenCodex={() => openBadgeModal(badge.category)}
+                    />
+                  ))}
+                </div>
+              </motion.section>
+            )}
 
             {/* 2. Countries Visited & Scouting Passport */}
             <motion.section
