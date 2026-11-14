@@ -429,6 +429,261 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   };
 
+  // Helper to check if a string is a guest placeholder that should never overwrite a real Google user's name/email
+  const isGuestPlaceholder = (val?: string | null): boolean => {
+    if (!val) return true;
+    const clean = val.trim().toLowerCase();
+    return (
+      clean === '' ||
+      clean === 'guest' ||
+      clean === 'guest explorer' ||
+      clean === 'guest@refirely.org' ||
+      clean === 'retiree member'
+    );
+  };
+
+  // Format an email prefix (e.g. "rahul.sharma@gmail.com") into a clean display name ("Rahul Sharma")
+  const formatNameFromEmail = (email?: string | null): string => {
+    if (!email) return 'Expat Member';
+    const prefix = email.split('@')[0] || '';
+    const words = prefix
+      .replace(/[._\-+]+/g, ' ')
+      .replace(/\d+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (words.length === 0) return prefix || 'Expat Member';
+    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
+
+  // Helper to merge two VisitedCountry[] arrays without losing logged travel history to a stale empty array
+  const mergeTravelHistoryLists = (
+    primaryList?: VisitedCountry[] | null,
+    secondaryList?: VisitedCountry[] | null
+  ): VisitedCountry[] => {
+    const a = Array.isArray(primaryList) ? primaryList.filter(Boolean) : [];
+    const b = Array.isArray(secondaryList) ? secondaryList.filter(Boolean) : [];
+    if (a.length === 0 && b.length === 0) return [];
+    if (a.length === 0) return b;
+    if (b.length === 0) return a;
+
+    const map = new Map<string, VisitedCountry>();
+    b.forEach(item => {
+      if (!item || !item.countryName) return;
+      const key = item.id || `${item.countryName.trim().toLowerCase()}-${item.yearVisited || ''}`;
+      map.set(key, item);
+    });
+    a.forEach(item => {
+      if (!item || !item.countryName) return;
+      const compositeKey = `${item.countryName.trim().toLowerCase()}-${item.yearVisited || ''}`;
+      for (const [k, existing] of Array.from(map.entries())) {
+        const existingComposite = `${(existing.countryName || '').trim().toLowerCase()}-${existing.yearVisited || ''}`;
+        if (k === item.id || existingComposite === compositeKey) {
+          map.delete(k);
+        }
+      }
+      map.set(item.id || compositeKey, item);
+    });
+    return Array.from(map.values());
+  };
+
+  // Helper to merge two KnownLanguage[] arrays without losing added languages to a stale 1-language default
+  const mergeLanguagesKnownLists = (
+    primaryList?: KnownLanguage[] | null,
+    secondaryList?: KnownLanguage[] | null,
+    fallbackId: string = 'usr'
+  ): KnownLanguage[] => {
+    const a = Array.isArray(primaryList) ? primaryList.filter(l => l && l.language) : [];
+    const b = Array.isArray(secondaryList) ? secondaryList.filter(l => l && l.language) : [];
+    if (a.length === 0 && b.length === 0) {
+      return [{ id: `lang-${fallbackId}`, language: 'English', proficiency: 'Fluent' }];
+    }
+    if (a.length === 0) return b;
+    if (b.length === 0) return a;
+
+    const map = new Map<string, KnownLanguage>();
+    b.forEach(item => {
+      map.set(item.language.trim().toLowerCase(), item);
+    });
+    a.forEach(item => {
+      map.set(item.language.trim().toLowerCase(), item);
+    });
+    return Array.from(map.values());
+  };
+
+  // Helper to merge two UserProfile snapshots so richer travelHistory, languagesKnown, bio, and interests are never lost
+  const mergeUserProfiles = (
+    baseProfile?: Partial<UserProfile> | null,
+    incomingProfile?: Partial<UserProfile> | null,
+    preferIncomingScalar: boolean = true
+  ): UserProfile => {
+    const base = (baseProfile || {}) as Partial<UserProfile>;
+    const inc = (incomingProfile || {}) as Partial<UserProfile>;
+    const primary = preferIncomingScalar ? inc : base;
+    const secondary = preferIncomingScalar ? base : inc;
+
+    const resolvedId = primary.id || secondary.id || 'usr-member';
+
+    let cachedLocalAccProfile: Partial<UserProfile> | null = null;
+    let isTravelExplicitlyCleared = false;
+    try {
+      isTravelExplicitlyCleared =
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_travel_cleared_${resolvedId}`) === 'true';
+      const rawPerAcc = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${resolvedId}`);
+      if (rawPerAcc) {
+        cachedLocalAccProfile = JSON.parse(rawPerAcc);
+      }
+    } catch {}
+
+    const mergedTravel = isTravelExplicitlyCleared
+      ? Array.isArray(primary.travelHistory)
+        ? primary.travelHistory
+        : []
+      : mergeTravelHistoryLists(
+          mergeTravelHistoryLists(primary.travelHistory, secondary.travelHistory),
+          cachedLocalAccProfile?.travelHistory
+        );
+
+    const mergedLanguages = mergeLanguagesKnownLists(
+      mergeLanguagesKnownLists(primary.languagesKnown, secondary.languagesKnown, resolvedId),
+      cachedLocalAccProfile?.languagesKnown,
+      resolvedId
+    );
+
+    const primaryInterests = Array.isArray(primary.interests) ? primary.interests : [];
+    const secondaryInterests = Array.isArray(secondary.interests) ? secondary.interests : [];
+    const localInterests = Array.isArray(cachedLocalAccProfile?.interests) ? cachedLocalAccProfile!.interests! : [];
+    const mergedInterests =
+      primaryInterests.length >= secondaryInterests.length && primaryInterests.length >= localInterests.length
+        ? primaryInterests
+        : secondaryInterests.length >= localInterests.length
+          ? secondaryInterests
+          : localInterests;
+
+    const isGenericBio = (b?: string) =>
+      !b ||
+      b.includes('Log in or create a free account') ||
+      b.startsWith('Exploring global retirement havens and expat communities (');
+
+    const resolvedBio = !isGenericBio(primary.bio)
+      ? primary.bio!
+      : !isGenericBio(secondary.bio)
+        ? secondary.bio!
+        : !isGenericBio(cachedLocalAccProfile?.bio)
+          ? cachedLocalAccProfile!.bio!
+          : primary.bio || secondary.bio || cachedLocalAccProfile?.bio || '';
+
+    const resolvedAboutMe =
+      primary.aboutMe?.trim() ||
+      secondary.aboutMe?.trim() ||
+      cachedLocalAccProfile?.aboutMe?.trim() ||
+      '';
+
+    const resolvedAvatar =
+      (primary.avatarUrl && !isSampleStockAvatar(primary.avatarUrl) ? primary.avatarUrl : '') ||
+      (secondary.avatarUrl && !isSampleStockAvatar(secondary.avatarUrl) ? secondary.avatarUrl : '') ||
+      (cachedLocalAccProfile?.avatarUrl && !isSampleStockAvatar(cachedLocalAccProfile.avatarUrl)
+        ? cachedLocalAccProfile.avatarUrl
+        : '') ||
+      primary.avatarUrl ||
+      secondary.avatarUrl ||
+      cachedLocalAccProfile?.avatarUrl ||
+      '';
+
+    const mergedFinances = {
+      ...DEFAULT_FINANCIAL_PORTFOLIO,
+      ...(secondary.finances || {}),
+      ...(primary.finances || {}),
+      investments: {
+        ...DEFAULT_FINANCIAL_PORTFOLIO.investments,
+        ...(secondary.finances?.investments || {}),
+        ...(primary.finances?.investments || {}),
+      },
+    };
+
+    return {
+      ...DEFAULT_ACCOUNTS[0].profile,
+      ...cachedLocalAccProfile,
+      ...secondary,
+      ...primary,
+      id: resolvedId,
+      name:
+        (!isGuestPlaceholder(primary.name) ? primary.name : '') ||
+        (!isGuestPlaceholder(secondary.name) ? secondary.name : '') ||
+        (!isGuestPlaceholder(cachedLocalAccProfile?.name) ? cachedLocalAccProfile?.name : '') ||
+        'Expat Member',
+      email:
+        (!isGuestPlaceholder(primary.email) ? primary.email : '') ||
+        (!isGuestPlaceholder(secondary.email) ? secondary.email : '') ||
+        (!isGuestPlaceholder(cachedLocalAccProfile?.email) ? cachedLocalAccProfile?.email : '') ||
+        'member@refirely.org',
+      avatarUrl: resolvedAvatar,
+      bio: resolvedBio,
+      aboutMe: resolvedAboutMe,
+      travelHistory: mergedTravel,
+      languagesKnown: mergedLanguages,
+      interests: mergedInterests.length > 0 ? mergedInterests : ['Coastal Living & Beaches', 'Healthcare & Wellness'],
+      finances: mergedFinances,
+      savedCountryIds:
+        Array.isArray(primary.savedCountryIds) && primary.savedCountryIds.length > 0
+          ? primary.savedCountryIds
+          : Array.isArray(secondary.savedCountryIds) && secondary.savedCountryIds.length > 0
+            ? secondary.savedCountryIds
+            : cachedLocalAccProfile?.savedCountryIds || ['portugal', 'spain'],
+      appliedVisas:
+        Array.isArray(primary.appliedVisas) && primary.appliedVisas.length > 0
+          ? primary.appliedVisas
+          : Array.isArray(secondary.appliedVisas) && secondary.appliedVisas.length > 0
+            ? secondary.appliedVisas
+            : cachedLocalAccProfile?.appliedVisas || [],
+      rsvpMeetupIds:
+        Array.isArray(primary.rsvpMeetupIds) && primary.rsvpMeetupIds.length > 0
+          ? primary.rsvpMeetupIds
+          : Array.isArray(secondary.rsvpMeetupIds) && secondary.rsvpMeetupIds.length > 0
+            ? secondary.rsvpMeetupIds
+            : cachedLocalAccProfile?.rsvpMeetupIds || [],
+    };
+  };
+
+  // Helper to merge two UserAccount objects while preserving the richest profile data (travelHistory, languages, etc.)
+  const mergeUserAccounts = (existingAcc: UserAccount, incomingAcc: UserAccount): UserAccount => {
+    const existingTime = existingAcc.lastSyncedAt || '';
+    const incomingTime = incomingAcc.lastSyncedAt || '';
+    const preferIncomingScalar = incomingTime >= existingTime || !existingAcc.cloudSynced;
+    const mergedProfile = mergeUserProfiles(existingAcc.profile, incomingAcc.profile, preferIncomingScalar);
+
+    const signupNum =
+      typeof incomingAcc.signupNumber === 'number'
+        ? incomingAcc.signupNumber
+        : typeof existingAcc.signupNumber === 'number'
+          ? existingAcc.signupNumber
+          : mergedProfile.signupNumber;
+
+    return {
+      ...existingAcc,
+      ...incomingAcc,
+      id: existingAcc.id || incomingAcc.id,
+      username: incomingAcc.username || existingAcc.username || existingAcc.id,
+      name: mergedProfile.name,
+      email: mergedProfile.email,
+      createdAt:
+        existingAcc.createdAt && existingAcc.createdAt !== '2026-01-01'
+          ? existingAcc.createdAt
+          : incomingAcc.createdAt || existingAcc.createdAt || '2026-01-01',
+      signupNumber: signupNum,
+      profile: {
+        ...mergedProfile,
+        signupNumber: signupNum,
+      },
+      checklist:
+        preferIncomingScalar && Array.isArray(incomingAcc.checklist) && incomingAcc.checklist.length > 0
+          ? incomingAcc.checklist
+          : existingAcc.checklist || incomingAcc.checklist,
+      cloudSynced: Boolean(existingAcc.cloudSynced || incomingAcc.cloudSynced),
+      lastSyncedAt: incomingTime >= existingTime ? incomingTime : existingTime,
+    };
+  };
+
   // Registered accounts in local storage (guarantees deleted personas stay deleted and never resurrect)
   const [registeredAccounts, setRegisteredAccounts] = useState<UserAccount[]>(() => {
     const deletedUserIds = getDeletedUserAccountIds();
@@ -446,19 +701,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Strictly exclude any accounts marked deleted
           const nonDeleted = parsed.filter(acc => acc && acc.id && !deletedUserIds.has(acc.id));
           const repaired = nonDeleted.map(acc => {
+            const healedProfile = mergeUserProfiles(acc.profile, null, false);
             if (acc.id === 'usr-ganesh' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
-              const currentAvatar = acc.profile?.avatarUrl || '';
+              const currentAvatar = healedProfile.avatarUrl || '';
               const cleanedAvatar = isSampleStockAvatar(currentAvatar) ? savedGooglePhoto : currentAvatar;
               return {
                 ...acc,
                 profile: {
-                  ...acc.profile,
+                  ...healedProfile,
                   avatarUrl: cleanedAvatar,
                   role: 'admin' as const,
                 },
               };
             }
-            return acc;
+            return {
+              ...acc,
+              profile: healedProfile,
+            };
           });
 
           // Always ensure primary admin account usr-ganesh exists
@@ -571,14 +830,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Real-time synchronization of expat profiles from Firestore /savedAccounts
-  // Ensures any expat registered or created (e.g. Tanya Malik) is immediately reflected
-  // on all computers, devices, and browsers without requiring reloads or admin auth!
+  // Real-time synchronization of expat profiles from Firestore /savedAccounts AND /users
+  // Ensures any expat profile or travelHistory update (e.g. @ganesh-photolife or Tanya Malik)
+  // is immediately reflected across all sessions (User & Admin), browsers, and devices!
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeSavedAccounts: (() => void) | undefined;
+    let unsubscribeUsers: (() => void) | undefined;
+
     try {
       const savedAccountsColl = collection(db, 'savedAccounts');
-      unsubscribe = onSnapshot(
+      unsubscribeSavedAccounts = onSnapshot(
         savedAccountsColl,
         (snapshot) => {
           if (snapshot.empty) return;
@@ -609,7 +870,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               name: cleanName,
               createdAt: data.createdAt || '2026-01-01',
               signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
-              profile: {
+              profile: mergeUserProfiles(null, {
                 ...data.profile,
                 id: data.id,
                 name: cleanName,
@@ -620,7 +881,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ],
                 travelHistory: data.profile?.travelHistory || [],
                 badges: data.profile?.badges || [],
-              },
+              }),
               checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
               cloudSynced: true,
               lastSyncedAt: data.updatedAt || new Date().toISOString(),
@@ -629,18 +890,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
 
           if (incomingAccounts.length > 0) {
+            const healedToSyncBack: UserAccount[] = [];
             setRegisteredAccounts((prevAccounts) => {
               const currentDeletedIds = getDeletedUserAccountIds();
               const map = new Map<string, UserAccount>();
 
-              // 1. Keep local non-deleted accounts
               prevAccounts.forEach((acc) => {
                 if (acc && acc.id && !currentDeletedIds.has(acc.id)) {
                   map.set(acc.id, acc);
                 }
               });
 
-              // 2. Merge incoming remote accounts from server Firestore
               let hasNewOrChanged = false;
               incomingAccounts.forEach((remoteAcc) => {
                 if (currentDeletedIds.has(remoteAcc.id)) return;
@@ -649,20 +909,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   map.set(remoteAcc.id, remoteAcc);
                   hasNewOrChanged = true;
                 } else {
-                  // Merge if remote is cloud synced or newer
-                  const existingUpdated = existing.lastSyncedAt || '';
-                  const remoteUpdated = remoteAcc.lastSyncedAt || '';
-                  if (remoteUpdated >= existingUpdated || !existing.cloudSynced) {
-                    map.set(remoteAcc.id, {
-                      ...existing,
-                      ...remoteAcc,
-                      profile: {
-                        ...existing.profile,
-                        ...remoteAcc.profile,
-                      },
-                      cloudSynced: true,
-                    });
+                  const mergedAcc = mergeUserAccounts(existing, remoteAcc);
+                  const prevJson = JSON.stringify(existing.profile);
+                  const nextJson = JSON.stringify(mergedAcc.profile);
+                  if (
+                    prevJson !== nextJson ||
+                    existing.name !== mergedAcc.name ||
+                    existing.signupNumber !== mergedAcc.signupNumber
+                  ) {
+                    map.set(remoteAcc.id, mergedAcc);
                     hasNewOrChanged = true;
+                  }
+                  if (
+                    (mergedAcc.profile.travelHistory?.length || 0) >
+                    (remoteAcc.profile.travelHistory?.length || 0)
+                  ) {
+                    healedToSyncBack.push(mergedAcc);
                   }
                 }
               });
@@ -676,35 +938,182 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
               return hasNewOrChanged ? merged : prevAccounts;
             });
+
+            if (healedToSyncBack.length > 0) {
+              setTimeout(() => {
+                healedToSyncBack.forEach(acc => {
+                  syncSingleAccountToFirestore(acc).catch(() => {});
+                });
+              }, 300);
+            }
           }
         },
         (err) => {
           console.warn('Real-time savedAccounts listener notice:', err);
         }
       );
+
+      // Listen to root /users collection so any profile data (e.g. travelHistory, languagesKnown)
+      // saved under /users/{firebaseUid} or /users/{accountId} is automatically merged into registeredAccounts
+      // and healed into /savedAccounts/{accountId}!
+      const usersColl = collection(db, 'users');
+      unsubscribeUsers = onSnapshot(
+        usersColl,
+        (snapshot) => {
+          if (snapshot.empty) return;
+          const currentDeleted = getDeletedUserAccountIds();
+          const rootUserDocs: Array<Record<string, any>> = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Record<string, any>;
+            if (data && (data.id || docSnap.id)) {
+              rootUserDocs.push({ ...data, _docId: docSnap.id });
+            }
+          });
+
+          if (rootUserDocs.length === 0) return;
+
+          const accountsToHealInCloud: UserAccount[] = [];
+          setRegisteredAccounts((prevAccounts) => {
+            let changed = false;
+            const nextAccounts = prevAccounts.map((acc) => {
+              if (!acc || !acc.id || acc.id === 'guest' || currentDeleted.has(acc.id)) {
+                return acc;
+              }
+              const accEmailLower = (acc.email || '').trim().toLowerCase();
+              const matchingUserDocs = rootUserDocs.filter((uDoc) => {
+                const uDocId = String(uDoc._docId || uDoc.id || '').trim();
+                const uActiveAccId = String(uDoc.activeAccountId || '').trim();
+                const uEmailLower = String(uDoc.email || '').trim().toLowerCase();
+                return (
+                  uDocId === acc.id ||
+                  uActiveAccId === acc.id ||
+                  (accEmailLower &&
+                    accEmailLower !== 'member@refirely.org' &&
+                    uEmailLower === accEmailLower &&
+                    (acc.id === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'))
+                );
+              });
+
+              if (matchingUserDocs.length === 0) return acc;
+
+              let updatedProfile = acc.profile;
+              let updatedChecklist = acc.checklist;
+              for (const uDoc of matchingUserDocs) {
+                const candidateProfile: Partial<UserProfile> = {
+                  ...(uDoc.profile || {}),
+                  ...uDoc,
+                  id: acc.id,
+                  name: !isGuestPlaceholder(uDoc.name) ? uDoc.name : acc.name,
+                  email: !isGuestPlaceholder(uDoc.email) ? uDoc.email : acc.email,
+                };
+                updatedProfile = mergeUserProfiles(
+                  updatedProfile,
+                  candidateProfile,
+                  Boolean(
+                    (Array.isArray(candidateProfile.travelHistory) &&
+                      candidateProfile.travelHistory.length > (updatedProfile.travelHistory?.length || 0)) ||
+                      (Array.isArray(candidateProfile.languagesKnown) &&
+                        candidateProfile.languagesKnown.length > (updatedProfile.languagesKnown?.length || 0))
+                  )
+                );
+                if (
+                  (!updatedChecklist || updatedChecklist.length === 0) &&
+                  Array.isArray(uDoc.checklist) &&
+                  uDoc.checklist.length > 0
+                ) {
+                  updatedChecklist = uDoc.checklist;
+                }
+              }
+
+              const prevTravelLen = acc.profile.travelHistory?.length || 0;
+              const nextTravelLen = updatedProfile.travelHistory?.length || 0;
+              const prevLangLen = acc.profile.languagesKnown?.length || 0;
+              const nextLangLen = updatedProfile.languagesKnown?.length || 0;
+
+              if (
+                nextTravelLen > prevTravelLen ||
+                nextLangLen > prevLangLen ||
+                JSON.stringify(acc.profile.travelHistory || []) !==
+                  JSON.stringify(updatedProfile.travelHistory || [])
+              ) {
+                changed = true;
+                const healedAcc: UserAccount = {
+                  ...acc,
+                  profile: updatedProfile,
+                  checklist: updatedChecklist,
+                };
+                try {
+                  localStorage.setItem(
+                    `${LOCAL_STORAGE_KEY}_profile_${acc.id}`,
+                    JSON.stringify(updatedProfile)
+                  );
+                } catch {}
+                if (nextTravelLen > prevTravelLen || nextLangLen > prevLangLen) {
+                  accountsToHealInCloud.push(healedAcc);
+                }
+                return healedAcc;
+              }
+              return acc;
+            });
+
+            if (changed) {
+              registeredAccountsRef.current = nextAccounts;
+              try {
+                localStorage.setItem(
+                  `${LOCAL_STORAGE_KEY}_registered_accounts`,
+                  JSON.stringify(nextAccounts)
+                );
+              } catch {}
+              const activeId = currentUserIdRef.current;
+              if (activeId && activeId !== 'guest') {
+                const enrichedActive = nextAccounts.find((a) => a.id === activeId);
+                if (enrichedActive) {
+                  setUserProfile((prevProf) => {
+                    const nextProf = mergeUserProfiles(prevProf, enrichedActive.profile, true);
+                    userProfileRef.current = nextProf;
+                    return nextProf;
+                  });
+                }
+              }
+              return nextAccounts;
+            }
+            return prevAccounts;
+          });
+
+          if (accountsToHealInCloud.length > 0) {
+            setTimeout(() => {
+              accountsToHealInCloud.forEach((healedAcc) => {
+                syncSingleAccountToFirestore(healedAcc).catch(() => {});
+              });
+            }, 350);
+          }
+        },
+        (err) => {
+          console.warn('Real-time users listener notice:', err);
+        }
+      );
     } catch (e) {
-      console.warn('Real-time savedAccounts setup notice:', e);
+      console.warn('Real-time savedAccounts/users setup notice:', e);
     }
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeSavedAccounts) unsubscribeSavedAccounts();
+      if (unsubscribeUsers) unsubscribeUsers();
     };
   }, []);
 
-  // Auto-sync routine: pushes any locally registered expat accounts up to Firestore server
-  // so any profile created on this computer (like Tanya Malik) is guaranteed to be on the server
+  // Auto-sync routine: pushes any unsynced or enriched locally registered expat accounts up to Firestore server
   useEffect(() => {
     const timer = setTimeout(() => {
       const currentList = registeredAccountsRef.current;
       const deletedIds = getDeletedUserAccountIds();
       currentList.forEach((acc) => {
         if (!acc || !acc.id || acc.id === 'guest' || deletedIds.has(acc.id)) return;
-        // If not marked synced or custom created expat, push to Firestore
-        if (!acc.cloudSynced || acc.id.startsWith('usr-')) {
+        if (!acc.cloudSynced || (acc.profile?.travelHistory && acc.profile.travelHistory.length > 0)) {
           syncSingleAccountToFirestore(acc).catch(() => {});
         }
       });
-    }, 1500);
+    }, 1800);
 
     return () => clearTimeout(timer);
   }, []);
@@ -735,11 +1144,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Role and profile
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const explicitAuth = localStorage.getItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`);
+      if (explicitAuth !== 'true') {
+        return GUEST_PROFILE;
+      }
+      const savedAdminGooglePhoto =
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_ganesh.indireddy@gmail.com`) ||
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_usr-ganesh`) ||
+        '';
+
+      const savedAccountsRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
+      const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`);
+      const savedPerUserProfRaw = savedUserId
+        ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${savedUserId}`)
+        : null;
+      const savedPerUserProf = savedPerUserProfRaw ? JSON.parse(savedPerUserProfRaw) : null;
+
+      if (savedAccountsRaw && savedUserId) {
+        const parsedAccounts: UserAccount[] = JSON.parse(savedAccountsRaw);
+        const matchedAcc = parsedAccounts.find(a => a.id === savedUserId);
+        if (matchedAcc && matchedAcc.profile) {
+          const mergedProf = mergeUserProfiles(matchedAcc.profile, savedPerUserProf, true);
+          const isAdminAcc =
+            matchedAcc.id === 'usr-ganesh' ||
+            matchedAcc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+            mergedProf.role === 'admin';
+          const rawAvatar = mergedProf.avatarUrl || '';
+          const cleanedAvatar =
+            isAdminAcc && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
+          return {
+            ...mergedProf,
+            avatarUrl: cleanedAvatar,
+            role: isAdminAcc ? 'admin' : mergedProf.role || 'member',
+          };
+        }
+      }
+      const saved =
+        savedPerUserProfRaw ||
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile`) ||
+        localStorage.getItem('havenroute_app_state_v1_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const isAdminProf =
+          parsed.id === 'usr-ganesh' ||
+          parsed.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
+          parsed.role === 'admin';
+        const rawAvatar = parsed.avatarUrl || '';
+        const cleanedAvatar =
+          isAdminProf && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
+        return mergeUserProfiles(null, {
+          ...parsed,
+          avatarUrl: cleanedAvatar,
+        });
+      }
+    } catch {}
+    return GUEST_PROFILE;
+  });
+
   // Public Member Profile modal state (excludes admin role / admin user)
   const [selectedPublicProfileId, setSelectedPublicProfileId] = useState<string | null>(null);
   const publicMemberAccounts = React.useMemo(
-    () => registeredAccounts.filter(acc => isPublicMemberAccount(acc)),
-    [registeredAccounts]
+    () =>
+      registeredAccounts
+        .filter(acc => isPublicMemberAccount(acc))
+        .map(acc =>
+          acc.id === currentUserId && currentUserId !== 'guest'
+            ? {
+                ...acc,
+                profile: mergeUserProfiles(acc.profile, userProfile, true),
+              }
+            : acc
+        ),
+    [registeredAccounts, currentUserId, userProfile]
   );
 
   const openPublicProfile = (identifier: string): boolean => {
@@ -762,74 +1241,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const closePublicProfile = () => setSelectedPublicProfileId(null);
-
-  // Role and profile
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const explicitAuth = localStorage.getItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`);
-      if (explicitAuth !== 'true') {
-        return GUEST_PROFILE;
-      }
-      const savedAdminGooglePhoto =
-        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_ganesh.indireddy@gmail.com`) ||
-        localStorage.getItem(`${LOCAL_STORAGE_KEY}_google_photo_usr-ganesh`) ||
-        '';
-
-      // First check if the active User ID exists in registeredAccounts
-      const savedAccountsRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_registered_accounts`);
-      const savedUserId = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user_id`);
-      if (savedAccountsRaw && savedUserId) {
-        const parsedAccounts: UserAccount[] = JSON.parse(savedAccountsRaw);
-        const matchedAcc = parsedAccounts.find(a => a.id === savedUserId);
-        if (matchedAcc && matchedAcc.profile) {
-          const isAdminAcc =
-            matchedAcc.id === 'usr-ganesh' ||
-            matchedAcc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
-            matchedAcc.profile.role === 'admin';
-          const rawAvatar = matchedAcc.profile.avatarUrl || '';
-          const cleanedAvatar =
-            isAdminAcc && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
-          return {
-            ...matchedAcc.profile,
-            avatarUrl: cleanedAvatar,
-            role: isAdminAcc ? 'admin' : matchedAcc.profile.role || 'member',
-            finances: matchedAcc.profile.finances ? {
-              ...DEFAULT_FINANCIAL_PORTFOLIO,
-              ...matchedAcc.profile.finances,
-              investments: {
-                ...DEFAULT_FINANCIAL_PORTFOLIO.investments,
-                ...(matchedAcc.profile.finances.investments || {}),
-              },
-            } : DEFAULT_FINANCIAL_PORTFOLIO,
-          };
-        }
-      }
-      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile`) || localStorage.getItem('havenroute_app_state_v1_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const isAdminProf =
-          parsed.id === 'usr-ganesh' ||
-          parsed.email?.toLowerCase() === 'ganesh.indireddy@gmail.com' ||
-          parsed.role === 'admin';
-        const rawAvatar = parsed.avatarUrl || '';
-        const cleanedAvatar =
-          isAdminProf && isSampleStockAvatar(rawAvatar) ? savedAdminGooglePhoto : rawAvatar;
-        return {
-          ...parsed,
-          avatarUrl: cleanedAvatar,
-          finances: parsed.finances ? {
-            ...DEFAULT_FINANCIAL_PORTFOLIO,
-            ...parsed.finances,
-            investments: {
-              ...DEFAULT_FINANCIAL_PORTFOLIO.investments,
-              ...(parsed.finances.investments || {}),
-            },
-          } : DEFAULT_FINANCIAL_PORTFOLIO,
-        };
-      }
-    } catch {}
-    return GUEST_PROFILE;
-  });
 
   // Filters & Persona Lens
   const [searchQuery, setSearchQuery] = useState('');
@@ -1500,33 +1911,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Helper to check if a string is a guest placeholder that should never overwrite a real Google user's name/email
-  const isGuestPlaceholder = (val?: string | null): boolean => {
-    if (!val) return true;
-    const clean = val.trim().toLowerCase();
-    return (
-      clean === '' ||
-      clean === 'guest' ||
-      clean === 'guest explorer' ||
-      clean === 'guest@refirely.org' ||
-      clean === 'retiree member'
-    );
-  };
-
-  // Format an email prefix (e.g. "rahul.sharma@gmail.com") into a clean display name ("Rahul Sharma")
-  const formatNameFromEmail = (email?: string | null): string => {
-    if (!email) return 'Expat Member';
-    const prefix = email.split('@')[0] || '';
-    const words = prefix
-      .replace(/[._\-+]+/g, ' ')
-      .replace(/\d+/g, ' ')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (words.length === 0) return prefix || 'Expat Member';
-    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-  };
-
   // Build or resolve a complete UserAccount + UserProfile for any Google Auth user (admin or general Gmail user)
   const resolveGoogleAccountForUser = (
     user: FirebaseUser,
@@ -1653,72 +2037,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch {}
     }
 
-    // Use a clean member base profile (never GUEST_PROFILE)
-    const cleanBaseProfile: UserProfile =
+    // Smart-merge existingByEmail.profile, firestoreRootData, and per-account localStorage so travelHistory & languages are never lost!
+    const rootProfileCandidate: Partial<UserProfile> | null = firestoreRootData
+      ? {
+          ...firestoreRootData,
+          id: candidateId,
+          name: resolvedName,
+          email: resolvedEmail,
+          avatarUrl: resolvedAvatar,
+        }
+      : null;
+
+    const mergedBaseProfile = mergeUserProfiles(
       existingByEmail && existingByEmail.id !== 'guest'
-        ? existingByEmail.profile
+        ? { ...existingByEmail.profile, id: candidateId }
         : {
             ...DEFAULT_ACCOUNTS[0].profile,
             id: candidateId,
             name: resolvedName,
             email: resolvedEmail,
             avatarUrl: resolvedAvatar,
-            originCountry: firestoreRootData?.originCountry && firestoreRootData.originCountry !== 'United States'
-              ? firestoreRootData.originCountry
-              : 'United States',
-            residingCountry: firestoreRootData?.residingCountry || firestoreRootData?.originCountry || 'United States',
-            originCity: firestoreRootData?.originCity || '',
-            targetCountry: firestoreRootData?.targetCountry || 'Portugal',
-            retirementTimelineYear: firestoreRootData?.retirementTimelineYear || 2027,
-            monthlyBudgetUSD: firestoreRootData?.monthlyBudgetUSD || 2500,
-            preferredClimate: firestoreRootData?.preferredClimate || 'Mediterranean',
-            savedCountryIds:
-              Array.isArray(firestoreRootData?.savedCountryIds) && firestoreRootData!.savedCountryIds.length > 0
-                ? firestoreRootData!.savedCountryIds
-                : ['portugal', 'spain', 'costa-rica'],
-            rsvpMeetupIds: Array.isArray(firestoreRootData?.rsvpMeetupIds) ? firestoreRootData!.rsvpMeetupIds : [],
-            appliedVisas: Array.isArray(firestoreRootData?.appliedVisas) ? firestoreRootData!.appliedVisas : [],
-            bio:
-              firestoreRootData?.bio && !firestoreRootData.bio.includes('Log in or create a free account')
-                ? firestoreRootData.bio
-                : `Exploring global retirement havens and expat communities (${resolvedEmail}).`,
-            aboutMe: firestoreRootData?.aboutMe || '',
-            occupationOrBackground:
-              firestoreRootData?.occupationOrBackground && firestoreRootData.occupationOrBackground !== 'Prospective Retiree'
-                ? firestoreRootData.occupationOrBackground
-                : 'Global Expat Member',
-            relocationStatus: firestoreRootData?.relocationStatus || 'Exploring Options',
-            finances: firestoreRootData?.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+            originCountry: 'United States',
+            residingCountry: 'United States',
+            originCity: '',
+            targetCountry: 'Portugal',
+            retirementTimelineYear: 2027,
+            monthlyBudgetUSD: 2500,
+            preferredClimate: 'Mediterranean',
+            savedCountryIds: ['portugal', 'spain', 'costa-rica'],
+            rsvpMeetupIds: [],
+            appliedVisas: [],
+            bio: `Exploring global retirement havens and expat communities (${resolvedEmail}).`,
+            aboutMe: '',
+            occupationOrBackground: 'Global Expat Member',
+            relocationStatus: 'Exploring Options',
+            finances: DEFAULT_FINANCIAL_PORTFOLIO,
             role: isAdminEmail ? 'admin' : 'member',
-            languagesKnown:
-              Array.isArray(firestoreRootData?.languagesKnown) && firestoreRootData!.languagesKnown.length > 0
-                ? firestoreRootData!.languagesKnown
-                : [{ id: 'lang-en', language: 'English', proficiency: 'Fluent' }],
-            interests:
-              Array.isArray(firestoreRootData?.interests) && firestoreRootData!.interests.length > 0
-                ? firestoreRootData!.interests
-                : ['Coastal Living & Beaches', 'Healthcare & Wellness', 'Expat Meetups & Socializing'],
-            travelHistory: Array.isArray(firestoreRootData?.travelHistory) ? firestoreRootData!.travelHistory : [],
-          };
+            languagesKnown: [{ id: 'lang-en', language: 'English', proficiency: 'Fluent' }],
+            interests: ['Coastal Living & Beaches', 'Healthcare & Wellness', 'Expat Meetups & Socializing'],
+            travelHistory: [],
+          },
+      rootProfileCandidate,
+      Boolean(rootProfileCandidate)
+    );
 
     const finalProfile: UserProfile = {
-      ...cleanBaseProfile,
+      ...mergedBaseProfile,
       id: candidateId,
       name: resolvedName,
       email: resolvedEmail,
       avatarUrl: resolvedAvatar,
-      finances: cleanBaseProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-      role: isAdminEmail ? (cleanBaseProfile.role || 'admin') : 'member',
+      finances: mergedBaseProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+      role: isAdminEmail ? (mergedBaseProfile.role || 'admin') : 'member',
     };
 
     const nowIso = new Date().toISOString();
     return {
       id: candidateId,
-      username: emailPrefix || candidateId,
+      username: existingByEmail?.username || emailPrefix || candidateId,
       email: resolvedEmail,
       password: existingByEmail?.password || 'password123',
       name: resolvedName,
       createdAt: existingByEmail?.createdAt || nowIso.split('T')[0],
+      signupNumber: existingByEmail?.signupNumber ?? finalProfile.signupNumber,
       profile: finalProfile,
       checklist: existingByEmail?.checklist || firestoreRootData?.checklist || INITIAL_CHECKLIST,
       cloudSynced: true,
@@ -2007,11 +2388,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           savedAccSnap.forEach(d => {
             const data = d.data() as any;
             if (data && data.id && data.id !== 'guest' && data.profile) {
-              // Ignore any deleted or tombstoned account IDs
               if (currentDeletedUserIds.has(data.id)) {
                 return;
               }
-              // Non-admin users ignore any stale copies of the 3 default admin personas in their subcollection
               if (!isAdminUser && defaultIds.has(data.id)) {
                 return;
               }
@@ -2035,13 +2414,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 password: data.password || matchingDefault?.password || 'password123',
                 name: cleanName,
                 createdAt: data.createdAt || '2026-01-01',
-                profile: {
+                signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+                profile: mergeUserProfiles(null, {
                   ...data.profile,
                   id: data.id,
                   name: cleanName,
                   email: cleanEmail,
                   finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-                },
+                }),
                 checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
                 cloudSynced: true,
                 lastSyncedAt: data.updatedAt || new Date().toISOString(),
@@ -2049,49 +2429,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           });
 
-          // If admin user, also fetch top-level /savedAccounts and /users to include all cloud-registered users
-          if (isAdminUser) {
-            try {
-              const topSavedSnap = await getDocs(collection(db, 'savedAccounts'));
-              topSavedSnap.forEach(d => {
-                const data = d.data() as any;
-                if (data && data.id && data.id !== 'guest' && data.profile && !remoteAccountsMap.has(data.id)) {
-                  if (currentDeletedUserIds.has(data.id)) {
-                    return;
-                  }
-                  const cleanName = !isGuestPlaceholder(data.name)
-                    ? data.name
-                    : !isGuestPlaceholder(data.profile?.name)
-                      ? data.profile.name
-                      : formatNameFromEmail(data.email);
-                  const cleanEmail = !isGuestPlaceholder(data.email)
-                    ? data.email
-                    : !isGuestPlaceholder(data.profile?.email)
-                      ? data.profile.email
-                      : 'member@refirely.org';
-                  remoteAccountsMap.set(data.id, {
+          // Fetch top-level /savedAccounts and /users and smart-merge them (NEVER skip if remoteAccountsMap already has a stale subcollection copy!)
+          try {
+            const topSavedSnap = await getDocs(collection(db, 'savedAccounts'));
+            topSavedSnap.forEach(d => {
+              const data = d.data() as any;
+              if (data && data.id && data.id !== 'guest' && data.profile) {
+                if (currentDeletedUserIds.has(data.id)) {
+                  return;
+                }
+                const cleanName = !isGuestPlaceholder(data.name)
+                  ? data.name
+                  : !isGuestPlaceholder(data.profile?.name)
+                    ? data.profile.name
+                    : formatNameFromEmail(data.email);
+                const cleanEmail = !isGuestPlaceholder(data.email)
+                  ? data.email
+                  : !isGuestPlaceholder(data.profile?.email)
+                    ? data.profile.email
+                    : 'member@refirely.org';
+                const topAcc: UserAccount = {
+                  id: data.id,
+                  username: data.username || data.id,
+                  email: cleanEmail,
+                  password: data.password || 'password123',
+                  name: cleanName,
+                  createdAt: data.createdAt || '2026-01-01',
+                  signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+                  profile: mergeUserProfiles(null, {
+                    ...data.profile,
                     id: data.id,
-                    username: data.username || data.id,
-                    email: cleanEmail,
-                    password: data.password || 'password123',
                     name: cleanName,
-                    createdAt: data.createdAt || '2026-01-01',
-                    profile: {
-                      ...data.profile,
-                      id: data.id,
-                      name: cleanName,
-                      email: cleanEmail,
-                      finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-                    },
-                    checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
-                    cloudSynced: true,
-                    lastSyncedAt: data.updatedAt || new Date().toISOString(),
+                    email: cleanEmail,
+                    finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                  }),
+                  checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+                  cloudSynced: true,
+                  lastSyncedAt: data.updatedAt || new Date().toISOString(),
+                };
+                const existingInRemote = remoteAccountsMap.get(data.id);
+                remoteAccountsMap.set(
+                  data.id,
+                  existingInRemote ? mergeUserAccounts(existingInRemote, topAcc) : topAcc
+                );
+              }
+            });
+          } catch (e) {
+            console.warn('Top-level savedAccounts fetch notice:', e);
+          }
+
+          // Also fetch root /users collection to recover any travelHistory or languages saved under /users/{firebaseUid} or /users/{accountId}
+          try {
+            const allUsersSnap = await getDocs(collection(db, 'users'));
+            allUsersSnap.forEach(uSnap => {
+              const uData = uSnap.data() as any;
+              if (!uData) return;
+              const uDocId = uSnap.id;
+              const uActiveAccId = String(uData.activeAccountId || '').trim();
+              const uEmailLower = String(uData.email || '').trim().toLowerCase();
+
+              for (const [accId, accObj] of Array.from(remoteAccountsMap.entries())) {
+                const accEmailLower = (accObj.email || '').trim().toLowerCase();
+                const isMatch =
+                  uDocId === accId ||
+                  uActiveAccId === accId ||
+                  (accEmailLower &&
+                    accEmailLower !== 'member@refirely.org' &&
+                    uEmailLower === accEmailLower &&
+                    (accId === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'));
+
+                if (isMatch) {
+                  const candidateProfile: Partial<UserProfile> = {
+                    ...(uData.profile || {}),
+                    ...uData,
+                    id: accId,
+                    name: !isGuestPlaceholder(uData.name) ? uData.name : accObj.name,
+                    email: !isGuestPlaceholder(uData.email) ? uData.email : accObj.email,
+                  };
+                  const mergedProf = mergeUserProfiles(
+                    accObj.profile,
+                    candidateProfile,
+                    Boolean(
+                      (Array.isArray(candidateProfile.travelHistory) &&
+                        candidateProfile.travelHistory.length > (accObj.profile.travelHistory?.length || 0)) ||
+                        (Array.isArray(candidateProfile.languagesKnown) &&
+                          candidateProfile.languagesKnown.length > (accObj.profile.languagesKnown?.length || 0))
+                    )
+                  );
+                  remoteAccountsMap.set(accId, {
+                    ...accObj,
+                    profile: mergedProf,
+                    checklist:
+                      (!accObj.checklist || accObj.checklist.length === 0) &&
+                      Array.isArray(uData.checklist) &&
+                      uData.checklist.length > 0
+                        ? uData.checklist
+                        : accObj.checklist,
                   });
                 }
-              });
-            } catch (e) {
-              console.warn('Admin top-level savedAccounts fetch notice:', e);
-            }
+              }
+            });
+          } catch (e) {
+            console.warn('Top-level users fetch notice:', e);
           }
 
           // 2. Read root /users/{uid} document if it exists
@@ -2124,18 +2563,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               mergedMap.set(safeLocalId, {
                 ...localAcc,
                 email: matchingDefault.email,
-                profile: {
-                  ...localAcc.profile,
-                  email: matchingDefault.email,
-                },
+                profile: mergeUserProfiles(localAcc.profile, { email: matchingDefault.email }, false),
               });
             } else {
-              mergedMap.set(safeLocalId, localAcc);
+              mergedMap.set(safeLocalId, {
+                ...localAcc,
+                profile: mergeUserProfiles(localAcc.profile, null, false),
+              });
             }
           }
           remoteAccountsMap.forEach((acc, id) => {
             if (!currentDeletedUserIds.has(id)) {
-              mergedMap.set(id, acc);
+              const existingLocal = mergedMap.get(id);
+              mergedMap.set(id, existingLocal ? mergeUserAccounts(existingLocal, acc) : acc);
             }
           });
 
@@ -2176,15 +2616,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           mergedMap.set(resolvedGoogleAccount.id, resolvedGoogleAccount);
 
           // 5. Sync accounts to Firestore:
-          // - Only sync active, non-deleted accounts!
           const nowIso = new Date().toISOString();
           for (const [safeId, acc] of Array.from(mergedMap.entries())) {
             if (currentDeletedUserIds.has(safeId)) continue;
             const belongsToCurrentUser =
-              isAdminUser ||
               safeId === resolvedGoogleAccount.id ||
-              (!defaultIds.has(safeId) &&
-                (remoteAccountsMap.has(safeId) || acc.email.trim().toLowerCase() === googleEmail));
+              (!defaultIds.has(safeId) && acc.email.trim().toLowerCase() === googleEmail) ||
+              (isAdminUser && (!acc.cloudSynced || (acc.profile.travelHistory?.length || 0) > 0));
 
             if (belongsToCurrentUser) {
               const synced = await syncSingleAccountToFirestore({ ...acc, id: safeId });
@@ -2204,6 +2642,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const mergedAccountsList = Array.from(mergedMap.values());
           setRegisteredAccounts(mergedAccountsList);
           registeredAccountsRef.current = mergedAccountsList;
+          try {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(mergedAccountsList));
+          } catch {}
 
           // 6. Activate the signed-in Google user's User ID and profile
           const activeAccount = mergedMap.get(resolvedGoogleAccount.id) || resolvedGoogleAccount;
@@ -2493,13 +2934,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch {}
     }
 
+    const mergedAccountProfile = mergeUserProfiles(account.profile, null, false);
     const restoredProfile: UserProfile = {
-      ...account.profile,
+      ...mergedAccountProfile,
       id: account.id,
-      avatarUrl: effectiveAvatar,
-      role: isAccountOwnerAdmin ? 'admin' : account.profile.role || 'member',
-      finances: account.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+      avatarUrl: effectiveAvatar || mergedAccountProfile.avatarUrl,
+      role: isAccountOwnerAdmin ? 'admin' : mergedAccountProfile.role || 'member',
+      finances: mergedAccountProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
     };
+
+    const updatedAccountForLogin: UserAccount = {
+      ...account,
+      profile: restoredProfile,
+      name: restoredProfile.name,
+      email: restoredProfile.email,
+    };
+    const nextAccountsOnLogin = registeredAccountsRef.current.map(a =>
+      a.id === account.id ? updatedAccountForLogin : a
+    );
+    registeredAccountsRef.current = nextAccountsOnLogin;
+    setRegisteredAccounts(nextAccountsOnLogin);
 
     setCurrentUserId(account.id);
     currentUserIdRef.current = account.id;
@@ -2527,8 +2981,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (account.journalEntries) {
         setJournalEntries(account.journalEntries);
       }
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccountsOnLogin));
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_current_user_id`, account.id);
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(restoredProfile));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${account.id}`, JSON.stringify(restoredProfile));
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'true');
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
     } catch {}
@@ -2538,7 +2994,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentUserIdRef.current && currentUserIdRef.current !== 'guest' && currentUserIdRef.current !== account.id) {
         saveUserDmThreads(currentUserIdRef.current, dmThreadsRef.current);
       }
-      const userThreads = loadUserDmThreads(account.id, registeredAccountsRef.current);
+      const userThreads = loadUserDmThreads(account.id, nextAccountsOnLogin);
       setDmThreads(userThreads);
       setActiveDmThreadId(userThreads[0]?.id || null);
 
@@ -2552,6 +3008,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.warn('Notice loading user inbox on signin:', e);
     }
+
+    // Always sync the logged-in account (including travelHistory) to /savedAccounts/{account.id}
+    syncSingleAccountToFirestore(updatedAccountForLogin).catch(() => {});
 
     // If connected to Firebase, persist activeAccountId to Firestore so page refresh keeps this User ID active
     if (auth.currentUser) {
@@ -2709,11 +3168,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               email: latestProfile.email,
               checklist: checklistRef.current,
               journalEntries: journalEntriesRef.current,
+              lastSyncedAt: new Date().toISOString(),
             }
           : acc
       );
       registeredAccountsRef.current = updatedAccounts;
       setRegisteredAccounts(updatedAccounts);
+      const activeAccToSync = updatedAccounts.find(a => a.id === activeId);
+      if (activeAccToSync) {
+        await syncSingleAccountToFirestore(activeAccToSync).catch(() => {});
+      }
       try {
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(updatedAccounts));
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${activeId}`, JSON.stringify(latestProfile));
@@ -3324,7 +3788,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ? data.profile.email
                 : 'member@refirely.org';
 
-            mergedMap.set(safeId, {
+            const remoteAcc: UserAccount = {
               id: safeId,
               username: data.username || safeId,
               email: cleanEmail,
@@ -3332,7 +3796,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               name: cleanName,
               createdAt: data.createdAt || '2026-01-01',
               signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
-              profile: {
+              profile: mergeUserProfiles(null, {
                 ...data.profile,
                 id: safeId,
                 name: cleanName,
@@ -3341,18 +3805,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 languagesKnown: data.profile.languagesKnown || [{ id: `lang-${safeId}`, language: 'English', proficiency: 'Native' }],
                 travelHistory: data.profile.travelHistory || [],
                 badges: data.profile.badges || [],
-              },
+              }),
               checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
               cloudSynced: true,
               lastSyncedAt: data.updatedAt || new Date().toISOString(),
-            });
+            };
+            const existing = mergedMap.get(safeId);
+            mergedMap.set(safeId, existing ? mergeUserAccounts(existing, remoteAcc) : remoteAcc);
           }
         });
       } catch (e) {
         console.warn('top-level savedAccounts fetch notice:', e);
       }
 
-      // 2. If signed in to Firebase, also fetch user subcollection
+      // 2. Also fetch top-level /users collection so any travelHistory/profile stored under /users/{uid} or /users/{accId} is merged
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        usersSnap.forEach(uDocSnap => {
+          const uData = uDocSnap.data() as any;
+          if (!uData) return;
+          const uDocId = uDocSnap.id;
+          const uActiveAccId = String(uData.activeAccountId || '').trim();
+          const uEmailLower = String(uData.email || '').trim().toLowerCase();
+
+          for (const [accId, accObj] of Array.from(mergedMap.entries())) {
+            const accEmailLower = (accObj.email || '').trim().toLowerCase();
+            const isMatch =
+              uDocId === accId ||
+              uActiveAccId === accId ||
+              (accEmailLower &&
+                accEmailLower !== 'member@refirely.org' &&
+                uEmailLower === accEmailLower &&
+                (accId === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'));
+
+            if (isMatch) {
+              const candidateProfile: Partial<UserProfile> = {
+                ...(uData.profile || {}),
+                ...uData,
+                id: accId,
+                name: !isGuestPlaceholder(uData.name) ? uData.name : accObj.name,
+                email: !isGuestPlaceholder(uData.email) ? uData.email : accObj.email,
+              };
+              const mergedProf = mergeUserProfiles(
+                accObj.profile,
+                candidateProfile,
+                Boolean(
+                  (Array.isArray(candidateProfile.travelHistory) &&
+                    candidateProfile.travelHistory.length > (accObj.profile.travelHistory?.length || 0)) ||
+                    (Array.isArray(candidateProfile.languagesKnown) &&
+                      candidateProfile.languagesKnown.length > (accObj.profile.languagesKnown?.length || 0))
+                )
+              );
+              mergedMap.set(accId, {
+                ...accObj,
+                profile: mergedProf,
+              });
+            }
+          }
+        });
+      } catch {}
+
+      // 3. If signed in to Firebase, also fetch user subcollection
       if (currentUser) {
         try {
           const subSnap = await getDocs(collection(db, 'users', currentUser.uid, 'savedAccounts'));
@@ -3361,25 +3874,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (data && data.id && data.id !== 'guest' && data.profile) {
               const safeId = sanitizeAccountId(data.id);
               if (deletedUserIds.has(safeId)) return;
-              if (!mergedMap.has(safeId)) {
-                mergedMap.set(safeId, {
+              const subAcc: UserAccount = {
+                id: safeId,
+                username: data.username || safeId,
+                email: data.email || 'member@refirely.org',
+                password: data.password || 'password123',
+                name: data.name || data.profile.name || 'Retiree Member',
+                createdAt: data.createdAt || '2026-01-01',
+                signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
+                profile: mergeUserProfiles(null, {
+                  ...data.profile,
                   id: safeId,
-                  username: data.username || safeId,
-                  email: data.email || 'member@refirely.org',
-                  password: data.password || 'password123',
-                  name: data.name || data.profile.name || 'Retiree Member',
-                  createdAt: data.createdAt || '2026-01-01',
-                  signupNumber: typeof data.signupNumber === 'number' ? data.signupNumber : data.profile?.signupNumber,
-                  profile: {
-                    ...data.profile,
-                    id: safeId,
-                    finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
-                  },
-                  checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
-                  cloudSynced: true,
-                  lastSyncedAt: data.updatedAt || new Date().toISOString(),
-                });
-              }
+                  finances: data.profile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                }),
+                checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
+                cloudSynced: true,
+                lastSyncedAt: data.updatedAt || new Date().toISOString(),
+              };
+              const existing = mergedMap.get(safeId);
+              mergedMap.set(safeId, existing ? mergeUserAccounts(existing, subAcc) : subAcc);
             }
           });
         } catch {}
@@ -3410,155 +3923,154 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserProfile = (updates: Partial<UserProfile>) => {
-    setUserProfile(prev => {
-      // Preserve the active account's custom User ID! Do NOT overwrite it with auth.currentUser.uid
-      const activeAccId = currentUserIdRef.current && currentUserIdRef.current !== 'guest'
+    // Preserve the active account's custom User ID! Do NOT overwrite it with auth.currentUser.uid
+    const prev = userProfileRef.current;
+    const activeAccId =
+      currentUserIdRef.current && currentUserIdRef.current !== 'guest'
         ? currentUserIdRef.current
-        : (prev.id || auth.currentUser?.uid || DEFAULT_ACCOUNTS[0].id);
+        : prev.id || auth.currentUser?.uid || DEFAULT_ACCOUNTS[0].id;
 
-      const updated: UserProfile = {
-        ...prev,
-        ...updates,
-        id: activeAccId,
-      };
+    const updated: UserProfile = {
+      ...prev,
+      ...updates,
+      id: activeAccId,
+    };
 
-      userProfileRef.current = updated;
+    userProfileRef.current = updated;
+    setUserProfile(updated);
 
-      // Synchronously persist profile and dedicated avatar keys to localStorage
-      try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(updated));
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${activeAccId}`, JSON.stringify(updated));
-        if (updated.avatarUrl) {
-          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${activeAccId}`, updated.avatarUrl);
-          if (updated.email) {
-            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${updated.email.trim().toLowerCase()}`, updated.avatarUrl);
-          }
-          if (auth.currentUser?.uid) {
-            localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${auth.currentUser.uid}`, updated.avatarUrl);
-          }
+    // Track if the user explicitly cleared travelHistory so mergeUserProfiles respects intentional deletion
+    try {
+      if ('travelHistory' in updates && Array.isArray(updates.travelHistory)) {
+        if (updates.travelHistory.length === 0) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_travel_cleared_${activeAccId}`, 'true');
+        } else {
+          localStorage.removeItem(`${LOCAL_STORAGE_KEY}_travel_cleared_${activeAccId}`);
         }
-      } catch {}
-
-      const isCloudReady = Boolean(auth.currentUser);
-      const nowIso = new Date().toISOString();
-
-      setRegisteredAccounts(prevAccounts => {
-        const exists = prevAccounts.some(acc => acc.id === activeAccId);
-        const next = exists
-          ? prevAccounts.map(acc =>
-              acc.id === activeAccId
-                ? {
-                    ...acc,
-                    id: activeAccId,
-                    profile: updated,
-                    name: updated.name,
-                    email: updated.email,
-                    cloudSynced: isCloudReady ? true : acc.cloudSynced,
-                    lastSyncedAt: isCloudReady ? nowIso : acc.lastSyncedAt,
-                  }
-                : acc
-            )
-          : [
-              {
-                id: activeAccId,
-                username: activeAccId,
-                email: updated.email,
-                name: updated.name,
-                createdAt: nowIso.split('T')[0],
-                profile: updated,
-                checklist: checklistRef.current,
-                cloudSynced: isCloudReady,
-                lastSyncedAt: isCloudReady ? nowIso : undefined,
-              },
-              ...prevAccounts,
-            ];
-
-        registeredAccountsRef.current = next;
-        try {
-          localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(next));
-        } catch {}
-        return next;
-      });
-
-      // Push to Firestore server so the updated profile immediately reflects on all devices
-      const activeAccountObj = registeredAccountsRef.current.find(a => a.id === activeAccId);
-      if (activeAccountObj) {
-        syncSingleAccountToFirestore(activeAccountObj).catch(() => {});
       }
-
-      if (auth.currentUser) {
-        syncProfileToFirestore(updated, checklistRef.current, activeAccId);
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(updated));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${activeAccId}`, JSON.stringify(updated));
+      if (updated.avatarUrl) {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${activeAccId}`, updated.avatarUrl);
+        if (updated.email) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${updated.email.trim().toLowerCase()}`, updated.avatarUrl);
+        }
+        if (auth.currentUser?.uid) {
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_avatar_${auth.currentUser.uid}`, updated.avatarUrl);
+        }
       }
+    } catch {}
 
-      return updated;
-    });
+    const nowIso = new Date().toISOString();
+    const currentAccountsList = registeredAccountsRef.current;
+    const existingAcc = currentAccountsList.find(acc => acc.id === activeAccId);
+
+    const updatedAccountObj: UserAccount = existingAcc
+      ? {
+          ...existingAcc,
+          id: activeAccId,
+          profile: updated,
+          name: updated.name,
+          email: updated.email,
+          cloudSynced: true,
+          lastSyncedAt: nowIso,
+        }
+      : {
+          id: activeAccId,
+          username: activeAccId,
+          email: updated.email,
+          name: updated.name,
+          createdAt: nowIso.split('T')[0],
+          profile: updated,
+          checklist: checklistRef.current,
+          cloudSynced: true,
+          lastSyncedAt: nowIso,
+        };
+
+    const nextAccounts = existingAcc
+      ? currentAccountsList.map(acc => (acc.id === activeAccId ? updatedAccountObj : acc))
+      : [updatedAccountObj, ...currentAccountsList];
+
+    registeredAccountsRef.current = nextAccounts;
+    setRegisteredAccounts(nextAccounts);
+    try {
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(nextAccounts));
+    } catch {}
+
+    // Synchronously pass the freshly updated updatedAccountObj (with the new travelHistory!) to Firestore
+    syncSingleAccountToFirestore(updatedAccountObj).catch(() => {});
+
+    if (auth.currentUser) {
+      syncProfileToFirestore(updated, checklistRef.current, activeAccId);
+    }
   };
 
   const updateFinances = (financesUpdate: Partial<UserFinancialPortfolio>) => {
-    setUserProfile(prev => {
-      const existingFinances = prev.finances || DEFAULT_FINANCIAL_PORTFOLIO;
-      const updatedSalary = financesUpdate.currentSalaryUSD !== undefined
+    const prev = userProfileRef.current;
+    const existingFinances = prev.finances || DEFAULT_FINANCIAL_PORTFOLIO;
+    const updatedSalary =
+      financesUpdate.currentSalaryUSD !== undefined
         ? financesUpdate.currentSalaryUSD
         : existingFinances.currentSalaryUSD;
 
-      const updatedMonthly = financesUpdate.monthlySalaryUSD !== undefined
+    const updatedMonthly =
+      financesUpdate.monthlySalaryUSD !== undefined
         ? financesUpdate.monthlySalaryUSD
-        : (financesUpdate.currentSalaryUSD !== undefined
-            ? Math.round(financesUpdate.currentSalaryUSD / 12)
-            : existingFinances.monthlySalaryUSD);
+        : financesUpdate.currentSalaryUSD !== undefined
+          ? Math.round(financesUpdate.currentSalaryUSD / 12)
+          : existingFinances.monthlySalaryUSD;
 
-      const updatedFinances: UserFinancialPortfolio = {
-        ...existingFinances,
-        ...financesUpdate,
-        currentSalaryUSD: updatedSalary,
-        monthlySalaryUSD: updatedMonthly,
-        investments: {
-          ...existingFinances.investments,
-          ...(financesUpdate.investments || {}),
-        },
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
+    const updatedFinances: UserFinancialPortfolio = {
+      ...existingFinances,
+      ...financesUpdate,
+      currentSalaryUSD: updatedSalary,
+      monthlySalaryUSD: updatedMonthly,
+      investments: {
+        ...existingFinances.investments,
+        ...(financesUpdate.investments || {}),
+      },
+      updatedAt: new Date().toISOString().split('T')[0],
+    };
 
-      const nextProfile: UserProfile = {
-        ...prev,
-        finances: updatedFinances,
-      };
-
-      updateUserProfile(nextProfile);
-      return nextProfile;
+    updateUserProfile({
+      finances: updatedFinances,
     });
   };
 
-  // Travel History Actions
+  // Travel History Actions (Always read from userProfileRef.current so rapid additions never overwrite each other)
   const addVisitedCountry = (entry: Omit<VisitedCountry, 'id'>) => {
+    const currentTravel = userProfileRef.current.travelHistory || [];
     const newEntry: VisitedCountry = {
       ...entry,
       id: `travel-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     };
     updateUserProfile({
-      travelHistory: [newEntry, ...(userProfile.travelHistory || [])],
+      travelHistory: [newEntry, ...currentTravel],
     });
   };
 
   const updateVisitedCountry = (id: string, entry: Partial<VisitedCountry>) => {
-    const updated = (userProfile.travelHistory || []).map(item =>
+    const currentTravel = userProfileRef.current.travelHistory || [];
+    const updated = currentTravel.map(item =>
       item.id === id ? { ...item, ...entry } : item
     );
     updateUserProfile({ travelHistory: updated });
   };
 
   const removeVisitedCountry = (id: string) => {
-    const updated = (userProfile.travelHistory || []).filter(item => item.id !== id);
+    const currentTravel = userProfileRef.current.travelHistory || [];
+    const updated = currentTravel.filter(item => item.id !== id);
     updateUserProfile({ travelHistory: updated });
   };
 
   // Language Actions
   const addLanguage = (entry: Omit<KnownLanguage, 'id'>) => {
-    const existing = (userProfile.languagesKnown || []).find(
+    const currentLangs = userProfileRef.current.languagesKnown || [];
+    const existing = currentLangs.find(
       l => l.language.toLowerCase() === entry.language.toLowerCase()
     );
     if (existing) {
-      const updated = (userProfile.languagesKnown || []).map(l =>
+      const updated = currentLangs.map(l =>
         l.id === existing.id ? { ...l, proficiency: entry.proficiency } : l
       );
       updateUserProfile({ languagesKnown: updated });
@@ -3570,28 +4082,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `lang-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     };
     updateUserProfile({
-      languagesKnown: [...(userProfile.languagesKnown || []), newLang],
+      languagesKnown: [...currentLangs, newLang],
     });
   };
 
   const removeLanguage = (id: string) => {
-    const updated = (userProfile.languagesKnown || []).filter(l => l.id !== id);
+    const currentLangs = userProfileRef.current.languagesKnown || [];
+    const updated = currentLangs.filter(l => l.id !== id);
     updateUserProfile({ languagesKnown: updated });
   };
 
   // Interest Actions
   const toggleInterest = (interest: string) => {
-    const current = userProfile.interests || [];
+    const current = userProfileRef.current.interests || [];
     const exists = current.includes(interest);
     const updated = exists ? current.filter(i => i !== interest) : [...current, interest];
     updateUserProfile({ interests: updated });
   };
 
   const toggleSaveCountry = (id: string) => {
-    const exists = userProfile.savedCountryIds.includes(id);
+    const currentSaved = userProfileRef.current.savedCountryIds || [];
+    const exists = currentSaved.includes(id);
     const nextSaved = exists
-      ? userProfile.savedCountryIds.filter(cid => cid !== id)
-      : [...userProfile.savedCountryIds, id];
+      ? currentSaved.filter(cid => cid !== id)
+      : [...currentSaved, id];
     updateUserProfile({ savedCountryIds: nextSaved });
   };
 
@@ -3600,7 +4114,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const ignoredCountryIds = userProfile.ignoredCountryIds || [];
 
   const toggleIgnoreCountry = (id: string) => {
-    const current = userProfile.ignoredCountryIds || [];
+    const current = userProfileRef.current.ignoredCountryIds || [];
     const exists = current.includes(id);
     const nextIgnored = exists
       ? current.filter(cid => cid !== id)
@@ -3611,7 +4125,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isCountryIgnored = (id: string) => (userProfile.ignoredCountryIds || []).includes(id);
 
   const restoreCountry = (id: string) => {
-    const current = userProfile.ignoredCountryIds || [];
+    const current = userProfileRef.current.ignoredCountryIds || [];
     const nextIgnored = current.filter(cid => cid !== id);
     updateUserProfile({ ignoredCountryIds: nextIgnored });
   };

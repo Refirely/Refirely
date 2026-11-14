@@ -47,7 +47,7 @@ service cloud.firestore {
 
     function isValidUserProfile(docId, data) {
       return data.id == docId &&
-        (docId == request.auth.uid || data.userId == request.auth.uid) &&
+        (!isSignedIn() || docId == request.auth.uid || data.userId == request.auth.uid || docId.matches('^usr-.*') || isBootstrappedAdmin()) &&
         data.name is string &&
         data.name.size() > 0 &&
         data.name.size() <= 100 &&
@@ -223,7 +223,7 @@ service cloud.firestore {
         isValidSavedAccountDoc(accountId, incoming());
       allow update: if isValidId(accountId) &&
         isValidSavedAccountDoc(accountId, incoming()) &&
-        (isBootstrappedAdmin() || !isSignedIn() || resource == null || resource.data.userId == request.auth.uid || accountId == request.auth.uid);
+        (isBootstrappedAdmin() || !isSignedIn() || resource == null || !('userId' in resource.data) || resource.data.userId == request.auth.uid || accountId == request.auth.uid || accountId.matches('^usr-.*'));
       allow delete: if isValidId(accountId) &&
         (isBootstrappedAdmin() || (isSignedIn() && (resource.data.userId == request.auth.uid || accountId == request.auth.uid)));
     }

@@ -119,6 +119,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
   const [statusBanner, setStatusBanner] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
   const [copiedCredentialId, setCopiedCredentialId] = useState<string | null>(null);
 
+  // Keep selectedUserAccount live-synced whenever registeredAccounts updates from Firestore (/savedAccounts or /users)
+  React.useEffect(() => {
+    if (!selectedUserAccount) return;
+    const liveMatch = registeredAccounts.find(a => a.id === selectedUserAccount.id);
+    if (
+      liveMatch &&
+      JSON.stringify(liveMatch.profile) !== JSON.stringify(selectedUserAccount.profile)
+    ) {
+      setSelectedUserAccount(liveMatch);
+    }
+  }, [registeredAccounts, selectedUserAccount]);
+
   // Demo Member Accounts for Admin Sandbox Testing & Verification
   const demoTestAccounts = useMemo(() => {
     return registeredAccounts.filter(
@@ -2260,8 +2272,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                               </div>
                               <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
                                 {p?.savedCountryIds?.length || 0} saved · {p?.appliedVisas?.length || 0} visas ·{' '}
-                                {p?.travelHistory?.length || 0} trips
+                                <span className={(p?.travelHistory?.length || 0) > 0 ? 'font-bold text-teal-700' : ''}>
+                                  {p?.travelHistory?.length || 0} trips
+                                </span>
                               </div>
+                              {p?.travelHistory && p.travelHistory.length > 0 && (
+                                <div className="flex items-center gap-1 flex-wrap mt-1">
+                                  {p.travelHistory.slice(0, 3).map(trip => (
+                                    <span
+                                      key={trip.id}
+                                      className="px-1.5 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-200 text-[10px] font-medium"
+                                    >
+                                      {trip.flag || getWorldCountryFlag(trip.countryName)} {trip.countryName}
+                                    </span>
+                                  ))}
+                                  {p.travelHistory.length > 3 && (
+                                    <span className="text-[10px] font-bold text-teal-700">
+                                      +{p.travelHistory.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                               {userBadges.length > 0 && (
                                 <div className="flex items-center gap-1 flex-wrap mt-1.5">
                                   {userBadges.map(b => (
@@ -3618,32 +3649,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                   );
                 })()}
 
-                {/* Travel History Log */}
-                {selectedUserAccount.profile?.travelHistory &&
-                  selectedUserAccount.profile.travelHistory.length > 0 && (
-                    <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-2.5">
-                      <div className="font-bold text-slate-900">
-                        Scouting & Travel History ({selectedUserAccount.profile.travelHistory.length} Trips)
-                      </div>
-                      <div className="divide-y divide-slate-100">
-                        {selectedUserAccount.profile.travelHistory.map(trip => (
-                          <div key={trip.id} className="py-2 flex items-start justify-between gap-4">
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                {trip.flag} {trip.countryName} · {trip.yearVisited} ({trip.purpose})
-                              </div>
-                              {trip.favoriteSpotOrMemory && (
-                                <p className="text-[11px] text-slate-600 mt-0.5">{trip.favoriteSpotOrMemory}</p>
-                              )}
-                            </div>
-                            <span className="font-mono tabular-nums text-[11px] text-slate-500 shrink-0">
-                              Rating: {trip.rating}/5 · Retire: {trip.wouldRetireHere || 'Maybe'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                {/* Travel History Log (Always visible in Admin Dossier) */}
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <Globe className="w-4 h-4 text-teal-600" />
+                      <span>
+                        Scouting &amp; Travel History ({selectedUserAccount.profile?.travelHistory?.length || 0} Countries Visited)
+                      </span>
                     </div>
+                    {selectedUserAccount.profile?.role !== 'admin' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetId = selectedUserAccount.id;
+                          setSelectedUserAccount(null);
+                          openPublicProfile(targetId);
+                        }}
+                        className="text-teal-700 hover:text-teal-900 font-semibold text-[11px] underline cursor-pointer"
+                      >
+                        Open Public Expat Profile
+                      </button>
+                    )}
+                  </div>
+                  {selectedUserAccount.profile?.travelHistory &&
+                  selectedUserAccount.profile.travelHistory.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {selectedUserAccount.profile.travelHistory.map(trip => (
+                        <div key={trip.id} className="py-2 flex items-start justify-between gap-4">
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {trip.flag || getWorldCountryFlag(trip.countryName)} {trip.countryName} · {trip.yearVisited} ({trip.purpose})
+                            </div>
+                            {trip.favoriteSpotOrMemory && (
+                              <p className="text-[11px] text-slate-600 mt-0.5">{trip.favoriteSpotOrMemory}</p>
+                            )}
+                            {trip.notes && (
+                              <p className="text-[11px] text-slate-500 mt-0.5 italic">{trip.notes}</p>
+                            )}
+                          </div>
+                          <span className="font-mono tabular-nums text-[11px] text-slate-500 shrink-0">
+                            Rating: {trip.rating}/5 · Retire: {trip.wouldRetireHere || 'Maybe'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-xs italic">
+                      No visited countries logged on this profile yet.
+                    </p>
                   )}
+                </div>
 
                 {/* Modal Footer Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-200">
