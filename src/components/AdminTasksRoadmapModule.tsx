@@ -28,6 +28,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { motion } from 'motion/react';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 
 export type AdminTaskStatus = 'ideation' | 'planned' | 'in_progress' | 'testing' | 'finished';
@@ -1017,111 +1018,279 @@ export const AdminTasksRoadmapModule: React.FC = () => {
 
           {/* Visual Infographic: 5-Stage Pipeline Funnel + Priority & Workstream Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left 7 Cols: 5-Stage Lifecycle Pipeline Infographic */}
-            <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-slate-900 text-white space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 block">
-                    Visual Roadmap Infographic
-                  </span>
-                  <h3 className="text-sm sm:text-base font-extrabold text-white">
-                    5-Stage Product Lifecycle &amp; Execution Funnel
-                  </h3>
+            {/* Left 7 Cols: 5-Stage Lifecycle Pipeline Infographic (Light Luminous & Animated Theme) */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="lg:col-span-7 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-emerald-50/75 border border-indigo-200/80 shadow-xs relative overflow-hidden space-y-5"
+            >
+              {/* Soft decorative ambient blobs */}
+              <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-teal-200/30 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-indigo-200/30 blur-3xl" />
+
+              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-start gap-2.5">
+                  <motion.div
+                    animate={{ rotate: [0, 6, -6, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5"
+                  >
+                    <Milestone className="w-4 h-4" />
+                  </motion.div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
+                        Visual Roadmap Infographic
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                      5-Stage Product Lifecycle &amp; Execution Funnel
+                    </h3>
+                  </div>
                 </div>
-                <span className="font-mono tabular-nums text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 rounded-lg">
-                  Overall Weighted Completion: {stats.avgOverallProgress}%
-                </span>
+                <motion.div
+                  initial={{ scale: 0.92, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.15, type: 'spring', stiffness: 240, damping: 20 }}
+                  className="inline-flex items-center gap-2 font-mono tabular-nums text-xs font-extrabold text-emerald-900 bg-white/90 border border-emerald-300/90 shadow-2xs px-3 py-1.5 rounded-xl self-start sm:self-auto"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Weighted Completion: {stats.avgOverallProgress}%</span>
+                </motion.div>
               </div>
 
-              {/* Stacked Multi-Segment Progress Bar */}
-              <div className="space-y-1.5">
-                <div className="w-full h-3.5 rounded-full bg-white/10 overflow-hidden flex">
-                  {(['finished', 'testing', 'in_progress', 'planned', 'ideation'] as AdminTaskStatus[]).map(st => {
-                    const count =
-                      st === 'finished'
-                        ? stats.finishedCount
-                        : st === 'testing'
-                        ? stats.testingCount
-                        : st === 'in_progress'
-                        ? stats.inProgressCount
-                        : st === 'planned'
-                        ? stats.plannedCount
-                        : stats.ideationCount;
-                    const widthPct = stats.total > 0 ? (count / stats.total) * 100 : 0;
-                    if (widthPct <= 0) return null;
-                    return (
-                      <div
-                        key={st}
-                        style={{ width: `${widthPct}%` }}
-                        title={`${TASK_STATUS_META[st].label}: ${count} tasks (${Math.round(widthPct)}%)`}
-                        className={`h-full ${TASK_STATUS_META[st].barColor} transition-all duration-500 first:rounded-l-full last:rounded-r-full`}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300 pt-1">
-                  {(['ideation', 'planned', 'in_progress', 'testing', 'finished'] as AdminTaskStatus[]).map(st => {
-                    const count =
-                      st === 'finished'
-                        ? stats.finishedCount
-                        : st === 'testing'
-                        ? stats.testingCount
-                        : st === 'in_progress'
-                        ? stats.inProgressCount
-                        : st === 'planned'
-                        ? stats.plannedCount
-                        : stats.ideationCount;
-                    const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-                    return (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setStatusFilter(statusFilter === st ? 'all' : st)}
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all cursor-pointer ${
-                          statusFilter === st
-                            ? 'bg-white/15 border-amber-400 text-white'
-                            : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200'
-                        }`}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${TASK_STATUS_META[st].dotColor}`} />
-                        <span className="font-semibold">{TASK_STATUS_META[st].shortLabel}:</span>
-                        <span className="font-mono tabular-nums font-bold text-white">
-                          {count} ({pct}%)
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* 5-Stage Visual Funnel Cards with Animated Step Connectors */}
+              <div className="relative grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                {(
+                  [
+                    {
+                      st: 'ideation' as AdminTaskStatus,
+                      stepNum: '01',
+                      icon: Lightbulb,
+                      cardBg: 'from-purple-50/95 via-white to-purple-50/50',
+                      borderCls: 'border-purple-200/90 hover:border-purple-400',
+                      activeCls: 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/90',
+                      iconWrap: 'bg-purple-100 text-purple-700 border-purple-200',
+                      numText: 'text-purple-950',
+                      pctBadge: 'bg-purple-100/90 text-purple-800',
+                    },
+                    {
+                      st: 'planned' as AdminTaskStatus,
+                      stepNum: '02',
+                      icon: Target,
+                      cardBg: 'from-sky-50/95 via-white to-sky-50/50',
+                      borderCls: 'border-sky-200/90 hover:border-sky-400',
+                      activeCls: 'ring-2 ring-sky-500 border-sky-500 bg-sky-50/90',
+                      iconWrap: 'bg-sky-100 text-sky-700 border-sky-200',
+                      numText: 'text-sky-950',
+                      pctBadge: 'bg-sky-100/90 text-sky-800',
+                    },
+                    {
+                      st: 'in_progress' as AdminTaskStatus,
+                      stepNum: '03',
+                      icon: Rocket,
+                      cardBg: 'from-amber-50/95 via-white to-amber-50/50',
+                      borderCls: 'border-amber-200/90 hover:border-amber-400',
+                      activeCls: 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/90',
+                      iconWrap: 'bg-amber-100 text-amber-800 border-amber-200',
+                      numText: 'text-amber-950',
+                      pctBadge: 'bg-amber-100/90 text-amber-900',
+                    },
+                    {
+                      st: 'testing' as AdminTaskStatus,
+                      stepNum: '04',
+                      icon: Sparkles,
+                      cardBg: 'from-indigo-50/95 via-white to-indigo-50/50',
+                      borderCls: 'border-indigo-200/90 hover:border-indigo-400',
+                      activeCls: 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/90',
+                      iconWrap: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                      numText: 'text-indigo-950',
+                      pctBadge: 'bg-indigo-100/90 text-indigo-800',
+                    },
+                    {
+                      st: 'finished' as AdminTaskStatus,
+                      stepNum: '05',
+                      icon: CheckCircle2,
+                      cardBg: 'from-emerald-50/95 via-white to-emerald-50/50',
+                      borderCls: 'border-emerald-300/90 hover:border-emerald-500',
+                      activeCls: 'ring-2 ring-emerald-600 border-emerald-600 bg-emerald-50/90',
+                      iconWrap: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                      numText: 'text-emerald-950',
+                      pctBadge: 'bg-emerald-100/90 text-emerald-800',
+                    },
+                  ] as const
+                ).map((stageCfg, idx) => {
+                  const StageIcon = stageCfg.icon;
+                  const count =
+                    stageCfg.st === 'finished'
+                      ? stats.finishedCount
+                      : stageCfg.st === 'testing'
+                      ? stats.testingCount
+                      : stageCfg.st === 'in_progress'
+                      ? stats.inProgressCount
+                      : stageCfg.st === 'planned'
+                      ? stats.plannedCount
+                      : stats.ideationCount;
+                  const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                  const isSelected = statusFilter === stageCfg.st;
 
-              {/* Workstream Category Progress Bars */}
-              <div className="pt-2 border-t border-white/10 space-y-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Progress by Workstream Category
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {stats.categoryStats.slice(0, 6).map(cat => (
-                    <div
-                      key={cat.category}
-                      className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1"
+                  return (
+                    <motion.button
+                      key={stageCfg.st}
+                      type="button"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.07, duration: 0.35, ease: 'easeOut' }}
+                      whileHover={{ y: -3, scale: 1.015 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setStatusFilter(isSelected ? 'all' : stageCfg.st)}
+                      className={`group relative text-left p-3 rounded-xl bg-gradient-to-b ${stageCfg.cardBg} border transition-all cursor-pointer shadow-2xs ${
+                        isSelected ? stageCfg.activeCls : stageCfg.borderCls
+                      }`}
                     >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-slate-200 truncate">{cat.category}</span>
-                        <span className="font-mono tabular-nums text-[11px] text-amber-300 font-bold shrink-0">
-                          {cat.finished}/{cat.total} ({cat.avgProgress}%)
+                      <div className="flex items-center justify-between gap-1 mb-2">
+                        <span
+                          className={`w-7 h-7 rounded-lg border flex items-center justify-center ${stageCfg.iconWrap} transition-transform group-hover:scale-110`}
+                        >
+                          <StageIcon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="font-mono text-[10px] font-extrabold text-slate-400">
+                          STAGE {stageCfg.stepNum}
                         </span>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400 transition-all duration-500"
-                          style={{ width: `${cat.avgProgress}%` }}
+
+                      <div className="text-[11px] font-extrabold text-slate-700 truncate">
+                        {TASK_STATUS_META[stageCfg.st].shortLabel}
+                      </div>
+
+                      <div className="mt-1 flex items-baseline justify-between gap-1">
+                        <span className={`font-mono tabular-nums text-xl font-black ${stageCfg.numText}`}>
+                          {count}
+                        </span>
+                        <span
+                          className={`font-mono tabular-nums text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${stageCfg.pctBadge}`}
+                        >
+                          {pct}%
+                        </span>
+                      </div>
+
+                      {/* Mini Stage Share Bar */}
+                      <div className="w-full h-1.5 rounded-full bg-slate-200/70 overflow-hidden mt-2">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, delay: 0.15 + idx * 0.07, ease: 'easeOut' }}
+                          className={`h-full rounded-full ${TASK_STATUS_META[stageCfg.st].barColor}`}
                         />
                       </div>
-                    </div>
+
+                      {idx < 4 && (
+                        <div className="hidden sm:flex items-center justify-center absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 rounded-full bg-white border border-slate-200 text-slate-400 shadow-2xs pointer-events-none">
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Animated Multi-Segment Funnel Distribution Bar */}
+              <div className="relative p-3 rounded-xl bg-white/85 border border-slate-200/80 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-600 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Unified Lifecycle Distribution Bar (Click any stage above to filter)</span>
+                  </span>
+                  {statusFilter !== 'all' && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('all')}
+                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer whitespace-nowrap"
+                    >
+                      Reset Stage Filter
+                    </button>
+                  )}
+                </div>
+                <div className="w-full h-3.5 rounded-full bg-slate-100 border border-slate-200/80 overflow-hidden flex p-0.5 gap-0.5">
+                  {(['finished', 'testing', 'in_progress', 'planned', 'ideation'] as AdminTaskStatus[]).map(
+                    (st, segIdx) => {
+                      const count =
+                        st === 'finished'
+                          ? stats.finishedCount
+                          : st === 'testing'
+                          ? stats.testingCount
+                          : st === 'in_progress'
+                          ? stats.inProgressCount
+                          : st === 'planned'
+                          ? stats.plannedCount
+                          : stats.ideationCount;
+                      const widthPct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                      if (widthPct <= 0) return null;
+                      return (
+                        <motion.div
+                          key={st}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${widthPct}%` }}
+                          transition={{ duration: 0.75, delay: segIdx * 0.06, ease: 'easeOut' }}
+                          title={`${TASK_STATUS_META[st].label}: ${count} tasks (${Math.round(widthPct)}%)`}
+                          onClick={() => setStatusFilter(statusFilter === st ? 'all' : st)}
+                          className={`h-full ${TASK_STATUS_META[st].barColor} rounded-full cursor-pointer hover:brightness-110 transition-all`}
+                        />
+                      );
+                    }
+                  )}
+                </div>
+              </div>
+
+              {/* Workstream Category Progress Bars (Light Cards + Animated Bars) */}
+              <div className="relative pt-2 border-t border-indigo-100/90 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Execution Velocity by Workstream Category</span>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500">
+                    Top {Math.min(6, stats.categoryStats.length)} active tracks
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {stats.categoryStats.slice(0, 6).map((cat, catIdx) => (
+                    <motion.div
+                      key={cat.category}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.12 + catIdx * 0.05, duration: 0.3 }}
+                      whileHover={{ y: -2 }}
+                      onClick={() =>
+                        setCategoryFilter(categoryFilter === cat.category ? 'all' : cat.category)
+                      }
+                      className={`p-3 rounded-xl bg-white/95 border transition-all cursor-pointer shadow-2xs space-y-1.5 ${
+                        categoryFilter === cat.category
+                          ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+                          : 'border-slate-200/90 hover:border-indigo-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs gap-2">
+                        <span className="font-bold text-slate-800 truncate">{cat.category}</span>
+                        <span className="font-mono tabular-nums text-[11px] text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
+                          {cat.finished}/{cat.total} · {cat.avgProgress}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/60">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${cat.avgProgress}%` }}
+                          transition={{ duration: 0.75, delay: 0.2 + catIdx * 0.06, ease: 'easeOut' }}
+                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500"
+                        />
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Right 5 Cols: Priority Matrix & Quick Filter Infographic */}
             <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
