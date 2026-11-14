@@ -10,13 +10,19 @@ import {
   MapPin, DollarSign, Briefcase, Award, Pin, Sparkles,
   ArrowUpRight, Clock, BookOpen, Plane, UserPlus, MessageSquarePlus,
   IndianRupee, MessageCircle, LogOut, Copy, Check, FlaskConical, Languages,
-  Crown, Star
+  Crown, Star, CheckSquare
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminFeedbackManagement } from './AdminFeedbackManagement';
 import { AdminSocialPromoStudio } from './AdminSocialPromoStudio';
 import { AdminAccountingModule } from './AdminAccountingModule';
 import { AdminDossierDownloadsModule } from './AdminDossierDownloadsModule';
+import {
+  AdminTasksRoadmapModule,
+  loadStoredAdminTasks,
+  TASK_STATUS_META,
+  TASK_PRIORITY_META,
+} from './AdminTasksRoadmapModule';
 import {
   getUserEarnedBadges,
   BADGE_DEFINITIONS,
@@ -28,7 +34,7 @@ import {
 import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard } from './BadgeShowcase';
 
-type AdminTab = 'overview' | 'users' | 'badges' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'downloads' | 'cloud';
+type AdminTab = 'overview' | 'tasks' | 'users' | 'badges' | 'countries' | 'community' | 'feedback' | 'accounting' | 'social-promo' | 'downloads' | 'cloud';
 
 interface AdminDashboardProps {
   onOpenBrandKit?: () => void;
@@ -417,6 +423,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
     };
   }, [activeTab, countries.length]);
 
+  // Live Admin Tasks & Roadmap Snapshot
+  const tasksSnapshot = useMemo(() => {
+    const list = loadStoredAdminTasks();
+    const total = list.length;
+    const finishedCount = list.filter(t => t.status === 'finished').length;
+    const inProgressCount = list.filter(t => t.status === 'in_progress' || t.status === 'testing').length;
+    const plannedCount = list.filter(t => t.status === 'planned').length;
+    const ideationCount = list.filter(t => t.status === 'ideation').length;
+    const activeCount = total - finishedCount;
+    const completionRate = total > 0 ? Math.round((finishedCount / total) * 100) : 0;
+    const avgProgress =
+      total > 0
+        ? Math.round(
+            list.reduce((s, t) => s + (t.status === 'finished' ? 100 : t.progressPercent || 0), 0) / total
+          )
+        : 0;
+    return {
+      total,
+      finishedCount,
+      activeCount,
+      inProgressCount,
+      plannedCount,
+      ideationCount,
+      completionRate,
+      avgProgress,
+      recentTasks: list.slice(0, 4),
+    };
+  }, [activeTab]);
+
   // Live Dossier Downloads Snapshot
   const downloadStats = useMemo(() => {
     const total = dossierDownloads.length;
@@ -669,6 +704,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
               <span aria-hidden="true">/</span>
               <span className="text-slate-900 font-semibold">
                 {activeTab === 'overview' && 'All-Modules Executive Snapshot'}
+                {activeTab === 'tasks' && `Tasks, Feature Roadmap & Milestones (${tasksSnapshot.total})`}
                 {activeTab === 'users' && `Registered Users & Expats (${registeredAccounts.length})`}
                 {activeTab === 'badges' && `Expat Honors & Profile Badges Hub`}
                 {activeTab === 'countries' && `Country Catalog CMS (${countries.length})`}
@@ -682,6 +718,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
               {activeTab === 'overview' && 'Platform Governance & All-Modules Snapshot'}
+              {activeTab === 'tasks' && 'Admin Tasks, Feature Ideation & Milestone Tracker'}
               {activeTab === 'users' && 'Registered Users & Expat Profiles'}
               {activeTab === 'badges' && 'Expat Honors, Identity Badges & Retention Governance'}
               {activeTab === 'countries' && 'Global Country Dossier Catalog CMS'}
@@ -781,7 +818,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                   activeTab === 'overview' ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'
                 }`}
               >
-                9
+                10
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'tasks'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <CheckSquare className="w-4 h-4 text-emerald-500" />
+                <span>Tasks &amp; Roadmap</span>
+              </span>
+              <span
+                className={`font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  activeTab === 'tasks' ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-800'
+                }`}
+              >
+                {tasksSnapshot.finishedCount}/{tasksSnapshot.total}
               </span>
             </button>
 
@@ -1897,6 +1955,108 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
                         className="font-bold text-teal-700 hover:text-teal-900 cursor-pointer"
                       >
                         Explore Infographics &amp; Matrix →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MODULE SNAPSHOT 10: ADMIN TASKS, FEATURE ROADMAP & MILESTONES */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <span className="text-[11px] font-semibold text-indigo-600">
+                            Module 10 · Ideation, Execution &amp; Milestone Governance
+                          </span>
+                          <h2 className="text-base font-bold text-slate-900 mt-0.5">
+                            Tasks &amp; Feature Roadmap ({tasksSnapshot.total} Tasks)
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Ideate, plan, execute, and track project features, deadlines, priorities, and finished milestones.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('tasks')}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <span>Open Module</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Mini Infographic KPI & Progress Strip */}
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <div className="text-[11px] text-slate-500">Finished</div>
+                            <div className="font-mono tabular-nums text-base font-extrabold text-emerald-700">
+                              {tasksSnapshot.finishedCount}/{tasksSnapshot.total}
+                            </div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <div className="text-[11px] text-slate-500">In Execution</div>
+                            <div className="font-mono tabular-nums text-base font-extrabold text-amber-700">
+                              {tasksSnapshot.inProgressCount}
+                            </div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <div className="text-[11px] text-slate-500">Avg Progress</div>
+                            <div className="font-mono tabular-nums text-base font-extrabold text-indigo-700">
+                              {tasksSnapshot.avgProgress}%
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden flex">
+                          <div
+                            className="h-full bg-gradient-to-r from-indigo-600 via-teal-500 to-emerald-500 transition-all"
+                            style={{ width: `${tasksSnapshot.avgProgress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Recent Tasks Preview */}
+                      <div className="divide-y divide-slate-100">
+                        {tasksSnapshot.recentTasks.map(task => {
+                          const pMeta = TASK_PRIORITY_META[task.priority];
+                          const sMeta = TASK_STATUS_META[task.status];
+                          return (
+                            <div key={task.id} className="py-2 flex items-center justify-between gap-2 text-xs">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-900 truncate">
+                                  {task.status === 'finished' ? '✅ ' : ''}
+                                  {task.title}
+                                </div>
+                                <div className="text-[11px] text-slate-500 truncate">
+                                  {task.category} · Due {task.deadline}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase border ${pMeta.badgeClass}`}
+                                >
+                                  {pMeta.label}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[9px] font-bold border ${sMeta.badgeClass}`}
+                                >
+                                  {sMeta.shortLabel}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        {tasksSnapshot.ideationCount} Ideation · {tasksSnapshot.plannedCount} Planned
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('tasks')}
+                        className="font-bold text-indigo-700 hover:text-indigo-900 cursor-pointer"
+                      >
+                        Open Tasks &amp; Roadmap →
                       </button>
                     </div>
                   </div>
@@ -3101,6 +3261,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
             ========================================================= */}
             {activeTab === 'downloads' && (
               <AdminDossierDownloadsModule />
+            )}
+
+            {/* =========================================================
+                TAB 5.9: ADMIN TASKS, FEATURE ROADMAP & MILESTONE TRACKER
+            ========================================================= */}
+            {activeTab === 'tasks' && (
+              <AdminTasksRoadmapModule />
             )}
 
             {/* =========================================================
