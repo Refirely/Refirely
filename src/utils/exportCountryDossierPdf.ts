@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jspdfAutoTable, { UserOptions } from 'jspdf-autotable';
 import {
   Country,
   CommunityThread,
@@ -281,10 +281,159 @@ function loadImageAsDataUrl(url: string): Promise<string | null> {
   });
 }
 
+const FONT_TTF_MAP: Record<string, { regular: string; bold: string; italic?: string }> = {
+  Outfit: {
+    regular: '/fonts/Outfit-Regular.ttf',
+    bold: '/fonts/Outfit-Bold.ttf',
+    italic: '/fonts/Figtree-Italic.ttf',
+  },
+  Figtree: {
+    regular: '/fonts/Figtree-Regular.ttf',
+    bold: '/fonts/Figtree-Bold.ttf',
+    italic: '/fonts/Figtree-Italic.ttf',
+  },
+  Urbanist: {
+    regular: 'https://fonts.gstatic.com/s/urbanist/v18/L0xjDF02iFML4hGCyOCpRdycFsGxSrqDyx4fFg.ttf',
+    bold: 'https://fonts.gstatic.com/s/urbanist/v18/L0xjDF02iFML4hGCyOCpRdycFsGxSrqDLBkfFg.ttf',
+  },
+  'Nunito Sans': {
+    regular:
+      'https://fonts.gstatic.com/s/nunitosans/v19/pe1mMImSLYBIv1o4X1M8ce2xCx3yop4tQpF_MeTm0lfGWVpNn64CL7U8upHZIbMV51Q42ptCp5F5bxqqtQ1yiU4G1ilntA.ttf',
+    bold:
+      'https://fonts.gstatic.com/s/nunitosans/v19/pe1mMImSLYBIv1o4X1M8ce2xCx3yop4tQpF_MeTm0lfGWVpNn64CL7U8upHZIbMV51Q42ptCp5F5bxqqtQ1yiU4GMS5ntA.ttf',
+  },
+  'DM Sans': {
+    regular: 'https://fonts.gstatic.com/s/dmsans/v17/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwAopxhTg.ttf',
+    bold: 'https://fonts.gstatic.com/s/dmsans/v17/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwARZthTg.ttf',
+  },
+  Quicksand: {
+    regular: 'https://fonts.gstatic.com/s/quicksand/v37/6xK-dSZaM9iE8KbpRA_LJ3z8mH9BOJvgkM0o18E.ttf',
+    bold: 'https://fonts.gstatic.com/s/quicksand/v37/6xK-dSZaM9iE8KbpRA_LJ3z8mH9BOJvgkBgv18E.ttf',
+  },
+  Sora: {
+    regular: 'https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSdSnn-K.ttf',
+    bold: 'https://fonts.gstatic.com/s/sora/v17/xMQOuFFYT72X5wkB_18qmnndmSe1mX-K.ttf',
+  },
+  Manrope: {
+    regular: 'https://fonts.gstatic.com/s/manrope/v23/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk79FO_F.ttf',
+    bold: 'https://fonts.gstatic.com/s/manrope/v23/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk4aE-_F.ttf',
+  },
+  'Plus Jakarta Sans': {
+    regular: 'https://fonts.gstatic.com/s/plusjakartasans/v12/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_qU7NSg.ttf',
+    bold: 'https://fonts.gstatic.com/s/plusjakartasans/v12/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_TknNSg.ttf',
+  },
+  Inter: {
+    regular: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf',
+    bold: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf',
+  },
+};
+
+export interface ActivePdfTypographyInfo {
+  displayFont: string;
+  bodyFont: string;
+  label: string;
+  regularUrl: string;
+  boldUrl: string;
+  italicUrl: string;
+}
+
+export function getActivePdfTypographyInfo(): ActivePdfTypographyInfo {
+  let displayFont = 'Outfit';
+  let bodyFont = 'Figtree';
+
+  if (typeof window !== 'undefined') {
+    try {
+      const savedRaw = localStorage.getItem('refirely_typography_theme_v1');
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        const extractPrimaryFont = (cssStr: string | undefined, fallback: string) => {
+          if (!cssStr) return fallback;
+          const first = cssStr.split(',')[0].replace(/["']/g, '').trim();
+          return first || fallback;
+        };
+        displayFont = extractPrimaryFont(parsed.displayCss, 'Outfit');
+        bodyFont = extractPrimaryFont(parsed.bodyCss, 'Figtree');
+      }
+    } catch {
+      // default to Outfit + Figtree
+    }
+  }
+
+  const displayEntry = FONT_TTF_MAP[displayFont] || FONT_TTF_MAP.Outfit;
+  const bodyEntry = FONT_TTF_MAP[bodyFont] || FONT_TTF_MAP.Figtree;
+
+  return {
+    displayFont,
+    bodyFont,
+    label: `${displayFont} + ${bodyFont}`,
+    regularUrl: bodyEntry.regular,
+    boldUrl: displayEntry.bold,
+    italicUrl: bodyEntry.italic || '/fonts/Figtree-Italic.ttf',
+  };
+}
+
+const fontBase64Cache = new Map<string, string>();
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  if (typeof btoa === 'function') {
+    return btoa(binary);
+  }
+  return Buffer.from(buffer).toString('base64');
+}
+
+async function fetchFontAsBase64(url: string, fallbackUrl?: string): Promise<string | null> {
+  if (fontBase64Cache.has(url)) {
+    return fontBase64Cache.get(url)!;
+  }
+  if (typeof window === 'undefined' || typeof fetch === 'undefined') {
+    return null;
+  }
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength < 1000) throw new Error('Invalid font buffer');
+    const b64 = arrayBufferToBase64(buf);
+    fontBase64Cache.set(url, b64);
+    return b64;
+  } catch {
+    if (fallbackUrl && fallbackUrl !== url) {
+      return fetchFontAsBase64(fallbackUrl);
+    }
+    return null;
+  }
+}
+
+export async function preloadPdfTypographyFonts(): Promise<{
+  regularB64: string | null;
+  boldB64: string | null;
+  italicB64: string | null;
+  info: ActivePdfTypographyInfo;
+}> {
+  const info = getActivePdfTypographyInfo();
+  const [regularB64, boldB64, italicB64] = await Promise.all([
+    fetchFontAsBase64(info.regularUrl, '/fonts/Figtree-Regular.ttf'),
+    fetchFontAsBase64(info.boldUrl, '/fonts/Outfit-Bold.ttf'),
+    fetchFontAsBase64(info.italicUrl, '/fonts/Figtree-Italic.ttf'),
+  ]);
+  return { regularB64, boldB64, italicB64, info };
+}
+
 export function preloadDossierBrandAssets(): Promise<{
   logoDataUrl: string | null;
   iconDataUrl: string | null;
 }> {
+  // Also warm up the active TTF font cache in parallel
+  if (typeof window !== 'undefined') {
+    preloadPdfTypographyFonts().catch(() => {});
+  }
   if (cachedLogoDataUrl && cachedIconDataUrl) {
     return Promise.resolve({ logoDataUrl: cachedLogoDataUrl, iconDataUrl: cachedIconDataUrl });
   }
@@ -312,13 +461,73 @@ if (typeof window !== 'undefined') {
 export async function generateCountryDossierPdf(ctx: DossierExportContext): Promise<void> {
   const { country, userProfile, isAuthenticated, journalEntry, threads, meetups, options } = ctx;
   const includeHealthcare = options.includeHealthcareAndInsurance ?? true;
-  const { logoDataUrl, iconDataUrl } = await preloadDossierBrandAssets();
+  const [{ logoDataUrl, iconDataUrl }, fontBundle] = await Promise.all([
+    preloadDossierBrandAssets(),
+    preloadPdfTypographyFonts(),
+  ]);
 
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
   });
+
+  // Register the website's active modern typography (Outfit Bold + Figtree Regular/Italic or active FontThemeStudio preset)
+  let customFontLoaded = false;
+  const PDF_FONT_FAMILY = 'RefirelyModern';
+  try {
+    if (fontBundle.regularB64 && fontBundle.boldB64) {
+      doc.addFileToVFS('RefirelyModern-Regular.ttf', fontBundle.regularB64);
+      doc.addFont('RefirelyModern-Regular.ttf', PDF_FONT_FAMILY, 'normal');
+
+      doc.addFileToVFS('RefirelyModern-Bold.ttf', fontBundle.boldB64);
+      doc.addFont('RefirelyModern-Bold.ttf', PDF_FONT_FAMILY, 'bold');
+
+      const italicData = fontBundle.italicB64 || fontBundle.regularB64;
+      doc.addFileToVFS('RefirelyModern-Italic.ttf', italicData);
+      doc.addFont('RefirelyModern-Italic.ttf', PDF_FONT_FAMILY, 'italic');
+      doc.addFont('RefirelyModern-Bold.ttf', PDF_FONT_FAMILY, 'bolditalic');
+
+      customFontLoaded = true;
+    }
+  } catch (e) {
+    console.warn('Custom PDF font registration fallback to standard sans:', e);
+  }
+
+  // Transparently upgrade all doc.setFont('helvetica', ...) calls to use our registered modern website font
+  const originalSetFont = doc.setFont.bind(doc);
+  doc.setFont = ((fontName: string, fontStyle?: string, fontWeight?: string | number) => {
+    const targetFont =
+      customFontLoaded && (!fontName || fontName.toLowerCase() === 'helvetica')
+        ? PDF_FONT_FAMILY
+        : fontName;
+    return originalSetFont(targetFont, fontStyle, fontWeight);
+  }) as typeof doc.setFont;
+
+  if (customFontLoaded) {
+    doc.setFont(PDF_FONT_FAMILY, 'normal');
+  }
+
+  // Wrapper around jspdfAutoTable so every table across all 35 pages uses the active modern website font
+  const autoTable = (d: jsPDF, tableOptions: UserOptions) => {
+    const activeFont = customFontLoaded ? PDF_FONT_FAMILY : 'helvetica';
+    return jspdfAutoTable(d, {
+      ...tableOptions,
+      styles: {
+        font: activeFont,
+        ...(tableOptions.styles || {}),
+      },
+      headStyles: {
+        font: activeFont,
+        fontStyle: 'bold',
+        ...(tableOptions.headStyles || {}),
+      },
+      bodyStyles: {
+        font: activeFont,
+        ...(tableOptions.bodyStyles || {}),
+      },
+    });
+  };
 
   const pageWidth = doc.internal.pageSize.getWidth(); // 210mm
   const pageHeight = doc.internal.pageSize.getHeight(); // 297mm

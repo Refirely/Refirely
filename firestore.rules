@@ -309,5 +309,20 @@ service cloud.firestore {
         );
       allow delete: if isBootstrappedAdmin() && isValidId(settingId);
     }
+
+    // 9. Top-level /dossierDownloads/{downloadId} collection (Real-time cross-device Country Dossier PDF download tracking)
+    match /dossierDownloads/{downloadId} {
+      allow get: if isValidId(downloadId);
+      allow list: if true;
+      allow create, update: if isValidId(downloadId) &&
+        incoming().id == downloadId &&
+        incoming().countryId is string && incoming().countryId.size() > 0 && incoming().countryId.size() <= 64 &&
+        incoming().countryName is string && incoming().countryName.size() > 0 && incoming().countryName.size() <= 100 &&
+        incoming().isRegisteredUser is bool &&
+        incoming().userName is string && incoming().userName.size() > 0 && incoming().userName.size() <= 120 &&
+        incoming().exportFormat is string && incoming().exportFormat.size() > 0 && incoming().exportFormat.size() <= 150 &&
+        incoming().downloadedAt is string && incoming().downloadedAt.size() > 0 && incoming().downloadedAt.size() <= 40;
+      allow delete: if isBootstrappedAdmin() || isValidId(downloadId);
+    }
   }
 }

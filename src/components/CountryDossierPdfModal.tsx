@@ -14,6 +14,7 @@ import {
   getStructuredVisaRows,
   getShortTermVisasForCountry,
   preloadDossierBrandAssets,
+  getActivePdfTypographyInfo,
 } from '../utils/exportCountryDossierPdf';
 import { getFaqsForCountry } from '../data/countryFaqs';
 import { getCountryHealthcareProfile } from '../data/countryHealthcare';
@@ -98,6 +99,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   const mobility = useMemo(() => getCountryTravelMobility(country), [country]);
   const housing = useMemo(() => getCountryHousingProfile(country), [country]);
   const gastronomy = useMemo(() => getCountryGastronomyProfile(country), [country]);
+  const activePdfFontInfo = useMemo(() => getActivePdfTypographyInfo(), [isOpen]);
 
   // Calculate dynamic page count based on selected sections (35 pages when all sections enabled)
   const estimatedPageCount = useMemo(() => {
@@ -148,6 +150,8 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   const handleDownloadPdf = async () => {
     setIsGenerating(true);
     setExportSuccess(false);
+    // Record the download immediately so the counter updates and syncs to Firestore right away
+    trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier');
     try {
       await generateCountryDossierPdf({
         country,
@@ -158,7 +162,6 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
         meetups,
         options,
       });
-      trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier');
       setExportSuccess(true);
     } finally {
       setIsGenerating(false);
@@ -166,6 +169,7 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
   };
 
   const handleBrowserPrint = () => {
+    trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier (Print)');
     window.print();
   };
 
@@ -206,6 +210,9 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-gradient-to-r from-teal-500/15 via-indigo-500/15 to-amber-500/15 text-indigo-950 border border-indigo-300/80">
                   <Sparkles className="w-3 h-3 text-indigo-600" />
                   {estimatedPageCount}-Page Publication · 22 Chapters
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200">
+                  PDF Font: {activePdfFontInfo.label}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
@@ -423,8 +430,14 @@ export const CountryDossierPdfModal: React.FC<CountryDossierPdfModalProps> = ({
                   {estimatedPageCount} Pages · A4 Vector PDF
                 </span>
               </div>
+              <div className="flex items-center justify-between text-[11px] pt-0.5">
+                <span className="font-bold text-slate-700">Embedded PDF Typography</span>
+                <span className="font-bold text-teal-800 bg-white/90 px-2 py-0.5 rounded-md border border-teal-200">
+                  {activePdfFontInfo.label} (Modern Rounded)
+                </span>
+              </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Includes multi-colored prestige cover page, 22-chapter master blueprint, running headers, neighborhood enclaves, gastronomy tasting guides, tabular financial &amp; healthcare matrices, and 12-month execution roadmap.
+                Includes multi-colored prestige cover page, embedded {activePdfFontInfo.label} TrueType fonts matching the live website, 22-chapter master blueprint, running headers, neighborhood enclaves, gastronomy tasting guides, tabular financial &amp; healthcare matrices, and 12-month execution roadmap.
               </p>
               {exportSuccess && (
                 <div className="pt-2 flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">

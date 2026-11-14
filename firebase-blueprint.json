@@ -563,12 +563,83 @@
         }
       },
       "required": ["id", "earlyPioneerThreshold", "updatedAt"]
+    },
+    "DossierDownloadRecord": {
+      "title": "DossierDownloadRecord",
+      "description": "Audit log record of Country Dossier PDF downloads across registered members and guest visitors",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique download audit identifier",
+          "maxLength": 128
+        },
+        "countryId": {
+          "type": "string",
+          "description": "Country slug identifier",
+          "maxLength": 64
+        },
+        "countryName": {
+          "type": "string",
+          "description": "Display name of the country",
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "ISO country code",
+          "maxLength": 10
+        },
+        "flag": {
+          "type": "string",
+          "description": "Country flag emoji",
+          "maxLength": 20
+        },
+        "isRegisteredUser": {
+          "type": "boolean",
+          "description": "Whether the downloader was a registered user"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Member User ID if registered",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Member display name or Guest label",
+          "maxLength": 120
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Member email if registered",
+          "maxLength": 150
+        },
+        "exportFormat": {
+          "type": "string",
+          "description": "Export format description",
+          "maxLength": 150
+        },
+        "downloadedAt": {
+          "type": "string",
+          "description": "ISO timestamp of download",
+          "maxLength": 40
+        },
+        "deviceInfo": {
+          "type": "string",
+          "description": "Browser and OS telemetry string",
+          "maxLength": 150
+        }
+      },
+      "required": ["id", "countryId", "countryName", "isRegisteredUser", "userName", "exportFormat", "downloadedAt"]
     }
   },
   "firestore": {
     "/platformSettings/{settingId}": {
       "schema": "PlatformThemeConfig",
       "description": "Global platform configuration (such as live website typography) readable by all visitors and writable strictly by administrators"
+    },
+    "/dossierDownloads/{downloadId}": {
+      "schema": "DossierDownloadRecord",
+      "description": "Global collection tracking all Country Dossier PDF downloads across devices and sessions"
     },
     "/feedbackReports/{reportId}": {
       "schema": "FeedbackReport",

@@ -1049,39 +1049,151 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, [feedbackReports]);
 
-  // Dossier Downloads Tracking State with localStorage & Firestore persistence
+  // Dossier Downloads Tracking State with localStorage & real-time Firestore persistence
   const [dossierDownloads, setDossierDownloads] = useState<DossierDownloadRecord[]>(() => {
     try {
-      const isExplicitlyCleared = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`) === 'true';
+      const isExplicitlyCleared = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared_v2`) === 'true';
+      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
+      const parsedLocal: DossierDownloadRecord[] = saved ? JSON.parse(saved) : [];
+
       if (isExplicitlyCleared) {
-        const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            return parsed;
-          }
-        }
-        return [];
+        return Array.isArray(parsedLocal) ? parsedLocal : [];
       }
 
-      const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`);
-      if (saved !== null) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
+      // Merge INITIAL_DOSSIER_DOWNLOADS (with updated April 2026 timestamps + Sri Lanka & Brazil)
+      // and any custom downloads saved in localStorage
+      const mergedMap = new Map<string, DossierDownloadRecord>();
+      INITIAL_DOSSIER_DOWNLOADS.forEach(item => {
+        mergedMap.set(item.id, item);
+      });
+      if (Array.isArray(parsedLocal)) {
+        parsedLocal.forEach(item => {
+          if (!item || !item.id) return;
+          // If it's a seed record (dl-1001..dl-1015), prefer the normalized April 2026 seed timestamp
+          if (mergedMap.has(item.id) && item.id.startsWith('dl-10')) {
+            return;
+          }
+          mergedMap.set(item.id, item);
+        });
       }
-      return INITIAL_DOSSIER_DOWNLOADS;
+
+      return Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.downloadedAt).getTime() - new Date(a.downloadedAt).getTime()
+      );
     } catch {
-      return [];
+      return INITIAL_DOSSIER_DOWNLOADS;
     }
   });
 
+  const dossierDownloadsRef = React.useRef<DossierDownloadRecord[]>(dossierDownloads);
   useEffect(() => {
+    dossierDownloadsRef.current = dossierDownloads;
     try {
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify(dossierDownloads));
     } catch {}
   }, [dossierDownloads]);
+
+  // Helper to sanitize a DossierDownloadRecord for Firestore (strips undefined values which Firestore rejects)
+  const buildCleanFirestoreDownloadDoc = React.useCallback((rec: DossierDownloadRecord): Record<string, any> => {
+    const docData: Record<string, any> = {
+      id: rec.id,
+      countryId: rec.countryId,
+      countryName: rec.countryName,
+      isRegisteredUser: Boolean(rec.isRegisteredUser),
+      userName: rec.userName || 'Guest (Anonymous)',
+      exportFormat: rec.exportFormat || 'Comprehensive 35-Page PDF Dossier',
+      downloadedAt: rec.downloadedAt || new Date().toISOString(),
+    };
+    if (rec.countryCode) docData.countryCode = rec.countryCode;
+    if (rec.flag) docData.flag = rec.flag;
+    if (rec.userId) docData.userId = rec.userId;
+    if (rec.userEmail) docData.userEmail = rec.userEmail;
+    if (rec.deviceInfo) docData.deviceInfo = rec.deviceInfo;
+    return docData;
+  }, []);
+
+  // Real-time listener on top-level /dossierDownloads collection so downloads across all devices/browsers sync live
+  useEffect(() => {
+    if (!db) return;
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const downloadsColl = collection(db, 'dossierDownloads');
+      unsubscribe = onSnapshot(
+        downloadsColl,
+        snapshot => {
+          if (snapshot.empty) return;
+          const isExplicitlyCleared =
+            localStorage.getItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared_v2`) === 'true';
+
+          const remoteRecords: DossierDownloadRecord[] = [];
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data() as DossierDownloadRecord;
+            if (data && data.id && data.countryId && data.countryName) {
+              // Normalize any legacy seed records that had future 2026-10 timestamps
+              const matchingSeed = INITIAL_DOSSIER_DOWNLOADS.find(s => s.id === data.id);
+              remoteRecords.push(
+                matchingSeed && data.id.startsWith('dl-10') ? matchingSeed : data
+              );
+            }
+          });
+
+          if (remoteRecords.length > 0) {
+            setDossierDownloads(prev => {
+              const map = new Map<string, DossierDownloadRecord>();
+              if (!isExplicitlyCleared) {
+                INITIAL_DOSSIER_DOWNLOADS.forEach(seed => map.set(seed.id, seed));
+              }
+              prev.forEach(item => {
+                if (item && item.id) map.set(item.id, item);
+              });
+              let changed = false;
+              remoteRecords.forEach(rem => {
+                if (!map.has(rem.id)) {
+                  changed = true;
+                }
+                map.set(rem.id, rem);
+              });
+
+              const sorted = Array.from(map.values()).sort(
+                (a, b) => new Date(b.downloadedAt).getTime() - new Date(a.downloadedAt).getTime()
+              );
+              if (changed || sorted.length !== prev.length) {
+                try {
+                  localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify(sorted));
+                } catch {}
+                return sorted;
+              }
+              return prev;
+            });
+          }
+        },
+        err => {
+          console.warn('Real-time dossierDownloads listener notice:', err);
+        }
+      );
+    } catch (e) {
+      console.warn('Real-time dossierDownloads setup notice:', e);
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Push local/seed dossier downloads up to Firestore server so all devices share the complete audit trail
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!db) return;
+      const currentDownloads = dossierDownloadsRef.current;
+      currentDownloads.forEach(rec => {
+        if (!rec || !rec.id) return;
+        try {
+          const docRef = doc(db, 'dossierDownloads', rec.id);
+          setDoc(docRef, buildCleanFirestoreDownloadDoc(rec), { merge: true }).catch(() => {});
+        } catch {}
+      });
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [buildCleanFirestoreDownloadDoc]);
 
   const trackDossierDownload = React.useCallback(
     (countryId: string, countryName: string, exportFormat: string = 'Comprehensive 35-Page PDF Dossier') => {
@@ -1106,32 +1218,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         countryName: countryName || targetCountry?.name || countryId,
         countryCode: targetCountry?.code,
         flag: targetCountry?.flag,
-        isRegisteredUser: isAuth && currentId !== 'guest',
+        isRegisteredUser: Boolean(isAuth && currentId !== 'guest'),
         userId: isAuth && currentId !== 'guest' ? currentId : 'guest',
         userName: resolvedUserName,
-        userEmail: resolvedEmail,
+        ...(resolvedEmail ? { userEmail: resolvedEmail } : {}),
         exportFormat,
         downloadedAt: new Date().toISOString(),
-        deviceInfo: typeof navigator !== 'undefined'
-          ? `${navigator.platform || 'Desktop'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`
-          : 'Desktop Browser',
+        deviceInfo:
+          typeof navigator !== 'undefined'
+            ? `${navigator.platform || 'Desktop'} · ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`
+            : 'Desktop Browser',
       };
 
       setDossierDownloads(prev => {
         const updated = [newRecord, ...prev];
+        dossierDownloadsRef.current = updated;
         try {
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify(updated));
-          // If the log was previously reset, keep cleared flag active so it never reverts to seed data!
-          localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`, 'true');
         } catch {}
         return updated;
       });
 
-      // Sync record to Firestore if database is available
+      // Immediately persist clean undefined-free record to Firestore /dossierDownloads/{id}
       try {
         if (db) {
           const docRef = doc(db, 'dossierDownloads', newRecord.id);
-          setDoc(docRef, newRecord).catch(() => {});
+          setDoc(docRef, buildCleanFirestoreDownloadDoc(newRecord)).catch(err => {
+            console.warn('Firestore dossierDownload write notice:', err);
+          });
         }
       } catch {}
 
@@ -1145,15 +1259,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       } catch {}
     },
-    []
+    [buildCleanFirestoreDownloadDoc]
   );
 
   const clearAllDossierDownloads = React.useCallback(() => {
+    const existingToClear = [...dossierDownloadsRef.current];
     setDossierDownloads([]);
+    dossierDownloadsRef.current = [];
     try {
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads`, JSON.stringify([]));
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared`, 'true');
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_dossier_downloads_cleared_v2`, 'true');
     } catch {}
+    if (db) {
+      existingToClear.forEach(rec => {
+        if (rec?.id) {
+          deleteDoc(doc(db, 'dossierDownloads', rec.id)).catch(() => {});
+        }
+      });
+    }
   }, []);
 
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);

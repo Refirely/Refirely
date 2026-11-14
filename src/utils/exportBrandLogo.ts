@@ -354,10 +354,10 @@ export function generateBrandSvgString(variant: BrandAssetVariant): string {
   <g transform="translate(1000, 0)">
     <!-- Kicker Pill -->
     <rect x="0" y="250" width="680" height="58" rx="29" fill="#ffffff" fill-opacity="0.08" stroke="#2dd4bf" stroke-opacity="0.4" stroke-width="2"/>
-    <text x="36" y="288" fill="#5eead4" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="25" font-weight="800" letter-spacing="4">GLOBAL RETIREMENT &amp; FIRE INTELLIGENCE</text>
+    <text x="36" y="288" fill="#5eead4" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="25" font-weight="800" letter-spacing="4">GLOBAL RETIREMENT &amp; FIRE INTELLIGENCE</text>
 
     <!-- Main ReFIREly.com Wordmark (with smaller .com) -->
-    <text x="0" y="535" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="900" letter-spacing="-6">
+    <text x="0" y="535" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="900" letter-spacing="-5">
       <tspan fill="#ffffff" font-size="220">Re</tspan><tspan fill="url(#sp-fire-grad)" font-size="220">FIRE</tspan><tspan fill="url(#sp-ly-grad)" font-size="220">ly</tspan><tspan fill="#94a3b8" font-size="88" font-weight="800" letter-spacing="-1">.com</tspan>
     </text>
 
@@ -365,18 +365,18 @@ export function generateBrandSvgString(variant: BrandAssetVariant): string {
     <rect x="6" y="585" width="1220" height="12" rx="6" fill="url(#sp-ribbon)"/>
 
     <!-- Tagline -->
-    <text x="6" y="670" fill="#e2e8f0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="43" font-weight="800" letter-spacing="4.5">
+    <text x="6" y="670" fill="#e2e8f0" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="43" font-weight="800" letter-spacing="4.5">
       WHERE YOUR FREEDOM GOES FURTHER
     </text>
 
     <!-- Feature Highlights -->
-    <text x="6" y="765" fill="#94a3b8" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="500">
+    <text x="6" y="765" fill="#94a3b8" font-family="'Figtree', 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="34" font-weight="500">
       Empirical Cost-of-Living Dossiers · Sovereign Visa Pathways · Expat Community
     </text>
 
     <!-- Bottom Domain Callout Badge -->
     <rect x="6" y="850" width="490" height="88" rx="24" fill="url(#sp-ribbon)"/>
-    <text x="251" y="907" text-anchor="middle" fill="#ffffff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="40" font-weight="900" letter-spacing="2">
+    <text x="251" y="907" text-anchor="middle" fill="#ffffff" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="40" font-weight="900" letter-spacing="2">
       ReFIREly.com
     </text>
   </g>
@@ -466,7 +466,7 @@ export function generateBrandSvgString(variant: BrandAssetVariant): string {
 
   <!-- Right Typographic Wordmark + Multi-Color Ribbon + Tagline -->
   <g transform="translate(675, 0)">
-    <text x="0" y="382" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="900" letter-spacing="-6">
+    <text x="0" y="382" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="900" letter-spacing="-5">
       <tspan fill="${reColor}" font-size="${mainFontSize}">Re</tspan><tspan fill="url(#hz-fire-text)" font-size="${mainFontSize}">FIRE</tspan><tspan fill="url(#hz-ly-text)" font-size="${mainFontSize}">ly</tspan>${
         includeDotCom
           ? `<tspan fill="${dotComColor}" font-size="${dotComFontSize}" font-weight="800" letter-spacing="-1">.com</tspan>`
@@ -478,7 +478,7 @@ export function generateBrandSvgString(variant: BrandAssetVariant): string {
     <rect x="8" y="432" width="1285" height="14" rx="7" fill="url(#hz-ribbon)"/>
 
     <!-- Subtitle / Tagline -->
-    <text x="12" y="518" fill="${taglineColor}" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="41" font-weight="800" letter-spacing="7.5">
+    <text x="12" y="518" fill="${taglineColor}" font-family="'Outfit', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="41" font-weight="800" letter-spacing="7.5">
       WHERE YOUR FREEDOM GOES FURTHER
     </text>
   </g>

@@ -103,6 +103,7 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
 
   const handleQuickExportPdf = (e: React.MouseEvent) => {
     e.stopPropagation();
+    trackDossierDownload(country.id, country.name, 'Quick Country Card Dossier');
     generateCountryDossierPdf({
       country,
       userProfile,
@@ -128,7 +129,6 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
         includeCommunityAndMeetups: true,
       },
     });
-    trackDossierDownload(country.id, country.name, 'Comprehensive 35-Page PDF Dossier');
   };
 
   return (
