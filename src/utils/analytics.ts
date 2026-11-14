@@ -82,6 +82,17 @@ export function trackPageView(
 
   const pageTitle = document.title;
 
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'virtual_pageview',
+    page_title: pageTitle,
+    page_location: window.location.href,
+    page_path: pagePath,
+    view_name: view,
+    country_id: selectedCountry?.id || undefined,
+    country_name: selectedCountry?.name || undefined,
+  });
+
   window.gtag('event', 'page_view', {
     page_title: pageTitle,
     page_location: window.location.href,
