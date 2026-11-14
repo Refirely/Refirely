@@ -6,6 +6,7 @@ import {
   InAppMessageNotification, FeedbackReport, FeedbackType, FeedbackStatus, FeedbackPriority,
   FireNumbersRating, DossierDownloadRecord, Persona, BadgeCategory
 } from '../types';
+import type { ShareFireCardPayload } from '../components/ShareableFireCardModal';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
@@ -32,6 +33,7 @@ import {
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  getAdditionalUserInfo,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
@@ -121,6 +123,12 @@ interface AppContextType {
   setBadgeModalCategory: (cat: BadgeCategory | 'all' | 'user') => void;
   earlyPioneerThreshold: number;
   updateEarlyPioneerThreshold: (newThreshold: number) => Promise<{ success: boolean; error?: string }>;
+
+  // Shareable FIRE Badge & Freedom Card Generator Modal
+  isShareFireCardModalOpen: boolean;
+  shareFireCardData: ShareFireCardPayload | null;
+  openShareFireCardModal: (data?: ShareFireCardPayload) => void;
+  closeShareFireCardModal: () => void;
 
   // Public Member Profiles (Strictly Non-Admin Registered Users)
   publicMemberAccounts: UserAccount[];
@@ -365,6 +373,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const targetUrl = getViewUrl(currentView, currentView === 'country-detail' ? activeCountryId : undefined);
     const currentFull = window.location.pathname + window.location.search;
+    // Preserve '/?signup=success' query parameter for Google Ads conversion tracking
+    if (window.location.search === '?signup=success' && currentView === 'landing') {
+      return;
+    }
     if (currentFull !== targetUrl) {
       try {
         window.history.pushState({ view: currentView, countryId: activeCountryId }, '', targetUrl);
@@ -794,6 +806,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openBadgeModal = (category: BadgeCategory | 'all' | 'user' = 'all') => {
     setBadgeModalCategory(category);
     setIsBadgeModalOpen(true);
+  };
+
+  // Shareable FIRE Badge & Freedom Card Generator Modal State
+  const [isShareFireCardModalOpen, setIsShareFireCardModalOpen] = useState(false);
+  const [shareFireCardData, setShareFireCardData] = useState<ShareFireCardPayload | null>(null);
+  const openShareFireCardModal = (data?: ShareFireCardPayload) => {
+    setShareFireCardData(data || null);
+    setIsShareFireCardModalOpen(true);
+  };
+  const closeShareFireCardModal = () => {
+    setIsShareFireCardModalOpen(false);
   };
 
   // Listen to /platformSettings/badges from Firestore
@@ -3143,12 +3166,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Optionally attempt Firebase Email/Password creation if enabled in Firebase Console
       createUserWithEmailAndPassword(auth, cleanEmail, data.password)
         .then(async () => {
+          try {
+            window.history.pushState({}, '', '/?signup=success');
+          } catch {}
           await syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
         })
         .catch(() => {
           // Email/password provider not enabled in Firebase Console; account is safely stored in Firestore /savedAccounts
         });
     }
+
+    try {
+      window.history.pushState({}, '', '/?signup=success');
+    } catch {}
 
     return { success: true, createdUserId: newId };
   };
@@ -3243,6 +3273,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsFirebaseSyncing(true);
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+      const additionalUserInfo = getAdditionalUserInfo(result);
+
+      const googleEmail = (user.email || '').trim().toLowerCase();
+      const hadExistingLocalAccount = registeredAccountsRef.current.some(
+        a => a.id !== 'guest' && a.email && a.email.trim().toLowerCase() === googleEmail
+      );
 
       // Pre-fetch user document from Firestore if it exists so custom avatar & profile are instantly resolved
       let firestoreRootData: (UserProfile & { activeAccountId?: string; checklist?: RelocationChecklistTask[] }) | null = null;
@@ -3252,6 +3288,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           firestoreRootData = docSnap.data() as any;
         }
       } catch {}
+
+      const isBrandNewGoogleSignup =
+        Boolean(additionalUserInfo?.isNewUser) || (!firestoreRootData && !hadExistingLocalAccount);
 
       // Immediately create/resolve the Google user's dedicated User ID (e.g., usr-<gmail-handle>) and profile
       const googleAcc = resolveGoogleAccountForUser(user, registeredAccountsRef.current, firestoreRootData);
@@ -3270,6 +3309,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsAuthenticated(true);
       if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
+      }
+
+      if (isBrandNewGoogleSignup) {
+        try {
+          window.history.pushState({}, '', '/?signup=success');
+        } catch {}
       }
 
       try {
@@ -4964,6 +5009,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBadgeModalCategory,
         earlyPioneerThreshold,
         updateEarlyPioneerThreshold,
+        isShareFireCardModalOpen,
+        shareFireCardData,
+        openShareFireCardModal,
+        closeShareFireCardModal,
         publicMemberAccounts,
         selectedPublicProfileId,
         openPublicProfile,

@@ -2137,10 +2137,19 @@ export const ScoutHopPlanner: React.FC = () => {
         try {
           const cred = await createUserWithEmailAndPassword(auth, cleanEmail, authPassword);
           fbUid = cred.user.uid;
+          try {
+            window.history.pushState({}, '', '/?signup=success');
+          } catch {}
         } catch {
           try {
             const signInCred = await signInWithEmailAndPassword(auth, cleanEmail, authPassword);
             fbUid = signInCred.user.uid;
+          } catch {}
+        }
+
+        if (signupRes.success) {
+          try {
+            window.history.pushState({}, '', '/?signup=success');
           } catch {}
         }
 

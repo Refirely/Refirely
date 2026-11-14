@@ -61,6 +61,7 @@ export const UserDashboard: React.FC = () => {
     setCurrentPersona,
     earlyPioneerThreshold,
     openBadgeModal,
+    openShareFireCardModal,
     registeredAccounts,
   } = useApp();
 
@@ -951,11 +952,35 @@ export const UserDashboard: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const estBurn = userProfile.monthlyBudgetUSD || 2200;
+                    const fireTarget = estBurn * 12 * 25;
+                    const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
+                    openShareFireCardModal({
+                      persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
+                      badgeTitle: firePct >= 100 ? '100% FI' : currentPersona === 'nomad' ? 'Coast FIRE Nomad' : 'Arbitrage Architect',
+                      badgeEmoji: firePct >= 100 ? '👑' : currentPersona === 'nomad' ? '🌍' : '⚡',
+                      topCountry: userProfile.targetCountry || 'Portugal',
+                      topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
+                      yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
+                      nomadRunwayMonths: Math.max(18, Math.round(userNetWorthUSD / Math.max(800, estBurn))),
+                      fireProgressPercent: firePct,
+                      monthlyBurnUSD: estBurn,
+                      currentNetWorthUSD: userNetWorthUSD,
+                      targetFireNestEggUSD: fireTarget,
+                    });
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-amber-300 border border-amber-400/40 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
+                >
+                  <span>🏅 Create Shareable FIRE Card</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => openBadgeModal('all')}
-                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>Open Honors Codex</span>
@@ -963,13 +988,143 @@ export const UserDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => openEditProfile('travel')}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Log Countries / Langs</span>
                 </button>
               </div>
             </div>
+
+            {/* Unlocked FIRE & Geoarbitrage Milestones (Shareable Freedom Cards) */}
+            {(() => {
+              const estBurn = userProfile.monthlyBudgetUSD || 2200;
+              const fireTarget = estBurn * 12 * 25;
+              const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
+              const yearsSaved = Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260)));
+              const runwayMonths = Math.max(12, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn)));
+              const havenCity = targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon';
+              const havenCountry = userProfile.targetCountry || 'Portugal';
+
+              const fireMilestones: {
+                id: string;
+                title: string;
+                icon: string;
+                subtitle: string;
+                description: string;
+                unlocked: boolean;
+                accent: string;
+                pill: string;
+                headlineMode: 'years-saved' | 'fi-percent' | 'nomad-runway';
+              }[] = [
+                {
+                  id: 'arbitrage-architect',
+                  title: 'Arbitrage Architect',
+                  icon: '⚡',
+                  subtitle: `Retiring ${yearsSaved} Years Earlier via Geoarbitrage`,
+                  description: `Target haven ${havenCity}, ${havenCountry} cuts monthly burn to $${estBurn.toLocaleString()}/mo.`,
+                  unlocked: true,
+                  accent: 'from-emerald-900 via-teal-900 to-slate-900',
+                  pill: 'Geoarbitrage Unlocked',
+                  headlineMode: 'years-saved',
+                },
+                {
+                  id: 'coast-fire-nomad',
+                  title: 'Coast FIRE Nomad',
+                  icon: '🌍',
+                  subtitle: `${firePct}% to Full Financial Independence`,
+                  description: `Compounding trajectory active across ${countries.length} global havens.`,
+                  unlocked: firePct >= 25,
+                  accent: 'from-teal-900 via-emerald-900 to-slate-900',
+                  pill: `${firePct}% FI Progress`,
+                  headlineMode: 'fi-percent',
+                },
+                {
+                  id: 'runway-sovereign',
+                  title: 'Runway Sovereign',
+                  icon: '🚀',
+                  subtitle: `${runwayMonths}+ Months Global Freedom Runway`,
+                  description: `Self-funded slow-travel & remote living runway in ${havenCountry}.`,
+                  unlocked: runwayMonths >= 18,
+                  accent: 'from-amber-900 via-emerald-950 to-slate-900',
+                  pill: `${runwayMonths} Mo Runway`,
+                  headlineMode: 'nomad-runway',
+                },
+                {
+                  id: '100-fi',
+                  title: '100% FI',
+                  icon: '👑',
+                  subtitle: firePct >= 100 ? '100% Financial Independence Unlocked' : `${firePct}% of 25x Safe Withdrawal Target`,
+                  description: `4% SWR portfolio coverage against $${estBurn.toLocaleString()}/mo haven lifestyle.`,
+                  unlocked: true,
+                  accent: 'from-amber-700 via-emerald-900 to-slate-950',
+                  pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Milestone`,
+                  headlineMode: 'fi-percent',
+                },
+              ];
+
+              return (
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-950 text-white border border-emerald-800/80 space-y-3.5 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300 block">
+                        🏅 Shareable FIRE Milestones &amp; Freedom Cards
+                      </span>
+                      <h4 className="text-sm sm:text-base font-extrabold text-white">
+                        Your Unlocked Financial Independence &amp; Geoarbitrage Badges
+                      </h4>
+                    </div>
+                    <span className="text-[11px] text-emerald-200/90 font-medium">
+                      Export 9:16 Story or 1:1 Post • Privacy Mode Built-In
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {fireMilestones.map(m => (
+                      <div
+                        key={m.id}
+                        className="rounded-xl bg-white/5 border border-white/10 hover:border-amber-400/50 p-3.5 flex flex-col justify-between gap-3 transition-all"
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-lg">{m.icon}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-300 text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap">
+                              {m.pill}
+                            </span>
+                          </div>
+                          <h5 className="text-xs font-extrabold text-white">{m.title}</h5>
+                          <p className="text-[11px] font-bold text-emerald-300 leading-snug">{m.subtitle}</p>
+                          <p className="text-[10px] text-slate-300/80 leading-relaxed">{m.description}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openShareFireCardModal({
+                              persona: m.id === 'coast-fire-nomad' || m.id === 'runway-sovereign' ? 'nomad' : currentPersona === 'nomad' ? 'nomad' : 'retiree',
+                              badgeTitle: m.title,
+                              badgeEmoji: m.icon,
+                              headlineMode: m.headlineMode,
+                              topCountry: havenCountry,
+                              topCity: havenCity,
+                              yearsSaved,
+                              nomadRunwayMonths: runwayMonths,
+                              fireProgressPercent: firePct,
+                              monthlyBurnUSD: estBurn,
+                              currentNetWorthUSD: userNetWorthUSD,
+                              targetFireNestEggUSD: fireTarget,
+                            })
+                          }
+                          className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+                        >
+                          <span>Share My FIRE Badge</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Showcase Grid of Earned Badges */}
             {earnedBadges.length === 0 ? (
@@ -996,6 +1151,24 @@ export const UserDashboard: React.FC = () => {
                     key={badge.tierId}
                     badge={badge}
                     onOpenCodex={() => openBadgeModal(badge.category)}
+                    onShareBadge={(b) => {
+                      const estBurn = userProfile.monthlyBudgetUSD || 2200;
+                      const fireTarget = estBurn * 12 * 25;
+                      const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
+                      openShareFireCardModal({
+                        persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
+                        badgeTitle: b.tierName,
+                        badgeEmoji: '🏅',
+                        topCountry: userProfile.targetCountry || 'Portugal',
+                        topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
+                        yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
+                        nomadRunwayMonths: Math.max(18, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn))),
+                        fireProgressPercent: firePct,
+                        monthlyBurnUSD: estBurn,
+                        currentNetWorthUSD: userNetWorthUSD,
+                        targetFireNestEggUSD: fireTarget,
+                      });
+                    }}
                   />
                 ))}
               </div>

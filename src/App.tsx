@@ -23,6 +23,7 @@ import { FontThemeStudio } from './components/FontThemeStudio';
 import { BrandLogo } from './components/BrandLogo';
 import { BrandKitModal } from './components/BrandKitModal';
 import { BadgeCodexModal } from './components/BadgeCodexModal';
+import { ShareableFireCardModal } from './components/ShareableFireCardModal';
 import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { initGoogleAnalytics, trackPageView } from './utils/analytics';
@@ -45,6 +46,9 @@ const MainContent: React.FC = () => {
     setIsBadgeModalOpen,
     openBadgeModal,
     badgeModalCategory,
+    isShareFireCardModalOpen,
+    shareFireCardData,
+    closeShareFireCardModal,
   } = useApp();
 
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -136,6 +140,11 @@ const MainContent: React.FC = () => {
         isOpen={isBadgeModalOpen}
         onClose={() => setIsBadgeModalOpen(false)}
         initialCategory={badgeModalCategory}
+      />
+      <ShareableFireCardModal
+        isOpen={isShareFireCardModalOpen}
+        onClose={closeShareFireCardModal}
+        initialData={shareFireCardData}
       />
 
       {/* Multi-Colored Elegant Footer */}

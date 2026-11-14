@@ -45,6 +45,7 @@ export const LandingPage: React.FC = () => {
     setSortBy,
     currentPersona,
     setCurrentPersona,
+    openShareFireCardModal,
   } = useApp();
 
   // -------------------------------------------------------------
@@ -2417,14 +2418,49 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <button
-                    onClick={() => setCurrentView('dashboard')}
-                    className="text-xs font-extrabold text-indigo-700 hover:text-teal-700 inline-flex items-center gap-1.5 cursor-pointer group"
-                  >
-                    <span>Open Detailed Financial Dashboard</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                  </button>
+                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openShareFireCardModal({
+                          persona: currentPersona,
+                          badgeTitle:
+                            fireProgressPercent >= 100
+                              ? '100% FI'
+                              : yearsSaved >= 5
+                              ? 'Arbitrage Architect'
+                              : 'FIRE Pathfinder',
+                          badgeEmoji: fireProgressPercent >= 100 ? '🔥' : '⚡',
+                          yearsSaved: Math.max(1, yearsSaved || 8),
+                          fireProgressPercent,
+                          topCountry: fireMatchedCountries[0]?.country.name || 'Portugal',
+                          topCity:
+                            fireMatchedCountries[0]?.country.topCities?.[0]?.name ||
+                            fireMatchedCountries[0]?.country.capital ||
+                            'Lisbon',
+                          monthlyBurnUSD: targetMonthlyExpenseAbroad,
+                          domesticMonthlyBurnUSD: domesticMonthlyExpense,
+                          currentNetWorthUSD: currentNetWorth,
+                          targetFireNestEggUSD: fireNestEggAbroad,
+                          swrPercent: safeWithdrawalRate,
+                          headlineMode: yearsSaved > 0 ? 'years-saved' : 'fi-percent',
+                        })
+                      }
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-500 hover:from-emerald-700 hover:to-amber-600 text-white text-xs font-extrabold shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                    >
+                      <span>🏅 Create Shareable FIRE Card</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentView('dashboard')}
+                      className="text-xs font-extrabold text-indigo-700 hover:text-teal-700 inline-flex items-center gap-1.5 cursor-pointer group whitespace-nowrap"
+                    >
+                      <span>Open Detailed Financial Dashboard</span>
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                    </button>
+                  </div>
                   <span className="text-[11px] text-slate-400">
                     Assumes {expectedGrowthRate}% annual return + ${(annualSavings / 1000).toFixed(0)}k/yr savings
                   </span>
@@ -2806,14 +2842,46 @@ export const LandingPage: React.FC = () => {
                       <span>24+ Mos</span>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <button
-                        onClick={handleOpenAdvancedExplorer}
-                        className="text-xs font-extrabold text-teal-700 hover:text-indigo-700 inline-flex items-center gap-1.5 cursor-pointer group"
-                      >
-                        <span>Explore Digital Nomad Visa Havens</span>
-                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                      </button>
+                    <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openShareFireCardModal({
+                              persona: 'nomad',
+                              badgeTitle:
+                                nomadRunwayMonths >= 24 ? 'Runway Sovereign' : 'Coast FIRE Nomad',
+                              badgeEmoji: nomadRunwayMonths >= 24 ? '👑' : '🌊',
+                              yearsSaved: Math.max(1, yearsSaved || 8),
+                              fireProgressPercent,
+                              topCountry: nomadMatchedCountries[0]?.country.name || 'Portugal',
+                              topCity:
+                                nomadMatchedCountries[0]?.nomadProfile.topNomadCities?.[0] ||
+                                nomadMatchedCountries[0]?.country.capital ||
+                                'Lisbon',
+                              monthlyBurnUSD: nomadMonthlyBurn,
+                              domesticMonthlyBurnUSD: domesticMonthlyExpense,
+                              currentNetWorthUSD: nomadSavings,
+                              nomadRunwayMonths: nomadNetBurn === 0 ? 60 : nomadRunwayMonths,
+                              fiberMbps:
+                                nomadMatchedCountries[0]?.nomadProfile.verifiedInternetMbps || 250,
+                              headlineMode: 'nomad-runway',
+                            })
+                          }
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-500 hover:from-emerald-700 hover:to-amber-600 text-white text-xs font-extrabold shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          <span>🏅 Create Shareable FIRE Card</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenAdvancedExplorer}
+                          className="text-xs font-extrabold text-teal-700 hover:text-indigo-700 inline-flex items-center gap-1.5 cursor-pointer group whitespace-nowrap"
+                        >
+                          <span>Explore Digital Nomad Visa Havens</span>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                        </button>
+                      </div>
                       <span className="text-[11px] text-slate-400">
                         Based on ${nomadMonthlyBurn.toLocaleString()}/mo short-term living
                       </span>

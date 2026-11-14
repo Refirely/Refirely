@@ -27,7 +27,7 @@ import {
 type FireTierMode = 'lean' | 'standard' | 'fat' | 'barista';
 
 export const FireCalculatorTracker: React.FC = () => {
-  const { userProfile, updateUserProfile, countries, openEditProfile } = useApp();
+  const { userProfile, updateUserProfile, countries, openEditProfile, openShareFireCardModal } = useApp();
 
   const currentYear = 2026;
 
@@ -1501,13 +1501,48 @@ export const FireCalculatorTracker: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => {
+              const targetCountryObj = countries.find(
+                c => c.name.toLowerCase() === targetHavenCountryName.toLowerCase()
+              );
+              openShareFireCardModal({
+                persona: plannerPersonaMode === 'digital-nomad' ? 'nomad' : 'retiree',
+                badgeTitle:
+                  fireAnalysis.fireProgressPct >= 100
+                    ? '100% FI'
+                    : plannerPersonaMode === 'digital-nomad'
+                    ? 'Coast FIRE Nomad'
+                    : 'Arbitrage Architect',
+                badgeEmoji:
+                  fireAnalysis.fireProgressPct >= 100
+                    ? '👑'
+                    : plannerPersonaMode === 'digital-nomad'
+                    ? '🌍'
+                    : '⚡',
+                topCountry: targetHavenCountryName,
+                topCity: targetCountryObj?.topCities?.[0]?.name || targetCountryObj?.capital || 'Lisbon',
+                yearsSaved: Math.max(3, Math.min(15, Math.round((4500 - fireAnalysis.effectiveMonthlyExpenseTodayUSD) / 260))),
+                nomadRunwayMonths: Math.max(12, Math.round(fireAnalysis.startingCorpusTodayUSD / Math.max(600, fireAnalysis.effectiveMonthlyExpenseTodayUSD))),
+                fireProgressPercent: Math.min(100, fireAnalysis.fireProgressPct),
+                monthlyBurnUSD: fireAnalysis.effectiveMonthlyExpenseTodayUSD,
+                currentNetWorthUSD: fireAnalysis.startingCorpusTodayUSD,
+                targetFireNestEggUSD: fireAnalysis.comprehensiveFireNumberTodayUSD,
+              });
+            }}
+            className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-amber-300 border border-amber-400/40 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+          >
+            <span>🏅 Share My FIRE Badge</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() =>
               persistFireUpdates(
                 {},
                 'Saved & Recalculated! All FIRE parameters, Digital Nomad runway settings, expenses, assets, and milestones are updated.'
               )
             }
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Save &amp; Recalculate FIRE Plan</span>

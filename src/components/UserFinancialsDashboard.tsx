@@ -24,6 +24,7 @@ export const UserFinancialsDashboard: React.FC = () => {
     countries,
     navigateToCountry,
     setCurrentView,
+    openShareFireCardModal,
   } = useApp();
 
   // Active user finances (fallback to DEFAULT_FINANCIAL_PORTFOLIO)
@@ -427,8 +428,34 @@ export const UserFinancialsDashboard: React.FC = () => {
             <>
               <button
                 type="button"
+                onClick={() => {
+                  const estBurn = userProfile.monthlyBudgetUSD || 2200;
+                  const fireTarget = estBurn * 12 * 25;
+                  const firePct = Math.min(100, Math.max(12, Math.round((totalNetWorth / Math.max(1, fireTarget)) * 100)));
+                  const targetCountryObj = countries.find(
+                    c => c.name.toLowerCase() === (userProfile.targetCountry || 'Portugal').toLowerCase()
+                  );
+                  openShareFireCardModal({
+                    badgeTitle: firePct >= 100 ? '100% FI' : 'Arbitrage Architect',
+                    badgeEmoji: firePct >= 100 ? '👑' : '⚡',
+                    topCountry: userProfile.targetCountry || 'Portugal',
+                    topCity: targetCountryObj?.topCities?.[0]?.name || targetCountryObj?.capital || 'Lisbon',
+                    yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
+                    nomadRunwayMonths: Math.max(18, Math.round(liquidInvestableAssets / Math.max(800, estBurn))),
+                    fireProgressPercent: firePct,
+                    monthlyBurnUSD: estBurn,
+                    currentNetWorthUSD: totalNetWorth,
+                    targetFireNestEggUSD: fireTarget,
+                  });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-amber-300 border border-amber-400/40 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+              >
+                <span>🏅 Share My FIRE Badge</span>
+              </button>
+              <button
+                type="button"
                 onClick={startInlineEdit}
-                className="px-3.5 py-2 rounded-xl border border-orange-300 bg-orange-50/80 text-orange-950 hover:bg-orange-100 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-orange-300 bg-orange-50/80 text-orange-950 hover:bg-orange-100 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
                 <Sliders className="w-3.5 h-3.5 text-orange-600" />
                 <span>Quick Edit Inline</span>
@@ -436,7 +463,7 @@ export const UserFinancialsDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={openEditModal}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit Full Portfolio ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})</span>

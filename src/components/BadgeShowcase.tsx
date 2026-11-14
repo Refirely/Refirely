@@ -17,9 +17,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
 interface BadgeShowcaseCardProps {
   badge: EarnedBadge;
   onOpenCodex?: () => void;
+  onShareBadge?: (badge: EarnedBadge) => void;
 }
 
-export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onOpenCodex }) => {
+export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onOpenCodex, onShareBadge }) => {
   const IconComponent = ICON_MAP[badge.iconName] || Award;
 
   return (
@@ -59,12 +60,12 @@ export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onO
 
       {/* Next Tier Progression Bar if applicable */}
       {badge.nextTier ? (
-        <div className="pt-2 border-t border-slate-100 space-y-1.5">
+        <div className="pt-2 border-t border-slate-100 space-y-2">
           <div className="flex items-center justify-between text-[10px] font-bold">
             <span className="text-slate-500">
               Next: <strong className="text-slate-800">{badge.nextTier.name}</strong> ({badge.nextTier.threshold} {badge.nextTier.unitLabel})
             </span>
-            <span className="text-indigo-600 font-mono">
+            <span className="text-indigo-600 font-mono tabular-nums">
               {badge.currentValue} / {badge.nextTier.threshold} ({badge.nextTierProgressPercent}%)
             </span>
           </div>
@@ -76,22 +77,45 @@ export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onO
               className={`h-full rounded-full bg-gradient-to-r ${badge.nextTier.accentGradient}`}
             />
           </div>
+          {onShareBadge && (
+            <div className="pt-1 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => onShareBadge(badge)}
+                className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-amber-300 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <span>🏅 Share My FIRE Badge</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-emerald-700">
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[10px] font-bold text-emerald-700">
           <span className="flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>Highest Tier Unlocked</span>
           </span>
-          {onOpenCodex && (
-            <button
-              onClick={onOpenCodex}
-              className="text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-0.5 cursor-pointer"
-            >
-              <span>Guide</span>
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onShareBadge && (
+              <button
+                type="button"
+                onClick={() => onShareBadge(badge)}
+                className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-amber-300 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <span>🏅 Share My FIRE Badge</span>
+              </button>
+            )}
+            {onOpenCodex && (
+              <button
+                type="button"
+                onClick={onOpenCodex}
+                className="text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>Guide</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </motion.div>
