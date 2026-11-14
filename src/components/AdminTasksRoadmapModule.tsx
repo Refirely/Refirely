@@ -318,7 +318,7 @@ export const AdminTasksRoadmapModule: React.FC = () => {
 
   // Filter & Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | AdminTaskStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | AdminTaskStatus>('active');
   const [priorityFilter, setPriorityFilter] = useState<'all' | AdminTaskPriority>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | AdminTaskCategory>('all');
   const [sortBy, setSortBy] = useState<'deadline-asc' | 'priority-desc' | 'progress-desc' | 'updated-desc'>('priority-desc');
@@ -928,442 +928,353 @@ export const AdminTasksRoadmapModule: React.FC = () => {
         </div>
 
         {/* ===================================================================
-            2. OVERALL SNAPSHOT & INFOGRAPHIC DASHBOARD
+            2. OVERALL SNAPSHOT & INFOGRAPHIC DASHBOARD (COMPACT & SPACIOUS)
         =================================================================== */}
-        <div className="mt-6 pt-6 border-t border-slate-100 space-y-5">
-          {/* 4 Executive KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+        <div className="mt-5 pt-5 border-t border-slate-100 space-y-4">
+          {/* 4 Executive KPI Cards — Slim Horizontal Layout */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200/90 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                 <span>Total Roadmap Tasks</span>
-                <Layers className="w-4 h-4 text-indigo-600" />
+                <Layers className="w-3.5 h-3.5 text-indigo-600" />
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="font-mono tabular-nums text-2xl font-extrabold text-slate-900">
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                <span className="font-mono tabular-nums text-xl font-extrabold text-slate-900">
                   {stats.total}
                 </span>
-                <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-mono tabular-nums">
-                  {stats.avgOverallProgress}% Avg Progress
+                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-md font-mono tabular-nums whitespace-nowrap">
+                  {stats.avgOverallProgress}% Avg
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 mt-1.5">
-                {stats.ideationCount} Ideation · {stats.plannedCount} Planned · {stats.inProgressCount + stats.testingCount} Executing
+              <div className="text-[11px] text-slate-500 mt-1 truncate">
+                {stats.ideationCount} Idea · {stats.plannedCount} Plan · {stats.inProgressCount + stats.testingCount} Active
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
+            <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/90 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800">
                 <span>Finished &amp; Shipped</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="font-mono tabular-nums text-2xl font-extrabold text-emerald-950">
-                  {stats.finishedCount} <span className="text-sm font-normal text-emerald-700">/ {stats.total}</span>
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                <span className="font-mono tabular-nums text-xl font-extrabold text-emerald-950">
+                  {stats.finishedCount}{' '}
+                  <span className="text-xs font-normal text-emerald-700">/ {stats.total}</span>
                 </span>
-                <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md font-mono tabular-nums">
+                <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md font-mono tabular-nums whitespace-nowrap">
                   {stats.completionRate}% Done
                 </span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-emerald-100 overflow-hidden mt-2">
-                <div
-                  className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.completionRate}%` }}
+              <div className="w-full h-1.5 rounded-full bg-emerald-100 overflow-hidden mt-1.5">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${stats.completionRate}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  className="h-full bg-emerald-600 rounded-full"
                 />
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/90 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-semibold text-amber-900">
-                <span>Active Execution Pipeline</span>
-                <Sparkles className="w-4 h-4 text-amber-600" />
+            <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/90 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-bold text-amber-900">
+                <span>Active Execution</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="font-mono tabular-nums text-2xl font-extrabold text-slate-900">
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                <span className="font-mono tabular-nums text-xl font-extrabold text-slate-900">
                   {stats.inProgressCount + stats.testingCount}
                 </span>
-                <span className="text-xs font-bold text-amber-900 bg-amber-100/80 border border-amber-300 px-2 py-0.5 rounded-md">
-                  {stats.testingCount} in QA Review
+                <span className="text-[11px] font-bold text-amber-900 bg-amber-100/80 border border-amber-300 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                  {stats.testingCount} in QA
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 mt-1.5">
-                {stats.inProgressCount} In Progress · {stats.plannedCount} Ready to Start
+              <div className="text-[11px] text-slate-600 mt-1 truncate">
+                {stats.inProgressCount} In Progress · {stats.plannedCount} Queued
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200/80 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs font-semibold text-rose-900">
-                <span>Priority &amp; Deadlines Pulse</span>
-                <Flag className="w-4 h-4 text-rose-600" />
+            <div className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200/80 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-bold text-rose-900">
+                <span>Priority &amp; Deadlines</span>
+                <Flag className="w-3.5 h-3.5 text-rose-600" />
               </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className="font-mono tabular-nums text-2xl font-extrabold text-slate-900">
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                <span className="font-mono tabular-nums text-xl font-extrabold text-slate-900">
                   {stats.criticalCount + stats.highCount}{' '}
-                  <span className="text-xs font-semibold text-rose-800">High/Crit</span>
+                  <span className="text-[11px] font-semibold text-rose-800">High/Crit</span>
                 </span>
                 {stats.overdueCount > 0 ? (
-                  <span className="text-xs font-extrabold text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-extrabold text-rose-800 bg-rose-100 border border-rose-300 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                     {stats.overdueCount} Overdue
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-bold text-slate-700 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                     {stats.dueSoonCount} Due ≤7d
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-slate-600 mt-1.5">
-                {stats.criticalCount} Critical · {stats.highCount} High Priority open
+              <div className="text-[11px] text-slate-600 mt-1 truncate">
+                {stats.criticalCount} Critical · {stats.highCount} High open
               </div>
             </div>
           </div>
 
-          {/* Visual Infographic: 5-Stage Pipeline Funnel + Priority & Workstream Distribution */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left 7 Cols: 5-Stage Lifecycle Pipeline Infographic (Light Luminous & Animated Theme) */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="lg:col-span-7 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-emerald-50/75 border border-indigo-200/80 shadow-xs relative overflow-hidden space-y-5"
-            >
-              {/* Soft decorative ambient blobs */}
-              <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-teal-200/30 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-indigo-200/30 blur-3xl" />
-
-              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-start gap-2.5">
-                  <motion.div
-                    animate={{ rotate: [0, 6, -6, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5"
-                  >
-                    <Milestone className="w-4 h-4" />
-                  </motion.div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
-                        Visual Roadmap Infographic
-                      </span>
-                    </div>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                      5-Stage Product Lifecycle &amp; Execution Funnel
-                    </h3>
-                  </div>
+          {/* Full-Width, Low-Profile Animated 5-Stage Lifecycle & Execution Funnel */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50/65 via-white to-emerald-50/65 border border-indigo-200/75 shadow-2xs relative overflow-hidden space-y-3.5"
+          >
+            {/* Row 1: Header + Inline Priority Filter Pills + Completion Badge */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Milestone className="w-4 h-4" />
                 </div>
-                <motion.div
-                  initial={{ scale: 0.92, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.15, type: 'spring', stiffness: 240, damping: 20 }}
-                  className="inline-flex items-center gap-2 font-mono tabular-nums text-xs font-extrabold text-emerald-900 bg-white/90 border border-emerald-300/90 shadow-2xs px-3 py-1.5 rounded-xl self-start sm:self-auto"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <span>Weighted Completion: {stats.avgOverallProgress}%</span>
-                </motion.div>
-              </div>
-
-              {/* 5-Stage Visual Funnel Cards with Animated Step Connectors */}
-              <div className="relative grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {(
-                  [
-                    {
-                      st: 'ideation' as AdminTaskStatus,
-                      stepNum: '01',
-                      icon: Lightbulb,
-                      cardBg: 'from-purple-50/95 via-white to-purple-50/50',
-                      borderCls: 'border-purple-200/90 hover:border-purple-400',
-                      activeCls: 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/90',
-                      iconWrap: 'bg-purple-100 text-purple-700 border-purple-200',
-                      numText: 'text-purple-950',
-                      pctBadge: 'bg-purple-100/90 text-purple-800',
-                    },
-                    {
-                      st: 'planned' as AdminTaskStatus,
-                      stepNum: '02',
-                      icon: Target,
-                      cardBg: 'from-sky-50/95 via-white to-sky-50/50',
-                      borderCls: 'border-sky-200/90 hover:border-sky-400',
-                      activeCls: 'ring-2 ring-sky-500 border-sky-500 bg-sky-50/90',
-                      iconWrap: 'bg-sky-100 text-sky-700 border-sky-200',
-                      numText: 'text-sky-950',
-                      pctBadge: 'bg-sky-100/90 text-sky-800',
-                    },
-                    {
-                      st: 'in_progress' as AdminTaskStatus,
-                      stepNum: '03',
-                      icon: Rocket,
-                      cardBg: 'from-amber-50/95 via-white to-amber-50/50',
-                      borderCls: 'border-amber-200/90 hover:border-amber-400',
-                      activeCls: 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/90',
-                      iconWrap: 'bg-amber-100 text-amber-800 border-amber-200',
-                      numText: 'text-amber-950',
-                      pctBadge: 'bg-amber-100/90 text-amber-900',
-                    },
-                    {
-                      st: 'testing' as AdminTaskStatus,
-                      stepNum: '04',
-                      icon: Sparkles,
-                      cardBg: 'from-indigo-50/95 via-white to-indigo-50/50',
-                      borderCls: 'border-indigo-200/90 hover:border-indigo-400',
-                      activeCls: 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/90',
-                      iconWrap: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-                      numText: 'text-indigo-950',
-                      pctBadge: 'bg-indigo-100/90 text-indigo-800',
-                    },
-                    {
-                      st: 'finished' as AdminTaskStatus,
-                      stepNum: '05',
-                      icon: CheckCircle2,
-                      cardBg: 'from-emerald-50/95 via-white to-emerald-50/50',
-                      borderCls: 'border-emerald-300/90 hover:border-emerald-500',
-                      activeCls: 'ring-2 ring-emerald-600 border-emerald-600 bg-emerald-50/90',
-                      iconWrap: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                      numText: 'text-emerald-950',
-                      pctBadge: 'bg-emerald-100/90 text-emerald-800',
-                    },
-                  ] as const
-                ).map((stageCfg, idx) => {
-                  const StageIcon = stageCfg.icon;
-                  const count =
-                    stageCfg.st === 'finished'
-                      ? stats.finishedCount
-                      : stageCfg.st === 'testing'
-                      ? stats.testingCount
-                      : stageCfg.st === 'in_progress'
-                      ? stats.inProgressCount
-                      : stageCfg.st === 'planned'
-                      ? stats.plannedCount
-                      : stats.ideationCount;
-                  const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-                  const isSelected = statusFilter === stageCfg.st;
-
-                  return (
-                    <motion.button
-                      key={stageCfg.st}
-                      type="button"
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.07, duration: 0.35, ease: 'easeOut' }}
-                      whileHover={{ y: -3, scale: 1.015 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setStatusFilter(isSelected ? 'all' : stageCfg.st)}
-                      className={`group relative text-left p-3 rounded-xl bg-gradient-to-b ${stageCfg.cardBg} border transition-all cursor-pointer shadow-2xs ${
-                        isSelected ? stageCfg.activeCls : stageCfg.borderCls
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-2">
-                        <span
-                          className={`w-7 h-7 rounded-lg border flex items-center justify-center ${stageCfg.iconWrap} transition-transform group-hover:scale-110`}
-                        >
-                          <StageIcon className="w-3.5 h-3.5" />
-                        </span>
-                        <span className="font-mono text-[10px] font-extrabold text-slate-400">
-                          STAGE {stageCfg.stepNum}
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] font-extrabold text-slate-700 truncate">
-                        {TASK_STATUS_META[stageCfg.st].shortLabel}
-                      </div>
-
-                      <div className="mt-1 flex items-baseline justify-between gap-1">
-                        <span className={`font-mono tabular-nums text-xl font-black ${stageCfg.numText}`}>
-                          {count}
-                        </span>
-                        <span
-                          className={`font-mono tabular-nums text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${stageCfg.pctBadge}`}
-                        >
-                          {pct}%
-                        </span>
-                      </div>
-
-                      {/* Mini Stage Share Bar */}
-                      <div className="w-full h-1.5 rounded-full bg-slate-200/70 overflow-hidden mt-2">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.7, delay: 0.15 + idx * 0.07, ease: 'easeOut' }}
-                          className={`h-full rounded-full ${TASK_STATUS_META[stageCfg.st].barColor}`}
-                        />
-                      </div>
-
-                      {idx < 4 && (
-                        <div className="hidden sm:flex items-center justify-center absolute -right-2 top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 rounded-full bg-white border border-slate-200 text-slate-400 shadow-2xs pointer-events-none">
-                          <ArrowRight className="w-2.5 h-2.5" />
-                        </div>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              {/* Animated Multi-Segment Funnel Distribution Bar */}
-              <div className="relative p-3 rounded-xl bg-white/85 border border-slate-200/80 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-600 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Unified Lifecycle Distribution Bar (Click any stage above to filter)</span>
-                  </span>
-                  {statusFilter !== 'all' && (
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter('all')}
-                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer whitespace-nowrap"
-                    >
-                      Reset Stage Filter
-                    </button>
-                  )}
-                </div>
-                <div className="w-full h-3.5 rounded-full bg-slate-100 border border-slate-200/80 overflow-hidden flex p-0.5 gap-0.5">
-                  {(['finished', 'testing', 'in_progress', 'planned', 'ideation'] as AdminTaskStatus[]).map(
-                    (st, segIdx) => {
-                      const count =
-                        st === 'finished'
-                          ? stats.finishedCount
-                          : st === 'testing'
-                          ? stats.testingCount
-                          : st === 'in_progress'
-                          ? stats.inProgressCount
-                          : st === 'planned'
-                          ? stats.plannedCount
-                          : stats.ideationCount;
-                      const widthPct = stats.total > 0 ? (count / stats.total) * 100 : 0;
-                      if (widthPct <= 0) return null;
-                      return (
-                        <motion.div
-                          key={st}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${widthPct}%` }}
-                          transition={{ duration: 0.75, delay: segIdx * 0.06, ease: 'easeOut' }}
-                          title={`${TASK_STATUS_META[st].label}: ${count} tasks (${Math.round(widthPct)}%)`}
-                          onClick={() => setStatusFilter(statusFilter === st ? 'all' : st)}
-                          className={`h-full ${TASK_STATUS_META[st].barColor} rounded-full cursor-pointer hover:brightness-110 transition-all`}
-                        />
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-
-              {/* Workstream Category Progress Bars (Light Cards + Animated Bars) */}
-              <div className="relative pt-2 border-t border-indigo-100/90 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Execution Velocity by Workstream Category</span>
-                  </div>
-                  <span className="text-[11px] font-medium text-slate-500">
-                    Top {Math.min(6, stats.categoryStats.length)} active tracks
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {stats.categoryStats.slice(0, 6).map((cat, catIdx) => (
-                    <motion.div
-                      key={cat.category}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.12 + catIdx * 0.05, duration: 0.3 }}
-                      whileHover={{ y: -2 }}
-                      onClick={() =>
-                        setCategoryFilter(categoryFilter === cat.category ? 'all' : cat.category)
-                      }
-                      className={`p-3 rounded-xl bg-white/95 border transition-all cursor-pointer shadow-2xs space-y-1.5 ${
-                        categoryFilter === cat.category
-                          ? 'border-indigo-500 ring-2 ring-indigo-500/20'
-                          : 'border-slate-200/90 hover:border-indigo-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs gap-2">
-                        <span className="font-bold text-slate-800 truncate">{cat.category}</span>
-                        <span className="font-mono tabular-nums text-[11px] text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
-                          {cat.finished}/{cat.total} · {cat.avgProgress}%
-                        </span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/60">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${cat.avgProgress}%` }}
-                          transition={{ duration: 0.75, delay: 0.2 + catIdx * 0.06, ease: 'easeOut' }}
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500"
-                        />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right 5 Cols: Priority Matrix & Quick Filter Infographic */}
-            <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 block">
-                    Severity &amp; Urgency Allocation
-                  </span>
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                    Tasks Breakdown by Priority Level
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700">
+                      Visual Roadmap Infographic
+                    </span>
+                    <span className="hidden sm:inline-block text-slate-300">•</span>
+                    <span className="hidden sm:inline-block font-mono tabular-nums text-[11px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      {stats.avgOverallProgress}% Weighted Progress
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    5-Stage Product Lifecycle &amp; Execution Funnel
                   </h3>
                 </div>
-
-                <div className="space-y-2.5">
-                  {stats.priorityStats.map(item => (
-                    <div
-                      key={item.priority}
-                      onClick={() =>
-                        setPriorityFilter(priorityFilter === item.priority ? 'all' : item.priority)
-                      }
-                      className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                        priorityFilter === item.priority
-                          ? 'bg-white border-indigo-400 shadow-2xs'
-                          : 'bg-white border-slate-200/80 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${item.meta.badgeClass}`}
-                          >
-                            {item.meta.label}
-                          </span>
-                          <span className="text-slate-600 font-medium">
-                            {item.active} Open · {item.finished} Finished
-                          </span>
-                        </div>
-                        <span className="font-mono tabular-nums font-bold text-slate-900">
-                          {item.total} ({item.pctOfTotal}%)
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${item.meta.barColor} transition-all duration-500`}
-                          style={{ width: `${item.pctOfTotal}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200/80 flex items-center justify-between gap-2 text-xs">
-                <div className="text-slate-700">
-                  <strong>Tip:</strong> Click any stage pill or priority bar above to filter the roadmap below.
-                </div>
-                {(statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== 'all' || searchQuery) && (
+              {/* Inline Priority Breakdown Pills & Filter Reset */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-500 mr-1">Priority:</span>
+                {stats.priorityStats.map(item => {
+                  const isPriActive = priorityFilter === item.priority;
+                  return (
+                    <button
+                      key={item.priority}
+                      type="button"
+                      onClick={() =>
+                        setPriorityFilter(isPriActive ? 'all' : item.priority)
+                      }
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                        isPriActive
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                          : 'bg-white/90 hover:bg-white text-slate-700 border-slate-200/90'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${item.meta.barColor}`} />
+                      <span>{item.meta.label}</span>
+                      <span
+                        className={`font-mono tabular-nums text-[10px] font-extrabold px-1 rounded ${
+                          isPriActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {item.total}
+                      </span>
+                    </button>
+                  );
+                })}
+                {(statusFilter !== 'active' ||
+                  priorityFilter !== 'all' ||
+                  categoryFilter !== 'all' ||
+                  searchQuery) && (
                   <button
                     type="button"
                     onClick={() => {
-                      setStatusFilter('all');
+                      setStatusFilter('active');
                       setPriorityFilter('all');
                       setCategoryFilter('all');
                       setSearchQuery('');
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-800 font-bold text-[11px] shrink-0 cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] cursor-pointer whitespace-nowrap"
                   >
                     Reset Filters
                   </button>
                 )}
               </div>
             </div>
-          </div>
+
+            {/* Row 2: Full-Width 5-Stage Horizontal Funnel Stepper */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {(
+                [
+                  {
+                    st: 'ideation' as AdminTaskStatus,
+                    stepNum: '01',
+                    icon: Lightbulb,
+                    cardBg: 'from-purple-50/80 to-white',
+                    borderCls: 'border-purple-200/90 hover:border-purple-400',
+                    activeCls: 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/90',
+                    iconWrap: 'bg-purple-100 text-purple-700',
+                    numText: 'text-purple-950',
+                    pctBadge: 'bg-purple-100/90 text-purple-800',
+                  },
+                  {
+                    st: 'planned' as AdminTaskStatus,
+                    stepNum: '02',
+                    icon: Target,
+                    cardBg: 'from-sky-50/80 to-white',
+                    borderCls: 'border-sky-200/90 hover:border-sky-400',
+                    activeCls: 'ring-2 ring-sky-500 border-sky-500 bg-sky-50/90',
+                    iconWrap: 'bg-sky-100 text-sky-700',
+                    numText: 'text-sky-950',
+                    pctBadge: 'bg-sky-100/90 text-sky-800',
+                  },
+                  {
+                    st: 'in_progress' as AdminTaskStatus,
+                    stepNum: '03',
+                    icon: Rocket,
+                    cardBg: 'from-amber-50/80 to-white',
+                    borderCls: 'border-amber-200/90 hover:border-amber-400',
+                    activeCls: 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/90',
+                    iconWrap: 'bg-amber-100 text-amber-800',
+                    numText: 'text-amber-950',
+                    pctBadge: 'bg-amber-100/90 text-amber-900',
+                  },
+                  {
+                    st: 'testing' as AdminTaskStatus,
+                    stepNum: '04',
+                    icon: Sparkles,
+                    cardBg: 'from-indigo-50/80 to-white',
+                    borderCls: 'border-indigo-200/90 hover:border-indigo-400',
+                    activeCls: 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/90',
+                    iconWrap: 'bg-indigo-100 text-indigo-700',
+                    numText: 'text-indigo-950',
+                    pctBadge: 'bg-indigo-100/90 text-indigo-800',
+                  },
+                  {
+                    st: 'finished' as AdminTaskStatus,
+                    stepNum: '05',
+                    icon: CheckCircle2,
+                    cardBg: 'from-emerald-50/80 to-white',
+                    borderCls: 'border-emerald-300/90 hover:border-emerald-500',
+                    activeCls: 'ring-2 ring-emerald-600 border-emerald-600 bg-emerald-50/90',
+                    iconWrap: 'bg-emerald-100 text-emerald-700',
+                    numText: 'text-emerald-950',
+                    pctBadge: 'bg-emerald-100/90 text-emerald-800',
+                  },
+                ] as const
+              ).map((stageCfg, idx) => {
+                const StageIcon = stageCfg.icon;
+                const count =
+                  stageCfg.st === 'finished'
+                    ? stats.finishedCount
+                    : stageCfg.st === 'testing'
+                    ? stats.testingCount
+                    : stageCfg.st === 'in_progress'
+                    ? stats.inProgressCount
+                    : stageCfg.st === 'planned'
+                    ? stats.plannedCount
+                    : stats.ideationCount;
+                const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                const isSelected = statusFilter === stageCfg.st;
+
+                return (
+                  <motion.button
+                    key={stageCfg.st}
+                    type="button"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05, duration: 0.3, ease: 'easeOut' }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => setStatusFilter(isSelected ? 'active' : stageCfg.st)}
+                    className={`group relative text-left px-3.5 py-2.5 rounded-xl bg-gradient-to-br ${stageCfg.cardBg} border transition-all cursor-pointer shadow-2xs ${
+                      isSelected ? stageCfg.activeCls : stageCfg.borderCls
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${stageCfg.iconWrap} transition-transform group-hover:scale-110`}
+                        >
+                          <StageIcon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="text-xs font-extrabold text-slate-800 truncate">
+                          {TASK_STATUS_META[stageCfg.st].shortLabel}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold text-slate-400 shrink-0">
+                        {stageCfg.stepNum}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex items-baseline justify-between gap-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className={`font-mono tabular-nums text-lg font-black ${stageCfg.numText}`}>
+                          {count}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-500">tasks</span>
+                      </div>
+                      <span
+                        className={`font-mono tabular-nums text-[10px] font-extrabold px-1.5 py-0.5 rounded ${stageCfg.pctBadge}`}
+                      >
+                        {pct}%
+                      </span>
+                    </div>
+
+                    <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.65, delay: 0.1 + idx * 0.05, ease: 'easeOut' }}
+                        className={`h-full rounded-full ${TASK_STATUS_META[stageCfg.st].barColor}`}
+                      />
+                    </div>
+
+                    {idx < 4 && (
+                      <div className="hidden sm:flex items-center justify-center absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 rounded-full bg-white border border-slate-200 text-slate-400 shadow-2xs pointer-events-none">
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </div>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Row 3: Slim Single-Row Workstream Velocity Strip (6 columns on desktop) */}
+            <div className="pt-2.5 border-t border-indigo-100/80">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {stats.categoryStats.slice(0, 6).map((cat, catIdx) => (
+                  <motion.button
+                    key={cat.category}
+                    type="button"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1 + catIdx * 0.04, duration: 0.25 }}
+                    whileHover={{ y: -1 }}
+                    onClick={() =>
+                      setCategoryFilter(categoryFilter === cat.category ? 'all' : cat.category)
+                    }
+                    className={`text-left px-2.5 py-2 rounded-lg bg-white/90 border transition-all cursor-pointer ${
+                      categoryFilter === cat.category
+                        ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+                        : 'border-slate-200/80 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] gap-1 mb-1">
+                      <span className="font-bold text-slate-700 truncate">{cat.category}</span>
+                      <span className="font-mono tabular-nums text-[10px] font-extrabold text-teal-700 shrink-0">
+                        {cat.avgProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${cat.avgProgress}%` }}
+                        transition={{ duration: 0.65, delay: 0.15 + catIdx * 0.04, ease: 'easeOut' }}
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500"
+                      />
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
 
@@ -1681,8 +1592,8 @@ export const AdminTasksRoadmapModule: React.FC = () => {
               onChange={e => setStatusFilter(e.target.value as any)}
               className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none"
             >
-              <option value="all">All Stages ({tasks.length})</option>
               <option value="active">Active / Open Only ({stats.activeCount})</option>
+              <option value="all">All Stages ({tasks.length})</option>
               <option value="ideation">Ideation ({stats.ideationCount})</option>
               <option value="planned">Planned ({stats.plannedCount})</option>
               <option value="in_progress">In Progress ({stats.inProgressCount})</option>
