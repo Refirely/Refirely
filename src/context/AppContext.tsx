@@ -3241,6 +3241,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       window.history.pushState({}, '', '/?signup=success');
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
+      }
     } catch {}
 
     return { success: true, createdUserId: newId };
@@ -3383,6 +3386,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (isBrandNewGoogleSignup) {
         try {
           window.history.pushState({}, '', '/?signup=success');
+          if (typeof window !== 'undefined' && window.gtag) {
+            window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
+          }
         } catch {}
       }
 
