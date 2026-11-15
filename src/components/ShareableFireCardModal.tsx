@@ -187,17 +187,75 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
     return initialData?.topCountry || userProfile.targetCountry || 'Portugal';
   });
 
-  // Sync selectedCountry when modal opens with new initialData
+  const existingPortfolioTotal = useMemo(() => {
+    const inv = userProfile.finances?.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments;
+    return (inv.savingsUSD || 0) + (inv.stocksMutualFundsUSD || 0) + (inv.realEstateUSD || 0) + (inv.goldUSD || 0) + (inv.othersUSD || 0);
+  }, [userProfile.finances]);
+
+  const [modalCorpusUSD, setModalCorpusUSD] = useState<number>(() => {
+    return initialData?.currentNetWorthUSD || existingPortfolioTotal || 250000;
+  });
+
+  // Sync selectedCountry and modalCorpusUSD when modal opens with new initialData
   useEffect(() => {
     if (isOpen) {
       setSelectedCountry(initialData?.topCountry || userProfile.targetCountry || 'Portugal');
+      const currentTotal = (userProfile.finances?.investments?.savingsUSD || 0) +
+        (userProfile.finances?.investments?.stocksMutualFundsUSD || 0) +
+        (userProfile.finances?.investments?.realEstateUSD || 0) +
+        (userProfile.finances?.investments?.goldUSD || 0) +
+        (userProfile.finances?.investments?.othersUSD || 0);
+      setModalCorpusUSD(initialData?.currentNetWorthUSD || currentTotal || 250000);
     }
-  }, [isOpen, initialData?.topCountry, userProfile.targetCountry]);
+  }, [isOpen, initialData?.topCountry, initialData?.currentNetWorthUSD, userProfile.finances, userProfile.targetCountry]);
 
-  // Compute live unified FIRE metrics based on live userProfile.finances & selectedCountry
+  // Effective profile for studio calculations incorporating modalCorpusUSD and selectedCountry
+  const effectiveProfileForStudio = useMemo(() => {
+    const baseFinances = userProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO;
+    const currentTotal = (baseFinances.investments?.savingsUSD || 0) +
+      (baseFinances.investments?.stocksMutualFundsUSD || 0) +
+      (baseFinances.investments?.realEstateUSD || 0) +
+      (baseFinances.investments?.goldUSD || 0) +
+      (baseFinances.investments?.othersUSD || 0);
+
+    const overrideStock = currentTotal === 0 && modalCorpusUSD > 0
+      ? modalCorpusUSD
+      : baseFinances.investments?.stocksMutualFundsUSD !== undefined && baseFinances.investments.stocksMutualFundsUSD > 0
+      ? baseFinances.investments.stocksMutualFundsUSD
+      : modalCorpusUSD;
+
+    return {
+      ...userProfile,
+      targetCountry: selectedCountry,
+      finances: {
+        ...baseFinances,
+        investments: {
+          ...(baseFinances.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
+          stocksMutualFundsUSD: overrideStock,
+        },
+      },
+    };
+  }, [userProfile, selectedCountry, modalCorpusUSD]);
+
+  // Compute live unified FIRE metrics based on effectiveProfileForStudio & selectedCountry
   const unifiedMetrics = useMemo(() => {
-    return calculateUnifiedFireMetrics(userProfile, countries, selectedCountry);
-  }, [userProfile, countries, selectedCountry]);
+    return calculateUnifiedFireMetrics(effectiveProfileForStudio, countries, selectedCountry);
+  }, [effectiveProfileForStudio, countries, selectedCountry]);
+
+  const handleSaveAndSyncProfile = () => {
+    updateUserProfile({
+      targetCountry: selectedCountry,
+      finances: {
+        ...DEFAULT_FINANCIAL_PORTFOLIO,
+        ...(userProfile.finances || {}),
+        investments: {
+          ...(userProfile.finances?.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
+          stocksMutualFundsUSD: modalCorpusUSD,
+        },
+      },
+    });
+    showToast(`✅ Saved & Synced! Corpus ($${Math.round(modalCorpusUSD).toLocaleString()}) & Target Haven (${selectedCountry}) updated across website.`);
+  };
 
   // 4. Active Persona ('retiree' vs 'nomad'), initialized from localStorage or payload
   const [activePersona, setActivePersona] = useState<Persona>(() => {
@@ -1144,6 +1202,35 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       >
                         Refirely.com
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Editable Corpus / Investable Assets Input + Save Button */}
+                  <div className="pt-3 border-t border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="w-full sm:w-auto flex-1">
+                      <label className="text-[10px] font-extrabold uppercase text-slate-600 block mb-1">
+                        Total Investable Assets / FIRE Corpus (USD $)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-xs font-bold text-slate-500">$</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="5000"
+                          value={modalCorpusUSD}
+                          onChange={e => setModalCorpusUSD(Number(e.target.value) || 0)}
+                          className="w-full pl-7 pr-3 py-1.5 text-xs font-bold font-mono border border-indigo-200 rounded-xl bg-white text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-auto pt-1 sm:pt-4">
+                      <button
+                        type="button"
+                        onClick={handleSaveAndSyncProfile}
+                        className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      >
+                        <span>💾 Save &amp; Update Profile</span>
+                      </button>
                     </div>
                   </div>
                 </div>
