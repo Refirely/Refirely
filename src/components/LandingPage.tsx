@@ -2476,6 +2476,25 @@ export const LandingPage: React.FC = () => {
 
           </div>
 
+          {/* Global Haven FIRE Feasibility Matrix */}
+          <div className="mb-8">
+            <GlobalHavenFeasibilityWidget
+              userProfile={{
+                ...userProfile,
+                finances: {
+                  ...DEFAULT_FINANCIAL_PORTFOLIO,
+                  ...(userProfile.finances || {}),
+                  investments: {
+                    ...(userProfile.finances?.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
+                    stocksMutualFundsUSD: currentNetWorth,
+                  },
+                },
+              }}
+              countries={countries}
+              onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
+            />
+          </div>
+
           {/* Live Matching Retirement Havens for the User's FIRE Parameters + Signup CTA */}
           <div className="relative z-10 mt-10 pt-8 border-t border-amber-200/70 space-y-6">
             <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-teal-50/85 via-white to-indigo-50/85 border border-teal-200/80 shadow-md space-y-5">
@@ -2619,25 +2638,6 @@ export const LandingPage: React.FC = () => {
                     </motion.div>
                   );
                 })}
-              </div>
-
-              {/* Global Haven FIRE Feasibility Matrix */}
-              <div className="mt-8">
-                <GlobalHavenFeasibilityWidget
-                  userProfile={{
-                    ...userProfile,
-                    finances: {
-                      ...DEFAULT_FINANCIAL_PORTFOLIO,
-                      ...(userProfile.finances || {}),
-                      investments: {
-                        ...(userProfile.finances?.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
-                        stocksMutualFundsUSD: currentNetWorth,
-                      },
-                    },
-                  }}
-                  countries={countries}
-                  onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
-                />
               </div>
             </div>
           </div>
@@ -2917,6 +2917,22 @@ export const LandingPage: React.FC = () => {
 
               </div>
 
+              {/* Digital Nomad Runway & Haven Sustainability Matrix */}
+              <div className="mb-8">
+                <NomadHavenRunwayWidget
+                  userProfile={{
+                    ...userProfile,
+                    finances: {
+                      ...DEFAULT_FINANCIAL_PORTFOLIO,
+                      ...(userProfile.finances || {}),
+                    },
+                  }}
+                  countries={countries}
+                  liquidSavingsUSD={nomadSavings}
+                  onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
+                />
+              </div>
+
               {/* Live Matching Nomad & Remote Destinations */}
               <div className="relative z-10 mt-10 pt-8 border-t border-teal-200/70 space-y-6">
                 <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-indigo-50/85 via-white to-teal-50/85 border border-teal-200/80 shadow-md space-y-5">
@@ -3027,22 +3043,6 @@ export const LandingPage: React.FC = () => {
                         </motion.div>
                       );
                     })}
-                  </div>
-
-                  {/* Digital Nomad Runway & Haven Sustainability Matrix */}
-                  <div className="mt-8">
-                    <NomadHavenRunwayWidget
-                      userProfile={{
-                        ...userProfile,
-                        finances: {
-                          ...DEFAULT_FINANCIAL_PORTFOLIO,
-                          ...(userProfile.finances || {}),
-                        },
-                      }}
-                      countries={countries}
-                      liquidSavingsUSD={nomadSavings}
-                      onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
-                    />
                   </div>
                 </div>
               </div>
