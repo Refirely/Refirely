@@ -459,12 +459,12 @@ export const UserDashboard: React.FC = () => {
   // Financial summary metrics for top banner
   const userSalaryUSD = userProfile.finances?.currentSalaryUSD || 120000;
   const userMonthlySalaryUSD = userProfile.finances?.monthlySalaryUSD || Math.round(userSalaryUSD / 12);
-  const userNetWorthUSD = userProfile.finances
-    ? (userProfile.finances.investments.savingsUSD +
-       userProfile.finances.investments.stocksMutualFundsUSD +
-       userProfile.finances.investments.realEstateUSD +
-       userProfile.finances.investments.goldUSD +
-       userProfile.finances.investments.othersUSD -
+  const userNetWorthUSD = userProfile.finances?.investments
+    ? ((userProfile.finances.investments.savingsUSD || 0) +
+       (userProfile.finances.investments.stocksMutualFundsUSD || 0) +
+       (userProfile.finances.investments.realEstateUSD || 0) +
+       (userProfile.finances.investments.goldUSD || 0) +
+       (userProfile.finances.investments.othersUSD || 0) -
        (userProfile.finances.totalLiabilitiesUSD || 0))
     : 835000;
 
