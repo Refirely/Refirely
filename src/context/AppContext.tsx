@@ -1939,6 +1939,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Detect user country via GeoIP (ipapi.co / ipinfo.io) with fallback to 'India'
+  const detectUserCountryAsync = async (): Promise<string> => {
+    try {
+      const cached = localStorage.getItem('refirely_detected_country');
+      if (cached) return cached;
+    } catch {}
+    try {
+      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.country_name) {
+          try {
+            localStorage.setItem('refirely_detected_country', data.country_name);
+          } catch {}
+          return data.country_name;
+        }
+      }
+    } catch {}
+    try {
+      const res2 = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(2500) });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        if (data2 && data2.country) {
+          const map: Record<string, string> = {
+            IN: 'India',
+            US: 'United States',
+            GB: 'United Kingdom',
+            CA: 'Canada',
+            AU: 'Australia',
+            AE: 'United Arab Emirates',
+            DE: 'Germany',
+            FR: 'France',
+          };
+          const resolved = map[data2.country] || data2.country || 'India';
+          try {
+            localStorage.setItem('refirely_detected_country', resolved);
+          } catch {}
+          return resolved;
+        }
+      }
+    } catch {}
+    return 'India';
+  };
+
   // Build or resolve a complete UserAccount + UserProfile for any Google Auth user (admin or general Gmail user)
   const resolveGoogleAccountForUser = (
     user: FirebaseUser,
@@ -2099,8 +2143,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             name: resolvedName,
             email: resolvedEmail,
             avatarUrl: resolvedAvatar,
-            originCountry: 'United States',
-            residingCountry: 'United States',
+            originCountry: localStorage.getItem('refirely_detected_country') || 'India',
+            residingCountry: localStorage.getItem('refirely_detected_country') || 'India',
             originCity: '',
             targetCountry: 'Portugal',
             retirementTimelineYear: 2027,
@@ -3107,8 +3151,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: data.name.trim(),
       email: cleanEmail,
       avatarUrl: data.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-      originCountry: data.originCountry || 'United States',
-      residingCountry: data.residingCountry || data.originCountry || 'United States',
+      originCountry: data.originCountry || localStorage.getItem('refirely_detected_country') || 'India',
+      residingCountry: data.residingCountry || data.originCountry || localStorage.getItem('refirely_detected_country') || 'India',
       originCity: data.originCity || '',
       targetCountry: data.targetCountry || 'Portugal',
       retirementTimelineYear: data.retirementTimelineYear || 2027,
@@ -3293,6 +3337,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const additionalUserInfo = getAdditionalUserInfo(result);
+
+      // Detect user country via GeoIP for new Google/Gmail signup
+      const detectedCountry = await detectUserCountryAsync();
+      try {
+        localStorage.setItem('refirely_detected_country', detectedCountry);
+      } catch {}
 
       const googleEmail = (user.email || '').trim().toLowerCase();
       const hadExistingLocalAccount = registeredAccountsRef.current.some(
