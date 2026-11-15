@@ -14,6 +14,7 @@ import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard, BadgeProgressRow } from './BadgeShowcase';
 import { CountryFlag } from './CountryFlag';
 import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
+import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   User, CheckSquare, Calendar, Compass,
@@ -1359,16 +1360,28 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Global Haven FIRE Feasibility Matrix */}
+            {/* Global Haven FIRE / Nomad Runway Feasibility Matrix (Dual Persona) */}
             <div className="pt-2">
-              <GlobalHavenFeasibilityWidget
-                userProfile={userProfile}
-                countries={countries}
-                onSelectCountry={(cName) => {
-                  updateUserProfile({ targetCountry: cName });
-                  setActiveTab('financials');
-                }}
-              />
+              {currentPersona === 'nomad' ? (
+                <NomadHavenRunwayWidget
+                  userProfile={userProfile}
+                  countries={countries}
+                  liquidSavingsUSD={(userProfile.finances?.investments?.savingsUSD || 0) + (userProfile.finances?.investments?.stocksMutualFundsUSD || 0) || 36000}
+                  onSelectCountry={(cName) => {
+                    updateUserProfile({ targetCountry: cName });
+                    setActiveTab('financials');
+                  }}
+                />
+              ) : (
+                <GlobalHavenFeasibilityWidget
+                  userProfile={userProfile}
+                  countries={countries}
+                  onSelectCountry={(cName) => {
+                    updateUserProfile({ targetCountry: cName });
+                    setActiveTab('financials');
+                  }}
+                />
+              )}
             </div>
           </div>
 

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
+import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { DEFAULT_FINANCIAL_PORTFOLIO } from '../data/userAccounts';
 
 export type NomadMatchPriority =
@@ -3026,6 +3027,22 @@ export const LandingPage: React.FC = () => {
                         </motion.div>
                       );
                     })}
+                  </div>
+
+                  {/* Digital Nomad Runway & Haven Sustainability Matrix */}
+                  <div className="mt-8">
+                    <NomadHavenRunwayWidget
+                      userProfile={{
+                        ...userProfile,
+                        finances: {
+                          ...DEFAULT_FINANCIAL_PORTFOLIO,
+                          ...(userProfile.finances || {}),
+                        },
+                      }}
+                      countries={countries}
+                      liquidSavingsUSD={nomadSavings}
+                      onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
+                    />
                   </div>
                 </div>
               </div>
