@@ -13,6 +13,7 @@ import { getUserEarnedBadges, getAllBadgesProgress } from '../data/badgeDefiniti
 import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard, BadgeProgressRow } from './BadgeShowcase';
 import { CountryFlag } from './CountryFlag';
+import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   User, CheckSquare, Calendar, Compass,
@@ -1356,6 +1357,18 @@ export const UserDashboard: React.FC = () => {
                     />
                   ))}
               </div>
+            </div>
+
+            {/* Global Haven FIRE Feasibility Matrix */}
+            <div className="pt-2">
+              <GlobalHavenFeasibilityWidget
+                userProfile={userProfile}
+                countries={countries}
+                onSelectCountry={(cName) => {
+                  updateUserProfile({ targetCountry: cName });
+                  setActiveTab('financials');
+                }}
+              />
             </div>
           </div>
 

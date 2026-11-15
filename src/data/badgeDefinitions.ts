@@ -727,11 +727,15 @@ export function evaluateFireBadges(profile?: Partial<UserProfile> | null, countr
     });
   };
 
-  // 1. FIRE Progress Milestones
+  // 1. FIRE Progress Milestones (Show ONLY highest achieved tier)
   const progressDef = BADGE_DEFINITIONS.find(b => b.id === 'fire-progress-milestones');
   if (progressDef?.tiers) {
-    const achieved = progressDef.tiers.filter(t => metrics.uncappedFireProgressPct >= t.threshold);
-    achieved.forEach(tier => addTierBadge(tier, progressDef, metrics.uncappedFireProgressPct));
+    const achieved = progressDef.tiers
+      .filter(t => metrics.uncappedFireProgressPct >= t.threshold)
+      .sort((a, b) => b.threshold - a.threshold);
+    if (achieved.length > 0) {
+      addTierBadge(achieved[0], progressDef, metrics.uncappedFireProgressPct);
+    }
   }
 
   // 2. Arbitrage Architect (>= 5 yrs saved)

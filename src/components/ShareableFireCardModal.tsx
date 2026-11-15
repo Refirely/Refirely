@@ -19,7 +19,7 @@ import { Persona } from '../types';
 import { getWorldCountryFlag, DEFAULT_FINANCIAL_PORTFOLIO } from '../data/userAccounts';
 import { CountryFlag } from './CountryFlag';
 import { useApp } from '../context/AppContext';
-import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
+import { calculateUnifiedFireMetrics, getCountryFireFeasibilityList } from '../utils/fireCalculations';
 
 declare global {
   interface Window {
@@ -241,6 +241,10 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   const unifiedMetrics = useMemo(() => {
     return calculateUnifiedFireMetrics(effectiveProfileForStudio, countries, selectedCountry);
   }, [effectiveProfileForStudio, countries, selectedCountry]);
+
+  const feasibilityList = useMemo(() => {
+    return getCountryFireFeasibilityList(effectiveProfileForStudio, countries);
+  }, [effectiveProfileForStudio, countries]);
 
   const handleSaveAndSyncProfile = () => {
     updateUserProfile({
@@ -622,11 +626,18 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       {!countries.some(c => c.name.toLowerCase() === selectedCountry.toLowerCase()) && selectedCountry && (
                         <option value={selectedCountry}>🌍 {selectedCountry}</option>
                       )}
-                      {countries.map(c => (
-                        <option key={`studio-country-${c.id}`} value={c.name}>
-                          {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
-                        </option>
-                      ))}
+                      {countries.map(c => {
+                        const feat = feasibilityList.achieved.find(item => item.country.id === c.id) ||
+                          feasibilityList.close.find(item => item.country.id === c.id) ||
+                          feasibilityList.far.find(item => item.country.id === c.id);
+                        const pct = feat ? feat.fundedPercent : 0;
+                        const statusBadge = pct >= 100 ? `🟢 Achieved (${pct}%)` : pct >= 70 ? `🟡 Close (${pct}%)` : `🔴 Far (${pct}%)`;
+                        return (
+                          <option key={`studio-country-${c.id}`} value={c.name}>
+                            {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo) · {statusBadge}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -679,6 +690,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                   </div>
                 </div>
               </div>
+
+
 
               {/* 2. Format Switcher Tabs */}
               <div className="space-y-2">

@@ -17,6 +17,7 @@ import {
 import { CurrencyAmountInput } from './CurrencyAmountInput';
 import { FireProgressChart, FireTrajectoryPoint } from './FireProgressChart';
 import { CountryFlag } from './CountryFlag';
+import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   Flame, TrendingUp, DollarSign, ShieldAlert, CheckCircle2, Plus, Trash2,
@@ -3954,6 +3955,14 @@ export const FireCalculatorTracker: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+          {/* Global Haven FIRE Feasibility Matrix */}
+          <div className="pt-2">
+            <GlobalHavenFeasibilityWidget
+              userProfile={userProfile}
+              countries={countries}
+              onSelectCountry={(cName) => handleTargetHavenChange(cName)}
+            />
           </div>
         </div>
 

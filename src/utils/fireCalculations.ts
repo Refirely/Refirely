@@ -293,3 +293,49 @@ export function calculateUnifiedFireMetrics(
     recommendedBadgeEmoji,
   };
 }
+
+export interface CountryFireFeasibility {
+  country: Country;
+  nestEggUSD: number;
+  fundedPercent: number;
+  status: 'achieved' | 'close' | 'far';
+}
+
+export function getCountryFireFeasibilityList(
+  userProfile: UserProfile,
+  countries: Country[]
+): {
+  achieved: CountryFireFeasibility[];
+  close: CountryFireFeasibility[];
+  far: CountryFireFeasibility[];
+  effectiveCorpus: number;
+} {
+  const metrics = calculateUnifiedFireMetrics(userProfile, countries);
+  const corpus = metrics.effectiveFireCorpusUSD;
+  const swr = metrics.swrPercent / 100;
+
+  const results: CountryFireFeasibility[] = countries.map(c => {
+    const monthlyBurn = c.costOfLiving.monthlyBudgetSingleUSD;
+    const nestEgg = Math.max(50000, Math.round((monthlyBurn * 12) / swr));
+    const fundedPercent = Math.min(999, Math.round((corpus / Math.max(1, nestEgg)) * 100));
+
+    let status: 'achieved' | 'close' | 'far' = 'far';
+    if (fundedPercent >= 100) status = 'achieved';
+    else if (fundedPercent >= 70) status = 'close';
+
+    return {
+      country: c,
+      nestEggUSD: nestEgg,
+      fundedPercent,
+      status,
+    };
+  });
+
+  return {
+    achieved: results.filter(r => r.status === 'achieved').sort((a, b) => b.fundedPercent - a.fundedPercent),
+    close: results.filter(r => r.status === 'close').sort((a, b) => b.fundedPercent - a.fundedPercent),
+    far: results.filter(r => r.status === 'far').sort((a, b) => b.fundedPercent - a.fundedPercent),
+    effectiveCorpus: corpus,
+  };
+}
+

@@ -18,6 +18,8 @@ import {
   Zap, Wifi, Laptop, Coffee, FileBadge, Search, X
 } from 'lucide-react';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
+import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
+import { DEFAULT_FINANCIAL_PORTFOLIO } from '../data/userAccounts';
 
 export type NomadMatchPriority =
   | 'high_speed_internet'
@@ -46,6 +48,7 @@ export const LandingPage: React.FC = () => {
     currentPersona,
     setCurrentPersona,
     openShareFireCardModal,
+    userProfile,
   } = useApp();
 
   // -------------------------------------------------------------
@@ -2615,6 +2618,25 @@ export const LandingPage: React.FC = () => {
                     </motion.div>
                   );
                 })}
+              </div>
+
+              {/* Global Haven FIRE Feasibility Matrix */}
+              <div className="mt-8">
+                <GlobalHavenFeasibilityWidget
+                  userProfile={{
+                    ...userProfile,
+                    finances: {
+                      ...DEFAULT_FINANCIAL_PORTFOLIO,
+                      ...(userProfile.finances || {}),
+                      investments: {
+                        ...(userProfile.finances?.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
+                        stocksMutualFundsUSD: currentNetWorth,
+                      },
+                    },
+                  }}
+                  countries={countries}
+                  onSelectCountry={(cName) => navigateToCountry(countries.find(c => c.name.toLowerCase() === cName.toLowerCase())?.id || 'portugal')}
+                />
               </div>
             </div>
           </div>
