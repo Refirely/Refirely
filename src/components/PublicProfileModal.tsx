@@ -212,198 +212,257 @@ export const PublicProfileModal: React.FC = () => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+        className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5 overflow-hidden"
         onClick={closePublicProfile}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-          className="relative bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-indigo-200/80 overflow-hidden flex flex-col max-h-[92vh] my-4"
+          className="relative bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full shadow-2xl border-t sm:border border-indigo-200/80 overflow-hidden flex flex-col h-[92dvh] sm:h-auto sm:max-h-[92vh] sm:my-4"
           onClick={e => e.stopPropagation()}
         >
           {/* Top Multi-Colored Gradient Accent Ribbon */}
-          <div className="h-2 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
+          <div className="h-1.5 sm:h-2 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
 
-          {/* Top Banner & Member Identity Header */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white px-6 py-6 sm:px-8 sm:py-7 border-b border-indigo-900/60 shrink-0">
-            {/* Ambient Multi-Color Glow Orbs */}
-            <div className="absolute -top-20 -right-16 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 left-1/4 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-6 right-1/3 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 flex items-start justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-5 flex-1 min-w-0">
-                {/* Avatar with Multi-Color Gradient Halo */}
-                <motion.div
-                  whileHover={{ scale: 1.04, rotate: 1 }}
-                  className="relative shrink-0 p-1 rounded-2xl bg-gradient-to-br from-teal-400 via-indigo-400 to-amber-400 shadow-lg"
-                >
-                  {profile.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile.name}
-                      referrerPolicy="no-referrer"
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border-2 border-slate-950"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-br from-teal-700 to-indigo-800 text-white text-2xl font-extrabold flex items-center justify-center border-2 border-slate-950">
-                      {profile.name.charAt(0)}
-                    </div>
-                  )}
-                  <span
-                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-slate-950 shadow-xs"
-                    title="Verified Expat Member"
-                  />
-                </motion.div>
-
-                {/* Name, Headline & Multi-Color Metadata Badges */}
-                <div className="space-y-2 min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-amber-300" />
-                      <span>{profile.relocationStatus || 'Exploring Options'}</span>
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
-                      Member since {memberAccount.createdAt || '2025'}
-                    </span>
-                    {memberAccount.username && (
-                      <span className="font-mono text-amber-300/90 bg-amber-500/15 border border-amber-400/25 px-2 py-0.5 rounded-full">
-                        @{memberAccount.username}
-                      </span>
-                    )}
-                  </div>
-
-                  <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                    {profile.name}
-                  </h2>
-
-                  {profile.occupationOrBackground && (
-                    <p className="text-xs sm:text-sm text-slate-200 flex items-center gap-1.5 font-medium">
-                      <Briefcase className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span>{profile.occupationOrBackground}</span>
-                    </p>
-                  )}
-
-                  {/* Origin & Residing Location */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-200 pt-0.5">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 border border-white/10">
-                      <span className="text-slate-300">From:</span>
-                      <strong className="text-white font-bold">
-                        {getWorldCountryFlag(profile.originCountry)} {profile.originCountry}
-                      </strong>
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-500/15 border border-teal-400/25">
-                      <MapPin className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                      <span className="text-teal-200">Residing:</span>
-                      <strong className="text-white font-bold">
-                        {getWorldCountryFlag(profile.residingCountry || profile.originCountry)}{' '}
-                        {profile.originCity ? `${profile.originCity}, ` : ''}
-                        {profile.residingCountry || profile.originCountry}
-                      </strong>
-                    </span>
-                    {profile.preferredClimate && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-400/25 text-amber-200 font-semibold">
-                        <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>{profile.preferredClimate} Climate</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Earned Profile Honors & Badges in Header */}
-                  {earnedBadges.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      {earnedBadges.map(b => (
-                        <BadgePill
-                          key={b.tierId}
-                          badge={b}
-                          size="sm"
-                          onClick={() => openBadgeModal(b.category)}
-                        />
-                      ))}
-                      <button
-                        onClick={() => openBadgeModal('all')}
-                        className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline ml-1 cursor-pointer flex items-center gap-1"
-                      >
-                        <Award className="w-3 h-3 text-amber-300" />
-                        <span>Honors Codex</span>
-                      </button>
-                    </div>
-                  )}
+          {/* Mobile Sticky Quick-Action & Close Bar */}
+          <div className="sm:hidden shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-900 text-white border-b border-white/10 z-30">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  referrerPolicy="no-referrer"
+                  className="w-7 h-7 rounded-lg object-cover border border-white/25 shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-700 to-indigo-800 text-white text-xs font-extrabold flex items-center justify-center border border-white/25 shrink-0">
+                  {profile.name.charAt(0)}
                 </div>
-              </div>
-
-              {/* Top-right Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                {isOwnProfile ? (
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      closePublicProfile();
-                      openEditProfile('about');
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500/30 to-teal-500/30 hover:from-indigo-500/50 hover:to-teal-500/50 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-xs"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Edit My Profile</span>
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={handleOpenFullMessenger}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-teal-950/30 whitespace-nowrap cursor-pointer"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>Open in Messenger</span>
-                  </motion.button>
-                )}
-
-                <motion.button
-                  whileHover={{ scale: 1.08, rotate: 90 }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={closePublicProfile}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-rose-500/80 text-slate-200 hover:text-white transition-colors cursor-pointer"
-                  aria-label="Close Public Profile"
-                >
-                  <X className="w-5 h-5" />
-                </motion.button>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold text-white truncate">{profile.name}</p>
+                <p className="text-[10px] text-teal-300 truncate">
+                  {profile.residingCountry || profile.originCountry}
+                </p>
               </div>
             </div>
 
-            {/* Privacy Assurance & Multi-Color Telemetry Strip */}
-            <div className="relative z-10 mt-5 pt-3.5 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>
-                  Public Expat Profile · Personal financial status, budget figures &amp; shortlisted countries are kept strictly private.
-                </span>
-              </div>
-              <div className="flex items-center gap-2 font-mono tabular-nums">
-                <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-200 border border-teal-400/25 font-bold">
-                  {visitedCountries.length} Countries Visited
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-200 border border-indigo-400/25 font-bold">
-                  {languagesKnown.length} Languages
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-200 border border-rose-400/25 font-bold">
-                  {interests.length} Interests
-                </span>
-              </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isOwnProfile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closePublicProfile();
+                    openEditProfile('about');
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-indigo-500/30 border border-white/20 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <Edit3 className="w-3 h-3 text-amber-300" />
+                  <span>Edit</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleOpenFullMessenger}
+                  className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  <span>Message</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={closePublicProfile}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-rose-500/80 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close Public Profile"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Scrollable Profile Body */}
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-7 bg-gradient-to-br from-slate-50 via-indigo-50/25 to-teal-50/30">
-            {/* 1. Basic Details & Retirement Vision */}
-            <motion.section
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="relative overflow-hidden bg-white rounded-2xl border border-indigo-100/90 p-5 sm:p-6 space-y-4 shadow-xs"
-            >
+          {/* Unified Scroll Container on Mobile; Fixed-Header + Scroll-Body Split on Desktop */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain sm:overflow-hidden sm:flex sm:flex-col">
+            {/* Top Banner & Member Identity Header */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white px-4 py-4 sm:px-8 sm:py-7 border-b border-indigo-900/60 sm:shrink-0">
+              {/* Ambient Multi-Color Glow Orbs */}
+              <div className="absolute -top-20 -right-16 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 left-1/4 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-6 right-1/3 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 flex items-start justify-between gap-3 sm:gap-4 w-full min-w-0">
+                <div className="flex flex-row items-start sm:items-center gap-3.5 sm:gap-5 flex-1 min-w-0">
+                  {/* Avatar with Multi-Color Gradient Halo */}
+                  <motion.div
+                    whileHover={{ scale: 1.04, rotate: 1 }}
+                    className="relative shrink-0 self-start sm:self-center p-0.5 sm:p-1 rounded-2xl bg-gradient-to-br from-teal-400 via-indigo-400 to-amber-400 shadow-lg w-fit"
+                  >
+                    {profile.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt={profile.name}
+                        referrerPolicy="no-referrer"
+                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl object-cover border-2 border-slate-950"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-br from-teal-700 to-indigo-800 text-white text-xl sm:text-2xl font-extrabold flex items-center justify-center border-2 border-slate-950">
+                        {profile.name.charAt(0)}
+                      </div>
+                    )}
+                    <span
+                      className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400 border-2 border-slate-950 shadow-xs"
+                      title="Verified Expat Member"
+                    />
+                  </motion.div>
+
+                  {/* Name, Headline & Multi-Color Metadata Badges */}
+                  <div className="space-y-1.5 sm:space-y-2 min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold">
+                      <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30 inline-flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
+                        <span>{profile.relocationStatus || 'Exploring Options'}</span>
+                      </span>
+                      <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
+                        Member since {memberAccount.createdAt || '2025'}
+                      </span>
+                      {memberAccount.username && (
+                        <span className="font-mono text-amber-300/90 bg-amber-500/15 border border-amber-400/25 px-2 py-0.5 rounded-full break-all">
+                          @{memberAccount.username}
+                        </span>
+                      )}
+                    </div>
+
+                    <h2 className="text-lg sm:text-2xl font-extrabold tracking-tight text-white break-words">
+                      {profile.name}
+                    </h2>
+
+                    {profile.occupationOrBackground && (
+                      <p className="text-xs sm:text-sm text-slate-200 flex items-start sm:items-center gap-1.5 font-medium break-words">
+                        <Briefcase className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+                        <span className="min-w-0 break-words">{profile.occupationOrBackground}</span>
+                      </p>
+                    )}
+
+                    {/* Origin & Residing Location */}
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-x-3 sm:gap-y-1.5 text-[11px] sm:text-xs text-slate-200 pt-0.5">
+                      <span className="inline-flex flex-wrap items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-white/10 border border-white/10 max-w-full">
+                        <span className="text-slate-300">From:</span>
+                        <strong className="text-white font-bold break-words">
+                          {getWorldCountryFlag(profile.originCountry)} {profile.originCountry}
+                        </strong>
+                      </span>
+                      <span className="inline-flex flex-wrap items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-teal-500/15 border border-teal-400/25 max-w-full">
+                        <MapPin className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                        <span className="text-teal-200">Residing:</span>
+                        <strong className="text-white font-bold break-words">
+                          {getWorldCountryFlag(profile.residingCountry || profile.originCountry)}{' '}
+                          {profile.originCity ? `${profile.originCity}, ` : ''}
+                          {profile.residingCountry || profile.originCountry}
+                        </strong>
+                      </span>
+                      {profile.preferredClimate && (
+                        <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-400/25 text-amber-200 font-semibold max-w-full">
+                          <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>{profile.preferredClimate} Climate</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Earned Profile Honors & Badges in Header */}
+                    {earnedBadges.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {earnedBadges.map(b => (
+                          <BadgePill
+                            key={b.tierId}
+                            badge={b}
+                            size="sm"
+                            onClick={() => openBadgeModal(b.category)}
+                          />
+                        ))}
+                        <button
+                          onClick={() => openBadgeModal('all')}
+                          className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline ml-1 cursor-pointer flex items-center gap-1"
+                        >
+                          <Award className="w-3 h-3 text-amber-300 shrink-0" />
+                          <span>Honors Codex</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop Top-right Action Buttons */}
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  {isOwnProfile ? (
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        closePublicProfile();
+                        openEditProfile('about');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500/30 to-teal-500/30 hover:from-indigo-500/50 hover:to-teal-500/50 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Edit My Profile</span>
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleOpenFullMessenger}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-teal-950/30 whitespace-nowrap cursor-pointer"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Open in Messenger</span>
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    whileHover={{ scale: 1.08, rotate: 90 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={closePublicProfile}
+                    className="p-2 rounded-xl bg-white/10 hover:bg-rose-500/80 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                    aria-label="Close Public Profile"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Privacy Assurance & Multi-Color Telemetry Strip */}
+              <div className="relative z-10 mt-3.5 sm:mt-5 pt-3 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-300">
+                <div className="flex items-start sm:items-center gap-1.5 min-w-0">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
+                  <span className="leading-snug">
+                    Public Expat Profile · Personal financial status, budget figures &amp; shortlisted countries are kept strictly private.
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 font-mono tabular-nums shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-200 border border-teal-400/25 font-bold">
+                    {visitedCountries.length} Countries Visited
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-200 border border-indigo-400/25 font-bold">
+                    {languagesKnown.length} Languages
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-200 border border-rose-400/25 font-bold">
+                    {interests.length} Interests
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Profile Body */}
+            <div className="p-3.5 sm:p-8 sm:overflow-y-auto sm:overflow-x-hidden sm:flex-1 space-y-4 sm:space-y-7 bg-gradient-to-br from-slate-50 via-indigo-50/25 to-teal-50/30">
+              {/* 1. Basic Details & Retirement Vision */}
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="relative overflow-hidden bg-white rounded-2xl border border-indigo-100/90 p-4 sm:p-6 space-y-4 shadow-xs min-w-0"
+              >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                 <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
@@ -443,8 +502,8 @@ export const PublicProfileModal: React.FC = () => {
               )}
 
               {/* 4-Color Structured Basic Details Grid (Strictly Non-Financial) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-50/85 to-teal-50/40 border border-emerald-200/80">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-50/85 to-teal-50/40 border border-emerald-200/80 min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
                     Origin Country
                   </span>
@@ -452,7 +511,7 @@ export const PublicProfileModal: React.FC = () => {
                     {getWorldCountryFlag(profile.originCountry)} {profile.originCountry}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50/85 to-sky-50/40 border border-indigo-200/80">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50/85 to-sky-50/40 border border-indigo-200/80 min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-800 block">
                     Current Residence
                   </span>
@@ -462,7 +521,7 @@ export const PublicProfileModal: React.FC = () => {
                     {profile.residingCountry || profile.originCountry}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-50/85 to-orange-50/40 border border-amber-200/80">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-50/85 to-orange-50/40 border border-amber-200/80 min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">
                     Preferred Climate
                   </span>
@@ -470,7 +529,7 @@ export const PublicProfileModal: React.FC = () => {
                     {profile.preferredClimate || 'Mediterranean'}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-rose-50/85 to-purple-50/40 border border-rose-200/80">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-rose-50/85 to-purple-50/40 border border-rose-200/80 min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 block">
                     Background
                   </span>
@@ -490,15 +549,15 @@ export const PublicProfileModal: React.FC = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 }}
-                className="relative overflow-hidden bg-white rounded-2xl border border-amber-200/90 p-5 sm:p-6 space-y-4 shadow-xs"
+                className="relative overflow-hidden bg-white rounded-2xl border border-amber-200/90 p-4 sm:p-6 space-y-4 shadow-xs min-w-0"
               >
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-rose-500 via-purple-600 to-teal-500" />
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
+                  <div className="flex items-start sm:items-center gap-2 min-w-0">
+                    <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-2xs shrink-0">
                       <Award className="w-4 h-4" />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="text-sm font-extrabold text-slate-900">
                         Honors &amp; Profile Badges ({earnedBadges.length})
                       </h3>
@@ -509,7 +568,7 @@ export const PublicProfileModal: React.FC = () => {
                   </div>
                   <button
                     onClick={() => openBadgeModal('all')}
-                    className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-auto"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                     <span>View Badge Codex</span>
@@ -533,7 +592,7 @@ export const PublicProfileModal: React.FC = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative overflow-hidden bg-white rounded-2xl border border-teal-200/80 p-5 sm:p-6 space-y-4 shadow-xs"
+              className="relative overflow-hidden bg-white rounded-2xl border border-teal-200/80 p-4 sm:p-6 space-y-4 shadow-xs min-w-0"
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -587,13 +646,13 @@ export const PublicProfileModal: React.FC = () => {
                       >
                         <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${topAccent}`} />
                         <div className="space-y-2 pt-0.5">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-2xl leading-none drop-shadow-2xs">
+                          <div className="flex items-start justify-between gap-2 min-w-0">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <span className="text-2xl leading-none drop-shadow-2xs shrink-0">
                                 {visit.flag || getWorldCountryFlag(visit.countryName)}
                               </span>
-                              <div>
-                                <h4 className="text-sm font-extrabold text-slate-900">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-sm font-extrabold text-slate-900 truncate">
                                   {visit.countryName}
                                 </h4>
                                 <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 font-medium">
@@ -631,20 +690,20 @@ export const PublicProfileModal: React.FC = () => {
                           </div>
 
                           {visit.favoriteSpotOrMemory && (
-                            <p className="text-xs text-slate-800 font-semibold leading-relaxed bg-amber-50/50 border border-amber-200/50 px-2.5 py-1.5 rounded-lg">
+                            <p className="text-xs text-slate-800 font-semibold leading-relaxed bg-amber-50/50 border border-amber-200/50 px-2.5 py-1.5 rounded-lg break-words">
                               <span className="text-amber-800 font-bold">Highlight: </span>
                               {visit.favoriteSpotOrMemory}
                             </p>
                           )}
 
                           {visit.notes && (
-                            <p className="text-xs text-slate-600 leading-relaxed">
+                            <p className="text-xs text-slate-600 leading-relaxed break-words">
                               {visit.notes}
                             </p>
                           )}
                         </div>
 
-                        <div className="pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
+                        <div className="pt-2.5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                           <span className="text-slate-500 font-medium">
                             Retire verdict:{' '}
                             <strong
@@ -681,19 +740,19 @@ export const PublicProfileModal: React.FC = () => {
             </motion.section>
 
             {/* 3. Languages Known & Lifestyle Interests (2-Column Split) */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-stretch">
               {/* Languages Known (5 cols) */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.14 }}
-                className="relative overflow-hidden md:col-span-5 bg-white rounded-2xl border border-indigo-200/80 p-5 sm:p-6 flex flex-col justify-between space-y-4 shadow-xs"
+                className="relative overflow-hidden md:col-span-5 bg-white rounded-2xl border border-indigo-200/80 p-4 sm:p-6 flex flex-col justify-between space-y-4 shadow-xs min-w-0"
               >
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
                 <div className="space-y-4">
                   <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-2xs">
+                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-2xs shrink-0">
                         <Languages className="w-4 h-4" />
                       </span>
                       <span>Languages Known ({languagesKnown.length})</span>
@@ -709,9 +768,9 @@ export const PublicProfileModal: React.FC = () => {
                         const barGrad = LANG_BAR_GRADIENTS[idx % LANG_BAR_GRADIENTS.length];
                         return (
                           <div key={lang.id} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-extrabold text-slate-900">{lang.language}</span>
-                              <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200/70 text-[11px] font-bold">
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="font-extrabold text-slate-900 truncate">{lang.language}</span>
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200/70 text-[11px] font-bold shrink-0">
                                 {lang.proficiency}
                               </span>
                             </div>
@@ -740,13 +799,13 @@ export const PublicProfileModal: React.FC = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18 }}
-                className="relative overflow-hidden md:col-span-7 bg-white rounded-2xl border border-rose-200/80 p-5 sm:p-6 flex flex-col justify-between space-y-4 shadow-xs"
+                className="relative overflow-hidden md:col-span-7 bg-white rounded-2xl border border-rose-200/80 p-4 sm:p-6 flex flex-col justify-between space-y-4 shadow-xs min-w-0"
               >
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-500 via-amber-500 to-teal-500" />
                 <div className="space-y-4">
-                  <div className="pb-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                  <div className="pb-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-rose-500 to-amber-500 text-white shadow-2xs">
+                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-rose-500 to-amber-500 text-white shadow-2xs shrink-0">
                         <Heart className="w-4 h-4" />
                       </span>
                       <span>Interests &amp; Lifestyle Passions ({interests.length})</span>
@@ -802,12 +861,12 @@ export const PublicProfileModal: React.FC = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.22 }}
-                className="relative overflow-hidden bg-white rounded-2xl border border-amber-200/80 p-5 sm:p-6 space-y-4 shadow-xs"
+                className="relative overflow-hidden bg-white rounded-2xl border border-amber-200/80 p-4 sm:p-6 space-y-4 shadow-xs min-w-0"
               >
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-purple-500" />
                 <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-2xs">
+                    <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-2xs shrink-0">
                       <MessageSquare className="w-4 h-4" />
                     </span>
                     <span>Community Posts &amp; Hosted Meetups</span>
@@ -819,10 +878,10 @@ export const PublicProfileModal: React.FC = () => {
                     <motion.div
                       key={t.id}
                       whileHover={{ y: -2 }}
-                      className="p-4 rounded-xl bg-gradient-to-br from-amber-50/60 via-white to-orange-50/40 border border-amber-200/80 flex flex-col justify-between space-y-2.5 shadow-2xs"
+                      className="p-4 rounded-xl bg-gradient-to-br from-amber-50/60 via-white to-orange-50/40 border border-amber-200/80 flex flex-col justify-between space-y-2.5 shadow-2xs min-w-0"
                     >
-                      <div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                           <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold">
                             {t.countryName}
                           </span>
@@ -853,17 +912,17 @@ export const PublicProfileModal: React.FC = () => {
                     <motion.div
                       key={m.id}
                       whileHover={{ y: -2 }}
-                      className="p-4 rounded-xl bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/40 border border-teal-200/80 flex flex-col justify-between space-y-2.5 shadow-2xs"
+                      className="p-4 rounded-xl bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/40 border border-teal-200/80 flex flex-col justify-between space-y-2.5 shadow-2xs min-w-0"
                     >
-                      <div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                           <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-900 font-bold">
                             {m.city}, {m.countryName}
                           </span>
                           <span aria-hidden="true">·</span>
                           <span className="font-mono font-semibold text-slate-700">{m.date}</span>
                         </div>
-                        <h4 className="text-xs font-extrabold text-slate-900 mt-1.5">
+                        <h4 className="text-xs font-extrabold text-slate-900 mt-1.5 break-words">
                           Host: {m.title}
                         </h4>
                         <p className="text-xs text-slate-600 mt-1 line-clamp-2">
@@ -892,16 +951,16 @@ export const PublicProfileModal: React.FC = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="relative overflow-hidden bg-white rounded-2xl border border-teal-300/90 p-5 sm:p-6 space-y-4 shadow-md shadow-teal-950/5"
+                className="relative overflow-hidden bg-white rounded-2xl border border-teal-300/90 p-4 sm:p-6 space-y-4 shadow-md shadow-teal-950/5 min-w-0"
               >
                 <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-2xs">
+                      <span className="p-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-2xs shrink-0">
                         <MessageCircle className="w-4 h-4" />
                       </span>
-                      <span>Connect &amp; Send Personal Message to {profile.name}</span>
+                      <span className="break-words">Connect &amp; Send Personal Message to {profile.name}</span>
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Messages sent here sync directly with your Direct Messenger inbox.
@@ -912,7 +971,7 @@ export const PublicProfileModal: React.FC = () => {
                     <motion.button
                       whileHover={{ x: 2 }}
                       onClick={handleOpenFullMessenger}
-                      className="text-xs font-extrabold text-indigo-700 hover:text-teal-700 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                      className="text-xs font-extrabold text-indigo-700 hover:text-teal-700 flex items-center gap-1 cursor-pointer self-start sm:self-auto shrink-0"
                     >
                       <span>Open Full Chat Window</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -921,7 +980,7 @@ export const PublicProfileModal: React.FC = () => {
                 </div>
 
                 {!isAuthenticated || currentUserId === 'guest' ? (
-                  <div className="py-6 px-4 bg-gradient-to-br from-teal-50/70 via-indigo-50/50 to-amber-50/50 rounded-2xl border border-teal-200/80 text-center space-y-3">
+                  <div className="py-5 px-3.5 sm:py-6 sm:px-4 bg-gradient-to-br from-teal-50/70 via-indigo-50/50 to-amber-50/50 rounded-2xl border border-teal-200/80 text-center space-y-3">
                     <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-600 to-indigo-600 text-white flex items-center justify-center mx-auto shadow-sm">
                       <Lock className="w-5 h-5" />
                     </div>
@@ -933,12 +992,12 @@ export const PublicProfileModal: React.FC = () => {
                         Direct peer messaging and conversation histories are reserved exclusively for authenticated members to protect privacy and prevent unsolicited messages.
                       </p>
                     </div>
-                    <div className="flex items-center justify-center gap-2.5 pt-1">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 pt-1">
                       <motion.button
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => openAuthModal('login')}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <LogIn className="w-3.5 h-3.5" />
                         <span>Log In to Message</span>
@@ -947,7 +1006,7 @@ export const PublicProfileModal: React.FC = () => {
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => openAuthModal('signup')}
-                        className="px-4 py-2 rounded-xl bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-950 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-950 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <UserPlus className="w-3.5 h-3.5 text-indigo-600" />
                         <span>Create Account</span>
@@ -971,7 +1030,7 @@ export const PublicProfileModal: React.FC = () => {
                               className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                             >
                               <div
-                                className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs font-medium ${
+                                className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs font-medium break-words ${
                                   isMe
                                     ? 'bg-gradient-to-r from-teal-600 to-indigo-600 text-white shadow-2xs'
                                     : 'bg-white text-slate-800 border border-slate-200'
@@ -992,10 +1051,10 @@ export const PublicProfileModal: React.FC = () => {
                     {/* Quick Icebreaker Starters */}
                     <div className="space-y-1.5">
                       <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
                         <span>Quick conversation starters (click to pre-fill):</span>
                       </span>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                         {quickIcebreakers.map((prompt, idx) => (
                           <motion.button
                             key={idx}
@@ -1003,7 +1062,7 @@ export const PublicProfileModal: React.FC = () => {
                             whileHover={{ y: -1.5 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setPersonalMessage(prompt)}
-                            className="text-left text-xs px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-50/80 via-indigo-50/50 to-amber-50/60 hover:from-teal-100/80 hover:to-indigo-100/70 text-slate-800 font-medium border border-teal-200/80 hover:border-indigo-300 transition-all cursor-pointer"
+                            className="w-full sm:w-auto text-left text-xs px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-50/80 via-indigo-50/50 to-amber-50/60 hover:from-teal-100/80 hover:to-indigo-100/70 text-slate-800 font-medium border border-teal-200/80 hover:border-indigo-300 transition-all cursor-pointer whitespace-normal break-words"
                           >
                             &ldquo;{prompt}&rdquo;
                           </motion.button>
@@ -1015,9 +1074,9 @@ export const PublicProfileModal: React.FC = () => {
                       <motion.div
                         initial={{ opacity: 0, y: -6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between gap-2"
+                        className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex flex-wrap items-center justify-between gap-2"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span>
                             Personal message sent to <strong>{profile.name}</strong>! It is now in your Direct Messages inbox.
@@ -1040,14 +1099,14 @@ export const PublicProfileModal: React.FC = () => {
                         placeholder={`Write a personal message to ${profile.name} about countries visited, languages, or expat life...`}
                         value={personalMessage}
                         onChange={e => setPersonalMessage(e.target.value)}
-                        className="flex-1 px-4 py-2.5 text-xs sm:text-sm border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/60 focus:bg-white font-medium"
+                        className="w-full sm:flex-1 px-4 py-2.5 text-xs sm:text-sm border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/60 focus:bg-white font-medium min-w-0"
                       />
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
                         type="submit"
                         disabled={!personalMessage.trim()}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-sm"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 hover:from-teal-700 hover:to-violet-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-sm"
                       >
                         <Send className="w-4 h-4" />
                         <span>Send Personal Message</span>
@@ -1057,6 +1116,7 @@ export const PublicProfileModal: React.FC = () => {
                 )}
               </motion.section>
             )}
+            </div>
           </div>
         </motion.div>
       </motion.div>

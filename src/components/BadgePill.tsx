@@ -57,7 +57,7 @@ export const BadgePill: React.FC<BadgePillProps> = ({
       whileTap={onClick ? { scale: 0.97 } : undefined}
       onClick={onClick}
       title={showDetailsTooltip ? `${badge.tierName}: ${badge.description}` : undefined}
-      className={`group relative inline-flex items-center font-bold tracking-tight border shadow-2xs transition-all cursor-pointer whitespace-nowrap ${badge.pillBgClass} ${sizeStyles.pill} ${className}`}
+      className={`group relative inline-flex items-center max-w-full font-bold tracking-tight border shadow-2xs transition-all cursor-pointer whitespace-nowrap ${badge.pillBgClass} ${sizeStyles.pill} ${className}`}
     >
       <IconComponent className={`${sizeStyles.icon} shrink-0 opacity-90 group-hover:scale-110 transition-transform`} />
       <span className="truncate">{badge.tierName}</span>
