@@ -13,6 +13,7 @@ import { getUserEarnedBadges, getAllBadgesProgress } from '../data/badgeDefiniti
 import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard, BadgeProgressRow } from './BadgeShowcase';
 import { CountryFlag } from './CountryFlag';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
@@ -1018,23 +1019,33 @@ export const UserDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const estBurn = userProfile.monthlyBudgetUSD || 2200;
-                    const fireTarget = estBurn * 12 * 25;
-                    const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
-                    const targetCountryName = userProfile.targetCountry || 'Portugal';
+                    const unified = calculateUnifiedFireMetrics(userProfile, countries);
                     openShareFireCardModal({
                       persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
-                      badgeTitle: firePct >= 100 ? '100% FI' : currentPersona === 'nomad' ? 'Coast FIRE Nomad' : 'Arbitrage Architect',
-                      badgeEmoji: firePct >= 100 ? '👑' : currentPersona === 'nomad' ? '🌍' : '⚡',
-                      topCountry: targetCountryName,
-                      topCountryFlag: getWorldCountryFlag(targetCountryName),
-                      topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
-                      yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
-                      nomadRunwayMonths: Math.max(18, Math.round(userNetWorthUSD / Math.max(800, estBurn))),
-                      fireProgressPercent: firePct,
-                      monthlyBurnUSD: estBurn,
-                      currentNetWorthUSD: userNetWorthUSD,
-                      targetFireNestEggUSD: fireTarget,
+                      badgeTitle:
+                        unified.isCompleteFire
+                          ? '100% FI'
+                          : currentPersona === 'nomad'
+                          ? 'Coast FIRE Nomad'
+                          : 'Arbitrage Architect',
+                      badgeEmoji:
+                        unified.isCompleteFire
+                          ? '🔥'
+                          : currentPersona === 'nomad'
+                          ? '🌊'
+                          : '⚡',
+                      headlineMode: unified.isCompleteFire ? 'fi-percent' : undefined,
+                      topCountry: unified.targetCountryName,
+                      topCountryFlag: unified.targetCountryFlag,
+                      topCity: unified.targetCityName,
+                      yearsSaved: unified.yearsSaved,
+                      nomadRunwayMonths: unified.nomadRunwayMonths,
+                      fireProgressPercent: unified.fireProgressPercent,
+                      monthlyBurnUSD: unified.monthlyBurnUSD,
+                      domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
+                      currentNetWorthUSD: unified.effectiveFireCorpusUSD,
+                      targetFireNestEggUSD: unified.targetFireNestEggUSD,
+                      swrPercent: unified.swrPercent,
                     });
                   }}
                   className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
@@ -1062,14 +1073,16 @@ export const UserDashboard: React.FC = () => {
 
             {/* Unlocked FIRE & Geoarbitrage Milestones (Shareable Freedom Cards — Light Multi-Colored Style) */}
             {(() => {
-              const estBurn = userProfile.monthlyBudgetUSD || 2200;
-              const fireTarget = estBurn * 12 * 25;
-              const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
-              const yearsSaved = Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260)));
-              const runwayMonths = Math.max(12, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn)));
-              const havenCity = targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon';
-              const havenCountry = userProfile.targetCountry || 'Portugal';
-              const havenFlag = getWorldCountryFlag(havenCountry);
+              const unified = calculateUnifiedFireMetrics(userProfile, countries);
+              const estBurn = unified.monthlyBurnUSD;
+              const fireTarget = unified.targetFireNestEggUSD;
+              const firePct = unified.fireProgressPercent;
+              const uncappedPct = unified.uncappedFireProgressPct;
+              const yearsSaved = unified.yearsSaved;
+              const runwayMonths = unified.nomadRunwayMonths;
+              const havenCity = unified.targetCityName;
+              const havenCountry = unified.targetCountryName;
+              const havenFlag = unified.targetCountryFlag;
 
               const fireMilestones: {
                 id: string;
@@ -1106,23 +1119,26 @@ export const UserDashboard: React.FC = () => {
                 {
                   id: 'coast-fire-nomad',
                   title: 'Coast FIRE Nomad',
-                  icon: '🌍',
-                  subtitle: `${firePct}% to Full Financial Independence`,
-                  description: `Compounding trajectory active across ${countries.length} global havens including ${havenCountry}.`,
+                  icon: '🌊',
+                  subtitle:
+                    firePct >= 100
+                      ? `100% Complete FIRE in ${havenCountry} (${uncappedPct}% Funded)`
+                      : `${firePct}% to Full Financial Independence`,
+                  description: `Live FIRE corpus ($${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k) vs $${Math.round(fireTarget / 1000).toLocaleString()}k target for ${havenCountry}.`,
                   unlocked: firePct >= 25,
                   cardBg: 'from-sky-50/90 via-white to-cyan-50/80',
                   cardBorder: 'border-sky-200/90 hover:border-sky-400',
                   pillBg: 'bg-sky-100/80 border-sky-200 text-sky-800',
                   subtitleColor: 'text-sky-700',
                   buttonGradient: 'from-sky-600 via-cyan-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white',
-                  pill: `${firePct}% FI Progress`,
+                  pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Progress`,
                   showCountryBadge: true,
                   headlineMode: 'fi-percent',
                 },
                 {
                   id: 'runway-sovereign',
                   title: 'Runway Sovereign',
-                  icon: '🚀',
+                  icon: '👑',
                   subtitle: `${runwayMonths}+ Months Global Freedom Runway`,
                   description: `Self-funded slow-travel & remote living runway in ${havenCity}, ${havenCountry}.`,
                   unlocked: runwayMonths >= 18,
@@ -1138,16 +1154,19 @@ export const UserDashboard: React.FC = () => {
                 {
                   id: '100-fi',
                   title: '100% FI',
-                  icon: '👑',
-                  subtitle: firePct >= 100 ? '100% Financial Independence Unlocked' : `${firePct}% of 25x Safe Withdrawal Target`,
-                  description: `4% SWR portfolio coverage against $${estBurn.toLocaleString()}/mo ${havenCountry} haven lifestyle.`,
+                  icon: '🔥',
+                  subtitle:
+                    firePct >= 100
+                      ? `100% Financial Independence Unlocked (${uncappedPct}% Funded)`
+                      : `${firePct}% of ${unified.swrPercent}% SWR Target`,
+                  description: `${unified.swrPercent}% SWR portfolio${unified.includePrimaryHome ? ' (incl. Real Estate' : ''}${unified.includeGold ? (unified.includePrimaryHome ? ' & Gold)' : ' (incl. Gold)') : unified.includePrimaryHome ? ')' : ''} covers $${estBurn.toLocaleString()}/mo ${havenCountry} lifestyle.`,
                   unlocked: true,
                   cardBg: 'from-purple-50/90 via-white to-fuchsia-50/80',
                   cardBorder: 'border-purple-200/90 hover:border-purple-400',
                   pillBg: 'bg-purple-100/80 border-purple-200 text-purple-800',
                   subtitleColor: 'text-purple-700',
                   buttonGradient: 'from-purple-600 via-fuchsia-600 to-rose-500 hover:from-purple-700 hover:to-rose-600 text-white',
-                  pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Milestone`,
+                  pill: firePct >= 100 ? '🔥 100% FI Achieved' : `${firePct}% FI Milestone`,
                   showCountryBadge: true,
                   headlineMode: 'fi-percent',
                 },
@@ -1155,7 +1174,7 @@ export const UserDashboard: React.FC = () => {
 
               return (
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-rose-50/80 text-slate-900 border border-indigo-200/85 space-y-3.5 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
@@ -1165,14 +1184,52 @@ export const UserDashboard: React.FC = () => {
                           <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
                           <span>{havenCity}, {havenCountry}</span>
                         </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-mono font-bold text-emerald-900 shadow-2xs tabular-nums">
+                          <span>
+                            FIRE Corpus: ${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k / Target: ${Math.round(fireTarget / 1000).toLocaleString()}k ({firePct}% FI)
+                          </span>
+                        </span>
                       </div>
                       <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
                         Your Unlocked Financial Independence &amp; Geoarbitrage Badges
                       </h4>
                     </div>
-                    <span className="text-[11px] text-indigo-900 font-semibold bg-white/90 px-3 py-1 rounded-full border border-indigo-200/80 shadow-2xs self-start sm:self-auto">
-                      Export 9:16 Story or 1:1 Post • Privacy Mode Built-In
-                    </span>
+
+                    <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+                      <div className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-indigo-200 shadow-2xs text-xs">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Target Country:</span>
+                        <select
+                          value={havenCountry}
+                          onChange={e => {
+                            const nextCountry = e.target.value;
+                            const matched = countries.find(
+                              c => c.name.toLowerCase() === nextCountry.toLowerCase()
+                            );
+                            updateUserProfile({
+                              targetCountry: nextCountry,
+                              ...(matched
+                                ? { monthlyBudgetUSD: matched.costOfLiving.monthlyBudgetSingleUSD }
+                                : {}),
+                            });
+                          }}
+                          className="font-bold text-indigo-950 bg-transparent focus:outline-none cursor-pointer text-xs"
+                        >
+                          {!countries.some(c => c.name === havenCountry) && havenCountry && (
+                            <option value={havenCountry}>
+                              {havenFlag} {havenCountry}
+                            </option>
+                          )}
+                          {countries.map(c => (
+                            <option key={`milestone-haven-${c.id}`} value={c.name}>
+                              {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="text-[11px] text-indigo-900 font-semibold bg-white/90 px-3 py-1 rounded-full border border-indigo-200/80 shadow-2xs">
+                        Export 9:16 Story or 1:1 Post • Privacy Mode Built-In
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1216,8 +1273,10 @@ export const UserDashboard: React.FC = () => {
                               nomadRunwayMonths: runwayMonths,
                               fireProgressPercent: firePct,
                               monthlyBurnUSD: estBurn,
-                              currentNetWorthUSD: userNetWorthUSD,
+                              domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
+                              currentNetWorthUSD: unified.effectiveFireCorpusUSD,
                               targetFireNestEggUSD: fireTarget,
+                              swrPercent: unified.swrPercent,
                             })
                           }
                           className={`w-full py-2 px-3 rounded-lg bg-gradient-to-r ${m.buttonGradient} font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap`}
@@ -1257,23 +1316,23 @@ export const UserDashboard: React.FC = () => {
                     badge={badge}
                     onOpenCodex={() => openBadgeModal(badge.category)}
                     onShareBadge={(b) => {
-                      const estBurn = userProfile.monthlyBudgetUSD || 2200;
-                      const fireTarget = estBurn * 12 * 25;
-                      const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
-                      const targetCountryName = userProfile.targetCountry || 'Portugal';
+                      const unified = calculateUnifiedFireMetrics(userProfile, countries);
                       openShareFireCardModal({
                         persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
                         badgeTitle: b.tierName,
                         badgeEmoji: '🏅',
-                        topCountry: targetCountryName,
-                        topCountryFlag: getWorldCountryFlag(targetCountryName),
-                        topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
-                        yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
-                        nomadRunwayMonths: Math.max(18, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn))),
-                        fireProgressPercent: firePct,
-                        monthlyBurnUSD: estBurn,
-                        currentNetWorthUSD: userNetWorthUSD,
-                        targetFireNestEggUSD: fireTarget,
+                        headlineMode: unified.isCompleteFire ? 'fi-percent' : undefined,
+                        topCountry: unified.targetCountryName,
+                        topCountryFlag: unified.targetCountryFlag,
+                        topCity: unified.targetCityName,
+                        yearsSaved: unified.yearsSaved,
+                        nomadRunwayMonths: unified.nomadRunwayMonths,
+                        fireProgressPercent: unified.fireProgressPercent,
+                        monthlyBurnUSD: unified.monthlyBurnUSD,
+                        domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
+                        currentNetWorthUSD: unified.effectiveFireCorpusUSD,
+                        targetFireNestEggUSD: unified.targetFireNestEggUSD,
+                        swrPercent: unified.swrPercent,
                       });
                     }}
                   />

@@ -10,6 +10,7 @@ import {
   getWorldCountryFlag,
 } from '../data/userAccounts';
 import { CurrencyAmountInput } from './CurrencyAmountInput';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   DollarSign, TrendingUp, Landmark, Home, Coins, PieChart,
   ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight, Edit3,
@@ -150,6 +151,30 @@ export const UserFinancialsDashboard: React.FC = () => {
       Number(formData.monthlySalaryUSD) || cleanAnnual / 12
     );
 
+    const cleanLiabilities = Math.round(Number(formData.totalLiabilitiesUSD) || 0);
+    const existingLoans = finances.loans || [];
+    const existingLoansSum = existingLoans.reduce(
+      (sum, l) => sum + (Number(l.outstandingPrincipalUSD) || 0),
+      0
+    );
+    const syncedLoans =
+      cleanLiabilities === 0
+        ? []
+        : cleanLiabilities !== existingLoansSum
+        ? [
+            {
+              id: existingLoans[0]?.id || `loan-${Date.now()}`,
+              name: existingLoans[0]?.name || 'Total Portfolio Debt / Mortgage',
+              category: existingLoans[0]?.category || ('Home / Mortgage' as const),
+              outstandingPrincipalUSD: cleanLiabilities,
+              interestRatePercent: existingLoans[0]?.interestRatePercent || 6.0,
+              monthlyEmiUSD:
+                existingLoans[0]?.monthlyEmiUSD || Math.round((cleanLiabilities * 0.075) / 12),
+              remainingYears: existingLoans[0]?.remainingYears || 10,
+            },
+          ]
+        : existingLoans;
+
     const updatedFinances: UserFinancialPortfolio = {
       ...finances,
       ...formData,
@@ -158,6 +183,8 @@ export const UserFinancialsDashboard: React.FC = () => {
       monthlyCurrentExpensesUSD: Math.round(Number(formData.monthlyCurrentExpensesUSD ?? finances.monthlyCurrentExpensesUSD ?? 3200)),
       monthlySipUSD: Math.round(Number(formData.monthlySipUSD) || 0),
       additionalMonthlyPassiveUSD: Math.round(Number(formData.additionalMonthlyPassiveUSD) || 0),
+      includePrimaryHomeInFire: formData.includePrimaryHomeInFire ?? finances.includePrimaryHomeInFire ?? true,
+      includeGoldInFire: formData.includeGoldInFire ?? finances.includeGoldInFire ?? true,
       investments: {
         savingsUSD: Math.round(Number(formData.investments?.savingsUSD) || 0),
         stocksMutualFundsUSD: Math.round(Number(formData.investments?.stocksMutualFundsUSD) || 0),
@@ -165,13 +192,21 @@ export const UserFinancialsDashboard: React.FC = () => {
         goldUSD: Math.round(Number(formData.investments?.goldUSD) || 0),
         othersUSD: Math.round(Number(formData.investments?.othersUSD) || 0),
       },
-      totalLiabilitiesUSD: Math.round(Number(formData.totalLiabilitiesUSD) || 0),
+      totalLiabilitiesUSD: cleanLiabilities,
+      loans: syncedLoans,
       safeWithdrawalRatePercent: safeWithdrawalRate,
       updatedAt: new Date().toISOString().split('T')[0],
     };
 
+    const matchedHaven = countries.find(
+      c => c.name.toLowerCase() === selectedResidingCountry.toLowerCase()
+    );
+
     updateUserProfile({
       residingCountry: selectedResidingCountry,
+      ...(matchedHaven && (!userProfile.targetCountry || userProfile.targetCountry === 'Portugal')
+        ? { targetCountry: matchedHaven.name }
+        : {}),
       finances: updatedFinances,
     });
 
@@ -429,24 +464,29 @@ export const UserFinancialsDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  const estBurn = userProfile.monthlyBudgetUSD || 2200;
-                  const fireTarget = estBurn * 12 * 25;
-                  const firePct = Math.min(100, Math.max(12, Math.round((totalNetWorth / Math.max(1, fireTarget)) * 100)));
-                  const targetCountryObj = countries.find(
-                    c => c.name.toLowerCase() === (userProfile.targetCountry || 'Portugal').toLowerCase()
+                  const unified = calculateUnifiedFireMetrics(
+                    {
+                      ...userProfile,
+                      residingCountry: selectedResidingCountry,
+                      finances: activeSource,
+                    },
+                    countries
                   );
                   openShareFireCardModal({
-                    badgeTitle: firePct >= 100 ? '100% FI' : 'Arbitrage Architect',
-                    badgeEmoji: firePct >= 100 ? '👑' : '⚡',
-                    topCountry: userProfile.targetCountry || 'Portugal',
-                    topCountryFlag: targetCountryObj?.flag,
-                    topCity: targetCountryObj?.topCities?.[0]?.name || targetCountryObj?.capital || 'Lisbon',
-                    yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
-                    nomadRunwayMonths: Math.max(18, Math.round(liquidInvestableAssets / Math.max(800, estBurn))),
-                    fireProgressPercent: firePct,
-                    monthlyBurnUSD: estBurn,
-                    currentNetWorthUSD: totalNetWorth,
-                    targetFireNestEggUSD: fireTarget,
+                    badgeTitle: unified.recommendedBadgeTitle,
+                    badgeEmoji: unified.recommendedBadgeEmoji,
+                    headlineMode: unified.isCompleteFire ? 'fi-percent' : 'years-saved',
+                    topCountry: unified.targetCountryName,
+                    topCountryFlag: unified.targetCountryFlag,
+                    topCity: unified.targetCityName,
+                    yearsSaved: unified.yearsSaved,
+                    nomadRunwayMonths: unified.nomadRunwayMonths,
+                    fireProgressPercent: unified.fireProgressPercent,
+                    monthlyBurnUSD: unified.monthlyBurnUSD,
+                    domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
+                    currentNetWorthUSD: unified.effectiveFireCorpusUSD,
+                    targetFireNestEggUSD: unified.targetFireNestEggUSD,
+                    swrPercent: unified.swrPercent,
                   });
                 }}
                 className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
@@ -857,9 +897,27 @@ export const UserFinancialsDashboard: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-indigo-900">3. Real Estate</span>
-                <div className="p-1 rounded bg-indigo-100 text-indigo-700">
-                  <Home className="w-3.5 h-3.5" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVal = !(activeSource.includePrimaryHomeInFire ?? true);
+                    setFormData(prev => ({ ...prev, includePrimaryHomeInFire: nextVal }));
+                    updateUserProfile({
+                      finances: {
+                        ...finances,
+                        includePrimaryHomeInFire: nextVal,
+                      },
+                    });
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                    (activeSource.includePrimaryHomeInFire ?? true)
+                      ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}
+                  title="Toggle whether Real Estate is counted in your FIRE corpus"
+                >
+                  {(activeSource.includePrimaryHomeInFire ?? true) ? '✓ In FIRE' : 'Excluded'}
+                </button>
               </div>
               {isInlineEditing ? (
                 <CurrencyAmountInput
@@ -867,6 +925,7 @@ export const UserFinancialsDashboard: React.FC = () => {
                   onChangeUsd={(val) =>
                     setFormData(prev => ({
                       ...prev,
+                      includePrimaryHomeInFire: true,
                       investments: { ...prev.investments, realEstateUSD: val },
                     }))
                   }
@@ -905,9 +964,27 @@ export const UserFinancialsDashboard: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-amber-900">4. Gold</span>
-                <div className="p-1 rounded bg-amber-100 text-amber-700">
-                  <Coins className="w-3.5 h-3.5" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVal = !(activeSource.includeGoldInFire ?? true);
+                    setFormData(prev => ({ ...prev, includeGoldInFire: nextVal }));
+                    updateUserProfile({
+                      finances: {
+                        ...finances,
+                        includeGoldInFire: nextVal,
+                      },
+                    });
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                    (activeSource.includeGoldInFire ?? true)
+                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}
+                  title="Toggle whether Gold is counted in your FIRE corpus"
+                >
+                  {(activeSource.includeGoldInFire ?? true) ? '✓ In FIRE' : 'Excluded'}
+                </button>
               </div>
               {isInlineEditing ? (
                 <CurrencyAmountInput
@@ -915,6 +992,7 @@ export const UserFinancialsDashboard: React.FC = () => {
                   onChangeUsd={(val) =>
                     setFormData(prev => ({
                       ...prev,
+                      includeGoldInFire: true,
                       investments: { ...prev.investments, goldUSD: val },
                     }))
                   }

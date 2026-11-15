@@ -13,10 +13,13 @@ import {
   Award,
   Smartphone,
   Square,
+  Landmark,
 } from 'lucide-react';
 import { Persona } from '../types';
-import { getWorldCountryFlag } from '../data/userAccounts';
+import { getWorldCountryFlag, DEFAULT_FINANCIAL_PORTFOLIO } from '../data/userAccounts';
 import { CountryFlag } from './CountryFlag';
+import { useApp } from '../context/AppContext';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 
 declare global {
   interface Window {
@@ -170,6 +173,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   onClose,
   initialData,
 }) => {
+  const { userProfile, updateUserProfile, countries } = useApp();
   const cardRef = useRef<HTMLDivElement>(null);
 
   // 1. Format Switcher: 'story' (9:16 -> 1080x1920) vs 'post' (1:1 -> 1080x1080)
@@ -178,7 +182,24 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   // 2. Privacy Mode (Checked by default per specification)
   const [privacyMode, setPrivacyMode] = useState<boolean>(true);
 
-  // 3. Active Persona ('retiree' vs 'nomad'), initialized from localStorage or payload
+  // 3. Featured Country Selector state (defaults to initialData.topCountry or userProfile.targetCountry)
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => {
+    return initialData?.topCountry || userProfile.targetCountry || 'Portugal';
+  });
+
+  // Sync selectedCountry when modal opens with new initialData
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedCountry(initialData?.topCountry || userProfile.targetCountry || 'Portugal');
+    }
+  }, [isOpen, initialData?.topCountry, userProfile.targetCountry]);
+
+  // Compute live unified FIRE metrics based on live userProfile.finances & selectedCountry
+  const unifiedMetrics = useMemo(() => {
+    return calculateUnifiedFireMetrics(userProfile, countries, selectedCountry);
+  }, [userProfile, countries, selectedCountry]);
+
+  // 4. Active Persona ('retiree' vs 'nomad'), initialized from localStorage or payload
   const [activePersona, setActivePersona] = useState<Persona>(() => {
     if (initialData?.persona) return initialData.persona;
     try {
@@ -188,16 +209,18 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
     return 'retiree';
   });
 
-  // 4. Hook Index (0, 1, 2)
+  // 5. Hook Index (0, 1, 2)
   const [hookIndex, setHookIndex] = useState<number>(0);
 
-  // 5. Badge Title & Headline Focus
+  // 6. Badge Title & Headline Focus
   const [badgeTitle, setBadgeTitle] = useState<string>(
-    initialData?.badgeTitle || 'Arbitrage Architect'
+    initialData?.badgeTitle || unifiedMetrics.recommendedBadgeTitle
   );
-  const [badgeEmoji, setBadgeEmoji] = useState<string>(initialData?.badgeEmoji || '⚡');
+  const [badgeEmoji, setBadgeEmoji] = useState<string>(
+    initialData?.badgeEmoji || unifiedMetrics.recommendedBadgeEmoji
+  );
   const [headlineMode, setHeadlineMode] = useState<'years-saved' | 'fi-percent' | 'nomad-runway'>(
-    initialData?.headlineMode || 'years-saved'
+    initialData?.headlineMode || (unifiedMetrics.isCompleteFire ? 'fi-percent' : 'years-saved')
   );
 
   // Export & Share status
@@ -220,66 +243,53 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
       setPrivacyMode(true);
       setHookIndex(0);
 
+      const computed = calculateUnifiedFireMetrics(
+        userProfile,
+        countries,
+        initialData?.topCountry || userProfile.targetCountry || 'Portugal'
+      );
+
       if (initialData?.badgeTitle) {
         setBadgeTitle(initialData.badgeTitle);
-        setBadgeEmoji(initialData.badgeEmoji || (resolvedPersona === 'nomad' ? '⚡' : '🌿'));
+        setBadgeEmoji(initialData.badgeEmoji || computed.recommendedBadgeEmoji);
       } else {
-        setBadgeTitle(resolvedPersona === 'nomad' ? 'Coast FIRE Nomad' : 'Arbitrage Architect');
-        setBadgeEmoji(resolvedPersona === 'nomad' ? '⚡' : '🌿');
+        setBadgeTitle(computed.recommendedBadgeTitle);
+        setBadgeEmoji(computed.recommendedBadgeEmoji);
       }
 
       if (initialData?.headlineMode) {
         setHeadlineMode(initialData.headlineMode);
+      } else if (computed.isCompleteFire) {
+        setHeadlineMode('fi-percent');
       } else if (resolvedPersona === 'nomad') {
         setHeadlineMode('nomad-runway');
-      } else if ((initialData?.yearsSaved ?? 8) > 0) {
-        setHeadlineMode('years-saved');
       } else {
-        setHeadlineMode('fi-percent');
+        setHeadlineMode('years-saved');
       }
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, userProfile, countries]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4200);
   };
 
-  // Resolved Metrics with sensible defaults
-  const yearsSaved = Math.max(1, initialData?.yearsSaved ?? 8);
-  const fireProgressPercent = Math.min(100, Math.max(5, initialData?.fireProgressPercent ?? 74));
-  const topCountry = initialData?.topCountry || 'Portugal';
-  const topCountryFlag = useMemo(
-    () => initialData?.topCountryFlag || getWorldCountryFlag(topCountry) || '🌍',
-    [initialData?.topCountryFlag, topCountry]
-  );
-  const topCity =
-    initialData?.topCity ||
-    (topCountry === 'Portugal'
-      ? 'Lisbon'
-      : topCountry === 'Spain'
-      ? 'Valencia'
-      : topCountry === 'Thailand'
-      ? 'Chiang Mai'
-      : 'Coastal Hub');
+  // Resolved Live Metrics from unifiedMetrics
+  const yearsSaved = unifiedMetrics.yearsSaved;
+  const fireProgressPercent = unifiedMetrics.fireProgressPercent;
+  const topCountry = unifiedMetrics.targetCountryName;
+  const topCountryFlag = unifiedMetrics.targetCountryFlag;
+  const topCity = unifiedMetrics.targetCityName;
   const topLocationDisplay =
     topCity && !topCountry.toLowerCase().includes(topCity.toLowerCase())
       ? `${topCity}, ${topCountry}`
       : topCountry;
-  const monthlyBurnUSD = initialData?.monthlyBurnUSD || 2100;
-  const domesticMonthlyBurnUSD = initialData?.domesticMonthlyBurnUSD || 4800;
-  const burnSavingsPct = Math.max(
-    25,
-    Math.min(
-      75,
-      Math.round(
-        ((domesticMonthlyBurnUSD - monthlyBurnUSD) / Math.max(1, domesticMonthlyBurnUSD)) * 100
-      )
-    )
-  );
-  const nomadRunwayMonths = Math.max(6, initialData?.nomadRunwayMonths ?? 24);
-  const targetFireNestEggUSD = initialData?.targetFireNestEggUSD || 600000;
-  const swrPercent = initialData?.swrPercent || 4.0;
+  const monthlyBurnUSD = unifiedMetrics.monthlyBurnUSD;
+  const domesticMonthlyBurnUSD = unifiedMetrics.domesticMonthlyBurnUSD;
+  const burnSavingsPct = unifiedMetrics.burnSavingsPct;
+  const nomadRunwayMonths = unifiedMetrics.nomadRunwayMonths;
+  const targetFireNestEggUSD = unifiedMetrics.targetFireNestEggUSD;
+  const swrPercent = unifiedMetrics.swrPercent;
   const fiberMbps = initialData?.fiberMbps || 250;
 
   // Dynamic Persona-Based Hook Arrays with Country Flag included when referencing a country
@@ -490,12 +500,12 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     />
                     <span>{topLocationDisplay}</span>
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                    {isStory ? '1080×1920 HD' : '1080×1080 HD'} · 2x Retina PNG
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    {fireProgressPercent}% FI ({unifiedMetrics.uncappedFireProgressPct}% Funded) · Live Sync
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 truncate">
-                  Customize your milestone badge, toggle privacy mode, shuffle viral hooks, and export multi-color social cards.
+                  Live synced with your User Dashboard &amp; 5-scheme investments. Switch country or toggle Real Estate/Gold instantly.
                 </p>
               </div>
             </div>
@@ -529,10 +539,93 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
           <div className="p-5 sm:p-7 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* LEFT COLUMN: Controls & Customization */}
             <div className="lg:col-span-6 space-y-4">
-              {/* 1. Format Switcher Tabs */}
+              {/* 1. Featured Country Selector & Asset Toggles */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/60 border border-indigo-200/90 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Featured Country &amp; Corpus Settings</span>
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    Corpus: ${Math.round(unifiedMetrics.effectiveFireCorpusUSD / 1000).toLocaleString()}k
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-600 block mb-1">
+                      Target Haven Country
+                    </label>
+                    <select
+                      value={selectedCountry}
+                      onChange={e => setSelectedCountry(e.target.value)}
+                      className="w-full px-2.5 py-2 text-xs font-bold border border-indigo-200 rounded-xl bg-white text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      {!countries.some(c => c.name.toLowerCase() === selectedCountry.toLowerCase()) && selectedCountry && (
+                        <option value={selectedCountry}>🌍 {selectedCountry}</option>
+                      )}
+                      {countries.map(c => (
+                        <option key={`studio-country-${c.id}`} value={c.name}>
+                          {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold uppercase text-slate-600 block mb-1">
+                      FIRE Asset Inclusions
+                    </label>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextHome = !(userProfile.finances?.includePrimaryHomeInFire ?? true);
+                          updateUserProfile({
+                            finances: {
+                              ...DEFAULT_FINANCIAL_PORTFOLIO,
+                              ...(userProfile.finances || {}),
+                              includePrimaryHomeInFire: nextHome,
+                            },
+                          });
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
+                          (userProfile.finances?.includePrimaryHomeInFire ?? true)
+                            ? 'bg-indigo-100 text-indigo-950 border-indigo-300'
+                            : 'bg-white text-slate-500 border-slate-200'
+                        }`}
+                      >
+                        {(userProfile.finances?.includePrimaryHomeInFire ?? true) ? '✓ Real Estate' : 'RE Excluded'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextGold = !(userProfile.finances?.includeGoldInFire ?? true);
+                          updateUserProfile({
+                            finances: {
+                              ...DEFAULT_FINANCIAL_PORTFOLIO,
+                              ...(userProfile.finances || {}),
+                              includeGoldInFire: nextGold,
+                            },
+                          });
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
+                          (userProfile.finances?.includeGoldInFire ?? true)
+                            ? 'bg-amber-100 text-amber-950 border-amber-300'
+                            : 'bg-white text-slate-500 border-slate-200'
+                        }`}
+                      >
+                        {(userProfile.finances?.includeGoldInFire ?? true) ? '✓ Gold' : 'Gold Excluded'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Format Switcher Tabs */}
               <div className="space-y-2">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 block">
-                  1. Card Aspect Ratio &amp; Export Resolution
+                  Card Aspect Ratio &amp; Export Resolution
                 </label>
                 <div className="grid grid-cols-2 gap-2.5 p-1.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
                   <button
@@ -562,7 +655,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 </div>
               </div>
 
-              {/* 2. Privacy Mode Checkbox (Checked by Default) */}
+              {/* 3. Privacy Mode Checkbox (Checked by Default) */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-50/90 via-indigo-50/60 to-violet-50/80 border border-sky-200/90 space-y-1.5 shadow-2xs">
                 <label className="flex items-start gap-3 cursor-pointer select-none">
                   <input
@@ -587,12 +680,12 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 </label>
               </div>
 
-              {/* 3. Persona & Viewer Call-to-Action Hook Shuffler */}
+              {/* 4. Persona & Viewer Call-to-Action Hook Shuffler */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/70 via-white to-rose-50/70 border border-purple-200/80 space-y-3 shadow-2xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                    <span>2. Persona &amp; Viral Call-to-Action Hook</span>
+                    <span>Persona &amp; Viral Call-to-Action Hook</span>
                   </span>
 
                   {/* Persona Switcher */}
@@ -651,11 +744,11 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 </div>
               </div>
 
-              {/* 4. Milestone Badge & Hero Headline Selector */}
+              {/* 5. Milestone Badge & Hero Headline Selector */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/60 via-white to-sky-50/60 border border-indigo-200/80 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
                   <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 block">
-                    3. Featured Milestone Badge &amp; Hero Stat
+                    Featured Milestone Badge &amp; Hero Stat
                   </label>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700">
                     <CountryFlag
@@ -729,7 +822,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 </div>
               </div>
 
-              {/* 5. Export & Native Mobile Share Actions */}
+              {/* 6. Export & Native Mobile Share Actions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <button
                   type="button"
@@ -758,6 +851,10 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
               <div className="text-[11px] font-mono text-slate-600 mb-3 flex flex-wrap items-center justify-center gap-2">
                 <span>
                   Live Preview ({isStory ? 'Instagram Story 9:16 · 1080×1920' : 'Social Post 1:1 · 1080×1080'})
+                </span>
+                <span>·</span>
+                <span className="text-emerald-700 font-bold">
+                  {fireProgressPercent}% FI ({unifiedMetrics.uncappedFireProgressPct}% Funded)
                 </span>
                 <span>·</span>
                 <span className="text-indigo-700 font-bold">
@@ -854,6 +951,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                           <span>
                             {activePersona === 'nomad'
                               ? 'Verified Digital Nomad Runway'
+                              : fireProgressPercent >= 100
+                              ? '100% Complete FIRE Achieved'
                               : 'Verified Geoarbitrage FIRE Roadmap'}
                           </span>
                         </div>
@@ -890,11 +989,15 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                           <span className="text-indigo-900 uppercase tracking-wider">
                             {activePersona === 'nomad'
                               ? 'Global Freedom Runway Index'
+                              : fireProgressPercent >= 100
+                              ? '100% FI Sovereign Progress'
                               : 'Financial Independence Progress'}
                           </span>
                           <span className="font-mono text-base font-extrabold text-purple-700 tabular-nums">
                             {activePersona === 'nomad'
                               ? `${nomadRunwayMonths} Months (${(nomadRunwayMonths / 12).toFixed(1)} Yrs)`
+                              : fireProgressPercent >= 100
+                              ? `🔥 100% FI (${unifiedMetrics.uncappedFireProgressPct}% Funded)`
                               : `${fireProgressPercent}% to FI`}
                           </span>
                         </div>
@@ -920,7 +1023,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                           <span className="font-semibold text-slate-800 flex items-center gap-1.5">
                             <Globe className="w-3.5 h-3.5 text-indigo-600" />
                             <span>
-                              Top Match:{' '}
+                              Target Haven:{' '}
                               <strong className="text-indigo-950 font-extrabold">
                                 {topCountryFlag} {topLocationDisplay}
                               </strong>

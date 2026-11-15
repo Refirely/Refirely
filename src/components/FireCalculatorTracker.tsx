@@ -17,6 +17,7 @@ import {
 import { CurrencyAmountInput } from './CurrencyAmountInput';
 import { FireProgressChart, FireTrajectoryPoint } from './FireProgressChart';
 import { CountryFlag } from './CountryFlag';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   Flame, TrendingUp, DollarSign, ShieldAlert, CheckCircle2, Plus, Trash2,
   Sparkles, Calendar, Award, Sliders, ArrowRight, RefreshCw, Landmark,
@@ -257,14 +258,34 @@ export const FireCalculatorTracker: React.FC = () => {
     setInputCurrencyMode(nextMacro.currencyCode !== 'USD' ? 'LOCAL' : 'USD');
     setInflationPct(nextMacro.defaultInflationPercent);
     setExpectedReturnPct(nextMacro.defaultReturnPercent);
+    const matched = countries.find(c => c.name.toLowerCase() === newCountry.toLowerCase());
+    const nextExp =
+      matched?.costOfLiving.monthlyBudgetSingleUSD ||
+      nextMacro.typicalMonthlyExpenseUSD ||
+      finances.monthlyCurrentExpensesUSD ||
+      2200;
     if (costBasisMode === 'residing') {
-      const matched = countries.find(c => c.name.toLowerCase() === newCountry.toLowerCase());
-      const nextExp =
-        finances.monthlyCurrentExpensesUSD ||
-        matched?.costOfLiving.monthlyBudgetCoupleUSD ||
-        nextMacro.typicalMonthlyExpenseUSD;
       setMonthlyCurrentExpensesUSD(nextExp);
-      setBaseMonthlyExpenseTodayUSD(finances.monthlyRetirementExpensesUSD ?? nextExp);
+      setBaseMonthlyExpenseTodayUSD(nextExp);
+    }
+    updateUserProfile({
+      residingCountry: newCountry,
+      ...(matched ? { targetCountry: matched.name } : {}),
+    });
+  };
+
+  const handleTargetHavenChange = (newHavenCountry: string) => {
+    const matched = countries.find(c => c.name.toLowerCase() === newHavenCountry.toLowerCase());
+    const nextHavenExp =
+      matched?.costOfLiving.monthlyBudgetSingleUSD ||
+      getCountryCurrencyMacro(newHavenCountry).typicalMonthlyExpenseUSD ||
+      1800;
+    updateUserProfile({
+      targetCountry: newHavenCountry,
+      monthlyBudgetUSD: nextHavenExp,
+    });
+    if (costBasisMode === 'target-haven') {
+      setBaseMonthlyExpenseTodayUSD(nextHavenExp);
     }
   };
 
@@ -369,9 +390,17 @@ export const FireCalculatorTracker: React.FC = () => {
     const cleanSipContinuityMode =
       partialFinances.sipContinuityMode ?? sipContinuityMode;
 
+    const isBasisTargetHaven = countries.some(
+      c => c.name.toLowerCase() === selectedBasisCountry.toLowerCase()
+    );
+
     updateUserProfile({
       residingCountry: selectedBasisCountry,
-      monthlyBudgetUSD: cleanRetirementExpenses,
+      ...(costBasisMode === 'target-haven'
+        ? { monthlyBudgetUSD: cleanRetirementExpenses }
+        : isBasisTargetHaven && (!userProfile.targetCountry || userProfile.targetCountry === 'Portugal')
+        ? { targetCountry: selectedBasisCountry, monthlyBudgetUSD: cleanRetirementExpenses }
+        : {}),
       finances: {
         ...finances,
         currentAge: Math.round(currentAge || 42),
@@ -409,6 +438,40 @@ export const FireCalculatorTracker: React.FC = () => {
     });
     if (toastMsg) triggerToast(toastMsg);
   };
+
+  // Auto-sync live draft edits (5-scheme investments, Real Estate/Gold toggles, SWR, expenses) to userProfile.finances
+  // so Shareable FIRE Badges & Overview cards immediately reflect the latest FIRE figures without requiring manual save
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const invChanged =
+        roundUsd2(investmentsDraft.savingsUSD) !== roundUsd2(finances.investments.savingsUSD) ||
+        roundUsd2(investmentsDraft.stocksMutualFundsUSD) !== roundUsd2(finances.investments.stocksMutualFundsUSD) ||
+        roundUsd2(investmentsDraft.realEstateUSD) !== roundUsd2(finances.investments.realEstateUSD) ||
+        roundUsd2(investmentsDraft.goldUSD) !== roundUsd2(finances.investments.goldUSD) ||
+        roundUsd2(investmentsDraft.othersUSD) !== roundUsd2(finances.investments.othersUSD);
+      const flagsChanged =
+        includePrimaryHome !== Boolean(finances.includePrimaryHomeInFire) ||
+        includeGold !== (finances.includeGoldInFire ?? true) ||
+        Number(swrPct) !== Number(finances.safeWithdrawalRatePercent || 4.0) ||
+        roundUsd2(baseMonthlyExpenseTodayUSD) !==
+          roundUsd2(finances.monthlyRetirementExpensesUSD ?? finances.monthlyCurrentExpensesUSD ?? 0);
+
+      if (invChanged || flagsChanged) {
+        persistFireUpdates({});
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    investmentsDraft.savingsUSD,
+    investmentsDraft.stocksMutualFundsUSD,
+    investmentsDraft.realEstateUSD,
+    investmentsDraft.goldUSD,
+    investmentsDraft.othersUSD,
+    includePrimaryHome,
+    includeGold,
+    swrPct,
+    baseMonthlyExpenseTodayUSD,
+  ]);
 
   // Stop SIP Right Away ($0/mo + Coast Mode) & Resume SIP Handlers
   const handleStopSipRightAway = () => {
@@ -1502,32 +1565,64 @@ export const FireCalculatorTracker: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              const targetCountryObj = countries.find(
-                c => c.name.toLowerCase() === targetHavenCountryName.toLowerCase()
+              persistFireUpdates({});
+              const basisIsHaven = countries.some(
+                c => c.name.toLowerCase() === selectedBasisCountry.toLowerCase()
               );
+              const featuredCountryName =
+                costBasisMode === 'target-haven'
+                  ? targetHavenCountryName
+                  : basisIsHaven
+                  ? selectedBasisCountry
+                  : targetHavenCountryName;
+
+              const unified = calculateUnifiedFireMetrics(
+                {
+                  ...userProfile,
+                  residingCountry: selectedBasisCountry,
+                  finances: {
+                    ...finances,
+                    includePrimaryHomeInFire: includePrimaryHome,
+                    includeGoldInFire: includeGold,
+                    safeWithdrawalRatePercent: swrPct,
+                    investments: investmentsDraft,
+                  },
+                },
+                countries,
+                featuredCountryName
+              );
+
+              const activeFirePct = Math.min(
+                100,
+                Math.max(fireAnalysis.fireProgressPct, unified.fireProgressPercent)
+              );
+
               openShareFireCardModal({
                 persona: plannerPersonaMode === 'digital-nomad' ? 'nomad' : 'retiree',
                 badgeTitle:
-                  fireAnalysis.fireProgressPct >= 100
+                  activeFirePct >= 100
                     ? '100% FI'
                     : plannerPersonaMode === 'digital-nomad'
                     ? 'Coast FIRE Nomad'
                     : 'Arbitrage Architect',
                 badgeEmoji:
-                  fireAnalysis.fireProgressPct >= 100
-                    ? '👑'
+                  activeFirePct >= 100
+                    ? '🔥'
                     : plannerPersonaMode === 'digital-nomad'
-                    ? '🌍'
+                    ? '🌊'
                     : '⚡',
-                topCountry: targetHavenCountryName,
-                topCountryFlag: targetCountryObj?.flag,
-                topCity: targetCountryObj?.topCities?.[0]?.name || targetCountryObj?.capital || 'Lisbon',
-                yearsSaved: Math.max(3, Math.min(15, Math.round((4500 - fireAnalysis.effectiveMonthlyExpenseTodayUSD) / 260))),
-                nomadRunwayMonths: Math.max(12, Math.round(fireAnalysis.startingCorpusTodayUSD / Math.max(600, fireAnalysis.effectiveMonthlyExpenseTodayUSD))),
-                fireProgressPercent: Math.min(100, fireAnalysis.fireProgressPct),
-                monthlyBurnUSD: fireAnalysis.effectiveMonthlyExpenseTodayUSD,
+                headlineMode: activeFirePct >= 100 ? 'fi-percent' : undefined,
+                topCountry: unified.targetCountryName,
+                topCountryFlag: unified.targetCountryFlag,
+                topCity: unified.targetCityName,
+                yearsSaved: unified.yearsSaved,
+                nomadRunwayMonths: unified.nomadRunwayMonths,
+                fireProgressPercent: activeFirePct,
+                monthlyBurnUSD: unified.monthlyBurnUSD,
+                domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
                 currentNetWorthUSD: fireAnalysis.startingCorpusTodayUSD,
-                targetFireNestEggUSD: fireAnalysis.comprehensiveFireNumberTodayUSD,
+                targetFireNestEggUSD: unified.targetFireNestEggUSD,
+                swrPercent: swrPct,
               });
             }}
             className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
@@ -2865,31 +2960,54 @@ export const FireCalculatorTracker: React.FC = () => {
 
         {/* Row 1: Residing Country Selector, Current & Target Age, Current Monthly Salary, Monthly Current Expenses, Monthly SIP, Base Retirement Expense */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Card 1: Residing Country (Basis) */}
+          {/* Card 1: Residing Country (Basis) & Target Haven Country */}
           <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-2">
-            <div>
-              <label className="font-semibold text-slate-700 block mb-1.5">
-                Residing Country (Basis)
-              </label>
-              <select
-                value={selectedBasisCountry}
-                onChange={e => handleBasisCountryChange(e.target.value)}
-                className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {!WORLD_COUNTRIES.some(c => c.name === selectedBasisCountry) && selectedBasisCountry && (
-                  <option value={selectedBasisCountry}>🌍 {selectedBasisCountry}</option>
-                )}
-                {WORLD_COUNTRIES.map(c => (
-                  <option key={`fire-basis-${c.code}-${c.name}`} value={c.name}>
-                    {c.flag} {c.name}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1 text-[11px]">
+                  Residing Country (Basis)
+                </label>
+                <select
+                  value={selectedBasisCountry}
+                  onChange={e => handleBasisCountryChange(e.target.value)}
+                  className="w-full px-2 py-2 text-xs border border-slate-300 rounded-lg bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  {!WORLD_COUNTRIES.some(c => c.name === selectedBasisCountry) && selectedBasisCountry && (
+                    <option value={selectedBasisCountry}>🌍 {selectedBasisCountry}</option>
+                  )}
+                  {WORLD_COUNTRIES.map(c => (
+                    <option key={`fire-basis-${c.code}-${c.name}`} value={c.name}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold text-indigo-800 block mb-1 text-[11px]">
+                  Target FIRE Haven
+                </label>
+                <select
+                  value={targetHavenCountryName}
+                  onChange={e => handleTargetHavenChange(e.target.value)}
+                  className="w-full px-2 py-2 text-xs border border-indigo-200 rounded-lg bg-indigo-50/50 font-semibold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  {!countries.some(c => c.name === targetHavenCountryName) && targetHavenCountryName && (
+                    <option value={targetHavenCountryName}>
+                      {getWorldCountryFlag(targetHavenCountryName)} {targetHavenCountryName}
+                    </option>
+                  )}
+                  {countries.map(c => (
+                    <option key={`fire-haven-${c.id}`} value={c.name}>
+                      {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <span className="text-[10px] font-mono text-slate-500 block pt-1 border-t border-slate-100">
               {countryMacro.currencyCode !== 'USD'
                 ? `Exchange Rate: 1 USD = ${countryMacro.symbol.trim()}${countryMacro.rateToUSD} ${countryMacro.currencyCode}`
-                : 'Base Currency: $ USD'}
+                : `Base: $ USD · Haven: ${targetHavenCountryName} ($${defaultTargetHavenMonthlyExpenseUSD.toLocaleString()}/mo)`}
             </span>
           </div>
 
