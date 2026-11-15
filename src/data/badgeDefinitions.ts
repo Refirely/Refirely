@@ -1,5 +1,6 @@
 import { BadgeDefinition, EarnedBadge, BadgeProgress, BadgeTier } from '../types/badges';
-import { UserProfile, UserAccount } from '../types';
+import { UserProfile, UserAccount, Country } from '../types';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
@@ -241,6 +242,268 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
       },
     ],
   },
+  // ==========================================
+  // New FIRE Calculator & Geoarbitrage Badges
+  // ==========================================
+  {
+    id: 'fire-progress-milestones',
+    name: 'FIRE Progress Milestones',
+    category: 'milestone',
+    categoryLabel: 'Financial Independence',
+    shortDescription: 'Privacy-safe percentage-based milestones toward work-optional freedom.',
+    fullDescription: 'Recognizes members achieving key percentage milestones toward their target Financial Independence number.',
+    howToEarn: ['Grow your investment portfolio and net worth toward your target FIRE number.'],
+    isTiered: true,
+    tiers: [
+      {
+        id: 'seed_planter',
+        name: 'Seed Planter (10% FI)',
+        level: 1,
+        threshold: 10,
+        unitLabel: '% FI',
+        tagline: '10% to Financial Independence',
+        description: 'Reached 10% of your target Financial Independence number.',
+        accentGradient: 'from-amber-500 via-yellow-600 to-amber-700',
+        badgeRingGradient: 'from-amber-400 via-yellow-500 to-amber-600',
+        borderClass: 'border-amber-500/70',
+        bgClass: 'bg-amber-950/20',
+        textClass: 'text-amber-300',
+        glowClass: 'shadow-amber-500/30',
+        pillBgClass: 'bg-gradient-to-r from-amber-900/85 via-amber-800/80 to-amber-950/90 text-amber-200 border-amber-500/60',
+        iconName: 'Star',
+      },
+      {
+        id: 'momentum_builder',
+        name: 'Momentum Builder (25% FI)',
+        level: 2,
+        threshold: 25,
+        unitLabel: '% FI',
+        tagline: 'Quarter-way to Freedom',
+        description: 'Quarter-way to work-optional freedom.',
+        accentGradient: 'from-teal-500 via-emerald-600 to-teal-700',
+        badgeRingGradient: 'from-teal-400 via-emerald-500 to-teal-600',
+        borderClass: 'border-teal-500/70',
+        bgClass: 'bg-teal-950/20',
+        textClass: 'text-teal-300',
+        glowClass: 'shadow-teal-500/30',
+        pillBgClass: 'bg-gradient-to-r from-teal-900/85 via-emerald-800/80 to-teal-950/90 text-teal-200 border-teal-500/60',
+        iconName: 'Sparkles',
+      },
+      {
+        id: 'halfway_sovereign',
+        name: 'Halfway Sovereign (50% FI)',
+        level: 3,
+        threshold: 50,
+        unitLabel: '% FI',
+        tagline: '50% Funded Toward FI',
+        description: 'Officially 50% funded toward Financial Independence.',
+        accentGradient: 'from-indigo-500 via-violet-600 to-purple-700',
+        badgeRingGradient: 'from-indigo-400 via-violet-500 to-purple-600',
+        borderClass: 'border-indigo-500/70',
+        bgClass: 'bg-indigo-950/20',
+        textClass: 'text-indigo-300',
+        glowClass: 'shadow-indigo-500/30',
+        pillBgClass: 'bg-gradient-to-r from-indigo-900/85 via-violet-800/80 to-indigo-950/90 text-indigo-200 border-indigo-500/60',
+        iconName: 'Crown',
+      },
+      {
+        id: 'escape_velocity',
+        name: 'Escape Velocity (75% FI)',
+        level: 4,
+        threshold: 75,
+        unitLabel: '% FI',
+        tagline: '75% Funded (Compounding Active)',
+        description: 'Three-quarters funded; passive compounding is taking over.',
+        accentGradient: 'from-rose-500 via-orange-600 to-amber-600',
+        badgeRingGradient: 'from-rose-400 via-orange-500 to-amber-500',
+        borderClass: 'border-rose-500/70',
+        bgClass: 'bg-rose-950/20',
+        textClass: 'text-rose-300',
+        glowClass: 'shadow-rose-500/30',
+        pillBgClass: 'bg-gradient-to-r from-rose-900/85 via-orange-800/80 to-rose-950/90 text-rose-200 border-rose-500/60',
+        iconName: 'Flame',
+      },
+      {
+        id: 'hundred_percent_fi',
+        name: '100% FI / Work-Optional',
+        level: 5,
+        threshold: 100,
+        unitLabel: '% FI',
+        tagline: '100% Financial Independence',
+        description: 'Achieved 100% Financial Independence target.',
+        accentGradient: 'from-purple-600 via-fuchsia-600 to-rose-600',
+        badgeRingGradient: 'from-purple-400 via-fuchsia-400 to-rose-400',
+        borderClass: 'border-purple-500/80',
+        bgClass: 'bg-purple-950/25',
+        textClass: 'text-purple-200',
+        glowClass: 'shadow-purple-500/40',
+        pillBgClass: 'bg-gradient-to-r from-purple-900/90 via-fuchsia-900/85 to-rose-900/90 text-purple-100 border-purple-400/80',
+        iconName: 'Crown',
+      },
+    ],
+  },
+  {
+    id: 'arbitrage_architect',
+    name: 'Arbitrage Architect',
+    category: 'milestone',
+    categoryLabel: 'Geoarbitrage Strategy',
+    shortDescription: 'Shaved 5+ years off your retirement timeline via geoarbitrage.',
+    fullDescription: 'Awarded to planners who shaved 5 or more years off their retirement timeline through international geoarbitrage.',
+    howToEarn: ['Save 5+ working years by selecting an economic target haven.'],
+    isTiered: false,
+    singleTier: {
+      id: 'arbitrage_architect_tier',
+      name: 'Arbitrage Architect',
+      level: 1,
+      threshold: 5,
+      unitLabel: 'years saved',
+      tagline: '5+ Years Saved',
+      description: 'Shaved 5+ years off your retirement timeline via geoarbitrage.',
+      accentGradient: 'from-indigo-600 via-violet-600 to-purple-600',
+      badgeRingGradient: 'from-indigo-400 via-violet-500 to-purple-500',
+      borderClass: 'border-indigo-500/70',
+      bgClass: 'bg-indigo-950/20',
+      textClass: 'text-indigo-300',
+      glowClass: 'shadow-indigo-500/30',
+      pillBgClass: 'bg-gradient-to-r from-indigo-900/85 to-purple-900/85 text-indigo-200 border-indigo-400/60',
+      iconName: 'Sparkles',
+    },
+  },
+  {
+    id: 'decade_jumper',
+    name: 'Decade Jumper',
+    category: 'milestone',
+    categoryLabel: 'Timeline Compression',
+    shortDescription: 'Cut 10+ years off your working life by choosing a high-leverage haven.',
+    fullDescription: 'Awarded to forward-thinking planners who cut 10 or more years off their working life through strategic international geoarbitrage.',
+    howToEarn: ['Save 10+ working years by selecting an economic target haven.'],
+    isTiered: false,
+    singleTier: {
+      id: 'decade_jumper_tier',
+      name: 'Decade Jumper',
+      level: 1,
+      threshold: 10,
+      unitLabel: 'years saved',
+      tagline: '10+ Years Saved',
+      description: 'Cut 10+ years off your working life by choosing a high-leverage haven.',
+      accentGradient: 'from-teal-600 via-cyan-600 to-blue-600',
+      badgeRingGradient: 'from-teal-400 via-cyan-500 to-blue-500',
+      borderClass: 'border-teal-500/70',
+      bgClass: 'bg-teal-950/20',
+      textClass: 'text-teal-300',
+      glowClass: 'shadow-teal-500/30',
+      pillBgClass: 'bg-gradient-to-r from-teal-900/85 to-blue-900/85 text-teal-200 border-teal-400/60',
+      iconName: 'Globe',
+    },
+  },
+  {
+    id: 'coast_fire_nomad',
+    name: 'Coast FIRE Nomad',
+    category: 'milestone',
+    categoryLabel: 'Coast Strategy',
+    shortDescription: 'Current portfolio will grow to full FIRE by retirement age with $0 new contributions.',
+    fullDescription: 'Honors practitioners who reached the Coast FIRE tipping point where compound growth alone ensures full financial independence.',
+    howToEarn: ['Reach portfolio equilibrium where compounding alone fulfills future FIRE targets.'],
+    isTiered: false,
+    singleTier: {
+      id: 'coast_fire_nomad_tier',
+      name: 'Coast FIRE Nomad',
+      level: 1,
+      threshold: 1,
+      unitLabel: 'status',
+      tagline: 'Coast FIRE Reached',
+      description: 'Current portfolio will grow to full FIRE by retirement age with $0 new contributions.',
+      accentGradient: 'from-sky-500 via-blue-600 to-indigo-700',
+      badgeRingGradient: 'from-sky-400 via-blue-500 to-indigo-500',
+      borderClass: 'border-sky-500/70',
+      bgClass: 'bg-sky-950/20',
+      textClass: 'text-sky-300',
+      glowClass: 'shadow-sky-500/30',
+      pillBgClass: 'bg-gradient-to-r from-sky-900/85 to-indigo-900/85 text-sky-200 border-sky-400/60',
+      iconName: 'Compass',
+    },
+  },
+  {
+    id: 'lean_fire_minimalist',
+    name: 'Lean FIRE Minimalist',
+    category: 'milestone',
+    categoryLabel: 'Efficiency',
+    shortDescription: 'Modeled a complete early retirement plan under $1,500/month.',
+    fullDescription: 'Awarded for curating highly efficient, streamlined early retirement plans requiring under $1,500/month in living expenses.',
+    howToEarn: ['Configure target retirement expenses below $1,500/mo.'],
+    isTiered: false,
+    singleTier: {
+      id: 'lean_fire_minimalist_tier',
+      name: 'Lean FIRE Minimalist',
+      level: 1,
+      threshold: 1500,
+      unitLabel: '/mo',
+      tagline: 'Under $1,500/mo Plan',
+      description: 'Modeled a complete early retirement plan under $1,500/month.',
+      accentGradient: 'from-emerald-500 via-teal-600 to-cyan-700',
+      badgeRingGradient: 'from-emerald-400 via-teal-500 to-cyan-500',
+      borderClass: 'border-emerald-500/70',
+      bgClass: 'bg-emerald-950/20',
+      textClass: 'text-emerald-300',
+      glowClass: 'shadow-emerald-500/30',
+      pillBgClass: 'bg-gradient-to-r from-emerald-900/85 to-cyan-900/85 text-emerald-200 border-emerald-400/60',
+      iconName: 'Star',
+    },
+  },
+  {
+    id: 'fat_fire_voyager',
+    name: 'Chubby / Fat FIRE Voyager',
+    category: 'milestone',
+    categoryLabel: 'Luxury Scale',
+    shortDescription: 'Configured a luxury global FIRE plan with a $1.5M+ target portfolio.',
+    fullDescription: 'Recognizes ambitious planners structuring high-net-worth global retirement plans with target portfolios exceeding $1.5M.',
+    howToEarn: ['Configure a target FIRE portfolio of $1,500,000 or greater.'],
+    isTiered: false,
+    singleTier: {
+      id: 'fat_fire_voyager_tier',
+      name: 'Chubby / Fat FIRE Voyager',
+      level: 1,
+      threshold: 1500000,
+      unitLabel: 'corpus',
+      tagline: '$1.5M+ Luxury FIRE Target',
+      description: 'Configured a luxury global FIRE plan with a $1.5M+ target portfolio.',
+      accentGradient: 'from-amber-600 via-yellow-500 to-orange-600',
+      badgeRingGradient: 'from-amber-400 via-yellow-400 to-orange-500',
+      borderClass: 'border-amber-500/80',
+      bgClass: 'bg-amber-950/30',
+      textClass: 'text-amber-200',
+      glowClass: 'shadow-amber-500/40',
+      pillBgClass: 'bg-gradient-to-r from-amber-800 via-yellow-700 to-orange-800 text-amber-100 border-amber-400/80',
+      iconName: 'Crown',
+    },
+  },
+  {
+    id: 'runway_sovereign',
+    name: 'Runway Sovereign',
+    category: 'milestone',
+    categoryLabel: 'Liquidity Runway',
+    shortDescription: 'Built 24+ months of living runway in your target haven.',
+    fullDescription: 'Honors members with robust liquid cash and equity buffers providing 24 or more months of untethered living runway abroad.',
+    howToEarn: ['Accumulate 24+ months of liquid living expenses in your financial portfolio.'],
+    isTiered: false,
+    singleTier: {
+      id: 'runway_sovereign_tier',
+      name: 'Runway Sovereign',
+      level: 1,
+      threshold: 24,
+      unitLabel: 'months',
+      tagline: '24+ Months Runway',
+      description: 'Built 24+ months of living runway in your target haven.',
+      accentGradient: 'from-rose-500 via-pink-600 to-purple-700',
+      badgeRingGradient: 'from-rose-400 via-pink-500 to-purple-500',
+      borderClass: 'border-rose-500/70',
+      bgClass: 'bg-rose-950/20',
+      textClass: 'text-rose-300',
+      glowClass: 'shadow-rose-500/30',
+      pillBgClass: 'bg-gradient-to-r from-rose-900/85 to-purple-900/85 text-rose-200 border-rose-400/60',
+      iconName: 'Award',
+    },
+  },
   {
     id: 'fire-vanguard',
     name: 'FIRE Vanguard',
@@ -308,36 +571,24 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   },
 ];
 
-/**
- * Calculates unique count of visited or tracked countries for a user profile
- */
 export function calculateUserCountryCount(profile?: Partial<UserProfile> | null): number {
   if (!profile) return 0;
   const visitedNames = (profile.travelHistory || []).map(t => t.countryName.trim().toLowerCase());
   const savedIds = (profile.savedCountryIds || []).map(s => s.trim().toLowerCase());
   const set = new Set([...visitedNames, ...savedIds]);
-  // Also count origin & residing countries if valid
   if (profile.originCountry) set.add(profile.originCountry.trim().toLowerCase());
   if (profile.residingCountry) set.add(profile.residingCountry.trim().toLowerCase());
   return set.size;
 }
 
-/**
- * Calculates number of languages known
- */
 export function calculateUserLanguageCount(profile?: Partial<UserProfile> | null): number {
-  if (!profile) return 1; // Base English
+  if (!profile) return 1;
   const langs = profile.languagesKnown || [];
   if (langs.length === 0) return 1;
   const uniqueLangs = new Set(langs.map(l => l.language.trim().toLowerCase()));
   return Math.max(1, uniqueLangs.size);
 }
 
-/**
- * Pre-seeded system test / demo expat persona IDs.
- * These system-created test users are excluded from the Early Pioneer / First 10 Pioneer cohorts
- * so that founding pioneer badges are strictly reserved for real signups.
- */
 export const SYSTEM_TEST_USER_IDS = new Set<string>([
   'usr-elena',
   'usr-marcus',
@@ -362,10 +613,6 @@ export function isSystemTestAccount(
   return false;
 }
 
-/**
- * Resolves the user's real signup sequence number (1-based index).
- * System-created test accounts return 0 (ineligible for Early Pioneer / First 10 Pioneer).
- */
 export function resolveUserSignupNumber(
   accountOrProfileId?: string,
   allAccounts?: UserAccount[],
@@ -376,8 +623,6 @@ export function resolveUserSignupNumber(
   if (cleanId === 'guest' || isSystemTestAccount(cleanId)) {
     return 0;
   }
-
-  // Also check if the matching account object in allAccounts is a system test user
   if (allAccounts && allAccounts.length > 0) {
     const matchedAcc = allAccounts.find(
       a => a.id.toLowerCase() === cleanId || a.profile?.id?.toLowerCase() === cleanId
@@ -386,18 +631,13 @@ export function resolveUserSignupNumber(
       return 0;
     }
   }
-
   if (explicitSignupNumber && explicitSignupNumber > 0) {
     return explicitSignupNumber;
   }
-
-  // Primary founding admin account is always Real Signup #1
   if (cleanId === 'usr-ganesh') {
     return 1;
   }
-
   if (allAccounts && allAccounts.length > 0) {
-    // Only count real user signups (exclude guest and system-created test personas)
     const realAccounts = allAccounts.filter(
       a => a && a.id && a.id !== 'guest' && !isSystemTestAccount(a)
     );
@@ -416,14 +656,9 @@ export function resolveUserSignupNumber(
     }
     return sorted.length + 1;
   }
-
-  return 2; // Default fallback for real custom signups
+  return 2;
 }
 
-/**
- * Resolves the clean, non-individual cohort name (e.g. "First 10 Pioneer", "First 50 Pioneer")
- * instead of exposing raw individual numbers. Returns null for system test users (signupNumber <= 0).
- */
 export function getPioneerCohortLabel(signupNumber: number, earlyPioneerThreshold = 100): string | null {
   if (!signupNumber || signupNumber <= 0 || signupNumber > earlyPioneerThreshold) return null;
   if (signupNumber <= 10) return 'First 10 Pioneer';
@@ -435,13 +670,121 @@ export function getPioneerCohortLabel(signupNumber: number, earlyPioneerThreshol
 }
 
 /**
- * Evaluates all earned badges for a user profile
+ * Evaluates FIRE & Geoarbitrage earned badges for a user profile
+ */
+export function evaluateFireBadges(profile?: Partial<UserProfile> | null, countries: Country[] = []): EarnedBadge[] {
+  if (!profile || !profile.finances) return [];
+  const metrics = calculateUnifiedFireMetrics(profile as UserProfile, countries);
+  const earned: EarnedBadge[] = [];
+
+  const addTierBadge = (tier: BadgeTier, badgeDef: BadgeDefinition, currVal: number) => {
+    earned.push({
+      id: tier.id,
+      badgeId: badgeDef.id,
+      badgeName: badgeDef.name,
+      category: badgeDef.category,
+      tierId: tier.id,
+      tierName: tier.name,
+      tierLevel: tier.level,
+      tagline: tier.tagline,
+      description: tier.description,
+      iconName: tier.iconName,
+      accentGradient: tier.accentGradient,
+      borderClass: tier.borderClass,
+      bgClass: tier.bgClass,
+      textClass: tier.textClass,
+      glowClass: tier.glowClass,
+      pillBgClass: tier.pillBgClass,
+      currentValue: currVal,
+      targetValue: tier.threshold,
+      metadata: { details: tier.description },
+    });
+  };
+
+  const addSingleBadge = (badgeDef: BadgeDefinition, currVal: number) => {
+    const tier = badgeDef.singleTier;
+    if (!tier) return;
+    earned.push({
+      id: tier.id,
+      badgeId: badgeDef.id,
+      badgeName: badgeDef.name,
+      category: badgeDef.category,
+      tierId: tier.id,
+      tierName: tier.name,
+      tierLevel: tier.level,
+      tagline: tier.tagline,
+      description: tier.description,
+      iconName: tier.iconName,
+      accentGradient: tier.accentGradient,
+      borderClass: tier.borderClass,
+      bgClass: tier.bgClass,
+      textClass: tier.textClass,
+      glowClass: tier.glowClass,
+      pillBgClass: tier.pillBgClass,
+      currentValue: currVal,
+      targetValue: tier.threshold,
+      metadata: { details: tier.description },
+    });
+  };
+
+  // 1. FIRE Progress Milestones
+  const progressDef = BADGE_DEFINITIONS.find(b => b.id === 'fire-progress-milestones');
+  if (progressDef?.tiers) {
+    const achieved = progressDef.tiers.filter(t => metrics.uncappedFireProgressPct >= t.threshold);
+    achieved.forEach(tier => addTierBadge(tier, progressDef, metrics.uncappedFireProgressPct));
+  }
+
+  // 2. Arbitrage Architect (>= 5 yrs saved)
+  if (metrics.yearsSaved >= 5) {
+    const archDef = BADGE_DEFINITIONS.find(b => b.id === 'arbitrage_architect');
+    if (archDef) addSingleBadge(archDef, metrics.yearsSaved);
+  }
+
+  // 3. Decade Jumper (>= 10 yrs saved)
+  if (metrics.yearsSaved >= 10) {
+    const decDef = BADGE_DEFINITIONS.find(b => b.id === 'decade_jumper');
+    if (decDef) addSingleBadge(decDef, metrics.yearsSaved);
+  }
+
+  // 4. Coast FIRE Nomad
+  const yearsToRetire = Math.max(1, (profile.finances?.targetFireAge || 50) - (profile.finances?.currentAge || 42));
+  const realReturn = 0.04;
+  const coastTarget = metrics.comprehensiveFireTargetUSD / Math.pow(1 + realReturn, yearsToRetire);
+  if (metrics.effectiveFireCorpusUSD >= coastTarget) {
+    const coastDef = BADGE_DEFINITIONS.find(b => b.id === 'coast_fire_nomad');
+    if (coastDef) addSingleBadge(coastDef, 1);
+  }
+
+  // 5. Lean FIRE Minimalist (<= $1,500/mo burn)
+  if (metrics.monthlyBurnUSD > 0 && metrics.monthlyBurnUSD <= 1500) {
+    const leanDef = BADGE_DEFINITIONS.find(b => b.id === 'lean_fire_minimalist');
+    if (leanDef) addSingleBadge(leanDef, metrics.monthlyBurnUSD);
+  }
+
+  // 6. Fat FIRE Voyager (>= $1.5M target corpus)
+  if (metrics.targetFireNestEggUSD >= 1500000) {
+    const fatDef = BADGE_DEFINITIONS.find(b => b.id === 'fat_fire_voyager');
+    if (fatDef) addSingleBadge(fatDef, metrics.targetFireNestEggUSD);
+  }
+
+  // 7. Runway Sovereign (>= 24 mos runway)
+  if (metrics.nomadRunwayMonths >= 24) {
+    const runDef = BADGE_DEFINITIONS.find(b => b.id === 'runway_sovereign');
+    if (runDef) addSingleBadge(runDef, metrics.nomadRunwayMonths);
+  }
+
+  return earned;
+}
+
+/**
+ * Evaluates all earned badges for a user profile (Globetrotter, Polyglot, Early Pioneer, FIRE Progress & Geoarbitrage)
  */
 export function getUserEarnedBadges(
   profile?: Partial<UserProfile> | null,
   account?: Partial<UserAccount> | null,
   earlyPioneerThreshold = 100,
-  allAccounts?: UserAccount[]
+  allAccounts?: UserAccount[],
+  countries: Country[] = []
 ): EarnedBadge[] {
   if (!profile) return [];
 
@@ -451,7 +794,6 @@ export function getUserEarnedBadges(
   const countryCount = calculateUserCountryCount(profile);
   const globetrotterDef = BADGE_DEFINITIONS.find(b => b.id === 'globetrotter');
   if (globetrotterDef?.tiers) {
-    // Find highest tier achieved
     const achievedTiers = globetrotterDef.tiers
       .filter(t => countryCount >= t.threshold)
       .sort((a, b) => b.level - a.level);
@@ -536,7 +878,7 @@ export function getUserEarnedBadges(
     }
   }
 
-  // 3. Early Pioneer Evaluation (Cohort-based: First 10, First 50, First 100, First 500, First 1,000)
+  // 3. Early Pioneer Evaluation
   const pioneerDef = BADGE_DEFINITIONS.find(b => b.id === 'early-pioneer');
   const signupNumber = resolveUserSignupNumber(
     account?.id || profile.id,
@@ -582,6 +924,10 @@ export function getUserEarnedBadges(
     }
   }
 
+  // 4. FIRE & Geoarbitrage Badges
+  const fireEarned = evaluateFireBadges(profile, countries);
+  earned.push(...fireEarned);
+
   return earned;
 }
 
@@ -592,7 +938,8 @@ export function getAllBadgesProgress(
   profile?: Partial<UserProfile> | null,
   account?: Partial<UserAccount> | null,
   earlyPioneerThreshold = 100,
-  allAccounts?: UserAccount[]
+  allAccounts?: UserAccount[],
+  countries: Country[] = []
 ): BadgeProgress[] {
   const countryCount = calculateUserCountryCount(profile);
   const languageCount = calculateUserLanguageCount(profile);
@@ -601,6 +948,8 @@ export function getAllBadgesProgress(
     allAccounts,
     (account as any)?.signupNumber || (profile as any)?.signupNumber
   );
+  const earnedFireBadges = evaluateFireBadges(profile, countries);
+  const earnedFireIds = new Set(earnedFireBadges.map(b => b.tierId));
 
   return BADGE_DEFINITIONS.map(badge => {
     if (badge.id === 'globetrotter' && badge.tiers) {
@@ -688,6 +1037,55 @@ export function getAllBadgesProgress(
             isAchieved: signupNumber > 0 && signupNumber <= t.threshold && signupNumber <= earlyPioneerThreshold,
             isCurrent: highestAchieved?.id === t.id,
           })),
+      };
+    }
+
+    // Handle tiered FIRE milestones badge
+    if (badge.id === 'fire-progress-milestones' && badge.tiers) {
+      const metrics = profile ? calculateUnifiedFireMetrics(profile as UserProfile, countries) : null;
+      const val = metrics ? metrics.uncappedFireProgressPct : 0;
+      const achievedTiers = badge.tiers.filter(t => val >= t.threshold);
+      const highestAchieved = achievedTiers.length > 0 ? achievedTiers[achievedTiers.length - 1] : undefined;
+      const nextTier = badge.tiers.find(t => val < t.threshold);
+      const target = nextTier ? nextTier.threshold : 100;
+      const progressPercent = nextTier ? Math.min(100, Math.round((val / nextTier.threshold) * 100)) : 100;
+
+      return {
+        badge,
+        isUnlocked: achievedTiers.length > 0,
+        highestEarnedTier: highestAchieved,
+        nextTier,
+        currentValue: val,
+        targetValue: target,
+        progressPercent,
+        remainingToNextTier: nextTier ? Math.max(0, nextTier.threshold - val) : 0,
+        allTiersWithStatus: badge.tiers.map(t => ({
+          tier: t,
+          isAchieved: val >= t.threshold,
+          isCurrent: highestAchieved?.id === t.id,
+        })),
+      };
+    }
+
+    // Handle single-tier FIRE / geoarbitrage badges
+    if (badge.singleTier) {
+      const tier = badge.singleTier;
+      const isUnlocked = earnedFireIds.has(tier.id);
+      return {
+        badge,
+        isUnlocked,
+        highestEarnedTier: isUnlocked ? tier : undefined,
+        currentValue: isUnlocked ? tier.threshold : 0,
+        targetValue: tier.threshold,
+        progressPercent: isUnlocked ? 100 : 0,
+        remainingToNextTier: isUnlocked ? 0 : 1,
+        allTiersWithStatus: [
+          {
+            tier,
+            isAchieved: isUnlocked,
+            isCurrent: isUnlocked,
+          },
+        ],
       };
     }
 
