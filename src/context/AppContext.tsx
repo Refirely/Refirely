@@ -34,6 +34,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   getAdditionalUserInfo,
+  updateProfile,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
@@ -537,10 +538,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const resolvedId = primary.id || secondary.id || 'usr-member';
 
     let cachedLocalAccProfile: Partial<UserProfile> | null = null;
+    let customSavedName: string | null = null;
     let isTravelExplicitlyCleared = false;
     try {
       isTravelExplicitlyCleared =
         localStorage.getItem(`${LOCAL_STORAGE_KEY}_travel_cleared_${resolvedId}`) === 'true';
+      customSavedName = localStorage.getItem(`${LOCAL_STORAGE_KEY}_custom_name_${resolvedId}`);
       const rawPerAcc = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${resolvedId}`);
       if (rawPerAcc) {
         cachedLocalAccProfile = JSON.parse(rawPerAcc);
@@ -620,9 +623,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...primary,
       id: resolvedId,
       name:
-        (!isGuestPlaceholder(primary.name) ? primary.name : '') ||
-        (!isGuestPlaceholder(secondary.name) ? secondary.name : '') ||
-        (!isGuestPlaceholder(cachedLocalAccProfile?.name) ? cachedLocalAccProfile?.name : '') ||
+        (customSavedName && !isGuestPlaceholder(customSavedName) ? customSavedName.trim() : '') ||
+        (!isGuestPlaceholder(primary.name) ? primary.name!.trim() : '') ||
+        (!isGuestPlaceholder(secondary.name) ? secondary.name!.trim() : '') ||
+        (!isGuestPlaceholder(cachedLocalAccProfile?.name) ? cachedLocalAccProfile!.name!.trim() : '') ||
         'Expat Member',
       email:
         (!isGuestPlaceholder(primary.email) ? primary.email : '') ||
@@ -907,7 +911,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }),
               checklist: Array.isArray(data.checklist) ? data.checklist : undefined,
               cloudSynced: true,
-              lastSyncedAt: data.updatedAt || new Date().toISOString(),
+              lastSyncedAt: data.updatedAt || data.createdAt || '2026-01-01',
             };
             incomingAccounts.push(accountObj);
           });
@@ -1026,18 +1030,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   ...(uDoc.profile || {}),
                   ...uDoc,
                   id: acc.id,
-                  name: !isGuestPlaceholder(uDoc.name) ? uDoc.name : acc.name,
+                  name: !isGuestPlaceholder(acc.profile?.name)
+                    ? acc.profile.name
+                    : !isGuestPlaceholder(acc.name)
+                      ? acc.name
+                      : !isGuestPlaceholder(uDoc.name)
+                        ? uDoc.name
+                        : acc.name,
                   email: !isGuestPlaceholder(uDoc.email) ? uDoc.email : acc.email,
                 };
                 updatedProfile = mergeUserProfiles(
                   updatedProfile,
                   candidateProfile,
-                  Boolean(
-                    (Array.isArray(candidateProfile.travelHistory) &&
-                      candidateProfile.travelHistory.length > (updatedProfile.travelHistory?.length || 0)) ||
-                      (Array.isArray(candidateProfile.languagesKnown) &&
-                        candidateProfile.languagesKnown.length > (updatedProfile.languagesKnown?.length || 0))
-                  )
+                  false
                 );
                 if (
                   (!updatedChecklist || updatedChecklist.length === 0) &&
@@ -1092,7 +1097,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 const enrichedActive = nextAccounts.find((a) => a.id === activeId);
                 if (enrichedActive) {
                   setUserProfile((prevProf) => {
-                    const nextProf = mergeUserProfiles(prevProf, enrichedActive.profile, true);
+                    const nextProf = mergeUserProfiles(prevProf, enrichedActive.profile, false);
                     userProfileRef.current = nextProf;
                     return nextProf;
                   });
@@ -1967,19 +1972,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       candidateId = sanitizeAccountId(`usr-${emailPrefix || user.uid.slice(0, 8).toLowerCase()}-${user.uid.slice(0, 4).toLowerCase()}`);
     }
 
-    // 3. Resolve real display name, email, and avatar from Google Auth (never 'Guest Explorer'!)
+    // 3. Resolve display name prioritizing user-edited custom name in localStorage/profile/Firestore over default Google Auth displayName
     const googleDisplayName = !isGuestPlaceholder(user.displayName)
       ? user.displayName!.trim()
       : formatNameFromEmail(user.email);
 
+    let customLocalName: string | null = null;
+    try {
+      customLocalName =
+        localStorage.getItem(`${LOCAL_STORAGE_KEY}_custom_name_${candidateId}`) ||
+        (googleEmail ? localStorage.getItem(`${LOCAL_STORAGE_KEY}_custom_name_${googleEmail}`) : null);
+      if (!customLocalName) {
+        const savedProfRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_profile_${candidateId}`);
+        if (savedProfRaw) {
+          const parsedProf = JSON.parse(savedProfRaw);
+          if (parsedProf?.name && !isGuestPlaceholder(parsedProf.name)) {
+            customLocalName = parsedProf.name.trim();
+          }
+        }
+      }
+    } catch {}
+
     const resolvedName = (
-      !isGuestPlaceholder(user.displayName)
-        ? user.displayName!.trim()
-        : !isGuestPlaceholder(existingByEmail?.profile?.name)
-          ? existingByEmail!.profile.name.trim()
-          : !isGuestPlaceholder(firestoreRootData?.name)
-            ? firestoreRootData!.name!.trim()
-            : googleDisplayName
+      (customLocalName && !isGuestPlaceholder(customLocalName) ? customLocalName.trim() : '') ||
+      (!isGuestPlaceholder(existingByEmail?.profile?.name) ? existingByEmail!.profile.name.trim() : '') ||
+      (!isGuestPlaceholder(existingByEmail?.name) ? existingByEmail!.name.trim() : '') ||
+      (!isGuestPlaceholder(firestoreRootData?.name) ? firestoreRootData!.name!.trim() : '') ||
+      googleDisplayName
     ).slice(0, 100);
 
     const resolvedEmail = (
@@ -3975,17 +3994,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? currentUserIdRef.current
         : prev.id || auth.currentUser?.uid || DEFAULT_ACCOUNTS[0].id;
 
+    const cleanUpdatedName =
+      updates.name !== undefined && updates.name.trim().length > 0
+        ? updates.name.trim()
+        : prev.name;
+
     const updated: UserProfile = {
       ...prev,
       ...updates,
       id: activeAccId,
+      name: cleanUpdatedName,
     };
 
     userProfileRef.current = updated;
     setUserProfile(updated);
 
-    // Track if the user explicitly cleared travelHistory so mergeUserProfiles respects intentional deletion
+    // Track if the user explicitly edited their display name or cleared travelHistory
     try {
+      if (updates.name !== undefined && cleanUpdatedName && !isGuestPlaceholder(cleanUpdatedName)) {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_custom_name_${activeAccId}`, cleanUpdatedName);
+        if (updated.email) {
+          localStorage.setItem(
+            `${LOCAL_STORAGE_KEY}_custom_name_${updated.email.trim().toLowerCase()}`,
+            cleanUpdatedName
+          );
+        }
+        if (auth.currentUser && auth.currentUser.displayName !== cleanUpdatedName) {
+          updateProfile(auth.currentUser, { displayName: cleanUpdatedName }).catch(() => {});
+        }
+      }
       if ('travelHistory' in updates && Array.isArray(updates.travelHistory)) {
         if (updates.travelHistory.length === 0) {
           localStorage.setItem(`${LOCAL_STORAGE_KEY}_travel_cleared_${activeAccId}`, 'true');

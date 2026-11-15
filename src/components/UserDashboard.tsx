@@ -99,6 +99,14 @@ export const UserDashboard: React.FC = () => {
   const [newDashSpotNeighborhood, setNewDashSpotNeighborhood] = useState<string>('');
   const [newDashSpotWeek, setNewDashSpotWeek] = useState<number>(1);
   const [newDashSpotDay, setNewDashSpotDay] = useState<string>('Day 5 (Fri)');
+  const [isEditingNameInline, setIsEditingNameInline] = useState<boolean>(false);
+  const [inlineNameDraft, setInlineNameDraft] = useState<string>(userProfile.name || '');
+
+  useEffect(() => {
+    if (!isEditingNameInline) {
+      setInlineNameDraft(userProfile.name || '');
+    }
+  }, [userProfile.name, isEditingNameInline]);
 
   useEffect(() => {
     if (!isAuthenticated || currentUserId === 'guest') {
@@ -572,7 +580,61 @@ export const UserDashboard: React.FC = () => {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-extrabold text-slate-900">{userProfile.name}</h1>
+              {isEditingNameInline ? (
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const cleaned = inlineNameDraft.trim();
+                    if (cleaned) {
+                      updateUserProfile({ name: cleaned });
+                    }
+                    setIsEditingNameInline(false);
+                  }}
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <input
+                    type="text"
+                    value={inlineNameDraft}
+                    onChange={e => setInlineNameDraft(e.target.value)}
+                    autoFocus
+                    className="px-2.5 py-1 text-base sm:text-lg font-extrabold text-slate-900 bg-white border-2 border-indigo-500 rounded-lg focus:outline-none shadow-2xs"
+                    placeholder="Enter display name"
+                  />
+                  <button
+                    type="submit"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInlineNameDraft(userProfile.name);
+                      setIsEditingNameInline(false);
+                    }}
+                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                    title="Cancel"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+              ) : (
+                <div className="inline-flex items-center gap-1.5">
+                  <h1 className="text-2xl font-extrabold text-slate-900">{userProfile.name}</h1>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInlineNameDraft(userProfile.name);
+                      setIsEditingNameInline(true);
+                    }}
+                    title="Edit Display Name"
+                    className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               <code className="text-xs font-mono font-bold bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded">
                 ID: {currentUserId}
               </code>
@@ -959,11 +1021,13 @@ export const UserDashboard: React.FC = () => {
                     const estBurn = userProfile.monthlyBudgetUSD || 2200;
                     const fireTarget = estBurn * 12 * 25;
                     const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
+                    const targetCountryName = userProfile.targetCountry || 'Portugal';
                     openShareFireCardModal({
                       persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
                       badgeTitle: firePct >= 100 ? '100% FI' : currentPersona === 'nomad' ? 'Coast FIRE Nomad' : 'Arbitrage Architect',
                       badgeEmoji: firePct >= 100 ? '👑' : currentPersona === 'nomad' ? '🌍' : '⚡',
-                      topCountry: userProfile.targetCountry || 'Portugal',
+                      topCountry: targetCountryName,
+                      topCountryFlag: getWorldCountryFlag(targetCountryName),
                       topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
                       yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
                       nomadRunwayMonths: Math.max(18, Math.round(userNetWorthUSD / Math.max(800, estBurn))),
@@ -973,7 +1037,7 @@ export const UserDashboard: React.FC = () => {
                       targetFireNestEggUSD: fireTarget,
                     });
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-amber-300 border border-amber-400/40 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                 >
                   <span>🏅 Create Shareable FIRE Card</span>
                 </button>
@@ -996,7 +1060,7 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Unlocked FIRE & Geoarbitrage Milestones (Shareable Freedom Cards) */}
+            {/* Unlocked FIRE & Geoarbitrage Milestones (Shareable Freedom Cards — Light Multi-Colored Style) */}
             {(() => {
               const estBurn = userProfile.monthlyBudgetUSD || 2200;
               const fireTarget = estBurn * 12 * 25;
@@ -1005,6 +1069,7 @@ export const UserDashboard: React.FC = () => {
               const runwayMonths = Math.max(12, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn)));
               const havenCity = targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon';
               const havenCountry = userProfile.targetCountry || 'Portugal';
+              const havenFlag = getWorldCountryFlag(havenCountry);
 
               const fireMilestones: {
                 id: string;
@@ -1013,8 +1078,13 @@ export const UserDashboard: React.FC = () => {
                 subtitle: string;
                 description: string;
                 unlocked: boolean;
-                accent: string;
+                cardBg: string;
+                cardBorder: string;
+                pillBg: string;
+                subtitleColor: string;
+                buttonGradient: string;
                 pill: string;
+                showCountryBadge: boolean;
                 headlineMode: 'years-saved' | 'fi-percent' | 'nomad-runway';
               }[] = [
                 {
@@ -1024,8 +1094,13 @@ export const UserDashboard: React.FC = () => {
                   subtitle: `Retiring ${yearsSaved} Years Earlier via Geoarbitrage`,
                   description: `Target haven ${havenCity}, ${havenCountry} cuts monthly burn to $${estBurn.toLocaleString()}/mo.`,
                   unlocked: true,
-                  accent: 'from-emerald-900 via-teal-900 to-slate-900',
+                  cardBg: 'from-indigo-50/90 via-white to-violet-50/80',
+                  cardBorder: 'border-indigo-200/90 hover:border-indigo-400',
+                  pillBg: 'bg-indigo-100/80 border-indigo-200 text-indigo-800',
+                  subtitleColor: 'text-indigo-700',
+                  buttonGradient: 'from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white',
                   pill: 'Geoarbitrage Unlocked',
+                  showCountryBadge: true,
                   headlineMode: 'years-saved',
                 },
                 {
@@ -1033,10 +1108,15 @@ export const UserDashboard: React.FC = () => {
                   title: 'Coast FIRE Nomad',
                   icon: '🌍',
                   subtitle: `${firePct}% to Full Financial Independence`,
-                  description: `Compounding trajectory active across ${countries.length} global havens.`,
+                  description: `Compounding trajectory active across ${countries.length} global havens including ${havenCountry}.`,
                   unlocked: firePct >= 25,
-                  accent: 'from-teal-900 via-emerald-900 to-slate-900',
+                  cardBg: 'from-sky-50/90 via-white to-cyan-50/80',
+                  cardBorder: 'border-sky-200/90 hover:border-sky-400',
+                  pillBg: 'bg-sky-100/80 border-sky-200 text-sky-800',
+                  subtitleColor: 'text-sky-700',
+                  buttonGradient: 'from-sky-600 via-cyan-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white',
                   pill: `${firePct}% FI Progress`,
+                  showCountryBadge: true,
                   headlineMode: 'fi-percent',
                 },
                 {
@@ -1044,10 +1124,15 @@ export const UserDashboard: React.FC = () => {
                   title: 'Runway Sovereign',
                   icon: '🚀',
                   subtitle: `${runwayMonths}+ Months Global Freedom Runway`,
-                  description: `Self-funded slow-travel & remote living runway in ${havenCountry}.`,
+                  description: `Self-funded slow-travel & remote living runway in ${havenCity}, ${havenCountry}.`,
                   unlocked: runwayMonths >= 18,
-                  accent: 'from-amber-900 via-emerald-950 to-slate-900',
+                  cardBg: 'from-rose-50/90 via-white to-pink-50/80',
+                  cardBorder: 'border-rose-200/90 hover:border-rose-400',
+                  pillBg: 'bg-rose-100/80 border-rose-200 text-rose-800',
+                  subtitleColor: 'text-rose-700',
+                  buttonGradient: 'from-rose-500 via-pink-600 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white',
                   pill: `${runwayMonths} Mo Runway`,
+                  showCountryBadge: true,
                   headlineMode: 'nomad-runway',
                 },
                 {
@@ -1055,26 +1140,37 @@ export const UserDashboard: React.FC = () => {
                   title: '100% FI',
                   icon: '👑',
                   subtitle: firePct >= 100 ? '100% Financial Independence Unlocked' : `${firePct}% of 25x Safe Withdrawal Target`,
-                  description: `4% SWR portfolio coverage against $${estBurn.toLocaleString()}/mo haven lifestyle.`,
+                  description: `4% SWR portfolio coverage against $${estBurn.toLocaleString()}/mo ${havenCountry} haven lifestyle.`,
                   unlocked: true,
-                  accent: 'from-amber-700 via-emerald-900 to-slate-950',
+                  cardBg: 'from-purple-50/90 via-white to-fuchsia-50/80',
+                  cardBorder: 'border-purple-200/90 hover:border-purple-400',
+                  pillBg: 'bg-purple-100/80 border-purple-200 text-purple-800',
+                  subtitleColor: 'text-purple-700',
+                  buttonGradient: 'from-purple-600 via-fuchsia-600 to-rose-500 hover:from-purple-700 hover:to-rose-600 text-white',
                   pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Milestone`,
+                  showCountryBadge: true,
                   headlineMode: 'fi-percent',
                 },
               ];
 
               return (
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-950 text-white border border-emerald-800/80 space-y-3.5 shadow-sm">
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-rose-50/80 text-slate-900 border border-indigo-200/85 space-y-3.5 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300 block">
-                        🏅 Shareable FIRE Milestones &amp; Freedom Cards
-                      </span>
-                      <h4 className="text-sm sm:text-base font-extrabold text-white">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
+                          🏅 Shareable FIRE Milestones &amp; Freedom Cards
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-[10px] font-bold text-slate-700 shadow-2xs">
+                          <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
+                          <span>{havenCity}, {havenCountry}</span>
+                        </span>
+                      </div>
+                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
                         Your Unlocked Financial Independence &amp; Geoarbitrage Badges
                       </h4>
                     </div>
-                    <span className="text-[11px] text-emerald-200/90 font-medium">
+                    <span className="text-[11px] text-indigo-900 font-semibold bg-white/90 px-3 py-1 rounded-full border border-indigo-200/80 shadow-2xs self-start sm:self-auto">
                       Export 9:16 Story or 1:1 Post • Privacy Mode Built-In
                     </span>
                   </div>
@@ -1083,18 +1179,26 @@ export const UserDashboard: React.FC = () => {
                     {fireMilestones.map(m => (
                       <div
                         key={m.id}
-                        className="rounded-xl bg-white/5 border border-white/10 hover:border-amber-400/50 p-3.5 flex flex-col justify-between gap-3 transition-all"
+                        className={`rounded-xl bg-gradient-to-br ${m.cardBg} border ${m.cardBorder} p-3.5 flex flex-col justify-between gap-3 transition-all shadow-2xs`}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-lg">{m.icon}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-300 text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded-full border ${m.pillBg} text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap`}>
                               {m.pill}
                             </span>
                           </div>
-                          <h5 className="text-xs font-extrabold text-white">{m.title}</h5>
-                          <p className="text-[11px] font-bold text-emerald-300 leading-snug">{m.subtitle}</p>
-                          <p className="text-[10px] text-slate-300/80 leading-relaxed">{m.description}</p>
+                          <div className="flex items-center justify-between gap-1.5">
+                            <h5 className="text-xs font-extrabold text-slate-900 truncate">{m.title}</h5>
+                            {m.showCountryBadge && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/90 border border-slate-200/80 text-[10px] font-bold text-slate-700 shrink-0">
+                                <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
+                                <span>{havenCountry}</span>
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-[11px] font-extrabold ${m.subtitleColor} leading-snug`}>{m.subtitle}</p>
+                          <p className="text-[10px] text-slate-600 leading-relaxed">{m.description}</p>
                         </div>
 
                         <button
@@ -1106,6 +1210,7 @@ export const UserDashboard: React.FC = () => {
                               badgeEmoji: m.icon,
                               headlineMode: m.headlineMode,
                               topCountry: havenCountry,
+                              topCountryFlag: havenFlag,
                               topCity: havenCity,
                               yearsSaved,
                               nomadRunwayMonths: runwayMonths,
@@ -1115,7 +1220,7 @@ export const UserDashboard: React.FC = () => {
                               targetFireNestEggUSD: fireTarget,
                             })
                           }
-                          className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+                          className={`w-full py-2 px-3 rounded-lg bg-gradient-to-r ${m.buttonGradient} font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap`}
                         >
                           <span>Share My FIRE Badge</span>
                         </button>
@@ -1155,11 +1260,13 @@ export const UserDashboard: React.FC = () => {
                       const estBurn = userProfile.monthlyBudgetUSD || 2200;
                       const fireTarget = estBurn * 12 * 25;
                       const firePct = Math.min(100, Math.max(12, Math.round((userNetWorthUSD / Math.max(1, fireTarget)) * 100)));
+                      const targetCountryName = userProfile.targetCountry || 'Portugal';
                       openShareFireCardModal({
                         persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
                         badgeTitle: b.tierName,
                         badgeEmoji: '🏅',
-                        topCountry: userProfile.targetCountry || 'Portugal',
+                        topCountry: targetCountryName,
+                        topCountryFlag: getWorldCountryFlag(targetCountryName),
                         topCity: targetCountryData?.topCities?.[0]?.name || targetCountryData?.capital || 'Lisbon',
                         yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
                         nomadRunwayMonths: Math.max(18, Math.round((userNetWorthUSD * 0.25) / Math.max(800, estBurn))),

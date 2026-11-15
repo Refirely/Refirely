@@ -439,6 +439,7 @@ export const UserFinancialsDashboard: React.FC = () => {
                     badgeTitle: firePct >= 100 ? '100% FI' : 'Arbitrage Architect',
                     badgeEmoji: firePct >= 100 ? '👑' : '⚡',
                     topCountry: userProfile.targetCountry || 'Portugal',
+                    topCountryFlag: targetCountryObj?.flag,
                     topCity: targetCountryObj?.topCities?.[0]?.name || targetCountryObj?.capital || 'Lisbon',
                     yearsSaved: Math.max(4, Math.min(15, Math.round((4500 - estBurn) / 260))),
                     nomadRunwayMonths: Math.max(18, Math.round(liquidInvestableAssets / Math.max(800, estBurn))),
@@ -448,7 +449,7 @@ export const UserFinancialsDashboard: React.FC = () => {
                     targetFireNestEggUSD: fireTarget,
                   });
                 }}
-                className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-amber-300 border border-amber-400/40 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 transition-all text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
               >
                 <span>🏅 Share My FIRE Badge</span>
               </button>

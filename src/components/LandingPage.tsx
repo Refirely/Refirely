@@ -2435,6 +2435,7 @@ export const LandingPage: React.FC = () => {
                           yearsSaved: Math.max(1, yearsSaved || 8),
                           fireProgressPercent,
                           topCountry: fireMatchedCountries[0]?.country.name || 'Portugal',
+                          topCountryFlag: fireMatchedCountries[0]?.country.flag,
                           topCity:
                             fireMatchedCountries[0]?.country.topCities?.[0]?.name ||
                             fireMatchedCountries[0]?.country.capital ||
@@ -2447,7 +2448,7 @@ export const LandingPage: React.FC = () => {
                           headlineMode: yearsSaved > 0 ? 'years-saved' : 'fi-percent',
                         })
                       }
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-500 hover:from-emerald-700 hover:to-amber-600 text-white text-xs font-extrabold shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:via-purple-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 text-xs font-extrabold shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                     >
                       <span>🏅 Create Shareable FIRE Card</span>
                     </button>
@@ -2855,6 +2856,7 @@ export const LandingPage: React.FC = () => {
                               yearsSaved: Math.max(1, yearsSaved || 8),
                               fireProgressPercent,
                               topCountry: nomadMatchedCountries[0]?.country.name || 'Portugal',
+                              topCountryFlag: nomadMatchedCountries[0]?.country.flag,
                               topCity:
                                 nomadMatchedCountries[0]?.nomadProfile.topNomadCities?.[0] ||
                                 nomadMatchedCountries[0]?.country.capital ||
@@ -2868,7 +2870,7 @@ export const LandingPage: React.FC = () => {
                               headlineMode: 'nomad-runway',
                             })
                           }
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-500 hover:from-emerald-700 hover:to-amber-600 text-white text-xs font-extrabold shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:via-purple-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 text-xs font-extrabold shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                         >
                           <span>🏅 Create Shareable FIRE Card</span>
                         </button>

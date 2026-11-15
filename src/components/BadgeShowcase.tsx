@@ -82,7 +82,7 @@ export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onO
               <button
                 type="button"
                 onClick={() => onShareBadge(badge)}
-                className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-amber-300 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-900 border border-indigo-200/90 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
               >
                 <span>🏅 Share My FIRE Badge</span>
               </button>
@@ -100,7 +100,7 @@ export const BadgeShowcaseCard: React.FC<BadgeShowcaseCardProps> = ({ badge, onO
               <button
                 type="button"
                 onClick={() => onShareBadge(badge)}
-                className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-amber-300 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-900 border border-indigo-200/90 text-[10px] font-extrabold transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
               >
                 <span>🏅 Share My FIRE Badge</span>
               </button>

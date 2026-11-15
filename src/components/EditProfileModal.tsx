@@ -326,17 +326,25 @@ export const EditProfileModal: React.FC = () => {
 
   const handleSaveAboutChanges = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = formData.name.trim() || userProfile.name;
     updateUserProfile({
       ...formData,
+      name: trimmedName,
       monthlyBudgetUSD: Math.round(Number(formData.monthlyBudgetUSD) || 2400),
     });
+    setFormData(prev => ({ ...prev, name: trimmedName }));
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 3000);
   };
 
   const handleCloseModal = () => {
-    if (formData.name.trim()) {
-      updateUserProfile(formData);
+    const trimmedName = formData.name.trim();
+    if (trimmedName) {
+      updateUserProfile({
+        ...formData,
+        name: trimmedName,
+        monthlyBudgetUSD: Math.round(Number(formData.monthlyBudgetUSD) || 2400),
+      });
     }
     setIsEditProfileOpen(false);
   };
@@ -398,7 +406,16 @@ export const EditProfileModal: React.FC = () => {
                 key={tab.id}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => {
+                  if (formData.name.trim() && formData.name.trim() !== userProfile.name) {
+                    updateUserProfile({
+                      ...formData,
+                      name: formData.name.trim(),
+                      monthlyBudgetUSD: Math.round(Number(formData.monthlyBudgetUSD) || 2400),
+                    });
+                  }
+                  setActiveTab(tab.id as any);
+                }}
                 className={`py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? `bg-gradient-to-r ${tab.activeClass}`
@@ -1883,7 +1900,7 @@ export const EditProfileModal: React.FC = () => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             type="button"
-            onClick={() => setIsEditProfileOpen(false)}
+            onClick={handleCloseModal}
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white font-bold text-xs hover:from-teal-700 hover:to-violet-700 transition-all shadow-sm cursor-pointer"
           >
             Done

@@ -11,12 +11,12 @@ import {
   Flame,
   Globe,
   Award,
-  TrendingUp,
   Smartphone,
   Square,
-  Copy,
 } from 'lucide-react';
 import { Persona } from '../types';
+import { getWorldCountryFlag } from '../data/userAccounts';
+import { CountryFlag } from './CountryFlag';
 
 declare global {
   interface Window {
@@ -249,37 +249,62 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   const yearsSaved = Math.max(1, initialData?.yearsSaved ?? 8);
   const fireProgressPercent = Math.min(100, Math.max(5, initialData?.fireProgressPercent ?? 74));
   const topCountry = initialData?.topCountry || 'Portugal';
-  const topCity = initialData?.topCity || (topCountry === 'Portugal' ? 'Lisbon' : topCountry === 'Spain' ? 'Valencia' : topCountry === 'Thailand' ? 'Chiang Mai' : 'Coastal Hub');
-  const topLocationDisplay = topCity && !topCountry.toLowerCase().includes(topCity.toLowerCase())
-    ? `${topCity}, ${topCountry}`
-    : topCountry;
+  const topCountryFlag = useMemo(
+    () => initialData?.topCountryFlag || getWorldCountryFlag(topCountry) || '🌍',
+    [initialData?.topCountryFlag, topCountry]
+  );
+  const topCity =
+    initialData?.topCity ||
+    (topCountry === 'Portugal'
+      ? 'Lisbon'
+      : topCountry === 'Spain'
+      ? 'Valencia'
+      : topCountry === 'Thailand'
+      ? 'Chiang Mai'
+      : 'Coastal Hub');
+  const topLocationDisplay =
+    topCity && !topCountry.toLowerCase().includes(topCity.toLowerCase())
+      ? `${topCity}, ${topCountry}`
+      : topCountry;
   const monthlyBurnUSD = initialData?.monthlyBurnUSD || 2100;
   const domesticMonthlyBurnUSD = initialData?.domesticMonthlyBurnUSD || 4800;
   const burnSavingsPct = Math.max(
     25,
-    Math.min(75, Math.round(((domesticMonthlyBurnUSD - monthlyBurnUSD) / Math.max(1, domesticMonthlyBurnUSD)) * 100))
+    Math.min(
+      75,
+      Math.round(
+        ((domesticMonthlyBurnUSD - monthlyBurnUSD) / Math.max(1, domesticMonthlyBurnUSD)) * 100
+      )
+    )
   );
   const nomadRunwayMonths = Math.max(6, initialData?.nomadRunwayMonths ?? 24);
-  const currentNetWorthUSD = initialData?.currentNetWorthUSD || 445000;
   const targetFireNestEggUSD = initialData?.targetFireNestEggUSD || 600000;
   const swrPercent = initialData?.swrPercent || 4.0;
   const fiberMbps = initialData?.fiberMbps || 250;
 
-  // Dynamic Persona-Based Hook Arrays (Section 3 of Spec)
+  // Dynamic Persona-Based Hook Arrays with Country Flag included when referencing a country
   const hooks = useMemo(() => {
     if (activePersona === 'nomad') {
       return [
-        `My savings fund ${nomadRunwayMonths} months of living & creating in ${topCountry}. How long is YOUR global runway? Test it free at:`,
-        `Zero Schengen overstays. Full slow-travel freedom. Plan your multi-stop visa & living route at:`,
-        `Trading high rent for fiber internet, sunshine, and lower taxes. Find your next remote hub at:`,
+        `My savings fund ${nomadRunwayMonths} months of living & creating in ${topCountryFlag} ${topCountry}. How long is YOUR global runway? Test it free at:`,
+        `Zero Schengen overstays. Full slow-travel freedom in ${topCountryFlag} ${topCountry} & beyond. Plan your multi-stop visa & living route at:`,
+        `Trading high rent for fiber internet, sunshine, and lower taxes in ${topCountryFlag} ${topLocationDisplay}. Find your next remote hub at:`,
       ];
     }
     return [
-      `My nest egg buys ${yearsSaved} extra years of freedom in ${topCountry}. How early could YOU retire abroad? Calculate your FIRE roadmap at:`,
-      `Same savings. Half the monthly burn. Zero cubicle stress. Discover where your wealth multiplies at:`,
-      `I just unlocked my ${badgeTitle} badge on ReFIREly. See which of 209 global havens matches your FIRE number at:`,
+      `My nest egg buys ${yearsSaved} extra years of freedom in ${topCountryFlag} ${topCountry}. How early could YOU retire abroad? Calculate your FIRE roadmap at:`,
+      `Same savings. Half the monthly burn in ${topCountryFlag} ${topLocationDisplay}. Zero cubicle stress. Discover where your wealth multiplies at:`,
+      `I just unlocked my ${badgeTitle} badge for ${topCountryFlag} ${topCountry} on ReFIREly. See which of 209 global havens matches your FIRE number at:`,
     ];
-  }, [activePersona, yearsSaved, nomadRunwayMonths, topCountry, badgeTitle]);
+  }, [
+    activePersona,
+    yearsSaved,
+    nomadRunwayMonths,
+    topCountry,
+    topCountryFlag,
+    topLocationDisplay,
+    badgeTitle,
+  ]);
 
   const activeHookText = hooks[hookIndex % hooks.length];
 
@@ -287,18 +312,18 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
     setHookIndex(prev => (prev + 1) % hooks.length);
   };
 
-  // Hero Headline based on headlineMode
+  // Hero Headline based on headlineMode (includes country flag when specific country is highlighted)
   const heroHeadline = useMemo(() => {
     if (headlineMode === 'nomad-runway') {
-      return `${nomadRunwayMonths} Months of Global Freedom in ${topCountry}`;
+      return `${nomadRunwayMonths} Months of Global Freedom in ${topCountryFlag} ${topCountry}`;
     }
     if (headlineMode === 'fi-percent') {
       return fireProgressPercent >= 100
-        ? `100% Financially Independent via Geoarbitrage`
-        : `${fireProgressPercent}% to Financial Independence`;
+        ? `100% Financially Independent in ${topCountryFlag} ${topCountry}`
+        : `${fireProgressPercent}% to Financial Independence in ${topCountryFlag} ${topCountry}`;
     }
-    return `Retiring ${yearsSaved} ${yearsSaved === 1 ? 'Year' : 'Years'} Earlier via Geoarbitrage`;
-  }, [headlineMode, nomadRunwayMonths, topCountry, fireProgressPercent, yearsSaved]);
+    return `Retiring ${yearsSaved} ${yearsSaved === 1 ? 'Year' : 'Years'} Earlier in ${topCountryFlag} ${topCountry}`;
+  }, [headlineMode, nomadRunwayMonths, topCountry, topCountryFlag, fireProgressPercent, yearsSaved]);
 
   // Capture PNG Data URL at 2x pixelRatio (1080x1920 for 9:16 Story, 1080x1080 for 1:1 Post)
   const generateCardPngDataUrl = async (): Promise<string> => {
@@ -315,7 +340,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
         cacheBust: true,
         width: baseWidth,
         height: baseHeight,
-        backgroundColor: '#041f1e',
+        backgroundColor: '#f8fafc',
       });
     } catch {
       // Fallback with skipFonts: true if browser extension or CORS blocks external font rules
@@ -325,7 +350,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
         skipFonts: true,
         width: baseWidth,
         height: baseHeight,
-        backgroundColor: '#041f1e',
+        backgroundColor: '#f8fafc',
       });
     }
   };
@@ -428,7 +453,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/45 backdrop-blur-md overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -437,31 +462,40 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           onClick={e => e.stopPropagation()}
-          className="relative w-full max-w-5xl rounded-3xl bg-slate-900/95 border border-emerald-500/30 text-white shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col"
+          className="relative w-full max-w-5xl rounded-3xl bg-gradient-to-br from-indigo-50/95 via-white to-rose-50/95 border border-indigo-200/90 text-slate-900 shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col"
         >
-          {/* Top Accent Gradient Bar */}
-          <div className="h-1.5 w-full bg-gradient-to-r from-emerald-400 via-amber-400 to-teal-400 shrink-0" />
+          {/* Top Multi-Color Accent Gradient Bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 shrink-0" />
 
           {/* Modal Header */}
-          <div className="px-5 sm:px-7 py-4 border-b border-white/10 flex items-center justify-between gap-4 shrink-0">
+          <div className="px-5 sm:px-7 py-4 border-b border-indigo-100 bg-white/80 backdrop-blur-md flex items-center justify-between gap-4 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-amber-500 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-rose-500 flex items-center justify-center text-white font-black shadow-md shrink-0">
                 <Award className="w-5 h-5" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2
-                    className="text-base sm:text-lg font-extrabold tracking-tight text-white truncate"
+                    className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 truncate"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
                     Shareable FIRE Badge &amp; Freedom Card Studio
                   </h2>
-                  <span className="text-[11px] font-mono font-bold text-amber-300">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-[11px] font-bold text-indigo-800">
+                    <CountryFlag
+                      countryName={topCountry}
+                      fallbackEmoji={topCountryFlag}
+                      size="xs"
+                      className="rounded-xs"
+                    />
+                    <span>{topLocationDisplay}</span>
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
                     {isStory ? '1080×1920 HD' : '1080×1080 HD'} · 2x Retina PNG
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 truncate">
-                  Customize your milestone badge, toggle privacy mode, shuffle viral hooks, and export high-resolution social cards.
+                <p className="text-xs text-slate-600 truncate">
+                  Customize your milestone badge, toggle privacy mode, shuffle viral hooks, and export multi-color social cards.
                 </p>
               </div>
             </div>
@@ -469,7 +503,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200/80 transition-colors cursor-pointer shrink-0"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -483,9 +517,9 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="mx-5 sm:mx-7 mt-3 px-4 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-bold flex items-center gap-2 shrink-0"
+                className="mx-5 sm:mx-7 mt-3 px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold flex items-center gap-2 shrink-0 shadow-xs"
               >
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <Check className="w-4 h-4 text-indigo-600 shrink-0" />
                 <span>{toastMessage}</span>
               </motion.div>
             )}
@@ -494,20 +528,20 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
           {/* Main Body: Left Controls + Right Live High-Res Card Preview */}
           <div className="p-5 sm:p-7 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* LEFT COLUMN: Controls & Customization */}
-            <div className="lg:col-span-6 space-y-5">
+            <div className="lg:col-span-6 space-y-4">
               {/* 1. Format Switcher Tabs */}
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 block">
                   1. Card Aspect Ratio &amp; Export Resolution
                 </label>
-                <div className="grid grid-cols-2 gap-2.5 p-1 rounded-2xl bg-slate-950/80 border border-white/10">
+                <div className="grid grid-cols-2 gap-2.5 p-1.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
                   <button
                     type="button"
                     onClick={() => setFormat('story')}
                     className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                       format === 'story'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md'
-                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                        ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-indigo-950 hover:bg-white/80'
                     }`}
                   >
                     <Smartphone className="w-4 h-4 shrink-0" />
@@ -518,8 +552,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     onClick={() => setFormat('post')}
                     className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap ${
                       format === 'post'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md'
-                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                        ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-indigo-950 hover:bg-white/80'
                     }`}
                   >
                     <Square className="w-4 h-4 shrink-0" />
@@ -529,22 +563,22 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
               </div>
 
               {/* 2. Privacy Mode Checkbox (Checked by Default) */}
-              <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-1.5">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-50/90 via-indigo-50/60 to-violet-50/80 border border-sky-200/90 space-y-1.5 shadow-2xs">
                 <label className="flex items-start gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={privacyMode}
                     onChange={e => setPrivacyMode(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded accent-emerald-500 cursor-pointer shrink-0"
+                    className="mt-0.5 w-4 h-4 rounded accent-indigo-600 cursor-pointer shrink-0"
                   />
                   <div className="space-y-1">
-                    <span className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                       <span>
                         Privacy Mode (Hide exact dollar balances — show Years Saved &amp; % Progress only)
                       </span>
                     </span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
                       {privacyMode
                         ? 'Active: Your exact portfolio & monthly burn dollar amounts are hidden. Only percentages, target haven, and years saved are shown.'
                         : 'Unlocked: Displaying exact monthly living burn ($/mo) and portfolio targets on the card.'}
@@ -554,15 +588,15 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
               </div>
 
               {/* 3. Persona & Viewer Call-to-Action Hook Shuffler */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/70 via-white to-rose-50/70 border border-purple-200/80 space-y-3 shadow-2xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
                     <span>2. Persona &amp; Viral Call-to-Action Hook</span>
                   </span>
 
                   {/* Persona Switcher */}
-                  <div className="inline-flex p-0.5 rounded-xl bg-slate-900 border border-white/15 text-[11px]">
+                  <div className="inline-flex p-0.5 rounded-xl bg-purple-100/80 border border-purple-200 text-[11px]">
                     <button
                       type="button"
                       onClick={() => {
@@ -572,8 +606,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       }}
                       className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer whitespace-nowrap ${
                         activePersona === 'retiree'
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'text-slate-300 hover:text-white'
+                          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-indigo-950'
                       }`}
                     >
                       🌿 Retiree
@@ -587,8 +621,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       }}
                       className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer whitespace-nowrap ${
                         activePersona === 'nomad'
-                          ? 'bg-amber-400 text-slate-950'
-                          : 'text-slate-300 hover:text-white'
+                          ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-rose-950'
                       }`}
                     >
                       ⚡ Nomad
@@ -596,30 +630,43 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-900/90 border border-white/10 text-xs text-slate-200 leading-relaxed italic">
-                  &ldquo;{activeHookText}&rdquo; <strong className="text-amber-300 not-italic">Refirely.com</strong>
+                <div className="p-3 rounded-xl bg-white border border-purple-200/80 text-xs text-slate-700 leading-relaxed italic shadow-2xs">
+                  &ldquo;{activeHookText}&rdquo;{' '}
+                  <strong className="text-indigo-700 not-italic font-extrabold">Refirely.com</strong>
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Hook {(hookIndex % hooks.length) + 1} of {hooks.length} ({activePersona === 'nomad' ? 'Nomad' : 'Retiree'} Pack)
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    Hook {(hookIndex % hooks.length) + 1} of {hooks.length} (
+                    {activePersona === 'nomad' ? 'Nomad' : 'Retiree'} Pack)
                   </span>
                   <button
                     type="button"
                     onClick={handleShuffleHook}
-                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-emerald-500/20 hover:from-amber-500/30 hover:to-emerald-500/30 border border-amber-400/40 text-amber-200 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 border border-indigo-200 text-indigo-900 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-amber-300" />
+                    <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
                     <span>🔄 Shuffle Hook</span>
                   </button>
                 </div>
               </div>
 
               {/* 4. Milestone Badge & Hero Headline Selector */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-                  3. Featured Milestone Badge &amp; Hero Stat
-                </label>
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/60 via-white to-sky-50/60 border border-indigo-200/80 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 block">
+                    3. Featured Milestone Badge &amp; Hero Stat
+                  </label>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700">
+                    <CountryFlag
+                      countryName={topCountry}
+                      fallbackEmoji={topCountryFlag}
+                      size="xs"
+                      className="rounded-xs"
+                    />
+                    <span>{topCountry}</span>
+                  </span>
+                </div>
 
                 <div className="flex flex-wrap gap-1.5">
                   {FIRE_MILESTONE_PRESETS.map(preset => {
@@ -635,8 +682,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                         }}
                         className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer whitespace-nowrap ${
                           isSelected
-                            ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
-                            : 'bg-slate-900 text-slate-300 border-white/10 hover:border-white/25 hover:text-white'
+                            ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300 hover:text-indigo-900'
                         }`}
                       >
                         {preset.emoji} {preset.title}
@@ -651,8 +698,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     onClick={() => setHeadlineMode('years-saved')}
                     className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
                       headlineMode === 'years-saved'
-                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                        : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                        ? 'bg-indigo-100/90 border-indigo-400 text-indigo-950'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-indigo-900'
                     }`}
                   >
                     Headline: {yearsSaved} Yrs Saved
@@ -662,8 +709,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     onClick={() => setHeadlineMode('fi-percent')}
                     className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
                       headlineMode === 'fi-percent'
-                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                        : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                        ? 'bg-purple-100/90 border-purple-400 text-purple-950'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-purple-900'
                     }`}
                   >
                     Headline: {fireProgressPercent}% to FI
@@ -673,8 +720,8 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     onClick={() => setHeadlineMode('nomad-runway')}
                     className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
                       headlineMode === 'nomad-runway'
-                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                        : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                        ? 'bg-rose-100/90 border-rose-400 text-rose-950'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-rose-900'
                     }`}
                   >
                     Headline: {nomadRunwayMonths}m Runway
@@ -688,9 +735,9 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                   type="button"
                   disabled={isExporting}
                   onClick={handleDownloadPng}
-                  className="py-3.5 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                  className="py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs sm:text-sm shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
                 >
-                  <Download className="w-4 h-4 text-slate-950 shrink-0" />
+                  <Download className="w-4 h-4 text-white shrink-0" />
                   <span>{isExporting ? 'Rendering 2x PNG...' : '⬇️ Download Image (PNG)'}</span>
                 </button>
 
@@ -698,20 +745,22 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                   type="button"
                   disabled={isExporting}
                   onClick={handleShareToSocial}
-                  className="py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                  className="py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-black text-xs sm:text-sm shadow-md shadow-rose-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap"
                 >
-                  <Share2 className="w-4 h-4 text-slate-950 shrink-0" />
+                  <Share2 className="w-4 h-4 text-white shrink-0" />
                   <span>📤 Share to Social</span>
                 </button>
               </div>
             </div>
 
             {/* RIGHT COLUMN: Live Scaled Card Preview (1080x1920 or 1080x1080 at 2x pixelRatio) */}
-            <div className="lg:col-span-6 flex flex-col items-center justify-center bg-slate-950/90 rounded-3xl border border-white/10 p-4 sm:p-6 min-h-[420px]">
-              <div className="text-[11px] font-mono text-slate-400 mb-3 flex items-center gap-2">
-                <span>Live Preview ({isStory ? 'Instagram Story 9:16 · 1080×1920' : 'Social Post 1:1 · 1080×1080'})</span>
+            <div className="lg:col-span-6 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50/70 via-white to-rose-50/70 rounded-3xl border border-indigo-200/80 p-4 sm:p-6 min-h-[420px] shadow-inner">
+              <div className="text-[11px] font-mono text-slate-600 mb-3 flex flex-wrap items-center justify-center gap-2">
+                <span>
+                  Live Preview ({isStory ? 'Instagram Story 9:16 · 1080×1920' : 'Social Post 1:1 · 1080×1080'})
+                </span>
                 <span>·</span>
-                <span className="text-emerald-400 font-bold">
+                <span className="text-indigo-700 font-bold">
                   {privacyMode ? '🔒 Privacy Mode ON' : '🔓 Dollar Figures Visible'}
                 </span>
               </div>
@@ -722,7 +771,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                   width: `${Math.round(baseWidth * previewScale)}px`,
                   height: `${Math.round(baseHeight * previewScale)}px`,
                 }}
-                className="relative flex items-start justify-start overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"
+                className="relative flex items-start justify-start overflow-hidden rounded-2xl shadow-xl ring-1 ring-indigo-200/90"
               >
                 <div
                   style={{
@@ -734,6 +783,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                 >
                   {/* ================================================================= */}
                   {/* EXPORTED CARD NODE (Captured at 2x pixelRatio -> 1080x1920 / 1080) */}
+                  {/* Luminous Multi-Colored Light Theme with Country Flag Integration   */}
                   {/* ================================================================= */}
                   <div
                     ref={cardRef}
@@ -742,17 +792,17 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       height: `${baseHeight}px`,
                       fontFamily: "'Inter', sans-serif",
                       background:
-                        'radial-gradient(circle at 18% 15%, rgba(16, 185, 129, 0.28) 0%, transparent 45%), radial-gradient(circle at 85% 80%, rgba(245, 158, 11, 0.22) 0%, transparent 48%), linear-gradient(145deg, #031c1a 0%, #072d29 45%, #0c192c 100%)',
+                        'radial-gradient(circle at 14% 14%, rgba(99, 102, 241, 0.18) 0%, transparent 44%), radial-gradient(circle at 88% 18%, rgba(236, 72, 153, 0.16) 0%, transparent 45%), radial-gradient(circle at 82% 84%, rgba(14, 165, 233, 0.18) 0%, transparent 48%), linear-gradient(145deg, #eef2ff 0%, #ffffff 48%, #fdf2f8 100%)',
                     }}
-                    className={`relative overflow-hidden text-white flex flex-col justify-between ${
+                    className={`relative overflow-hidden text-slate-900 flex flex-col justify-between ${
                       isStory ? 'p-11' : 'p-7'
                     }`}
                   >
-                    {/* Subtle geometric fintech grid & gold rim */}
+                    {/* Subtle Multi-Color Rim Frame */}
                     <div
-                      className="pointer-events-none absolute inset-3 rounded-3xl border border-amber-300/20"
+                      className="pointer-events-none absolute inset-3 rounded-3xl border border-indigo-200/80"
                       style={{
-                        boxShadow: 'inset 0 0 60px rgba(16, 185, 129, 0.08)',
+                        boxShadow: 'inset 0 0 50px rgba(99, 102, 241, 0.06)',
                       }}
                     />
 
@@ -763,18 +813,22 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                           src="/assets/aistudio/refirely-icon.png"
                           alt="ReFIREly Logo"
                           crossOrigin="anonymous"
-                          className={`${isStory ? 'w-12 h-12' : 'w-10 h-10'} rounded-2xl object-contain bg-white/10 p-1 border border-amber-300/30 shadow-md`}
+                          className={`${
+                            isStory ? 'w-12 h-12' : 'w-10 h-10'
+                          } rounded-2xl object-contain bg-white p-1 border border-indigo-200 shadow-sm`}
                         />
                         <div>
                           <div
                             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                            className={`${isStory ? 'text-2xl' : 'text-xl'} font-extrabold tracking-tight leading-none flex items-center`}
+                            className={`${
+                              isStory ? 'text-2xl' : 'text-xl'
+                            } font-extrabold tracking-tight leading-none flex items-center`}
                           >
-                            <span className="text-white">Re</span>
-                            <span className="text-amber-400">FIRE</span>
-                            <span className="text-emerald-300">ly</span>
+                            <span className="text-slate-900">Re</span>
+                            <span className="text-indigo-600">FIRE</span>
+                            <span className="text-rose-500">ly</span>
                           </div>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-200/80 block mt-0.5">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-700/80 block mt-0.5">
                             Global Freedom &amp; Geoarbitrage
                           </span>
                         </div>
@@ -783,24 +837,31 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       {/* Dynamic Milestone Pill Badge */}
                       <div
                         style={{
-                          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.25))',
+                          background: 'linear-gradient(135deg, #eef2ff 0%, #f3e8ff 50%, #ffe4e6 100%)',
                         }}
-                        className="px-3.5 py-1.5 rounded-full border border-amber-300/50 text-amber-200 text-xs font-extrabold tracking-wider uppercase shadow-md"
+                        className="px-3.5 py-1.5 rounded-full border border-indigo-300/80 text-indigo-950 text-xs font-extrabold tracking-wider uppercase shadow-xs"
                       >
                         {badgeEmoji} {badgeTitle.toUpperCase()}
                       </div>
                     </div>
 
                     {/* 2. CENTER HERO METRIC */}
-                    <div className={`relative z-10 ${isStory ? 'space-y-7 my-auto' : 'space-y-3.5 my-auto'}`}>
-                      {/* Eyebrow Kicker */}
-                      <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-300">
-                        <Flame className="w-4 h-4 text-amber-400" />
-                        <span>
-                          {activePersona === 'nomad'
-                            ? 'Verified Digital Nomad Runway Roadmap'
-                            : 'Verified Geoarbitrage FIRE Roadmap'}
-                        </span>
+                    <div className={`relative z-10 ${isStory ? 'space-y-6 my-auto' : 'space-y-3.5 my-auto'}`}>
+                      {/* Eyebrow Kicker + Country Flag Haven Pill */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-indigo-200 text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 shadow-2xs">
+                          <Flame className="w-3.5 h-3.5 text-rose-500" />
+                          <span>
+                            {activePersona === 'nomad'
+                              ? 'Verified Digital Nomad Runway'
+                              : 'Verified Geoarbitrage FIRE Roadmap'}
+                          </span>
+                        </div>
+
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 border border-purple-200 text-[11px] font-extrabold text-purple-950 shadow-2xs">
+                          <span>{topCountryFlag}</span>
+                          <span>{topLocationDisplay}</span>
+                        </div>
                       </div>
 
                       {/* Bold Hero Achievement Headline */}
@@ -811,7 +872,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                         }}
                         className={`${
                           isStory ? 'text-4xl' : 'text-2xl'
-                        } font-extrabold tracking-tight text-white`}
+                        } font-extrabold tracking-tight text-slate-900`}
                       >
                         {heroHeadline}
                       </h1>
@@ -819,19 +880,19 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                       {/* Visual Progress Bar Card */}
                       <div
                         style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
+                          background: 'rgba(255, 255, 255, 0.9)',
                         }}
-                        className={`rounded-2xl border border-white/15 ${
+                        className={`rounded-2xl border border-indigo-200/90 shadow-sm ${
                           isStory ? 'p-5 space-y-3.5' : 'p-3.5 space-y-2'
                         }`}
                       >
                         <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-emerald-200 uppercase tracking-wider">
+                          <span className="text-indigo-900 uppercase tracking-wider">
                             {activePersona === 'nomad'
                               ? 'Global Freedom Runway Index'
                               : 'Financial Independence Progress'}
                           </span>
-                          <span className="font-mono text-base font-extrabold text-amber-300 tabular-nums">
+                          <span className="font-mono text-base font-extrabold text-purple-700 tabular-nums">
                             {activePersona === 'nomad'
                               ? `${nomadRunwayMonths} Months (${(nomadRunwayMonths / 12).toFixed(1)} Yrs)`
                               : `${fireProgressPercent}% to FI`}
@@ -839,7 +900,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                         </div>
 
                         {/* Progress Track */}
-                        <div className="w-full h-3.5 rounded-full bg-slate-950/80 overflow-hidden p-0.5 border border-white/10">
+                        <div className="w-full h-3.5 rounded-full bg-indigo-100/90 overflow-hidden p-0.5 border border-indigo-200/70">
                           <div
                             style={{
                               width: `${
@@ -847,18 +908,22 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                                   ? Math.min(100, Math.round((nomadRunwayMonths / 24) * 100))
                                   : Math.min(100, fireProgressPercent)
                               }%`,
-                              background: 'linear-gradient(90deg, #10b981 0%, #f59e0b 65%, #fde047 100%)',
+                              background:
+                                'linear-gradient(90deg, #4f46e5 0%, #9333ea 52%, #ec4899 100%)',
                             }}
                             className="h-full rounded-full"
                           />
                         </div>
 
-                        {/* Target Haven Highlight */}
-                        <div className="pt-1 flex items-center justify-between text-xs text-slate-200">
-                          <span className="font-semibold text-white flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                        {/* Target Haven Highlight with Country Flag */}
+                        <div className="pt-1 flex items-center justify-between text-xs text-slate-700">
+                          <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-indigo-600" />
                             <span>
-                              Top Match: <strong className="text-amber-300">{topLocationDisplay}</strong>
+                              Top Match:{' '}
+                              <strong className="text-indigo-950 font-extrabold">
+                                {topCountryFlag} {topLocationDisplay}
+                              </strong>
                               {privacyMode
                                 ? ` • ${burnSavingsPct}% Lower Burn vs. Home`
                                 : ` • Est. Monthly Burn: $${monthlyBurnUSD.toLocaleString()}`}
@@ -867,53 +932,63 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Supporting KPI Grid (Adapts to Privacy Mode) */}
+                      {/* Supporting Multi-Colored Pastel KPI Grid (Adapts to Privacy Mode) */}
                       <div className="grid grid-cols-3 gap-3">
                         <div
-                          style={{ background: 'rgba(16, 185, 129, 0.12)' }}
-                          className={`rounded-2xl border border-emerald-400/30 ${
+                          style={{
+                            background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
+                          }}
+                          className={`rounded-2xl border border-indigo-200/90 shadow-2xs ${
                             isStory ? 'p-4' : 'p-2.5'
                           }`}
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 block">
                             {activePersona === 'nomad' ? 'Global Runway' : 'Years Saved'}
                           </span>
                           <span
                             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                             className={`${
                               isStory ? 'text-2xl' : 'text-lg'
-                            } font-extrabold text-white font-mono tabular-nums mt-0.5 block`}
+                            } font-extrabold text-indigo-950 font-mono tabular-nums mt-0.5 block`}
                           >
-                            {activePersona === 'nomad' ? `${nomadRunwayMonths} Mos` : `+${yearsSaved} Yrs`}
+                            {activePersona === 'nomad'
+                              ? `${nomadRunwayMonths} Mos`
+                              : `+${yearsSaved} Yrs`}
                           </span>
                         </div>
 
                         <div
-                          style={{ background: 'rgba(245, 158, 11, 0.12)' }}
-                          className={`rounded-2xl border border-amber-400/30 ${
+                          style={{
+                            background: 'linear-gradient(135deg, #fff1f2 0%, #fdf2f8 100%)',
+                          }}
+                          className={`rounded-2xl border border-rose-200/90 shadow-2xs ${
                             isStory ? 'p-4' : 'p-2.5'
                           }`}
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 block">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 block">
                             {privacyMode ? 'Burn Reduction' : 'Monthly Burn'}
                           </span>
                           <span
                             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                             className={`${
                               isStory ? 'text-2xl' : 'text-lg'
-                            } font-extrabold text-amber-200 font-mono tabular-nums mt-0.5 block`}
+                            } font-extrabold text-rose-950 font-mono tabular-nums mt-0.5 block`}
                           >
-                            {privacyMode ? `-${burnSavingsPct}%` : `$${monthlyBurnUSD.toLocaleString()}`}
+                            {privacyMode
+                              ? `-${burnSavingsPct}%`
+                              : `$${monthlyBurnUSD.toLocaleString()}`}
                           </span>
                         </div>
 
                         <div
-                          style={{ background: 'rgba(255, 255, 255, 0.06)' }}
-                          className={`rounded-2xl border border-white/15 ${
+                          style={{
+                            background: 'linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%)',
+                          }}
+                          className={`rounded-2xl border border-sky-200/90 shadow-2xs ${
                             isStory ? 'p-4' : 'p-2.5'
                           }`}
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 block">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 block">
                             {privacyMode
                               ? activePersona === 'nomad'
                                 ? 'Fiber Speed'
@@ -924,7 +999,7 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                             className={`${
                               isStory ? 'text-2xl' : 'text-lg'
-                            } font-extrabold text-white font-mono tabular-nums mt-0.5 block`}
+                            } font-extrabold text-sky-950 font-mono tabular-nums mt-0.5 block`}
                           >
                             {privacyMode
                               ? activePersona === 'nomad'
@@ -939,29 +1014,30 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
                     {/* 3. BOTTOM VIRAL CALL-TO-ACTION FOOTER (Mandatory on every card) */}
                     <div
                       style={{
-                        background: 'linear-gradient(135deg, rgba(4, 47, 46, 0.92), rgba(15, 23, 42, 0.95))',
+                        background:
+                          'linear-gradient(135deg, rgba(238, 242, 255, 0.95) 0%, rgba(250, 245, 255, 0.95) 50%, rgba(255, 241, 242, 0.95) 100%)',
                       }}
-                      className={`relative z-10 rounded-2xl border border-amber-400/35 ${
+                      className={`relative z-10 rounded-2xl border border-indigo-300/90 ${
                         isStory ? 'p-5' : 'p-3.5'
-                      } flex items-center justify-between gap-4 shadow-lg`}
+                      } flex items-center justify-between gap-4 shadow-sm`}
                     >
                       <p
                         className={`${
                           isStory ? 'text-xs' : 'text-[11px]'
-                        } text-slate-100 font-medium leading-snug flex-1`}
+                        } text-slate-800 font-semibold leading-snug flex-1`}
                       >
                         {activeHookText}
                       </p>
 
-                      {/* Prominent High-Contrast URL Pill */}
+                      {/* Prominent High-Contrast Multi-Color URL Pill */}
                       <div
                         style={{
                           fontFamily: "'Plus Jakarta Sans', sans-serif",
-                          background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #10b981 100%)',
+                          background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%)',
                         }}
                         className={`shrink-0 ${
                           isStory ? 'px-4 py-2.5 text-sm' : 'px-3.5 py-2 text-xs'
-                        } rounded-full text-slate-950 font-black tracking-tight shadow-md`}
+                        } rounded-full text-white font-black tracking-tight shadow-sm`}
                       >
                         Refirely.com
                       </div>
