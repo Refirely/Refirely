@@ -306,8 +306,11 @@ service cloud.firestore {
            incoming().earlyPioneerThreshold is number &&
            incoming().earlyPioneerThreshold >= 1 &&
            incoming().earlyPioneerThreshold <= 100000)
+          ||
+          (settingId == 'deletedAccounts' &&
+           incoming().deletedUserIds is list)
         );
-      allow delete: if isBootstrappedAdmin() && isValidId(settingId);
+      allow delete: if (isBootstrappedAdmin() || isSignedIn()) && isValidId(settingId);
     }
 
     // 9. Top-level /dossierDownloads/{downloadId} collection (Real-time cross-device Country Dossier PDF download tracking)

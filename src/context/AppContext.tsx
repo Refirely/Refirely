@@ -439,6 +439,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedAt: nowIso,
         }).catch(() => {});
       }
+
+      try {
+        setDoc(doc(db, 'platformSettings', 'deletedAccounts'), {
+          id: 'deletedAccounts',
+          deletedUserIds: arr,
+          updatedAt: new Date().toISOString(),
+        }).catch(() => {});
+      } catch {}
     } catch {}
   };
 
@@ -854,6 +862,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
     return () => {
       if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Listen to /platformSettings/deletedAccounts for real-time cross-device deletion sync
+  useEffect(() => {
+    let unsubscribeDel: (() => void) | undefined;
+    try {
+      const delRef = doc(db, 'platformSettings', 'deletedAccounts');
+      getDoc(delRef).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data() as any;
+          if (Array.isArray(data.deletedUserIds)) {
+            const current = getDeletedUserAccountIds();
+            let changed = false;
+            data.deletedUserIds.forEach((id: string) => {
+              if (id && !current.has(id)) {
+                current.add(id);
+                changed = true;
+              }
+            });
+            if (changed) {
+              const arr = Array.from(current);
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
+              setRegisteredAccounts(prev => prev.filter(acc => !current.has(acc.id)));
+            }
+          }
+        }
+      }).catch(() => {});
+
+      unsubscribeDel = onSnapshot(delRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as any;
+          if (Array.isArray(data.deletedUserIds)) {
+            const current = getDeletedUserAccountIds();
+            let changed = false;
+            data.deletedUserIds.forEach((id: string) => {
+              if (id && !current.has(id)) {
+                current.add(id);
+                changed = true;
+              }
+            });
+            if (changed) {
+              const arr = Array.from(current);
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
+              setRegisteredAccounts(prev => prev.filter(acc => !current.has(acc.id)));
+            }
+          }
+        }
+      }, () => {});
+    } catch {}
+    return () => {
+      if (unsubscribeDel) unsubscribeDel();
     };
   }, []);
 
