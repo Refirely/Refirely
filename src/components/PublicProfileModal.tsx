@@ -28,6 +28,9 @@ import {
   UserPlus,
   Sparkles,
   Award,
+  Share2,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 const VISIT_CARD_ACCENTS = [
@@ -76,6 +79,7 @@ export const PublicProfileModal: React.FC = () => {
 
   const [personalMessage, setPersonalMessage] = useState('');
   const [sentConfirmation, setSentConfirmation] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   if (!selectedPublicProfileId) return null;
 
@@ -84,6 +88,34 @@ export const PublicProfileModal: React.FC = () => {
 
   const profile = memberAccount.profile;
   const isOwnProfile = memberAccount.id === currentUserId;
+
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/?profile=${encodeURIComponent(memberAccount.username || memberAccount.id)}`
+    : `https://refirely.com/?profile=${encodeURIComponent(memberAccount.username || memberAccount.id)}`;
+
+  const handleCopyProfileLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }).catch(() => {
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 3000);
+      } catch {}
+      document.body.removeChild(textArea);
+    });
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = `Check out ${profile.name}'s verified expat profile on ReFirely (Residing in ${profile.residingCountry || profile.originCountry}, ${profile.travelHistory?.length || 0} countries visited): ${shareUrl}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const visitedCountries = profile.travelHistory || [];
   const languagesKnown = profile.languagesKnown || [];
@@ -395,6 +427,17 @@ export const PublicProfileModal: React.FC = () => {
 
                 {/* Desktop Top-right Action Buttons */}
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleCopyProfileLink}
+                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-xs"
+                    title="Copy Profile Share Link"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-300" />}
+                    <span>{copiedLink ? 'Copied!' : 'Share'}</span>
+                  </motion.button>
+
                   {isOwnProfile ? (
                     <motion.button
                       whileHover={{ scale: 1.03 }}
@@ -456,6 +499,66 @@ export const PublicProfileModal: React.FC = () => {
 
             {/* Scrollable Profile Body */}
             <div className="p-3.5 sm:p-8 sm:overflow-y-auto sm:overflow-x-hidden sm:flex-1 space-y-4 sm:space-y-7 bg-gradient-to-br from-slate-50 via-indigo-50/25 to-teal-50/30">
+              {/* Share Profile Card */}
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.04 }}
+                className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950 text-white rounded-2xl border border-teal-400/30 p-4 sm:p-6 space-y-3.5 shadow-md min-w-0"
+              >
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-400 to-amber-400" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+                    <span className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white shadow-sm shrink-0 mt-0.5 sm:mt-0">
+                      <Share2 className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-white">
+                        Share {profile.name}&apos;s Verified Expat Profile
+                      </h3>
+                      <p className="text-[11px] text-slate-300">
+                        Share via WhatsApp or copy link. Rich previews load profile photo, badges &amp; visited countries.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleWhatsAppShare}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleCopyProfileLink}
+                      className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-300" />}
+                      <span>{copiedLink ? 'Copied Link!' : 'Copy Link'}</span>
+                    </motion.button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-300 pt-0.5">
+                  <div className="flex items-center gap-2 font-mono text-[11px] truncate min-w-0">
+                    <span className="text-teal-300 font-bold shrink-0">Share Link:</span>
+                    <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 truncate select-all min-w-0">
+                      {shareUrl}
+                    </span>
+                  </div>
+                  {copiedLink && (
+                    <span className="text-emerald-400 font-bold text-[11px] shrink-0">
+                      ✓ Link successfully copied to clipboard!
+                    </span>
+                  )}
+                </div>
+              </motion.section>
+
               {/* 1. Basic Details & Retirement Vision */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}

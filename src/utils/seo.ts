@@ -495,6 +495,43 @@ export function updatePageSeo(
   updateStructuredDataJsonLd(origin, currentView, selectedCountry, allCountries);
 }
 
+export function updatePublicProfileSeo(memberAccount: { id: string; username?: string; profile: import('../types').UserProfile }) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const profile = memberAccount.profile;
+  const origin = PUBLIC_SITE_ORIGIN;
+  const shareUrl = `${origin}/?profile=${encodeURIComponent(memberAccount.username || memberAccount.id)}`;
+  const avatar = profile.avatarUrl && !profile.avatarUrl.includes('images.unsplash.com') ? profile.avatarUrl : `${origin}/assets/aistudio/refirely-logo.png`;
+  
+  const visitedCount = profile.travelHistory?.length || 0;
+  const langCount = profile.languagesKnown?.length || 0;
+  const residence = profile.residingCountry || profile.originCountry || 'Global Haven';
+
+  const title = `${profile.name} – Verified Expat Profile (${residence}) | ReFirely`;
+  const description = `Explore ${profile.name}'s verified expat profile: residing in ${residence}, ${visitedCount} countries visited, ${langCount} languages, and active in the ReFirely global relocation community.`;
+
+  document.title = title;
+  setMetaTag('name', 'title', title);
+  setMetaTag('name', 'description', description);
+  setMetaTag('property', 'og:title', title);
+  setMetaTag('property', 'og:description', description);
+  setMetaTag('property', 'og:url', shareUrl);
+  setMetaTag('property', 'og:image', avatar);
+  setMetaTag('property', 'og:image:secure_url', avatar);
+  setMetaTag('property', 'og:logo', `${origin}/assets/aistudio/refirely-icon.png`);
+  setMetaTag('name', 'twitter:title', title);
+  setMetaTag('name', 'twitter:description', description);
+  setMetaTag('name', 'twitter:image', avatar);
+
+  let canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
+  if (!canonicalEl) {
+    canonicalEl = document.createElement('link');
+    canonicalEl.id = 'canonical-link';
+    canonicalEl.rel = 'canonical';
+    document.head.appendChild(canonicalEl);
+  }
+  canonicalEl.href = shareUrl;
+}
+
 const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {
   landing: ['#14b8a6', '#6366f1', '#d946ef', '#f59e0b'],
   explore: ['#10b981', '#06b6d4', '#6366f1', '#f97316'],

@@ -16,7 +16,7 @@ import { INITIAL_JOURNAL_ENTRIES } from '../data/initialJournal';
 import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
 import { INITIAL_DOSSIER_DOWNLOADS } from '../data/seedDossierDownloads';
 import { playNotificationChime } from '../utils/audioNotification';
-import { parseUrlToRoute, getViewUrl } from '../utils/seo';
+import { parseUrlToRoute, getViewUrl, updatePublicProfileSeo } from '../utils/seo';
 import { matchesContinentFilter } from '../utils/continents';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import {
@@ -1329,6 +1329,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const closePublicProfile = () => setSelectedPublicProfileId(null);
+
+  // Listen to selectedPublicProfileId to update SEO and push history state
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (selectedPublicProfileId) {
+      const matched = publicMemberAccounts.find(a => a.id === selectedPublicProfileId);
+      if (matched) {
+        updatePublicProfileSeo(matched);
+        const shareUrl = `/?profile=${encodeURIComponent(matched.username || matched.id)}`;
+        try {
+          window.history.pushState({ profileId: matched.id }, '', shareUrl);
+        } catch {}
+      }
+    } else {
+      const targetUrl = getViewUrl(currentView, currentView === 'country-detail' ? activeCountryId : undefined);
+      try {
+        window.history.pushState({ view: currentView }, '', targetUrl);
+      } catch {}
+    }
+  }, [selectedPublicProfileId, publicMemberAccounts, currentView, activeCountryId]);
+
+  // Check URL query parameter on mount for ?profile=...
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const profileParam = params.get('profile')?.trim();
+    if (profileParam) {
+      const timer = setTimeout(() => {
+        openPublicProfile(profileParam);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Filters & Persona Lens
   const [searchQuery, setSearchQuery] = useState('');
