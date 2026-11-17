@@ -139,13 +139,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenBrandKit }
 
   // Demo Member Accounts for Admin Sandbox Testing & Verification
   const demoTestAccounts = useMemo(() => {
-    return registeredAccounts.filter(
-      acc =>
-        acc.id !== 'guest' &&
-        acc.id !== 'usr-ganesh' &&
-        acc.profile?.role !== 'admin' &&
-        acc.email?.toLowerCase() !== 'ganesh.indireddy@gmail.com'
-    );
+    const demoIds = new Set(['usr-elena', 'usr-marcus', 'usr-arthur', 'usr-margaret', 'usr-david', 'usr-carlos']);
+    return registeredAccounts.filter(acc => demoIds.has(acc.id));
   }, [registeredAccounts]);
 
   const handleCopyCredentials = (acc: UserAccount) => {
