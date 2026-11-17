@@ -2664,6 +2664,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const uData = uSnap.data() as any;
               if (!uData) return;
               const uDocId = uSnap.id;
+              if (currentDeletedUserIds.has(uDocId)) return;
               const uActiveAccId = String(uData.activeAccountId || '').trim();
               const uEmailLower = String(uData.email || '').trim().toLowerCase();
 
@@ -4038,6 +4039,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const uData = uDocSnap.data() as any;
           if (!uData) return;
           const uDocId = uDocSnap.id;
+          if (deletedUserIds.has(uDocId)) return;
           const uActiveAccId = String(uData.activeAccountId || '').trim();
           const uEmailLower = String(uData.email || '').trim().toLowerCase();
 
