@@ -1295,9 +1295,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Public Member Profile modal state (excludes admin role / admin user)
   const [selectedPublicProfileId, setSelectedPublicProfileId] = useState<string | null>(null);
   const publicMemberAccounts = React.useMemo(
-    () =>
-      registeredAccounts
-        .filter(acc => isPublicMemberAccount(acc))
+    () => {
+      const deletedUserIds = getDeletedUserAccountIds();
+      return registeredAccounts
+        .filter(acc => acc && acc.id && !deletedUserIds.has(acc.id) && isPublicMemberAccount(acc))
         .map(acc =>
           acc.id === currentUserId && currentUserId !== 'guest'
             ? {
@@ -1305,7 +1306,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 profile: mergeUserProfiles(acc.profile, userProfile, true),
               }
             : acc
-        ),
+        );
+    },
     [registeredAccounts, currentUserId, userProfile]
   );
 

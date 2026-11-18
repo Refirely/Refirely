@@ -1,4 +1,5 @@
 import { UserProfile, UserAccount, UserFinancialPortfolio } from '../types';
+import { isSystemTestAccount } from './badgeDefinitions';
 
 export const AVATAR_PRESETS = [
   {
@@ -1243,6 +1244,7 @@ export function isPublicMemberAccount(account?: UserAccount | null): boolean {
   if (!account || !account.profile) return false;
   if (account.id === 'guest' || account.id === 'usr-ganesh') return false;
   if (account.profile.role === 'admin') return false;
+  if (isSystemTestAccount(account)) return false;
   const emailLower = (account.email || account.profile.email || '').trim().toLowerCase();
   if (emailLower === 'ganesh.indireddy@gmail.com') return false;
   try {
