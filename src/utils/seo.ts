@@ -4,11 +4,11 @@ import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 
 const DEFAULT_TITLE =
-  'ReFirely – Global Retirement (FIRE) & Digital Nomad Haven Guide | Runway & Burn Calculator';
+  'ReFirely – Retire Early Abroad (FIRE) & Digital Nomad Cost of Living Calculator';
 const DEFAULT_DESCRIPTION =
-  'Compare 209 global havens for early retirement (FIRE) and digital nomads: explore monthly cash burn, nomad runway, remote & DNV visas, fiber internet, rents, food, and healthcare.';
+  'Compare 209 countries for early retirement (FIRE) & digital nomads. Calculate 4% FIRE nest eggs, monthly cash burn, DNV & D7 visas, rent, healthcare & taxes.';
 const DEFAULT_KEYWORDS =
-  'digital nomad cost of living 2026, nomad cash burn calculator, digital nomad runway simulator, best countries to retire 2026, global retirement havens, digital nomad visa friendly countries, Spain digital nomad visa, Thailand DTV visa, Portugal D8 digital nomad visa, Portugal D7 visa, fastest internet speed for remote work, coworking spaces abroad, short-term furnished apartment rent overseas, monthly living burn abroad, geographic arbitrage platform, slow travel budget calculator, FIRE calculator overseas, safe expat neighborhoods, apartment rents abroad, food and gastronomy abroad, vegetarian vegan expat dining, tap water safety overseas, retirement visa requirements, international healthcare for expats, SafetyWing nomad insurance, Wise multi-currency expat transfers, expat taxes 183 day rule, female to male ratio by country, dating and lifestyle dynamics, financial independence retire early';
+  'retire early abroad calculator, FIRE calculator by country, digital nomad cost of living 2026, nomad cash burn calculator, digital nomad runway simulator, best countries to retire 2026, cheapest countries to retire well, geoarbitrage calculator, Portugal D7 passive income visa, Portugal D8 digital nomad visa, Spain Non-Lucrative Visa NLV, Spain digital nomad visa Beckham law, Thailand DTV visa 5 year, Thailand LTR retirement visa, Costa Rica Pensionado visa, Panama Pensionado visa, Malaysia MM2H visa, Greece digital nomad visa, Mexico temporary resident visa, cost of living comparison by country, apartment rent overseas, international healthcare for expats, SafetyWing nomad insurance, Wise expat currency transfer, 183 day tax residency rule, verified expats directory, financial independence retire early';
 
 const VALID_VIEWS: AppView[] = [
   'landing',
@@ -466,17 +466,27 @@ export function updatePageSeo(
   setMetaTag('name', 'keywords', keywords);
 
   // OpenGraph tags
+  const activeImage = selectedCountry?.imageUrl || logoUrl;
+  const activeImageAlt = selectedCountry
+    ? `${selectedCountry.name} Retirement (FIRE) & Digital Nomad Guide – ReFirely`
+    : 'ReFirely – Retire Early Abroad (FIRE) & Digital Nomad Cost of Living Calculator';
+
+  setMetaTag('property', 'og:type', 'website');
   setMetaTag('property', 'og:title', title);
   setMetaTag('property', 'og:description', description);
   setMetaTag('property', 'og:url', canonicalUrl);
-  setMetaTag('property', 'og:image', selectedCountry?.imageUrl || logoUrl);
-  setMetaTag('property', 'og:image:secure_url', selectedCountry?.imageUrl || logoUrl);
+  setMetaTag('property', 'og:image', activeImage);
+  setMetaTag('property', 'og:image:secure_url', activeImage);
+  setMetaTag('property', 'og:image:alt', activeImageAlt);
   setMetaTag('property', 'og:logo', iconUrl);
 
   // Twitter Card tags
+  setMetaTag('name', 'twitter:card', 'summary_large_image');
+  setMetaTag('name', 'twitter:url', canonicalUrl);
   setMetaTag('name', 'twitter:title', title);
   setMetaTag('name', 'twitter:description', description);
-  setMetaTag('name', 'twitter:image', selectedCountry?.imageUrl || logoUrl);
+  setMetaTag('name', 'twitter:image', activeImage);
+  setMetaTag('name', 'twitter:image:alt', activeImageAlt);
 
   // Update canonical link
   let canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
@@ -505,22 +515,28 @@ export function updatePublicProfileSeo(memberAccount: { id: string; username?: s
   const visitedCount = profile.travelHistory?.length || 0;
   const langCount = profile.languagesKnown?.length || 0;
   const residence = profile.residingCountry || profile.originCountry || 'Global Haven';
+  const targetHaven = profile.targetCountry || residence;
 
   const title = `${profile.name} – Verified Expat Profile (${residence}) | ReFirely`;
-  const description = `Explore ${profile.name}'s verified expat profile: residing in ${residence}, ${visitedCount} countries visited, ${langCount} languages, and active in the ReFirely global relocation community.`;
+  const description = `Explore ${profile.name}'s verified expat profile: residing in ${residence}, scouting ${targetHaven}, ${visitedCount} countries visited, ${langCount} languages spoken on ReFirely.`;
 
   document.title = title;
   setMetaTag('name', 'title', title);
   setMetaTag('name', 'description', description);
+  setMetaTag('property', 'og:type', 'profile');
   setMetaTag('property', 'og:title', title);
   setMetaTag('property', 'og:description', description);
   setMetaTag('property', 'og:url', shareUrl);
   setMetaTag('property', 'og:image', avatar);
   setMetaTag('property', 'og:image:secure_url', avatar);
+  setMetaTag('property', 'og:image:alt', `${profile.name} – Verified Expat Profile on ReFirely`);
   setMetaTag('property', 'og:logo', `${origin}/assets/aistudio/refirely-icon.png`);
+  setMetaTag('name', 'twitter:card', 'summary_large_image');
+  setMetaTag('name', 'twitter:url', shareUrl);
   setMetaTag('name', 'twitter:title', title);
   setMetaTag('name', 'twitter:description', description);
   setMetaTag('name', 'twitter:image', avatar);
+  setMetaTag('name', 'twitter:image:alt', `${profile.name} – Verified Expat Profile on ReFirely`);
 
   let canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
   if (!canonicalEl) {
@@ -530,6 +546,35 @@ export function updatePublicProfileSeo(memberAccount: { id: string; username?: s
     document.head.appendChild(canonicalEl);
   }
   canonicalEl.href = shareUrl;
+
+  // Inject ProfilePage Schema.org JSON-LD for rich social and search indexing
+  let scriptEl = document.getElementById('dynamic-seo-jsonld') as HTMLScriptElement | null;
+  if (!scriptEl) {
+    scriptEl = document.createElement('script');
+    scriptEl.id = 'dynamic-seo-jsonld';
+    scriptEl.type = 'application/ld+json';
+    document.head.appendChild(scriptEl);
+  }
+  const profileJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    url: shareUrl,
+    name: title,
+    description,
+    mainEntity: {
+      '@type': 'Person',
+      name: profile.name,
+      identifier: memberAccount.username || memberAccount.id,
+      description: profile.bio || description,
+      image: avatar,
+      homeLocation: {
+        '@type': 'Place',
+        name: residence,
+      },
+      knowsLanguage: (profile.languagesKnown || []).map(l => l.language),
+    },
+  };
+  scriptEl.textContent = JSON.stringify(profileJsonLd);
 }
 
 const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {

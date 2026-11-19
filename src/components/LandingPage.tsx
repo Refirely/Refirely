@@ -62,6 +62,10 @@ export const LandingPage: React.FC = () => {
   const [nomadPriority, setNomadPriority] = useState<NomadMatchPriority>('high_speed_internet');
   const [previewContinent, setPreviewContinent] = useState<ContinentFilter>('All');
   const [matchSearchQuery, setMatchSearchQuery] = useState<string>('');
+  const [mobileShowMoreMatches, setMobileShowMoreMatches] = useState<boolean>(false);
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState<boolean>(false);
+  const [mobileStickyDismissed, setMobileStickyDismissed] = useState<boolean>(false);
+  const isGuestUser = !isAuthenticated || currentUserId === 'guest';
 
   // Continent counts across all countries
   const continentCounts = useMemo(() => {
@@ -537,12 +541,12 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-20 overflow-x-hidden">
+    <div className="space-y-8 md:space-y-24 pb-28 md:pb-20 overflow-x-hidden">
 
       {/* ============================================================ */}
       {/* 1. CINEMATIC HERO SECTION                                      */}
       {/* ============================================================ */}
-      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center bg-slate-950 text-white overflow-hidden border-b border-indigo-950">
+      <section className="relative min-h-0 md:min-h-[580px] lg:min-h-[640px] flex items-center bg-slate-950 text-white overflow-hidden border-b border-indigo-950">
         {/* Background Visual: Iconic Nature & Touristic Alpine Emerald Lake Panorama */}
         <div className="absolute inset-0 z-0">
           <img
@@ -557,21 +561,21 @@ export const LandingPage: React.FC = () => {
           <div className="pointer-events-none absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-teal-500/15 blur-3xl" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-3xl space-y-6"
+            className="max-w-3xl space-y-4 md:space-y-6"
           >
             {/* Trust badge kicker */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-orange-500/25 via-indigo-500/25 to-teal-500/25 border border-amber-400/35 text-amber-200 text-xs font-bold backdrop-blur-md shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-orange-500/25 via-indigo-500/25 to-teal-500/25 border border-amber-400/35 text-amber-200 text-[11px] md:text-xs font-bold backdrop-blur-md shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
               <span>{countries.length} Verified Global Havens · Updated for 2026</span>
             </div>
 
             {/* Impactful Dual-Persona Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
               Live Better,{' '}
               <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-teal-300 bg-clip-text text-transparent">
                 Work Anywhere
@@ -579,13 +583,75 @@ export const LandingPage: React.FC = () => {
               , Retire Years Earlier.
             </h1>
 
-            {/* Subheading */}
-            <p className="text-base sm:text-lg text-slate-200/90 font-normal leading-relaxed max-w-2xl">
+            {/* Mobile concise subheading (< md) */}
+            <p className="md:hidden text-sm text-slate-200/90 font-normal leading-snug">
+              Match your budget across {countries.length} havens, unlock visa roadmaps &amp; plan your FIRE timeline free.
+            </p>
+
+            {/* Desktop Subheading (unchanged >= md) */}
+            <p className="hidden md:block text-base sm:text-lg text-slate-200/90 font-normal leading-relaxed max-w-2xl">
               The data-driven geoarbitrage platform. Whether you are mapping your long-term FIRE destination or funding slow travel and remote work across top global havens.
             </p>
 
-            {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-wrap items-center gap-3.5">
+            {/* Mobile-Only Above-The-Fold Auth & Quick Explore CTAs (< md) */}
+            <div className="md:hidden pt-1 space-y-2.5">
+              {isGuestUser ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('signup')}
+                    className="w-full min-h-[48px] px-5 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 active:scale-[0.98] text-slate-950 font-black text-sm shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4 text-slate-950" />
+                    <span>Sign Up Free — Get Matched</span>
+                    <ArrowRight className="w-4 h-4 text-slate-950" />
+                  </button>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('login')}
+                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <LogIn className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Log In</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection('haven-matcher')}
+                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-900/75 hover:bg-indigo-800/80 text-white font-bold text-xs border border-indigo-400/30 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-teal-300" />
+                      <span>Top Matches</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-300/90 font-medium text-center">
+                    100% Free forever · No card required · Ready in 30s
+                  </p>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection('haven-matcher')}
+                    className="min-h-[44px] px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Match Engine</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection('fire-calculator')}
+                    className="min-h-[44px] px-4 py-3 rounded-xl bg-indigo-900/80 text-white font-bold text-xs border border-indigo-400/30 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    <span>FIRE Simulator</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Primary Action Buttons (unchanged >= md) */}
+            <div className="hidden md:flex pt-2 flex-wrap items-center gap-3.5">
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.03, y: -2 }}
@@ -622,39 +688,50 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Segmented Persona Toggle Directly Below CTA Buttons */}
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <div className="pt-1 md:pt-2 flex flex-wrap items-center gap-3">
+              <span className="hidden md:flex text-xs font-bold uppercase tracking-wider text-slate-300 items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
                 Select Mode:
               </span>
-              <div className="inline-flex p-1 rounded-2xl bg-slate-900/90 border border-white/25 backdrop-blur-md shadow-lg">
+              <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-slate-900/90 border border-white/25 backdrop-blur-md shadow-lg">
                 <button
                   type="button"
                   onClick={() => setCurrentPersona('retiree')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     currentPersona === 'retiree'
                       ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-black shadow-md'
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <span>🌿 Plan Early Retirement</span>
+                  <span className="md:hidden">🌿 Early Retiree</span>
+                  <span className="hidden md:inline">🌿 Plan Early Retirement</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setCurrentPersona('nomad')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     currentPersona === 'nomad'
                       ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-md'
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  <span>⚡ Nomad &amp; Slow Travel</span>
+                  <span className="md:hidden">⚡ Digital Nomad</span>
+                  <span className="hidden md:inline">⚡ Nomad &amp; Slow Travel</span>
                 </button>
               </div>
             </div>
 
-            {/* Multi-Colored Social Proof Metric Tiles */}
-            <div className="pt-6 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+            {/* Mobile-only Compact Trust Strip (< md) */}
+            <div className="flex md:hidden items-center justify-between pt-3 border-t border-white/15 text-[11px] font-semibold text-slate-300">
+              <span><strong className="text-indigo-300 font-mono">{countries.length}</strong> Havens</span>
+              <span className="text-white/25">·</span>
+              <span><strong className="text-amber-300 font-mono">55+</strong> Metrics</span>
+              <span className="text-white/25">·</span>
+              <span><strong className="text-emerald-300 font-mono">8.4 Yrs</strong> Earlier FIRE</span>
+            </div>
+
+            {/* Desktop Multi-Colored Social Proof Metric Tiles (unchanged >= md) */}
+            <div className="hidden md:grid pt-6 border-t border-white/15 grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
               <div className="p-3.5 rounded-2xl bg-indigo-950/55 border border-indigo-400/25 backdrop-blur-md">
                 <div className="text-xl sm:text-2xl font-black text-indigo-300 font-mono">{countries.length}</div>
                 <div className="text-slate-300 font-medium">Verified Havens</div>
@@ -677,9 +754,58 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 2. CORE VALUE PILLARS                                          */}
+      {/* 2. MOBILE QUICK SIGN-UP CARD (< md) + DESKTOP VALUE PILLARS   */}
       {/* ============================================================ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {isGuestUser && (
+        <section className="md:hidden max-w-7xl mx-auto px-4">
+          <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-white via-indigo-50/60 to-amber-50/50 border border-indigo-200/90 shadow-md space-y-3">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-indigo-500 to-teal-500" />
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">
+                  Free Member Access
+                </span>
+                <h2 className="text-base font-extrabold text-slate-900 leading-snug">
+                  Save Shortlists &amp; Get Your Custom Haven Match
+                </h2>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold shrink-0">
+                Free
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1.5 text-xs text-slate-700 font-medium">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                <span>Personalized visa &amp; budget matches by passport</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span>Save FIRE plans, compare havens &amp; download PDFs</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => openAuthModal('signup')}
+                className="min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Create Free Account</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openAuthModal('login')}
+                className="min-h-[44px] px-3 py-2.5 rounded-xl bg-white text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Member Log In</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-2.5 mb-12">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200/80 text-xs font-extrabold text-indigo-700 uppercase tracking-widest">
             <Compass className="w-3.5 h-3.5 text-indigo-600" />
@@ -780,7 +906,7 @@ export const LandingPage: React.FC = () => {
       <section id="haven-matcher" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div
           id="countries-grid"
-          className="relative overflow-hidden p-6 sm:p-10 rounded-[2rem] bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 text-slate-900 shadow-xl shadow-indigo-950/5 border border-indigo-200/80"
+          className="relative overflow-hidden p-4 md:p-10 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 text-slate-900 shadow-xl shadow-indigo-950/5 border border-indigo-200/80"
         >
           {/* Decorative Multi-Color Top Accent Ribbon & Ambient Glow Orbs */}
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
@@ -789,14 +915,14 @@ export const LandingPage: React.FC = () => {
           <div className="pointer-events-none absolute -bottom-28 left-1/3 w-96 h-96 rounded-full bg-amber-300/15 blur-3xl" />
 
           {/* Header & Multi-Colored Badges + Dual-Persona Switch */}
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-7">
-            <div className="max-w-3xl space-y-3">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-3 md:gap-5 mb-4 md:mb-7">
+            <div className="max-w-3xl space-y-2 md:space-y-3">
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-xs font-bold shadow-sm shadow-indigo-500/20">
+                <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-[11px] md:text-xs font-bold shadow-sm shadow-indigo-500/20">
                   <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
                   <span>Interactive Match Engine</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-slate-700 text-xs font-semibold border border-indigo-200/80 shadow-2xs">
+                <div className="hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-slate-700 text-xs font-semibold border border-indigo-200/80 shadow-2xs">
                   <Globe className="w-3.5 h-3.5 text-teal-600" />
                   <span>
                     {currentPersona === 'retiree'
@@ -805,7 +931,7 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
                 {currentPersona === 'retiree' ? (
                   <>
                     Find Your{' '}
@@ -822,7 +948,7 @@ export const LandingPage: React.FC = () => {
                   </>
                 )}
               </h2>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="hidden md:block text-sm text-slate-600 leading-relaxed">
                 {currentPersona === 'retiree' ? (
                   <>
                     Tune your target monthly couple budget, primary lifestyle priority, and preferred continent to preview your top 12 live-ranked destinations—then launch the full{' '}
@@ -837,7 +963,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 shrink-0">
+            <div className="hidden md:flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 shrink-0">
               {/* Dedicated Dual-Persona Mode Switch inside Match Engine Header */}
               <div className="inline-flex p-1 rounded-2xl bg-slate-900/95 border border-indigo-300/40 shadow-md">
                 <button
@@ -879,10 +1005,10 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Interactive Match Console (Elevated Multi-Color Control Deck) */}
-          <div className="relative z-10 p-5 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-xl border border-indigo-100/90 shadow-lg shadow-indigo-950/5 mb-8 space-y-6">
+          <div className="relative z-10 p-3.5 md:p-7 rounded-2xl md:rounded-3xl bg-white/95 backdrop-blur-xl border border-indigo-100/90 shadow-lg shadow-indigo-950/5 mb-5 md:mb-8 space-y-3.5 md:space-y-6">
             
-            {/* Console Mode Status Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 border-b border-indigo-100/80">
+            {/* Console Mode Status Bar (Desktop Only) */}
+            <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 border-b border-indigo-100/80">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                   Active Match Lens:
@@ -913,8 +1039,8 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Row 0: Live Country & Hub Instant Search Bar (Auto-loads country names & cards as you type) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50/85 via-sky-50/70 to-teal-50/80 border border-indigo-200/80 shadow-xs space-y-3.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-3 md:p-5 rounded-xl md:rounded-2xl bg-gradient-to-r from-indigo-50/85 via-sky-50/70 to-teal-50/80 border border-indigo-200/80 shadow-xs space-y-2.5 md:space-y-3.5">
+              <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label
                   htmlFor="match-engine-country-search"
                   className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-2"
@@ -945,10 +1071,10 @@ export const LandingPage: React.FC = () => {
                   onChange={e => setMatchSearchQuery(e.target.value)}
                   placeholder={
                     currentPersona === 'nomad'
-                      ? 'Type any country, nomad hub, or visa (e.g., Spain, Thailand, Portugal, Bali, Medellín)...'
-                      : 'Type any country, capital, or expat city (e.g., Portugal, Costa Rica, Thailand, Malaysia)...'
+                      ? 'Search country or nomad hub (Spain, Thailand, Bali)...'
+                      : 'Search country or city (Portugal, Thailand, Mexico)...'
                   }
-                  className="w-full pl-10 pr-28 py-3 rounded-xl bg-white/95 border border-indigo-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-2xs"
+                  className="w-full pl-10 pr-24 md:pr-28 py-2.5 md:py-3 rounded-xl bg-white/95 border border-indigo-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-2xs"
                 />
                 {matchSearchQuery.trim() !== '' ? (
                   <button
@@ -964,6 +1090,21 @@ export const LandingPage: React.FC = () => {
                     {countries.length} Havens Indexed
                   </span>
                 )}
+              </div>
+
+              {/* Mobile-only Compact Filter Toggle Row (< md) */}
+              <div className="flex md:hidden items-center justify-between gap-2 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersExpanded(prev => !prev)}
+                  className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-950 text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{mobileFiltersExpanded ? 'Hide Filters' : 'Tune Budget & Filters'}</span>
+                </button>
+                <span className="text-[11px] font-mono font-bold text-slate-600 truncate">
+                  ${(currentPersona === 'nomad' ? nomadMatchBurn : matchBudget).toLocaleString()}/mo · {previewContinent}
+                </span>
               </div>
 
               {/* Auto-Loaded Country Name Pills (Live Matches when typing, or Quick-Pick Spotlight when idle) */}
@@ -1056,7 +1197,7 @@ export const LandingPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <div className="hidden md:flex items-center gap-1.5 flex-wrap pt-0.5">
                   <span className="text-[11px] font-bold text-indigo-900/75 mr-1">Popular Quick-Find:</span>
                   {['Portugal', 'Spain', 'Thailand', 'Costa Rica', 'Malaysia', 'Mexico', 'Panama', 'Greece'].map(
                     quickName => (
@@ -1074,6 +1215,8 @@ export const LandingPage: React.FC = () => {
               )}
             </div>
 
+            {/* Collapsible Filters Container on Mobile (< md); Always Visible on Desktop (>= md) */}
+            <div className={`${mobileFiltersExpanded ? 'block' : 'hidden'} md:block space-y-4 md:space-y-6`}>
             {/* Row 1: Two-Column Core Match Parameters (Budget/Burn + Priority) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               
@@ -1345,7 +1488,7 @@ export const LandingPage: React.FC = () => {
                           <div>
                             <div className="text-xs font-extrabold leading-tight">{item.label}</div>
                             <div
-                              className={`text-[10px] font-medium mt-0.5 ${
+                              className={`hidden md:block text-[10px] font-medium mt-0.5 ${
                                 isSelected ? 'text-white/85' : 'text-slate-500'
                               }`}
                             >
@@ -1444,7 +1587,7 @@ export const LandingPage: React.FC = () => {
                           <div>
                             <div className="text-xs font-extrabold leading-tight">{item.label}</div>
                             <div
-                              className={`text-[10px] font-medium mt-0.5 ${
+                              className={`hidden md:block text-[10px] font-medium mt-0.5 ${
                                 isSelected ? 'text-white/85' : 'text-slate-500'
                               }`}
                             >
@@ -1520,12 +1663,30 @@ export const LandingPage: React.FC = () => {
                 </motion.button>
               </div>
             </div>
+            </div>
 
           </div>
 
           {/* Results Header Strip */}
-          <div className="relative z-10 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+          <div className="relative z-10 space-y-4 md:space-y-6">
+            {/* Mobile-only Clean 1-Line Results Bar (< md) */}
+            <div className="flex md:hidden items-center justify-between gap-2 px-0.5">
+              <span className="text-xs font-extrabold text-indigo-950">
+                Top {Math.min(displayedCountries.length, mobileShowMoreMatches ? 8 : 4)} {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Matches'}{' '}
+                <span className="text-slate-500 font-semibold">(of {sortedMatchedCountries.length})</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenAdvancedExplorer}
+                className="text-xs font-extrabold text-indigo-700 inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>All {countries.length}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Desktop Results Header Strip (unchanged >= md) */}
+            <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 bg-indigo-100/80 border border-indigo-200/80 px-3 py-1 rounded-full">
                   Top {displayedCountries.length} Live {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Matches'} (of {sortedMatchedCountries.length})
@@ -1639,6 +1800,7 @@ export const LandingPage: React.FC = () => {
                       'from-teal-500 via-indigo-500 to-amber-500',
                     ];
                     const accentGrad = cardAccentGradients[idx % cardAccentGradients.length];
+                    const hideCardOnMobile = idx >= (mobileShowMoreMatches ? 8 : 4);
 
                     return (
                       <motion.div
@@ -1655,14 +1817,14 @@ export const LandingPage: React.FC = () => {
                         }}
                         whileHover={{ y: -6 }}
                         onClick={() => navigateToCountry(country.id)}
-                        className="group relative bg-white rounded-2xl border border-indigo-100/90 overflow-hidden hover:border-indigo-300 transition-shadow cursor-pointer flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-950/10"
+                        className={`${hideCardOnMobile ? 'hidden md:flex' : 'flex'} group relative bg-white rounded-2xl border border-indigo-100/90 overflow-hidden hover:border-indigo-300 transition-shadow cursor-pointer flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-950/10`}
                       >
                         {/* Top Multi-Colored Accent Bar */}
                         <div className={`h-1.5 w-full bg-gradient-to-r ${accentGrad}`} />
 
                         <div>
                           {/* Photo Header */}
-                          <div className="h-44 relative overflow-hidden">
+                          <div className="h-32 md:h-44 relative overflow-hidden">
                             <CountryThumbnail
                               country={country}
                               hideLandmarkLabel
@@ -1670,11 +1832,11 @@ export const LandingPage: React.FC = () => {
                             />
 
                             {/* Top-left Rank & Continent / Fiber pill */}
-                            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+                            <div className="absolute top-2.5 md:top-3 left-2.5 md:left-3 flex flex-wrap items-center gap-1.5">
                               <span className="px-2 py-0.5 rounded-full bg-indigo-600/90 backdrop-blur-md text-white text-[10px] font-black shadow-xs">
                                 #{idx + 1}
                               </span>
-                              <span className="px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
+                              <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
                                 {continentLabel}
                               </span>
                               {currentPersona === 'nomad' && (
@@ -1686,7 +1848,7 @@ export const LandingPage: React.FC = () => {
                             </div>
 
                             {/* Top-right Match Score & Save Heart */}
-                            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                            <div className="absolute top-2.5 md:top-3 right-2.5 md:right-3 flex items-center gap-1.5">
                               <div
                                 className={`px-2.5 py-1 rounded-full backdrop-blur-md text-xs font-black flex items-center gap-1 shadow-md border ${
                                   matchScore >= 90
@@ -1717,7 +1879,7 @@ export const LandingPage: React.FC = () => {
                             </div>
 
                             {/* Bottom Country Flag & Name */}
-                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">
+                            <div className="absolute bottom-2.5 md:bottom-3 left-3 right-3 flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">
                                 <CountryFlag
                                   countryName={country.name}
@@ -1734,10 +1896,10 @@ export const LandingPage: React.FC = () => {
 
                           {/* Content details: Dynamic Retiree vs Digital Nomad View */}
                           {currentPersona === 'retiree' ? (
-                            <div className="p-4 space-y-3">
+                            <div className="p-3 md:p-4 space-y-2 md:space-y-3">
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div
-                                  className={`p-2.5 rounded-xl border ${
+                                  className={`p-2 md:p-2.5 rounded-xl border ${
                                     isUnderBudget
                                       ? 'bg-emerald-50/70 border-emerald-200/80'
                                       : 'bg-amber-50/70 border-amber-200/80'
@@ -1758,7 +1920,7 @@ export const LandingPage: React.FC = () => {
                                     ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
                                   </span>
                                 </div>
-                                <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/70">
+                                <div className="p-2 md:p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/70">
                                   <span className="text-indigo-700 font-semibold block text-[10px] uppercase tracking-wider">
                                     Travel &amp; Leisure
                                   </span>
@@ -1768,11 +1930,11 @@ export const LandingPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <p className="text-xs text-slate-600 line-clamp-1 leading-relaxed font-medium">
+                              <p className="hidden md:block text-xs text-slate-600 line-clamp-1 leading-relaxed font-medium">
                                 {country.tagline}
                               </p>
 
-                              <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2.5">
+                              <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2 md:pt-2.5">
                                 <div className="flex items-center justify-between gap-1.5 text-slate-700">
                                   <span className="inline-flex items-center gap-1">
                                     <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
@@ -1790,7 +1952,7 @@ export const LandingPage: React.FC = () => {
                                     </strong>
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-slate-700">
+                                <div className="hidden md:flex items-center gap-1.5 text-slate-700">
                                   <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                   <span className="truncate">
                                     <strong className="font-mono font-bold text-slate-900">
@@ -1814,10 +1976,10 @@ export const LandingPage: React.FC = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="p-4 space-y-3">
+                            <div className="p-3 md:p-4 space-y-2 md:space-y-3">
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div
-                                  className={`p-2.5 rounded-xl border ${
+                                  className={`p-2 md:p-2.5 rounded-xl border ${
                                     isUnderBudget
                                       ? 'bg-emerald-50/70 border-emerald-200/80'
                                       : 'bg-amber-50/70 border-amber-200/80'
@@ -1838,7 +2000,7 @@ export const LandingPage: React.FC = () => {
                                     ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo
                                   </span>
                                 </div>
-                                <div className="p-2.5 rounded-xl bg-teal-50/80 border border-teal-200/80">
+                                <div className="p-2 md:p-2.5 rounded-xl bg-teal-50/80 border border-teal-200/80">
                                   <span className="text-teal-800 font-semibold block text-[10px] uppercase tracking-wider truncate">
                                     {nomadPriority === 'coworking_cafe'
                                       ? 'Coworking Desk'
@@ -1856,13 +2018,13 @@ export const LandingPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <p className="text-xs text-slate-600 line-clamp-1 leading-relaxed font-medium" title={nomadProfile.topNomadCities.join(' · ')}>
+                              <p className="hidden md:block text-xs text-slate-600 line-clamp-1 leading-relaxed font-medium" title={nomadProfile.topNomadCities.join(' · ')}>
                                 <span className="font-bold text-slate-800">Hubs:</span>{' '}
                                 {nomadProfile.topNomadCities.slice(0, 2).join(' · ')}
                               </p>
 
-                              <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2.5">
-                                <div className="flex items-center justify-between gap-1.5 text-slate-700">
+                              <div className="text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-2 md:pt-2.5">
+                                <div className="hidden md:flex items-center justify-between gap-1.5 text-slate-700">
                                   <span className="inline-flex items-center gap-1 truncate">
                                     <Coffee className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                     <strong className="font-bold text-slate-900 truncate">
@@ -1916,7 +2078,7 @@ export const LandingPage: React.FC = () => {
                         </div>
 
                         {/* Card Footer with Compare & Dossier CTA */}
-                        <div className="p-4 pt-0 flex items-center gap-2">
+                        <div className="p-3 pt-0 md:p-4 md:pt-0 flex items-center gap-2">
                           <button
                             type="button"
                             onClick={e => {
@@ -1943,6 +2105,27 @@ export const LandingPage: React.FC = () => {
               </motion.div>
             )}
 
+            {/* Mobile-only Compact Show More / Explore All Bar (< md) */}
+            {displayedCountries.length > 4 && (
+              <div className="flex md:hidden items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setMobileShowMoreMatches(prev => !prev)}
+                  className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-white border border-indigo-200 text-indigo-900 text-xs font-extrabold shadow-2xs cursor-pointer"
+                >
+                  {mobileShowMoreMatches ? 'Show Fewer' : 'Show 4 More Havens'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAdvancedExplorer}
+                  className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-extrabold shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>All {countries.length} Havens</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
+                </button>
+              </div>
+            )}
+
             {/* Lighter Themed Matching Havens & Sign Up Conversion Portal */}
             {sortedMatchedCountries.length > 0 && (
               <motion.div
@@ -1950,17 +2133,17 @@ export const LandingPage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-indigo-50/50 to-teal-50/60 text-slate-900 p-6 sm:p-8 shadow-xl shadow-indigo-950/5 border border-indigo-200/90 mt-6"
+                className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-white via-indigo-50/50 to-teal-50/60 text-slate-900 p-5 md:p-8 shadow-xl shadow-indigo-950/5 border border-indigo-200/90 mt-4 md:mt-6"
               >
                 {/* Decorative Top Accent Ribbon & Ambient Glows */}
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
                 <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-teal-400/15 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-indigo-500/15 blur-3xl" />
 
-                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
-                  <div className="space-y-3.5 max-w-2xl">
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 lg:gap-8">
+                  <div className="space-y-2.5 md:space-y-3.5 max-w-2xl">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100/90 border border-indigo-200/90 text-indigo-950 text-xs font-bold shadow-2xs">
+                      <div className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100/90 border border-indigo-200/90 text-indigo-950 text-xs font-bold shadow-2xs">
                         <Layers className="w-3.5 h-3.5 text-indigo-600" />
                         <span>
                           {remainingCountriesCount > 0
@@ -1974,20 +2157,26 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                    <h3 className="text-lg md:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
                       Still Confused?{' '}
                       <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
                         Let Us Do the Hard Work for You.
                       </span>
                     </h3>
 
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                    {/* Concise Mobile Copy (< md) */}
+                    <p className="md:hidden text-xs text-slate-600 leading-relaxed">
+                      Sign up free in 30 seconds to rank all {countries.length} havens by your passport, budget &amp; visa eligibility.
+                    </p>
+
+                    {/* Desktop Copy (unchanged >= md) */}
+                    <p className="hidden md:block text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                       {currentPersona === 'nomad'
                         ? 'Planning your next remote work base or slow-travel circuit shouldn’t require dozens of messy spreadsheets. Create your free account in seconds and our Algorithmic Nomad & Haven Matcher will automatically rank destinations based on your passport, monthly burn, internet & coworking needs, and visa eligibility — completely 100% FREE.'
                         : 'Creating an international relocation plan shouldn’t require dozens of messy spreadsheets. Create your free account in seconds and our Algorithmic Retirement Haven Matcher will automatically find your ideal destinations based on your citizenship, personal financial status, and lifestyle preferences — completely 100% FREE. Or browse our complete directory with custom filters.'}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <div className="hidden md:flex flex-wrap items-center gap-2 pt-0.5">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-indigo-200/70 text-indigo-900 text-[11px] font-semibold shadow-2xs">
                         <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         {currentPersona === 'nomad' ? 'Turnkey Burn & Runway Fit' : 'Custom Financial Analysis'}
@@ -2004,7 +2193,7 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   {/* Actions Column with Signup CTA and Explore All Havens */}
-                  <div className="flex flex-col items-stretch lg:items-end gap-3 shrink-0 lg:min-w-[290px]">
+                  <div className="flex flex-col items-stretch lg:items-end gap-2.5 md:gap-3 shrink-0 lg:min-w-[290px]">
                     {(!isAuthenticated || currentUserId === 'guest') ? (
                       <>
                         <motion.button
@@ -2012,26 +2201,35 @@ export const LandingPage: React.FC = () => {
                           whileHover={{ scale: 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => openAuthModal('signup')}
-                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                          className="min-h-[46px] px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
                         >
                           <UserPlus className="w-4 h-4 text-slate-950" />
                           <span>Sign Up Free — Get Matched</span>
                           <ArrowRight className="w-4 h-4 text-slate-950" />
                         </motion.button>
 
+                        <button
+                          type="button"
+                          onClick={() => openAuthModal('login')}
+                          className="md:hidden min-h-[44px] px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-900 text-xs font-extrabold border border-indigo-200 shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <LogIn className="w-4 h-4 text-indigo-600" />
+                          <span>Already a Member? Log In</span>
+                        </button>
+
                         <motion.button
                           type="button"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleOpenAdvancedExplorer}
-                          className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-800"
+                          className="hidden md:flex px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer items-center justify-center gap-2 border border-slate-800"
                         >
                           <Compass className="w-4 h-4 text-teal-300" />
                           <span>Explore All {countries.length} Havens</span>
                           <ChevronRight className="w-4 h-4 text-slate-400" />
                         </motion.button>
 
-                        <div className="flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
+                        <div className="hidden md:flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
                           <span>Already a member?</span>
                           <button
                             type="button"
@@ -2074,7 +2272,7 @@ export const LandingPage: React.FC = () => {
                       </>
                     )}
 
-                    <span className="text-[11px] text-slate-500 text-center lg:text-right font-medium">
+                    <span className="hidden md:inline text-[11px] text-slate-500 text-center lg:text-right font-medium">
                       Auto-transfers your active filters ({previewContinent})
                     </span>
                   </div>
@@ -2090,52 +2288,54 @@ export const LandingPage: React.FC = () => {
       {/* 4. INTERACTIVE FIRE CALCULATOR SHOWCASE                         */}
       {/* ============================================================ */}
       <section id="fire-calculator" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
-        <div className="relative overflow-hidden p-6 sm:p-10 rounded-[2rem] bg-gradient-to-br from-amber-50/75 via-white to-emerald-50/75 border border-amber-200/80 shadow-xl shadow-amber-950/5">
+        <div className="relative overflow-hidden p-4 md:p-10 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-amber-50/75 via-white to-emerald-50/75 border border-amber-200/80 shadow-xl shadow-amber-950/5">
           {/* Decorative Multi-Color Top Ribbon & Ambient Orbs */}
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 via-50% to-emerald-500" />
           <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full bg-amber-400/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-emerald-400/15 blur-3xl" />
 
-          <div className="relative z-10 max-w-4xl mb-8 space-y-3">
+          <div className="relative z-10 max-w-4xl mb-5 md:mb-8 space-y-2.5 md:space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-bold shadow-xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-[11px] md:text-xs font-bold shadow-xs">
                 <Flame className="w-3.5 h-3.5 text-amber-100" />
                 <span>International Geo-Arbitrage Engine</span>
               </div>
-              <span className="text-xs font-bold text-slate-500">Dual-Persona Simulator</span>
+              <span className="hidden md:inline text-xs font-bold text-slate-500">Dual-Persona Simulator</span>
             </div>
 
             {/* Duo-Calculator Segmented Tab Switcher */}
             <div className="pt-1 flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex p-1 rounded-2xl bg-slate-900/10 border border-slate-300/80 backdrop-blur-md shadow-xs">
+              <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-slate-900/10 border border-slate-300/80 backdrop-blur-md shadow-xs">
                 <button
                   type="button"
                   onClick={() => setCalculatorTab('fire')}
-                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 md:gap-2 ${
                     calculatorTab === 'fire'
                       ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-md'
                       : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                   }`}
                 >
-                  <Flame className="w-4 h-4 text-amber-200" />
-                  <span>Tab 1: FIRE Target &amp; Nest Egg</span>
+                  <Flame className="w-4 h-4 text-amber-200 shrink-0" />
+                  <span className="md:hidden">FIRE Plan</span>
+                  <span className="hidden md:inline">Tab 1: FIRE Target &amp; Nest Egg</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setCalculatorTab('nomad')}
-                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 md:gap-2 ${
                     calculatorTab === 'nomad'
                       ? 'bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 text-white shadow-md'
                       : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                   }`}
                 >
-                  <Zap className="w-4 h-4 text-amber-300" />
-                  <span>Tab 2: Nomad Runway &amp; Burn</span>
+                  <Zap className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span className="md:hidden">Nomad Runway</span>
+                  <span className="hidden md:inline">Tab 2: Nomad Runway &amp; Burn</span>
                 </button>
               </div>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
               {calculatorTab === 'fire' ? (
                 <>
                   Calculate Your{' '}
@@ -2152,7 +2352,7 @@ export const LandingPage: React.FC = () => {
                 </>
               )}
             </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="hidden md:block text-sm text-slate-600 leading-relaxed">
               {calculatorTab === 'fire'
                 ? 'Living in an overseas haven with a high standard of living can reduce your required retirement portfolio by 40% to 65%, enabling you to retire a decade sooner.'
                 : 'Determine exactly how many months or years of global freedom your liquid savings buy across top digital nomad havens, factoring in turnkey rent, coworking, and remote client retainers.'}
@@ -2293,7 +2493,7 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-50/60 to-teal-50/60 border border-indigo-200/60 text-[11px] text-slate-600 leading-relaxed">
+              <div className="hidden md:block p-3.5 rounded-2xl bg-gradient-to-r from-indigo-50/60 to-teal-50/60 border border-indigo-200/60 text-[11px] text-slate-600 leading-relaxed">
                 <span className="font-bold text-indigo-950">How SWR works:</span> Nest Egg = Annual Spending ÷ SWR. A <span className="font-semibold text-slate-800">lower SWR</span> (e.g., 3.0%) means withdrawing a smaller slice of your portfolio each year for safety, which requires a <span className="font-semibold text-slate-800">larger nest egg ({swrMultiplier}x annual expenses)</span> and more years to save.
               </div>
 
@@ -2476,8 +2676,8 @@ export const LandingPage: React.FC = () => {
 
           </div>
 
-          {/* Global Haven FIRE Feasibility Matrix */}
-          <div className="mb-8">
+          {/* Global Haven FIRE Feasibility Matrix (Desktop Only to avoid mobile table bloat) */}
+          <div className="hidden md:block mb-8">
             <GlobalHavenFeasibilityWidget
               userProfile={{
                 ...userProfile,
@@ -2496,24 +2696,25 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Live Matching Retirement Havens for the User's FIRE Parameters + Signup CTA */}
-          <div className="relative z-10 mt-10 pt-8 border-t border-amber-200/70 space-y-6">
-            <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-teal-50/85 via-white to-indigo-50/85 border border-teal-200/80 shadow-md space-y-5">
+          <div className="relative z-10 mt-6 md:mt-10 pt-5 md:pt-8 border-t border-amber-200/70 space-y-5 md:space-y-6">
+            <div className="p-4 md:p-7 rounded-2xl md:rounded-3xl bg-gradient-to-br from-teal-50/85 via-white to-indigo-50/85 border border-teal-200/80 shadow-md space-y-4 md:space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider mb-2 shadow-2xs">
                     <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                     <span>Live FIRE-Ready Destination Matches</span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                    Top 4 Havens Matching Your ${targetMonthlyExpenseAbroad.toLocaleString()}/mo Target &amp; {safeWithdrawalRate.toFixed(1)}% SWR
+                  <h3 className="text-base md:text-xl font-extrabold text-slate-900 tracking-tight">
+                    <span className="md:hidden">Top 2</span>
+                    <span className="hidden md:inline">Top 4</span> Havens Matching Your ${targetMonthlyExpenseAbroad.toLocaleString()}/mo Target &amp; {safeWithdrawalRate.toFixed(1)}% SWR
                   </h3>
                 </div>
-                <span className="text-xs font-bold text-indigo-900 bg-white px-3.5 py-1.5 rounded-xl border border-indigo-200/80 shadow-2xs self-start sm:self-auto">
+                <span className="hidden md:inline-block text-xs font-bold text-indigo-900 bg-white px-3.5 py-1.5 rounded-xl border border-indigo-200/80 shadow-2xs self-start sm:self-auto">
                   Ranked by budget fit, healthcare, safety &amp; portfolio readiness
                 </span>
               </div>
 
-              {/* 4 Matching Countries Grid */}
+              {/* 4 Matching Countries Grid (2 on Mobile, 4 on Desktop) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {fireMatchedCountries.map(({
                   country,
@@ -2536,7 +2737,7 @@ export const LandingPage: React.FC = () => {
                       whileHover={{ y: -5 }}
                       transition={{ type: 'spring', stiffness: 320, damping: 26 }}
                       onClick={() => navigateToCountry(country.id)}
-                      className="group rounded-2xl bg-white border border-indigo-100 hover:border-indigo-300 transition-shadow cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-indigo-950/10"
+                      className={`${idx >= 2 ? 'hidden md:flex' : 'flex'} group rounded-2xl bg-white border border-indigo-100 hover:border-indigo-300 transition-shadow cursor-pointer flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-indigo-950/10`}
                     >
                       <div className={`h-1.5 w-full bg-gradient-to-r ${topBarColors[idx % topBarColors.length]}`} />
 
@@ -2746,8 +2947,8 @@ export const LandingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Info Explainer Banner */}
-                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/60 to-indigo-50/60 border border-teal-200/60 text-[11px] text-slate-600 leading-relaxed space-y-1">
+                  {/* Info Explainer Banner (Desktop Only) */}
+                  <div className="hidden md:block p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/60 to-indigo-50/60 border border-teal-200/60 text-[11px] text-slate-600 leading-relaxed space-y-1">
                     <div className="font-bold text-teal-950 flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5 text-teal-600" />
                       <span>The Nomad Runway Formula:</span>
@@ -2917,8 +3118,8 @@ export const LandingPage: React.FC = () => {
 
               </div>
 
-              {/* Digital Nomad Runway & Haven Sustainability Matrix */}
-              <div className="mb-8">
+              {/* Digital Nomad Runway & Haven Sustainability Matrix (Desktop Only) */}
+              <div className="hidden md:block mb-8">
                 <NomadHavenRunwayWidget
                   userProfile={{
                     ...userProfile,
@@ -2934,24 +3135,25 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Live Matching Nomad & Remote Destinations */}
-              <div className="relative z-10 mt-10 pt-8 border-t border-teal-200/70 space-y-6">
-                <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-indigo-50/85 via-white to-teal-50/85 border border-teal-200/80 shadow-md space-y-5">
+              <div className="relative z-10 mt-6 md:mt-10 pt-5 md:pt-8 border-t border-teal-200/70 space-y-5 md:space-y-6">
+                <div className="p-4 md:p-7 rounded-2xl md:rounded-3xl bg-gradient-to-br from-indigo-50/85 via-white to-teal-50/85 border border-teal-200/80 shadow-md space-y-4 md:space-y-5">
                   <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 text-white text-[11px] font-bold uppercase tracking-wider mb-2 shadow-2xs">
                         <Zap className="w-3.5 h-3.5 text-amber-300" />
                         <span>Live Nomad-Ready Destination Matches</span>
                       </div>
-                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                        Top 4 Hubs Matching Your ${nomadMonthlyBurn.toLocaleString()}/mo Turnkey Living Burn
+                      <h3 className="text-base md:text-xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="md:hidden">Top 2</span>
+                        <span className="hidden md:inline">Top 4</span> Hubs Matching Your ${nomadMonthlyBurn.toLocaleString()}/mo Turnkey Living Burn
                       </h3>
                     </div>
-                    <span className="text-xs font-bold text-teal-900 bg-white px-3.5 py-1.5 rounded-xl border border-teal-200/80 shadow-2xs self-start sm:self-auto">
+                    <span className="hidden md:inline-block text-xs font-bold text-teal-900 bg-white px-3.5 py-1.5 rounded-xl border border-teal-200/80 shadow-2xs self-start sm:self-auto">
                       Ranked by verified fiber speed, coworking density &amp; visa terms
                     </span>
                   </div>
 
-                  {/* 4 Matching Nomad Countries Grid */}
+                  {/* 4 Matching Nomad Countries Grid (2 on Mobile, 4 on Desktop) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {nomadMatchedCountries.map(({ country, nomadProfile }, idx) => {
                       const topBarColors = [
@@ -2967,7 +3169,7 @@ export const LandingPage: React.FC = () => {
                           whileHover={{ y: -5 }}
                           transition={{ type: 'spring', stiffness: 320, damping: 26 }}
                           onClick={() => navigateToCountry(country.id)}
-                          className="group rounded-2xl bg-white border border-teal-100 hover:border-teal-300 transition-shadow cursor-pointer flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-teal-950/10"
+                          className={`${idx >= 2 ? 'hidden md:flex' : 'flex'} group rounded-2xl bg-white border border-teal-100 hover:border-teal-300 transition-shadow cursor-pointer flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-teal-950/10`}
                         >
                           <div className={`h-1.5 w-full bg-gradient-to-r ${topBarColors[idx % topBarColors.length]}`} />
 
@@ -3050,15 +3252,15 @@ export const LandingPage: React.FC = () => {
           )}
 
             {/* Lighter Themed Freedom Countdown & Advanced FIRE Conversion Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-amber-50/50 to-orange-50/60 text-slate-900 p-6 sm:p-8 shadow-xl shadow-amber-950/5 border border-amber-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
+            <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-white via-amber-50/50 to-orange-50/60 text-slate-900 p-5 md:p-8 shadow-xl shadow-amber-950/5 border border-amber-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 lg:gap-8 mt-5 md:mt-6">
               {/* Decorative Top Accent Ribbon & Ambient Glows */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 via-50% to-emerald-500" />
               <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-amber-400/15 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl" />
 
-              <div className="relative z-10 space-y-3.5 max-w-2xl">
+              <div className="relative z-10 space-y-2.5 md:space-y-3.5 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/90 border border-amber-300/80 text-amber-950 text-xs font-bold shadow-2xs">
+                  <div className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/90 border border-amber-300/80 text-amber-950 text-xs font-bold shadow-2xs">
                     <Flame className="w-3.5 h-3.5 text-orange-600 animate-pulse" />
                     <span>Turn Your Numbers Into a Freedom Countdown</span>
                   </div>
@@ -3068,18 +3270,24 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
 
-                <h4 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                <h4 className="text-lg md:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
                   Don&rsquo;t Just Guess Your Retirement Date—
                   <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 bg-clip-text text-transparent">
                     Lock In Your Exact Overseas Freedom Blueprint.
                   </span>
                 </h4>
 
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                {/* Concise Mobile Copy (< md) */}
+                <p className="md:hidden text-xs text-slate-600 leading-relaxed">
+                  Save your FIRE numbers free and track your exact countdown across {countries.length} havens in your local currency.
+                </p>
+
+                {/* Desktop Copy (unchanged >= md) */}
+                <p className="hidden md:block text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                   Still wondering how many years or months away you truly are from financial independence? Sign up free to save your portfolio numbers and let our algorithmic engine model your live FIRE trajectory across all {countries.length} destinations. We calculate your exact safe withdrawal rate, multi-asset portfolio runway, and inflation impact in your local currency — completely FREE.
                 </p>
 
-                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <div className="hidden md:flex flex-wrap items-center gap-2 pt-0.5">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/95 border border-amber-200/70 text-amber-950 text-[11px] font-semibold shadow-2xs">
                     <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                     Multi-Asset Runway Modeling
@@ -3096,7 +3304,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Actions Column with Signup CTA and Explore All Havens */}
-              <div className="relative z-10 flex flex-col items-stretch lg:items-end gap-3 shrink-0 lg:min-w-[290px]">
+              <div className="relative z-10 flex flex-col items-stretch lg:items-end gap-2.5 md:gap-3 shrink-0 lg:min-w-[290px]">
                 {(!isAuthenticated || currentUserId === 'guest') ? (
                   <>
                     <motion.button
@@ -3104,26 +3312,35 @@ export const LandingPage: React.FC = () => {
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => openAuthModal('signup')}
-                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      className="min-h-[46px] px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-orange-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
                       <UserPlus className="w-4 h-4 text-slate-950" />
                       <span>Sign Up Free — Track Your FIRE</span>
                       <ArrowRight className="w-4 h-4 text-slate-950" />
                     </motion.button>
 
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('login')}
+                      className="md:hidden min-h-[44px] px-5 py-2.5 rounded-2xl bg-white hover:bg-amber-50 text-slate-900 text-xs font-extrabold border border-amber-200 shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <LogIn className="w-4 h-4 text-orange-600" />
+                      <span>Already a Member? Log In</span>
+                    </button>
+
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleOpenAdvancedExplorer}
-                      className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer flex items-center justify-center gap-2 border border-slate-800"
+                      className="hidden md:flex px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs sm:text-sm font-bold shadow-md shadow-slate-950/10 transition-all cursor-pointer items-center justify-center gap-2 border border-slate-800"
                     >
                       <Compass className="w-4 h-4 text-teal-300" />
                       <span>Explore All {countries.length} Havens</span>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
                     </motion.button>
 
-                    <div className="flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
+                    <div className="hidden md:flex items-center justify-center lg:justify-end gap-1.5 text-[11px] text-slate-500 font-medium">
                       <span>Already a member?</span>
                       <button
                         type="button"
@@ -3164,7 +3381,7 @@ export const LandingPage: React.FC = () => {
                   </>
                 )}
 
-                <span className="text-[11px] text-slate-500 text-center lg:text-right font-medium">
+                <span className="hidden md:inline text-[11px] text-slate-500 text-center lg:text-right font-medium">
                   Instant portfolio simulation · 100% Free
                 </span>
               </div>
@@ -3176,21 +3393,21 @@ export const LandingPage: React.FC = () => {
       {/* ============================================================ */}
       {/* 6. REAL EXPAT VOICES & SOCIAL PROOF                            */}
       {/* ============================================================ */}
-      <section className="bg-gradient-to-b from-indigo-50/40 via-white to-teal-50/40 border-y border-indigo-100/80 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <section className="bg-gradient-to-b from-indigo-50/40 via-white to-teal-50/40 border-y border-indigo-100/80 py-8 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 md:space-y-10">
           
-          <div className="text-center max-w-2xl mx-auto space-y-2.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-xs font-extrabold text-amber-800 uppercase tracking-widest">
+          <div className="text-center max-w-2xl mx-auto space-y-2 md:space-y-2.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-[11px] md:text-xs font-extrabold text-amber-800 uppercase tracking-widest">
               <Users className="w-3.5 h-3.5 text-amber-600" />
               <span>Boots on the Ground</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
               Hear from{' '}
               <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
                 Expats Who Already Made the Leap
               </span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600">
+            <p className="hidden md:block text-xs sm:text-sm text-slate-600">
               Honest reflections from early retirees living comfortably abroad.
             </p>
           </div>
@@ -3199,7 +3416,7 @@ export const LandingPage: React.FC = () => {
             <motion.div
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="relative overflow-hidden p-6 rounded-3xl bg-white border border-amber-200/80 shadow-sm hover:shadow-xl hover:shadow-amber-950/5 space-y-4"
+              className="relative overflow-hidden p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-amber-200/80 shadow-sm hover:shadow-xl hover:shadow-amber-950/5 space-y-3 md:space-y-4"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
               <div className="flex items-center gap-3">
@@ -3224,7 +3441,7 @@ export const LandingPage: React.FC = () => {
             <motion.div
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="relative overflow-hidden p-6 rounded-3xl bg-white border border-emerald-200/80 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 space-y-4"
+              className="hidden md:block relative overflow-hidden p-6 rounded-3xl bg-white border border-emerald-200/80 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 space-y-4"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
               <div className="flex items-center gap-3">
@@ -3249,7 +3466,7 @@ export const LandingPage: React.FC = () => {
             <motion.div
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="relative overflow-hidden p-6 rounded-3xl bg-white border border-indigo-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-950/5 space-y-4"
+              className="hidden md:block relative overflow-hidden p-6 rounded-3xl bg-white border border-indigo-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-950/5 space-y-4"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
               <div className="flex items-center gap-3">
@@ -3279,19 +3496,19 @@ export const LandingPage: React.FC = () => {
       {/* 7. HIGH-CONVERSION PORTAL SIGN-UP CALL TO ACTION               */}
       {/* ============================================================ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-12 lg:p-16 rounded-[2rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white shadow-2xl relative overflow-hidden border border-indigo-500/30">
+        <div className="p-6 md:p-12 lg:p-16 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white shadow-2xl relative overflow-hidden border border-indigo-500/30">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-indigo-400 to-teal-400" />
           {/* Ambient glow circles */}
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -mb-12 -ml-12 w-80 h-80 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 text-amber-300 text-xs font-bold backdrop-blur-md">
+          <div className="relative z-10 max-w-3xl space-y-4 md:space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-white/15 border border-white/20 text-amber-300 text-[11px] md:text-xs font-bold backdrop-blur-md">
               <Compass className="w-3.5 h-3.5 text-amber-400" />
               <span>Free Membership · Zero Spam</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+            <h2 className="text-2xl md:text-5xl font-black tracking-tight leading-tight">
               Ready to Turn Your{' '}
               <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-teal-300 bg-clip-text text-transparent">
                 Overseas Dream
@@ -3299,17 +3516,21 @@ export const LandingPage: React.FC = () => {
               into an Actionable Blueprint?
             </h2>
 
-            <p className="text-base sm:text-lg text-indigo-100/90 font-medium leading-relaxed">
+            <p className="md:hidden text-xs text-indigo-100/90 font-medium leading-relaxed">
+              Save haven shortlists, download PDF dossiers, and plan your FIRE timeline free.
+            </p>
+
+            <p className="hidden md:block text-base sm:text-lg text-indigo-100/90 font-medium leading-relaxed">
               Create your account to save customized haven shortlists, export printable PDF dossiers, simulate multi-currency portfolios, and connect with fellow retirees in local meetups.
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center gap-4">
+            <div className="pt-1 md:pt-2 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 md:gap-4">
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => openAuthModal('signup')}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 transition-all flex items-center gap-2.5 cursor-pointer"
+                className="w-full md:w-auto min-h-[48px] px-6 md:px-8 py-3.5 md:py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 <UserPlus className="w-5 h-5 text-slate-950" />
                 <span>Create Free Member Account</span>
@@ -3321,7 +3542,7 @@ export const LandingPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => openAuthModal('login')}
-                  className="px-6 py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-sm sm:text-base border border-white/25 backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+                  className="w-full md:w-auto min-h-[46px] px-6 py-3.5 md:py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-sm sm:text-base border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogIn className="w-5 h-5" />
                   <span>Existing Member Sign In</span>
@@ -3329,8 +3550,8 @@ export const LandingPage: React.FC = () => {
               )}
             </div>
 
-            {/* Checklist of Member Features */}
-            <div className="pt-6 border-t border-white/15 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-indigo-100 font-medium">
+            {/* Checklist of Member Features (Desktop Only) */}
+            <div className="hidden md:grid pt-6 border-t border-white/15 grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-indigo-100 font-medium">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{countries.length} Country PDF Dossier Downloads</span>
@@ -3352,6 +3573,38 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Mobile-Only Sleek Thumb-Zone Sticky Sign-Up / Log-In Bar for Guests (< md) */}
+      {isGuestUser && !mobileStickyDismissed && (
+        <div className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur-xl border-t border-indigo-200/90 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openAuthModal('signup')}
+              className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4 shrink-0" />
+              <span>Sign Up Free</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openAuthModal('login')}
+              className="min-h-[42px] px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <LogIn className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span>Log In</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileStickyDismissed(true)}
+              aria-label="Dismiss sign-up bar"
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

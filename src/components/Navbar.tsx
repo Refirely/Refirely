@@ -164,7 +164,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               }
               handleNav('messages');
             }}
-            className={`relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer ${
+            className={`${!isAuthenticated ? 'hidden sm:inline-flex' : 'inline-flex'} relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer ${
               currentView === 'messages' ? 'bg-orange-50 text-orange-800' : ''
             }`}
             title={
@@ -189,7 +189,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
           {!canAccessAdmin && (
             <button
               onClick={() => handleNav('dashboard')}
-              className="relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer"
+              className={`${!isAuthenticated ? 'hidden sm:inline-flex' : 'inline-flex'} relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer`}
               title="My Saved Havens & Tracker"
             >
               <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -361,22 +361,41 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               )}
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-2">
-              <button
-                onClick={() => openAuthModal('login')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Log In</span>
-              </button>
-              <button
-                onClick={() => openAuthModal('signup')}
-                className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Sign Up</span>
-              </button>
-            </div>
+            <>
+              {/* Mobile-only prominent Log In & Sign Up buttons (< sm) */}
+              <div className="flex sm:hidden items-center gap-1.5">
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="px-2.5 py-2 min-h-[36px] text-[11px] font-bold rounded-lg text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1 shadow-2xs cursor-pointer whitespace-nowrap"
+                >
+                  <span>Log In</span>
+                </button>
+                <button
+                  onClick={() => openAuthModal('signup')}
+                  className="px-2.5 py-2 min-h-[36px] text-[11px] font-extrabold rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
+                >
+                  <span>Sign Up</span>
+                </button>
+              </div>
+
+              {/* Desktop / Tablet Log In & Sign Up buttons (unchanged >= sm) */}
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Log In</span>
+                </button>
+                <button
+                  onClick={() => openAuthModal('signup')}
+                  className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Sign Up</span>
+                </button>
+              </div>
+            </>
           )}
 
           {/* Mobile hamburger - styled with border and background for clear mobile visibility */}

@@ -9,7 +9,8 @@ import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import {
   Search, SlidersHorizontal, Compass, RotateCcw,
   Sun, Shield, DollarSign, Scale, ArrowRight, Map, X,
-  Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp, ChevronRight
+  Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp, ChevronRight,
+  UserPlus, LogIn
 } from 'lucide-react';
 
 export const DirectoryExplorer: React.FC = () => {
@@ -36,26 +37,44 @@ export const DirectoryExplorer: React.FC = () => {
     setCurrentView,
     currentPersona,
     setCurrentPersona,
+    isAuthenticated,
+    currentUserId,
+    openAuthModal,
   } = useApp();
 
   const [showMap, setShowMap] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Progressive 24-country pagination
+  // Progressive 24-country pagination on desktop (6 on mobile < md)
   const PAGE_SIZE = 24;
+  const MOBILE_PAGE_SIZE = 6;
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  const [mobileVisibleCount, setMobileVisibleCount] = useState<number>(MOBILE_PAGE_SIZE);
 
-  // Reset pagination to 24 whenever active filters or search change
+  // Reset pagination whenever active filters or search change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
+    setMobileVisibleCount(MOBILE_PAGE_SIZE);
   }, [searchQuery, selectedRegion, budgetMax, selectedClimate, visaDifficultyMax, visaIncomeMax, sortBy]);
 
-  const displayedCountries = filteredCountries.slice(0, visibleCount);
+  const effectiveSliceCount = Math.max(visibleCount, mobileVisibleCount);
+  const displayedCountries = filteredCountries.slice(0, effectiveSliceCount);
   const hasMore = visibleCount < filteredCountries.length;
   const remainingCount = Math.max(0, filteredCountries.length - visibleCount);
   const nextBatchCount = Math.min(PAGE_SIZE, remainingCount);
 
+  const mobileShownCount = Math.min(mobileVisibleCount, filteredCountries.length);
+  const mobileHasMore = mobileVisibleCount < filteredCountries.length;
+  const mobileRemainingCount = Math.max(0, filteredCountries.length - mobileVisibleCount);
+  const mobileNextBatchCount = Math.min(MOBILE_PAGE_SIZE, mobileRemainingCount);
+  const isGuestUser = !isAuthenticated || currentUserId === 'guest';
+
   const handleLoadMore = () => {
     setVisibleCount(prev => prev + PAGE_SIZE);
+  };
+
+  const handleMobileLoadMore = () => {
+    setMobileVisibleCount(prev => prev + MOBILE_PAGE_SIZE);
   };
 
   const regions = [
@@ -181,10 +200,10 @@ export const DirectoryExplorer: React.FC = () => {
     visaIncomeMax < 3500;
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-5 md:space-y-10 pb-20">
       
       {/* Unified Factual Global Relocation Intelligence & Multi-Color Filter Console */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50/75 via-indigo-50/45 to-amber-50/65 pt-8 pb-12 border-b border-slate-200/80">
+      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50/75 via-indigo-50/45 to-amber-50/65 pt-5 pb-6 md:pt-8 md:pb-12 border-b border-slate-200/80">
         {/* Animated Ambient Multi-Colored Glow Orbs */}
         <motion.div
           animate={{ x: [0, 25, 0], y: [0, -15, 0], scale: [1, 1.06, 1] }}
@@ -202,22 +221,22 @@ export const DirectoryExplorer: React.FC = () => {
           className="absolute -bottom-24 left-1/3 w-96 h-96 bg-amber-300/20 rounded-full blur-3xl pointer-events-none"
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-4 md:space-y-6">
           
           {/* Unified Header Row */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="flex flex-col lg:flex-row lg:items-end justify-between gap-6"
+            className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 md:gap-6"
           >
-            <div className="space-y-2.5 max-w-3xl">
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-teal-800">
+            <div className="space-y-1.5 md:space-y-2.5 max-w-3xl">
+              <div className="inline-flex items-center gap-2 text-[11px] md:text-xs font-bold uppercase tracking-widest text-teal-800">
                 <Compass className="w-4 h-4 text-teal-600 animate-spin" style={{ animationDuration: '18s' }} />
                 <span>Factual Global Relocation Intelligence</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                 {currentPersona === 'retiree' ? (
                   <>
                     Choose the Right Country to Retire with{' '}
@@ -237,15 +256,15 @@ export const DirectoryExplorer: React.FC = () => {
                 )}
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+              <p className="hidden md:block text-sm sm:text-base text-slate-600 leading-relaxed">
                 {currentPersona === 'retiree'
                   ? `Search, filter, and compare visa pathways, real couple budgets, climate zones, healthcare standards, and community life across ${countries.length} verified havens in one unified console.`
                   : `Explore turnkey coliving and furnished rentals, verified high-speed fiber internet, vibrant coworking spaces, and Digital Nomad Visas (DNV) across ${countries.length} global destinations.`}
               </p>
             </div>
 
-            {/* Multi-Colored Live Intelligence Highlights */}
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
+            {/* Multi-Colored Live Intelligence Highlights (Desktop Only) */}
+            <div className="hidden md:grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
               <motion.div
                 whileHover={{ y: -2 }}
                 className="px-3.5 py-2.5 rounded-2xl bg-white/90 backdrop-blur-md border border-teal-200/80 shadow-xs"
@@ -297,23 +316,23 @@ export const DirectoryExplorer: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.08, ease: 'easeOut' }}
-            className="relative overflow-hidden bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 p-5 sm:p-7 space-y-6"
+            className="relative overflow-hidden bg-white/95 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 p-3.5 md:p-7 space-y-3.5 md:space-y-6"
           >
             {/* Top Multi-Colored Gradient Accent Ribbon */}
             <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500" />
             
             {/* Filter Console Header: Active Persona Lens Toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 pb-2.5 md:pb-3 border-b border-slate-100">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span className="hidden md:flex text-xs font-black uppercase tracking-wider text-slate-700 items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
                   Explore Lens:
                 </span>
-                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/90 shadow-2xs">
+                <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/90 shadow-2xs">
                   <button
                     type="button"
                     onClick={() => setCurrentPersona('retiree')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 md:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       currentPersona === 'retiree'
                         ? 'bg-white text-emerald-950 font-black shadow-xs border border-emerald-200/80'
                         : 'text-slate-600 hover:text-slate-900'
@@ -324,17 +343,18 @@ export const DirectoryExplorer: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentPersona('nomad')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 md:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       currentPersona === 'nomad'
                         ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <span>⚡ Digital Nomad / Creator</span>
+                    <span className="md:hidden">⚡ Digital Nomad</span>
+                    <span className="hidden md:inline">⚡ Digital Nomad / Creator</span>
                   </button>
                 </div>
               </div>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="hidden md:inline text-[11px] font-semibold text-slate-500">
                 {currentPersona === 'retiree'
                   ? 'Showing couple lease baseline & retirement visas'
                   : 'Showing 1-mo turnkey burn, verified fiber speeds & remote visas'}
@@ -342,8 +362,8 @@ export const DirectoryExplorer: React.FC = () => {
             </div>
 
             {/* Zone 1: Single Unified Search Bar + Action Buttons + Popular Multi-Color Chips */}
-            <div className="space-y-3">
-              <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            <div className="space-y-2.5 md:space-y-3">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 md:gap-3">
                 {/* Single Unified Search Box */}
                 <div className="relative flex-1 group">
                   <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 text-white flex items-center justify-center absolute left-2.5 top-1/2 -translate-y-1/2 shadow-xs pointer-events-none">
@@ -352,10 +372,10 @@ export const DirectoryExplorer: React.FC = () => {
                   <input
                     type="text"
                     aria-label="Search destinations by country name, climate type, or visa keyword"
-                    placeholder="Search by country, capital, climate (Mediterranean, Tropical), or visa keyword (D7, Pensionado, 0% tax)..."
+                    placeholder="Search country, climate, or visa (D7, 0% tax)..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-24 py-3.5 bg-slate-50/90 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 text-xs sm:text-sm font-medium rounded-2xl border border-slate-200/90 focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-2xs"
+                    className="w-full pl-12 pr-20 md:pr-24 py-2.5 md:py-3.5 bg-slate-50/90 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 text-xs sm:text-sm font-medium rounded-xl md:rounded-2xl border border-slate-200/90 focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-2xs"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     {searchQuery && (
@@ -374,8 +394,23 @@ export const DirectoryExplorer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right Action Bar: Compare & Interactive Spatial Atlas Toggle */}
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {/* Mobile-only Compact Filter Toggle Row (< md) */}
+                <div className="flex md:hidden items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(prev => !prev)}
+                    className="min-h-[38px] px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>{mobileFiltersOpen ? 'Hide Filters' : 'Filters & Sort'}</span>
+                  </button>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {filteredCountries.length} of {countries.length} havens
+                  </span>
+                </div>
+
+                {/* Right Action Bar: Compare & Interactive Spatial Atlas Toggle (Desktop / Expanded Mobile) */}
+                <div className={`${mobileFiltersOpen ? 'flex' : 'hidden'} md:flex flex-wrap items-center gap-2.5 shrink-0`}>
                   {comparedCountryIds.length >= 2 && (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -573,6 +608,8 @@ export const DirectoryExplorer: React.FC = () => {
               )}
             </div>
 
+            {/* Collapsible Filter Stack on Mobile (< md); Always Visible on Desktop (>= md) */}
+            <div className={`${mobileFiltersOpen ? 'block' : 'hidden'} md:block space-y-5 md:space-y-6`}>
             {/* Hairline Divider */}
             <div className="border-t border-slate-200/80" />
 
@@ -830,6 +867,7 @@ export const DirectoryExplorer: React.FC = () => {
                 </span>
               </div>
             </div>
+            </div>
 
           </motion.div>
 
@@ -837,8 +875,41 @@ export const DirectoryExplorer: React.FC = () => {
       </section>
 
       {/* Main Directory Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 md:space-y-6">
         
+        {/* Mobile-Only Prominent Quick Sign-Up / Log-In Banner for Guests (< md) */}
+        {isGuestUser && (
+          <div className="md:hidden relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-white via-indigo-50/70 to-amber-50/60 border border-indigo-200/90 shadow-sm space-y-2.5">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-orange-500 via-indigo-500 to-teal-500" />
+            <div>
+              <p className="text-sm font-extrabold text-slate-900 leading-snug">
+                Want Personalized Matches Instead of Scrolling?
+              </p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Sign up free in 30s to save shortlists &amp; rank havens by your passport &amp; budget.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => openAuthModal('signup')}
+                className="min-h-[42px] px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Sign Up Free</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openAuthModal('login')}
+                className="min-h-[42px] px-3 py-2 rounded-xl bg-white text-slate-800 font-bold text-xs border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Log In</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Interactive Spatial Map Component (Animated Expand/Collapse) */}
         <AnimatePresence>
           {showMap && (
@@ -853,13 +924,13 @@ export const DirectoryExplorer: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Quiet visual teaser card when spatial map is hidden */}
+        {/* Quiet visual teaser card when spatial map is hidden (Desktop Only) */}
         {!showMap && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -2 }}
-            className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/85 border border-teal-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm"
+            className="hidden md:flex relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-50/90 via-indigo-50/70 to-amber-50/85 border border-teal-200/80 flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm"
           >
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500" />
             <div className="flex items-center gap-3.5">
@@ -911,37 +982,77 @@ export const DirectoryExplorer: React.FC = () => {
               </button>
             </motion.div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               <motion.div
                 layout
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
               >
                 <AnimatePresence mode="popLayout">
-                  {displayedCountries.map((country, idx) => (
-                    <CountryCard key={country.id} country={country} index={idx} />
-                  ))}
+                  {displayedCountries.map((country, idx) => {
+                    const showOnMobile = idx < mobileVisibleCount;
+                    const showOnDesktop = idx < visibleCount;
+                    const visibilityClass =
+                      showOnMobile && showOnDesktop
+                        ? 'block'
+                        : showOnMobile && !showOnDesktop
+                        ? 'block md:hidden'
+                        : !showOnMobile && showOnDesktop
+                        ? 'hidden md:block'
+                        : 'hidden';
+                    return (
+                      <div key={country.id} className={visibilityClass}>
+                        <CountryCard country={country} index={idx} />
+                      </div>
+                    );
+                  })}
                 </AnimatePresence>
               </motion.div>
 
               {/* Progressive Pagination Controls & Catchy Haven Matcher Signup Section */}
-              <div className="space-y-8 pt-4">
+              <div className="space-y-6 md:space-y-8 pt-2 md:pt-4">
                 
-                {/* 24 More Havens Action Toolbar */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Mobile-only 6-Card Pagination Toolbar (< md) */}
+                <div className="flex md:hidden p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="font-extrabold text-slate-900">
+                      Showing {mobileShownCount} of {filteredCountries.length} havens
+                    </span>
+                    <button
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="p-2 rounded-xl border border-slate-200 text-slate-600 cursor-pointer"
+                      title="Back to Top"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {mobileHasMore && (
+                    <button
+                      type="button"
+                      onClick={handleMobileLoadMore}
+                      className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-700 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                      <span>Load {mobileNextBatchCount} More Havens ({mobileRemainingCount} left)</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Desktop 24 More Havens Action Toolbar (unchanged >= md) */}
+                <div className="hidden md:flex p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
                     <span className="font-extrabold text-slate-900">
-                      Showing {displayedCountries.length} of {filteredCountries.length} havens
+                      Showing {Math.min(visibleCount, filteredCountries.length)} of {filteredCountries.length} havens
                     </span>
                     <div className="w-28 sm:w-40 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                       <div
                         className="h-full bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500 transition-all duration-300 rounded-full"
                         style={{
-                          width: `${Math.min(100, Math.round((displayedCountries.length / filteredCountries.length) * 100))}%`,
+                          width: `${Math.min(100, Math.round((Math.min(visibleCount, filteredCountries.length) / filteredCountries.length) * 100))}%`,
                         }}
                       />
                     </div>
                     <span className="text-slate-400 font-mono text-[11px]">
-                      ({Math.round((displayedCountries.length / filteredCountries.length) * 100)}% visible)
+                      ({Math.round((Math.min(visibleCount, filteredCountries.length) / filteredCountries.length) * 100)}% visible)
                     </span>
                   </div>
 

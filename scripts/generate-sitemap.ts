@@ -35,10 +35,34 @@ export function generateSitemapXml(todayDate: string): string {
       priority: '0.9',
     },
     {
+      loc: `${SITE_ORIGIN}/?view=compare`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: '0.9',
+    },
+    {
+      loc: `${SITE_ORIGIN}/?view=dashboard`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: '0.9',
+    },
+    {
       loc: `${SITE_ORIGIN}/?view=scout`,
       lastmod: todayDate,
       changefreq: 'weekly',
       priority: '0.9',
+    },
+    {
+      loc: `${SITE_ORIGIN}/?view=expats`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: '0.85',
+    },
+    {
+      loc: `${SITE_ORIGIN}/?view=meetups`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: '0.85',
     },
   ];
 
