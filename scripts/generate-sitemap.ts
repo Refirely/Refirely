@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { INITIAL_COUNTRIES } from '../src/data/countries';
+import { PUBLIC_SITE_ORIGIN, FEATURED_VISA_CORRIDORS } from '../src/data/seoRoutes';
 
-const SITE_ORIGIN = 'https://refirely.com';
+const SITE_ORIGIN = PUBLIC_SITE_ORIGIN;
 
 function escapeXml(unsafe: string): string {
   return unsafe
@@ -22,66 +23,35 @@ interface SitemapEntry {
 
 export function generateSitemapXml(todayDate: string): string {
   const entries: SitemapEntry[] = [
-    {
-      loc: `${SITE_ORIGIN}/`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '1.0',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=explore`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=compare`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=dashboard`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=scout`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=visa-check`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.95',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=expats`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.85',
-    },
-    {
-      loc: `${SITE_ORIGIN}/?view=meetups`,
-      lastmod: todayDate,
-      changefreq: 'weekly',
-      priority: '0.85',
-    },
+    { loc: `${SITE_ORIGIN}/`, lastmod: todayDate, changefreq: 'weekly', priority: '1.0' },
+    { loc: `${SITE_ORIGIN}/visa-check`, lastmod: todayDate, changefreq: 'weekly', priority: '0.95' },
+    { loc: `${SITE_ORIGIN}/explore`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${SITE_ORIGIN}/compare`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${SITE_ORIGIN}/dashboard`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${SITE_ORIGIN}/scout`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${SITE_ORIGIN}/expats`, lastmod: todayDate, changefreq: 'weekly', priority: '0.85' },
+    { loc: `${SITE_ORIGIN}/meetups`, lastmod: todayDate, changefreq: 'weekly', priority: '0.85' },
   ];
 
-  // Loop through all 209 countries in the Refirely dataset
+  // Clean pre-rendered Global Visa Check corridor URLs
+  for (const corridor of FEATURED_VISA_CORRIDORS) {
+    entries.push({
+      loc: `${SITE_ORIGIN}/visa-check/${encodeURIComponent(corridor.slug)}`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: corridor.priority,
+    });
+  }
+
+  // All 209 pre-rendered country dossier URLs
   const seenIds = new Set<string>();
   for (const country of INITIAL_COUNTRIES) {
     const id = country.id.trim();
     if (!id || seenIds.has(id)) continue;
     seenIds.add(id);
 
-    const encodedId = encodeURIComponent(id);
     entries.push({
-      loc: `${SITE_ORIGIN}/?country=${encodedId}`,
+      loc: `${SITE_ORIGIN}/country/${encodeURIComponent(id)}`,
       lastmod: todayDate,
       changefreq: 'monthly',
       priority: '0.8',
@@ -115,4 +85,6 @@ const rootSitemapPath = path.resolve(process.cwd(), 'sitemap.xml');
 fs.writeFileSync(publicSitemapPath, xml, 'utf8');
 fs.writeFileSync(rootSitemapPath, xml, 'utf8');
 
-console.log(`Generated sitemap.xml with ${INITIAL_COUNTRIES.length} countries and 3 primary views (lastmod: ${today}).`);
+console.log(
+  `Generated sitemap.xml with 8 primary views, ${FEATURED_VISA_CORRIDORS.length} Visa Check corridors, and ${INITIAL_COUNTRIES.length} country dossiers (lastmod: ${today}).`
+);

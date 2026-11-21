@@ -1,6 +1,6 @@
 {
   "name": "ReFirely - Where Your Freedom Goes Further",
-  "description": "Compare 209 countries for early retirement (FIRE) & digital nomads. Calculate 4% FIRE nest eggs, monthly cash burn, DNV & D7 visas, rent, healthcare & taxes.",
+  "description": "Compare 209 countries for FIRE retirement & digital nomads, check global visa rules by passport type & US/Schengen visas, plan Scout & Hop trips & meet expats.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

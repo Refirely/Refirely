@@ -29,6 +29,10 @@ import {
   VisaRequirementStatus,
   VisaWorldCountry,
 } from '../types/visaCheck';
+import {
+  findFeaturedVisaCorridorBySlug,
+  findMatchingFeaturedVisaSlug,
+} from '../data/seoRoutes';
 import { PUBLIC_SITE_ORIGIN, updateVisaCheckRouteSeo } from '../utils/seo';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import {
@@ -457,19 +461,28 @@ type ExplorerFilterTab =
 export const VisaCheckPage: React.FC = () => {
   const { navigateToCountry, userProfile } = useApp();
 
-  // Resolve initial state from URL query params (for SEO / shared deep links) or user profile
+  // Resolve initial state from clean /visa-check/<slug> paths, URL query params, or user profile
   const initialSelection = useMemo(() => {
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const matchedSlugCorridor =
+      pathSegments[0]?.toLowerCase() === 'visa-check' && pathSegments[1]
+        ? findFeaturedVisaCorridorBySlug(pathSegments[1])
+        : undefined;
+
     const params =
       typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const urlFrom = params?.get('from')?.trim().toUpperCase();
-    const urlTo = params?.get('to')?.trim().toUpperCase();
-    const urlPassport = params?.get('passport')?.trim();
+    const urlFrom = params?.get('from')?.trim().toUpperCase() || matchedSlugCorridor?.originCode;
+    const urlTo = params?.get('to')?.trim().toUpperCase() || matchedSlugCorridor?.destinationCode;
+    const urlPassport = params?.get('passport')?.trim() || matchedSlugCorridor?.passportTypeId;
     const urlPurpose = params?.get('purpose')?.trim() as TravelPurpose | undefined;
-    const urlVisas = params
+    const queryVisas = params
       ?.get('visas')
       ?.split(',')
       .map(s => s.trim())
       .filter(Boolean) as HeldVisaId[] | undefined;
+    const urlVisas: HeldVisaId[] | undefined =
+      queryVisas && queryVisas.length > 0 ? queryVisas : matchedSlugCorridor?.heldVisas;
 
     // Infer origin from user profile if available, else India/US default
     let defaultOrigin = 'IN';
@@ -511,7 +524,7 @@ export const VisaCheckPage: React.FC = () => {
       passportTypeId: defaultPassportId,
       purpose: defaultPurpose,
       heldVisas: defaultVisas,
-      fromDeepLink: Boolean(urlFrom && urlTo),
+      fromDeepLink: Boolean(matchedSlugCorridor || (urlFrom && urlTo)),
     };
   }, [userProfile.originCountry, userProfile.targetCountry]);
 
@@ -533,6 +546,8 @@ export const VisaCheckPage: React.FC = () => {
     purpose: initialSelection.purpose,
     heldVisas: initialSelection.heldVisas,
   });
+  // Only override hub /?view=visa-check canonical SEO when deep-linked to a specific route or after user actively checks a route
+  const [hasRouteSelection, setHasRouteSelection] = useState<boolean>(initialSelection.fromDeepLink);
 
   // Global Access Explorer filters
   const [explorerTab, setExplorerTab] = useState<ExplorerFilterTab>('accessible');
@@ -679,8 +694,9 @@ export const VisaCheckPage: React.FC = () => {
     });
   }, [globalAccessList, explorerTab, explorerRegion, explorerSearch]);
 
-  // Update SEO metadata whenever a route check is submitted
+  // Update SEO metadata whenever a deep-linked or actively submitted route check is shown
   useEffect(() => {
+    if (!hasRouteSelection) return;
     const heldLabels = verdict.heldVisas
       .map(id => HELD_VISA_OPTIONS.find(v => v.id === id)?.shortLabel)
       .filter((v): v is string => Boolean(v));
@@ -691,22 +707,49 @@ export const VisaCheckPage: React.FC = () => {
       destinationName: verdict.destination.name,
       destinationCode: verdict.destination.code,
       passportLabel: verdict.passportType.label,
+      passportTypeId: verdict.passportType.id,
+      isDefaultPassport: verdict.passportType.category === 'ordinary',
       statusHeadline: verdict.headline,
       heldVisasLabels: heldLabels,
+      heldVisasIds: verdict.heldVisas,
+      totalAccessibleCountries: mobilityStats.totalAccessibleNoEmbassy,
+      visaFreeCountries: mobilityStats.visaFreeTotal,
     });
-  }, [verdict]);
+  }, [verdict, hasRouteSelection, mobilityStats.totalAccessibleNoEmbassy, mobilityStats.visaFreeTotal]);
+
+  const buildCleanVisaRoutePath = (next: typeof submittedInput): string => {
+    const passports = getPassportTypesForCountry(next.originCode);
+    const selectedPassport = passports.find(p => p.id === next.passportTypeId) || passports[0];
+    const isDefaultPassport = selectedPassport.category === 'ordinary';
+    const matchedSlug =
+      next.purpose === 'tourism'
+        ? findMatchingFeaturedVisaSlug({
+            originCode: next.originCode,
+            destinationCode: next.destinationCode,
+            passportTypeId: next.passportTypeId,
+            isDefaultPassport,
+            heldVisas: next.heldVisas,
+          })
+        : undefined;
+
+    if (matchedSlug) {
+      return `/visa-check/${matchedSlug}`;
+    }
+
+    const params = new URLSearchParams();
+    params.set('from', next.originCode);
+    params.set('to', next.destinationCode);
+    if (!isDefaultPassport) params.set('passport', next.passportTypeId);
+    if (next.purpose !== 'tourism') params.set('purpose', next.purpose);
+    if (next.heldVisas.length > 0) params.set('visas', next.heldVisas.join(','));
+    return `/visa-check?${params.toString()}`;
+  };
 
   const syncBrowserQueryParams = (next: typeof submittedInput) => {
     if (typeof window === 'undefined') return;
-    const params = new URLSearchParams();
-    params.set('view', 'visa-check');
-    params.set('from', next.originCode);
-    params.set('to', next.destinationCode);
-    params.set('passport', next.passportTypeId);
-    if (next.purpose !== 'tourism') params.set('purpose', next.purpose);
-    if (next.heldVisas.length > 0) params.set('visas', next.heldVisas.join(','));
+    const cleanPath = buildCleanVisaRoutePath(next);
     try {
-      window.history.replaceState({ view: 'visa-check' }, '', `/?${params.toString()}`);
+      window.history.replaceState({ view: 'visa-check' }, '', cleanPath);
     } catch {
       // Ignore if restricted in iframe
     }
@@ -721,6 +764,7 @@ export const VisaCheckPage: React.FC = () => {
       purpose,
       heldVisas,
     };
+    setHasRouteSelection(true);
     setSubmittedInput(nextInput);
     setVisibleCount(36);
     syncBrowserQueryParams(nextInput);
@@ -756,6 +800,7 @@ export const VisaCheckPage: React.FC = () => {
       purpose: scenario.purpose,
       heldVisas: scenario.heldVisas,
     };
+    setHasRouteSelection(true);
     setSubmittedInput(nextInput);
     setVisibleCount(36);
     syncBrowserQueryParams(nextInput);
@@ -784,6 +829,7 @@ export const VisaCheckPage: React.FC = () => {
       purpose: 'tourism' as TravelPurpose,
       heldVisas: [] as HeldVisaId[],
     };
+    setHasRouteSelection(true);
     setSubmittedInput(nextInput);
     syncBrowserQueryParams(nextInput);
   };
@@ -794,20 +840,15 @@ export const VisaCheckPage: React.FC = () => {
       ...submittedInput,
       destinationCode: dest.code,
     };
+    setHasRouteSelection(true);
     setSubmittedInput(nextInput);
     syncBrowserQueryParams(nextInput);
     verdictRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleCopyShareUrl = () => {
-    const params = new URLSearchParams();
-    params.set('view', 'visa-check');
-    params.set('from', submittedInput.originCode);
-    params.set('to', submittedInput.destinationCode);
-    params.set('passport', submittedInput.passportTypeId);
-    if (submittedInput.purpose !== 'tourism') params.set('purpose', submittedInput.purpose);
-    if (submittedInput.heldVisas.length > 0) params.set('visas', submittedInput.heldVisas.join(','));
-    const fullUrl = `${PUBLIC_SITE_ORIGIN}/?${params.toString()}`;
+    const cleanPath = buildCleanVisaRoutePath(submittedInput);
+    const fullUrl = `${PUBLIC_SITE_ORIGIN}${cleanPath}`;
     navigator.clipboard?.writeText(fullUrl).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2200);

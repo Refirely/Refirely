@@ -170,7 +170,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
       <div className="bg-white/90 backdrop-blur-md border-b border-indigo-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
           <a
-            href="/?view=explore"
+            href="/explore"
             onClick={e => {
               if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
                 e.preventDefault();
@@ -186,7 +186,7 @@ export const CountryDossier: React.FC<CountryDossierProps> = ({ country }) => {
           {/* Clean unboxed breadcrumbs */}
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
             <a
-              href="/?view=explore"
+              href="/explore"
               onClick={e => {
                 if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
                   e.preventDefault();

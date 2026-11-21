@@ -379,11 +379,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (window.location.search === '?signup=success' && currentView === 'landing') {
       return;
     }
-    // Preserve deep-linked Visa Check route parameters (e.g. /?view=visa-check&from=IN&to=PT)
+    // Preserve deep-linked Visa Check route parameters (e.g. /visa-check/in-to-pt or /visa-check?from=IN&to=PT)
     if (
       currentView === 'visa-check' &&
-      (window.location.search.includes('view=visa-check') || window.location.pathname === '/visa-check') &&
-      (window.location.search.includes('from=') || window.location.search.includes('to='))
+      (window.location.pathname.startsWith('/visa-check/') ||
+        ((window.location.search.includes('view=visa-check') || window.location.pathname === '/visa-check') &&
+          (window.location.search.includes('from=') || window.location.search.includes('to='))))
     ) {
       return;
     }

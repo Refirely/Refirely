@@ -1,11 +1,37 @@
 {
   "name": "ReFirely - Where Your Freedom Goes Further",
   "short_name": "ReFirely",
-  "description": "Data-driven geoarbitrage platform for early retirees (FIRE) and digital nomads: compare 209 global havens by monthly cash burn, runway, remote & DNV visas, fiber internet, housing rents, food, healthcare, and taxes.",
+  "description": "Compare 209 countries for FIRE retirement & digital nomads, check global visa rules by passport type & US/Schengen visas, plan Scout & Hop trips & meet expats.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",
+  "shortcuts": [
+    {
+      "name": "Global Visa Check",
+      "short_name": "Visa Check",
+      "description": "Check visa rules by nationality, passport class & US/Schengen visas",
+      "url": "/visa-check"
+    },
+    {
+      "name": "Explore 209 Havens",
+      "short_name": "Explore",
+      "description": "Compare retirement & digital nomad countries worldwide",
+      "url": "/explore"
+    },
+    {
+      "name": "FIRE & Nomad Calculator",
+      "short_name": "FIRE Calc",
+      "description": "Simulate 4% SWR FIRE nest eggs & nomad cash runway",
+      "url": "/dashboard"
+    },
+    {
+      "name": "Scout & Hop Planner",
+      "short_name": "Scout & Hop",
+      "description": "Build multi-stop scouting itineraries & track Schengen 90/180 days",
+      "url": "/scout"
+    }
+  ],
   "icons": [
     {
       "src": "/favicon.svg",

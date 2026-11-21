@@ -75,10 +75,14 @@ export function trackPageView(
 
   const pagePath =
     view === 'country-detail' && selectedCountry
-      ? `/?country=${encodeURIComponent(selectedCountry.id)}`
+      ? `/country/${encodeURIComponent(selectedCountry.id)}`
       : view === 'landing'
       ? '/'
-      : `/?view=${encodeURIComponent(view)}`;
+      : view === 'visa-check' && typeof window !== 'undefined' && window.location.pathname.startsWith('/visa-check')
+      ? `${window.location.pathname}${window.location.search}`
+      : view === 'community'
+      ? '/expats'
+      : `/${encodeURIComponent(view)}`;
 
   const pageTitle = document.title;
 
