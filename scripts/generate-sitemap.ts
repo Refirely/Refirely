@@ -53,6 +53,12 @@ export function generateSitemapXml(todayDate: string): string {
       priority: '0.9',
     },
     {
+      loc: `${SITE_ORIGIN}/?view=visa-check`,
+      lastmod: todayDate,
+      changefreq: 'weekly',
+      priority: '0.95',
+    },
+    {
       loc: `${SITE_ORIGIN}/?view=expats`,
       lastmod: todayDate,
       changefreq: 'weekly',

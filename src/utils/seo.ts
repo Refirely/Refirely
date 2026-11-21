@@ -16,6 +16,7 @@ const VALID_VIEWS: AppView[] = [
   'country-detail',
   'compare',
   'scout',
+  'visa-check',
   'community',
   'meetups',
   'messages',
@@ -108,10 +109,10 @@ export function parseUrlToRoute(countries: Country[]): { view: AppView; countryI
     return { view: viewParam };
   }
 
-  // 4. Check clean path /explore, /compare, /expats, /community, /meetups, /dashboard, /messages, /admin
+  // 4. Check clean path /explore, /compare, /visa-check, /expats, /community, /meetups, /dashboard, /messages, /admin
   if (pathSegments.length === 1) {
     const rawSeg = pathSegments[0];
-    const seg = (rawSeg === 'expats' ? 'community' : rawSeg) as AppView;
+    const seg = (rawSeg === 'expats' ? 'community' : rawSeg === 'visa' ? 'visa-check' : rawSeg) as AppView;
     if (VALID_VIEWS.includes(seg)) {
       return { view: seg };
     }
@@ -358,6 +359,82 @@ function updateStructuredDataJsonLd(
     };
 
     scriptEl.textContent = JSON.stringify(jsonLd);
+  } else if (currentView === 'visa-check') {
+    const visaCheckUrl = `${origin}/?view=visa-check`;
+    const visaJsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'ReFirely Home',
+              item: `${origin}/`,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Global Visa Checker & Passport Mobility Explorer',
+              item: visaCheckUrl,
+            },
+          ],
+        },
+        {
+          '@type': 'WebApplication',
+          name: 'ReFirely Global Visa Checker & Bilateral Passport Mobility Tool',
+          url: visaCheckUrl,
+          applicationCategory: 'TravelApplication',
+          operatingSystem: 'All',
+          description:
+            'Check visa requirements for 205+ countries by nationality, country-specific passport type (Ordinary, Official, Diplomatic, Special), bilateral visa waiver agreements, and valid U.S., Schengen, UK, Canada, Japan, or GCC visas.',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+          },
+        },
+        {
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'Which countries can I visit visa-free with a valid U.S. B1/B2 or Schengen visa?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'A valid multiple-entry U.S. visa (B1/B2, H1B, F1, or Green Card) or Schengen visa unlocks visa-free, Visa on Arrival, or fast e-Visa entry to over 35 destinations—including Mexico (up to 180 days), Costa Rica (US/Canada visa), Panama, Dominican Republic, Serbia, Montenegro, Albania, Bosnia & Herzegovina, Georgia (90 days), Cyprus (multi-entry Schengen), UAE 14-day VoA (for Indian citizens), Philippines 14-day visa-free (for Indian citizens), Saudi Arabia VoA/e-Visa (with used visa), and Türkiye e-Visa.',
+              },
+            },
+            {
+              '@type': 'Question',
+              name: 'Do diplomatic and official passport holders have different visa-free countries?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Yes. Many nations sign Bilateral Visa Waiver Agreements (BVWA) specifically for Diplomatic, Official, Service, or Special passports. For example, India’s Ministry of External Affairs maintains bilateral agreements granting visa-free access to 95+ countries for Official (White) passport holders and 130+ countries for Diplomatic (Maroon) passport holders, while Türkiye’s Special (Green) passport provides Schengen visa-free access.',
+              },
+            },
+            {
+              '@type': 'Question',
+              name: 'What other third-country visas unlock visa-free travel besides U.S. and Schengen visas?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Valid visas or residence permits from the United Kingdom (unlocks Ireland BIVS/SSVWP, Mexico, Balkans, UAE VoA for Indians, Saudi VoA, Georgia), Canada (Mexico, Costa Rica, Panama, Dominican Republic, Peru, Georgia), Japan and Australia/New Zealand (Mexico, Panama, Philippines, Taiwan TAC, Singapore 96h VFTF), GCC Residence Permits (Georgia, Oman, Bahrain, Saudi Arabia, Azerbaijan), and the APEC Business Travel Card (19 Asia-Pacific economies) all provide valuable exemptions.',
+              },
+            },
+            {
+              '@type': 'Question',
+              name: 'Where should I verify the latest official visa rules before flying?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Always verify final entry requirements, transit visa rules, and bilateral agreement applicability directly on the destination country’s official Ministry of Foreign Affairs, Immigration Department, or Embassy website prior to booking flights.',
+              },
+            },
+          ],
+        },
+      ],
+    };
+    scriptEl.textContent = JSON.stringify(visaJsonLd);
   } else if (allCountries && allCountries.length > 0) {
     // Inject ItemList of all countries so web crawlers discover every dedicated country URL with both Retiree & Nomad metrics
     const itemListJsonLd = {
@@ -442,6 +519,13 @@ export function updatePageSeo(
     description =
       'Test-drive countries before taking the leap. Map multi-stop scout trips, monitor Schengen 90/180-day allowances, calculate monthly living burn, and organize local relocation tasks.';
     canonicalUrl = `${origin}/?view=scout`;
+  } else if (currentView === 'visa-check') {
+    title = 'Global Visa Check 2026: Passport Types, US/Schengen Exemptions & Bilateral Agreements | ReFirely';
+    description =
+      'Check instant visa requirements for 205+ countries by nationality, passport type (Ordinary, Official, Diplomatic, Special), bilateral agreements, and U.S., Schengen, UK, or Canada visas.';
+    keywords =
+      'visa checker by nationality 2026, do I need a visa, visa free countries with US B1 B2 visa, visa free countries with Schengen visa, Indian diplomatic official passport visa free countries, MEA bilateral visa waiver agreements, Turkey green passport visa free countries, UK visa Ireland exemption, passport mobility checker, official embassy visa portal, digital nomad visa checker, ReFirely visa check';
+    canonicalUrl = `${origin}/?view=visa-check`;
   } else if (currentView === 'dashboard') {
     title = 'Global FIRE Nest Egg & Digital Nomad Runway Burn Calculator | ReFirely';
     description =
@@ -577,12 +661,46 @@ export function updatePublicProfileSeo(memberAccount: { id: string; username?: s
   scriptEl.textContent = JSON.stringify(profileJsonLd);
 }
 
+export function updateVisaCheckRouteSeo(params: {
+  originName: string;
+  originCode: string;
+  destinationName: string;
+  destinationCode: string;
+  passportLabel: string;
+  statusHeadline: string;
+  heldVisasLabels: string[];
+}) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const origin = PUBLIC_SITE_ORIGIN;
+  const routeUrl = `${origin}/?view=visa-check&from=${encodeURIComponent(params.originCode)}&to=${encodeURIComponent(params.destinationCode)}`;
+  const visaSuffix =
+    params.heldVisasLabels.length > 0 ? ` with ${params.heldVisasLabels.join(' & ')}` : '';
+  const title = `Do ${params.originName} Passport Holders Need a Visa for ${params.destinationName}${visaSuffix}? | ReFirely`;
+  const description = `${params.statusHeadline}. Check official ${params.destinationName} visa requirements for ${params.originName} (${params.passportLabel})${visaSuffix}, bilateral agreements & official government links.`;
+
+  document.title = title;
+  setMetaTag('name', 'title', title);
+  setMetaTag('name', 'description', description);
+  setMetaTag('property', 'og:title', title);
+  setMetaTag('property', 'og:description', description);
+  setMetaTag('property', 'og:url', routeUrl);
+  setMetaTag('name', 'twitter:title', title);
+  setMetaTag('name', 'twitter:description', description);
+  setMetaTag('name', 'twitter:url', routeUrl);
+
+  let canonicalEl = document.getElementById('canonical-link') as HTMLLinkElement | null;
+  if (canonicalEl) {
+    canonicalEl.href = routeUrl;
+  }
+}
+
 const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {
   landing: ['#14b8a6', '#6366f1', '#d946ef', '#f59e0b'],
   explore: ['#10b981', '#06b6d4', '#6366f1', '#f97316'],
   'country-detail': ['#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6'],
   compare: ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'],
   scout: ['#14b8a6', '#6366f1', '#f59e0b', '#10b981'],
+  'visa-check': ['#0d9488', '#4f46e5', '#f59e0b', '#10b981'],
   community: ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b'],
   meetups: ['#f97316', '#ec4899', '#6366f1', '#10b981'],
   messages: ['#06b6d4', '#6366f1', '#d946ef', '#f43f5e'],

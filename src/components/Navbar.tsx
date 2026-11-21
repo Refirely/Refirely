@@ -73,11 +73,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
     { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
     { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
-    { view: 'scout', label: 'Scout & Hop', isActive: currentView === 'scout', badge: '✨ New' },
+    { view: 'scout', label: 'Scout & Hop', isActive: currentView === 'scout' },
+    { view: 'visa-check', label: 'Visa Check', isActive: currentView === 'visa-check', badge: 'New' },
     { view: 'community', label: 'Expats', isActive: currentView === 'community' },
     { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
     ...(!canAccessAdmin
-      ? [{ view: 'dashboard' as typeof currentView, label: 'My Dashboard', isActive: currentView === 'dashboard' }]
+      ? [{ view: 'dashboard' as typeof currentView, label: 'Dashboard', isActive: currentView === 'dashboard' }]
       : []),
   ];
 
@@ -539,13 +540,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             </button>
             <button
               onClick={() => handleNav('scout')}
-              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between ${
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
                 currentView === 'scout' ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              <span>Scout &amp; Hop Planner</span>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-50 via-violet-50 to-teal-50 text-indigo-700 border border-indigo-200/80">
-                ✨ New
+              Scout &amp; Hop Planner
+            </button>
+            <button
+              onClick={() => handleNav('visa-check')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between ${
+                currentView === 'visa-check' ? 'bg-teal-50 text-teal-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <span>Visa Check &amp; Mobility</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80">
+                New
               </span>
             </button>
             <button
