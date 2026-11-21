@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { CountryThumbnail } from './CountryThumbnail';
 import { CountryFlag } from './CountryFlag';
@@ -15,12 +15,18 @@ import {
   ShieldCheck, Sun, Globe, Users, CheckCircle2,
   SlidersHorizontal, ChevronRight,
   LogIn, UserPlus, RotateCcw, Wallet, HeartPulse, Plane, Layers,
-  Zap, Wifi, Laptop, Coffee, FileBadge, Search, X
+  Zap, Wifi, Laptop, Coffee, FileBadge, Search, X, Stamp, Calendar
 } from 'lucide-react';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
 import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { DEFAULT_FINANCIAL_PORTFOLIO } from '../data/userAccounts';
+import type { AppView } from '../context/AppContext';
+import {
+  HeroVisualShowcase,
+  RelocationEcosystemShowcase,
+  PortalBlueprintInfographic,
+} from './LandingInfographics';
 
 export type NomadMatchPriority =
   | 'high_speed_internet'
@@ -49,6 +55,7 @@ export const LandingPage: React.FC = () => {
     currentPersona,
     setCurrentPersona,
     openShareFireCardModal,
+    openBadgeModal,
     userProfile,
   } = useApp();
 
@@ -540,221 +547,263 @@ export const LandingPage: React.FC = () => {
     }
   };
 
+  const handleNavigateView = (view: AppView) => {
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="space-y-8 md:space-y-24 pb-28 md:pb-20 overflow-x-hidden">
+    <MotionConfig reducedMotion="user">
+    <div className="space-y-8 md:space-y-20 pb-28 md:pb-20 overflow-x-clip bg-gradient-to-b from-sky-50/40 via-white to-teal-50/35">
 
       {/* ============================================================ */}
-      {/* 1. CINEMATIC HERO SECTION                                      */}
+      {/* 1. SUNLIT HIGH-CONTRAST LIGHT HERO SECTION                    */}
       {/* ============================================================ */}
-      <section className="relative min-h-0 md:min-h-[580px] lg:min-h-[640px] flex items-center bg-slate-950 text-white overflow-hidden border-b border-indigo-950">
-        {/* Background Visual: Iconic Nature & Touristic Alpine Emerald Lake Panorama */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2200&q=85"
-            alt="Iconic mountain valley, sunlit lake, and nature haven panorama"
-            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.60] contrast-[1.08]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-indigo-950/65 to-slate-950/25" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/45" />
-          {/* Ambient Multi-Color Glow Orbs */}
-          <div className="pointer-events-none absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-teal-500/15 blur-3xl" />
-        </div>
+      <section className="relative overflow-hidden bg-gradient-to-br from-sky-50/95 via-indigo-50/85 to-teal-50/90 text-slate-950 border-b border-indigo-200/75">
+        {/* Soft Sunlit Pastel Ambient Glow Orbs */}
+        <div className="pointer-events-none absolute -top-28 left-1/4 w-[28rem] h-[28rem] rounded-full bg-indigo-300/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 right-1/4 w-[26rem] h-[26rem] rounded-full bg-teal-300/25 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/3 -left-24 w-72 h-72 rounded-full bg-amber-200/30 blur-3xl" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-3xl space-y-4 md:space-y-6"
-          >
-            {/* Trust badge kicker */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-orange-500/25 via-indigo-500/25 to-teal-500/25 border border-amber-400/35 text-amber-200 text-[11px] md:text-xs font-bold backdrop-blur-md shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>{countries.length} Verified Global Havens · Updated for 2026</span>
-            </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 md:py-16 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+            {/* Left Column: Editorial Headline, Primary CTAs (incl. Visa Check), Persona Mode & Proof Metrics */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:col-span-7 flex flex-col justify-between space-y-4 md:space-y-5"
+            >
+              <div className="space-y-3.5 md:space-y-5">
+                {/* Clean Unboxed Kicker Metadata */}
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-indigo-800">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>{countries.length} Verified Global Havens</span>
+                  <span aria-hidden="true" className="text-indigo-300">·</span>
+                  <span className="text-teal-700">155+ Official Visa Links</span>
+                  <span aria-hidden="true" className="hidden sm:inline text-indigo-300">·</span>
+                  <span className="hidden sm:inline text-slate-600">Updated for 2026</span>
+                </div>
 
-            {/* Impactful Dual-Persona Headline */}
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
-              Live Better,{' '}
-              <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-teal-300 bg-clip-text text-transparent">
-                Work Anywhere
-              </span>
-              , Retire Years Earlier.
-            </h1>
+                {/* Impactful Dual-Persona Headline */}
+                <h1 className="text-3xl md:text-5xl lg:text-[3.35rem] font-black tracking-tight leading-[1.1] text-slate-950 text-balance">
+                  Live Better,{' '}
+                  <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                    Work Anywhere
+                  </span>
+                  , Retire Years Earlier.
+                </h1>
 
-            {/* Mobile concise subheading (< md) */}
-            <p className="md:hidden text-sm text-slate-200/90 font-normal leading-snug">
-              Match your budget across {countries.length} havens, unlock visa roadmaps &amp; plan your FIRE timeline free.
-            </p>
+                {/* Mobile concise subheading (< md) */}
+                <p className="md:hidden text-sm text-slate-700 font-medium leading-snug">
+                  Match your budget across {countries.length} havens, check global visa rules &amp; plan your FIRE timeline free.
+                </p>
 
-            {/* Desktop Subheading (unchanged >= md) */}
-            <p className="hidden md:block text-base sm:text-lg text-slate-200/90 font-normal leading-relaxed max-w-2xl">
-              The data-driven geoarbitrage platform. Whether you are mapping your long-term FIRE destination or funding slow travel and remote work across top global havens.
-            </p>
+                {/* Desktop Subheading (>= md) */}
+                <p className="hidden md:block text-base sm:text-lg text-slate-700 font-normal leading-relaxed max-w-2xl">
+                  The data-driven geoarbitrage &amp; relocation platform. Match your ideal haven, verify passport visa requirements with official treaties, model your FIRE runway, and connect with expats worldwide.
+                </p>
 
-            {/* Mobile-Only Above-The-Fold Auth & Quick Explore CTAs (< md) */}
-            <div className="md:hidden pt-1 space-y-2.5">
-              {isGuestUser ? (
-                <>
-                  <button
+                {/* Mobile-Only Above-The-Fold Auth & Quick Explore CTAs (< md) */}
+                <div className="md:hidden pt-1 space-y-2.5">
+                  {isGuestUser ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal('signup')}
+                        className="w-full min-h-[48px] px-5 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 active:scale-[0.98] text-slate-950 font-black text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <UserPlus className="w-4 h-4 text-slate-950" />
+                        <span>Sign Up Free — Get Matched</span>
+                        <ArrowRight className="w-4 h-4 text-slate-950" />
+                      </button>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openAuthModal('login')}
+                          className="min-h-[44px] px-2.5 py-2.5 rounded-xl bg-white hover:bg-indigo-50 text-slate-900 font-bold text-xs border border-indigo-200/90 shadow-2xs transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                        >
+                          <LogIn className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Log In</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateView('visa-check')}
+                          className="min-h-[44px] px-2.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                        >
+                          <Stamp className="w-3.5 h-3.5 text-teal-100 shrink-0" />
+                          <span>Visa Check</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollToSection('haven-matcher')}
+                          className="min-h-[44px] px-2.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-200 transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Matches</span>
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-600 font-medium text-center">
+                        100% Free forever · No card required · Ready in 30s
+                      </p>
+                    </>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection('haven-matcher')}
+                        className="min-h-[44px] px-2.5 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-sm flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                        <span>Matches</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigateView('visa-check')}
+                        className="min-h-[44px] px-2.5 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                      >
+                        <Stamp className="w-3.5 h-3.5 text-teal-100 shrink-0" />
+                        <span>Visa Check</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection('fire-calculator')}
+                        className="min-h-[44px] px-2.5 py-3 rounded-xl bg-white text-slate-900 font-bold text-xs border border-indigo-200 shadow-2xs flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                        <span>FIRE Sim</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Primary Action Buttons (including Visa Check >= md) */}
+                <div className="hidden md:flex pt-1 flex-wrap items-center gap-3">
+                  <motion.button
                     type="button"
-                    onClick={() => openAuthModal('signup')}
-                    className="w-full min-h-[48px] px-5 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 active:scale-[0.98] text-slate-950 font-black text-sm shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => scrollToSection('haven-matcher')}
+                    className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
                   >
-                    <UserPlus className="w-4 h-4 text-slate-950" />
-                    <span>Sign Up Free — Get Matched</span>
-                    <ArrowRight className="w-4 h-4 text-slate-950" />
-                  </button>
-                  <div className="grid grid-cols-2 gap-2.5">
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span>Interactive Match Engine ({countries.length} Havens)</span>
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleNavigateView('visa-check')}
+                    className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-sm shadow-md shadow-teal-500/20 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                  >
+                    <Stamp className="w-4 h-4 text-teal-100" />
+                    <span>Global Visa Check</span>
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => scrollToSection('fire-calculator')}
+                    className="px-5 py-3.5 rounded-2xl bg-white/95 hover:bg-amber-50 text-slate-900 font-bold text-sm border border-amber-300/90 shadow-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                  >
+                    <Flame className="w-4 h-4 text-orange-500" />
+                    <span>Simulate FIRE Geo-Arbitrage</span>
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleOpenAdvancedExplorer}
+                    className="px-5 py-3.5 rounded-2xl bg-white/90 hover:bg-indigo-50 text-indigo-950 font-bold text-sm border border-indigo-200/90 shadow-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                  >
+                    <Globe className="w-4 h-4 text-teal-600" />
+                    <span>Explore Havens</span>
+                  </motion.button>
+                </div>
+
+                {/* Segmented Persona Toggle Directly Below CTA Buttons */}
+                <div className="pt-1 md:pt-2 flex flex-wrap items-center gap-3">
+                  <span className="hidden md:inline text-xs font-bold text-slate-600">
+                    Select Mode:
+                  </span>
+                  <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-white/90 border border-indigo-200/90 shadow-sm">
                     <button
                       type="button"
-                      onClick={() => openAuthModal('login')}
-                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={() => setCurrentPersona('retiree')}
+                      className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        currentPersona === 'retiree'
+                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-teal-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-950'
+                      }`}
                     >
-                      <LogIn className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Log In</span>
+                      <span className="md:hidden">🌿 Early Retiree</span>
+                      <span className="hidden md:inline">🌿 Plan Early Retirement</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => scrollToSection('haven-matcher')}
-                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-900/75 hover:bg-indigo-800/80 text-white font-bold text-xs border border-indigo-400/30 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={() => setCurrentPersona('nomad')}
+                      className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        currentPersona === 'nomad'
+                          ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-950'
+                      }`}
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-                      <span>Top Matches</span>
+                      <span className="md:hidden">⚡ Digital Nomad</span>
+                      <span className="hidden md:inline">⚡ Nomad &amp; Slow Travel</span>
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-300/90 font-medium text-center">
-                    100% Free forever · No card required · Ready in 30s
-                  </p>
-                </>
-              ) : (
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection('haven-matcher')}
-                    className="min-h-[44px] px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Match Engine</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection('fire-calculator')}
-                    className="min-h-[44px] px-4 py-3 rounded-xl bg-indigo-900/80 text-white font-bold text-xs border border-indigo-400/30 flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Flame className="w-3.5 h-3.5 text-amber-400" />
-                    <span>FIRE Simulator</span>
-                  </button>
                 </div>
-              )}
-            </div>
-
-            {/* Desktop Primary Action Buttons (unchanged >= md) */}
-            <div className="hidden md:flex pt-2 flex-wrap items-center gap-3.5">
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => scrollToSection('haven-matcher')}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-slate-950 font-black text-sm sm:text-base shadow-lg shadow-orange-500/30 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                <span>Interactive Match Engine ({countries.length} Havens)</span>
-                <ArrowRight className="w-4 h-4 text-slate-950" />
-              </motion.button>
-
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => scrollToSection('fire-calculator')}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-900/80 to-teal-900/80 hover:from-indigo-800 hover:to-teal-800 text-white font-bold text-sm sm:text-base border border-indigo-400/30 backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <Flame className="w-4 h-4 text-amber-400" />
-                <span>Simulate FIRE Geo-Arbitrage</span>
-              </motion.button>
-
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleOpenAdvancedExplorer}
-                className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm sm:text-base border border-white/20 backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Globe className="w-4 h-4 text-teal-300" />
-                <span>Explore Havens</span>
-              </motion.button>
-            </div>
-
-            {/* Segmented Persona Toggle Directly Below CTA Buttons */}
-            <div className="pt-1 md:pt-2 flex flex-wrap items-center gap-3">
-              <span className="hidden md:flex text-xs font-bold uppercase tracking-wider text-slate-300 items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                Select Mode:
-              </span>
-              <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-slate-900/90 border border-white/25 backdrop-blur-md shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPersona('retiree')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    currentPersona === 'retiree'
-                      ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-black shadow-md'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <span className="md:hidden">🌿 Early Retiree</span>
-                  <span className="hidden md:inline">🌿 Plan Early Retirement</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPersona('nomad')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    currentPersona === 'nomad'
-                      ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-md'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <span className="md:hidden">⚡ Digital Nomad</span>
-                  <span className="hidden md:inline">⚡ Nomad &amp; Slow Travel</span>
-                </button>
               </div>
-            </div>
 
-            {/* Mobile-only Compact Trust Strip (< md) */}
-            <div className="flex md:hidden items-center justify-between pt-3 border-t border-white/15 text-[11px] font-semibold text-slate-300">
-              <span><strong className="text-indigo-300 font-mono">{countries.length}</strong> Havens</span>
-              <span className="text-white/25">·</span>
-              <span><strong className="text-amber-300 font-mono">55+</strong> Metrics</span>
-              <span className="text-white/25">·</span>
-              <span><strong className="text-emerald-300 font-mono">8.4 Yrs</strong> Earlier FIRE</span>
-            </div>
+              {/* Mobile-only Compact Trust Strip (< md) */}
+              <div className="flex md:hidden items-center justify-between pt-3 border-t border-indigo-200/70 text-[11px] font-semibold text-slate-700">
+                <span><strong className="text-indigo-700 font-mono tabular-nums">{countries.length}</strong> Havens</span>
+                <span className="text-indigo-300">·</span>
+                <span><strong className="text-teal-700 font-mono tabular-nums">155+</strong> Visa Links</span>
+                <span className="text-indigo-300">·</span>
+                <span><strong className="text-amber-700 font-mono tabular-nums">8.4 Yrs</strong> Earlier FIRE</span>
+              </div>
 
-            {/* Desktop Multi-Colored Social Proof Metric Tiles (unchanged >= md) */}
-            <div className="hidden md:grid pt-6 border-t border-white/15 grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
-              <div className="p-3.5 rounded-2xl bg-indigo-950/55 border border-indigo-400/25 backdrop-blur-md">
-                <div className="text-xl sm:text-2xl font-black text-indigo-300 font-mono">{countries.length}</div>
-                <div className="text-slate-300 font-medium">Verified Havens</div>
+              {/* Desktop Multi-Colored High-Contrast Light Proof Metric Tiles (>= md) */}
+              <div className="hidden md:grid pt-5 border-t border-indigo-200/70 grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-indigo-50/90 border border-indigo-200/80 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-indigo-700 font-mono tabular-nums">{countries.length}</div>
+                  <div className="text-slate-700 font-semibold mt-0.5">Verified Havens</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-teal-50/90 border border-teal-200/80 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-teal-700 font-mono tabular-nums">155+</div>
+                  <div className="text-slate-700 font-semibold mt-0.5">Official Visa Rules</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-amber-50/90 border border-amber-200/80 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-amber-700 font-mono tabular-nums">8.4 Yrs</div>
+                  <div className="text-slate-700 font-semibold mt-0.5">Avg Earlier FIRE</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-emerald-50/90 border border-emerald-200/80 shadow-2xs">
+                  <div className="text-xl sm:text-2xl font-black text-emerald-700 font-mono tabular-nums">55+</div>
+                  <div className="text-slate-700 font-semibold mt-0.5">Living Metrics</div>
+                </div>
               </div>
-              <div className="p-3.5 rounded-2xl bg-amber-950/45 border border-amber-400/25 backdrop-blur-md">
-                <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono">55+</div>
-                <div className="text-slate-300 font-medium">Living Parameters</div>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-emerald-950/50 border border-emerald-400/25 backdrop-blur-md">
-                <div className="text-xl sm:text-2xl font-black text-emerald-300 font-mono">8.4 Yrs</div>
-                <div className="text-slate-300 font-medium">Avg Earlier FIRE</div>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-teal-950/50 border border-teal-400/25 backdrop-blur-md">
-                <div className="text-xl sm:text-2xl font-black text-teal-300 font-mono">100%</div>
-                <div className="text-slate-300 font-medium">Free &amp; Ad-Free</div>
-              </div>
+            </motion.div>
+
+            {/* Right Column (Desktop >= lg): Sunlit Coastal Panorama + Live Geo-Arbitrage & Relocation Pulse Infographic */}
+            <div className="hidden lg:block lg:col-span-5">
+              <HeroVisualShowcase
+                countriesCount={countries.length}
+                currentPersona={currentPersona}
+                onScrollTo={scrollToSection}
+                onNavigateView={handleNavigateView}
+              />
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 2. MOBILE QUICK SIGN-UP CARD (< md) + DESKTOP VALUE PILLARS   */}
+      {/* 2. MOBILE QUICK SIGN-UP CARD (< md) + ECOSYSTEM SHOWCASE      */}
       {/* ============================================================ */}
       {isGuestUser && (
         <section className="md:hidden max-w-7xl mx-auto px-4">
@@ -769,8 +818,8 @@ export const LandingPage: React.FC = () => {
                   Save Shortlists &amp; Get Your Custom Haven Match
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold shrink-0">
-                Free
+              <span className="text-xs font-extrabold text-emerald-700 shrink-0">
+                100% Free
               </span>
             </div>
             <div className="grid grid-cols-1 gap-1.5 text-xs text-slate-700 font-medium">
@@ -780,7 +829,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                <span>Save FIRE plans, compare havens &amp; download PDFs</span>
+                <span>Save FIRE plans, scout trips &amp; join expat meetups</span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-0.5">
@@ -805,100 +854,16 @@ export const LandingPage: React.FC = () => {
         </section>
       )}
 
-      <section className="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-2.5 mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200/80 text-xs font-extrabold text-indigo-700 uppercase tracking-widest">
-            <Compass className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Built For Real Planners</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Everything You Need to{' '}
-            <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
-              Relocate Abroad with Clarity
-            </span>
-          </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            No vague sales pitches or sponsored real estate ads. Raw empirical metrics verified against government sources.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Indigo / Violet */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-            className="relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/60 border border-indigo-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-950/5 transition-shadow space-y-3.5"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-extrabold text-slate-900">Live Haven Match Scoring</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Input your desired monthly budget, continent, and lifestyle priorities. Get mathematically ranked country recommendations across all {countries.length} havens.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => scrollToSection('haven-matcher')}
-                className="text-xs font-extrabold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 group cursor-pointer"
-              >
-                <span>Try Match Engine below</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Card 2: Amber / Orange */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-            className="relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br from-amber-50/80 via-white to-orange-50/60 border border-amber-200/80 shadow-sm hover:shadow-xl hover:shadow-amber-950/5 transition-shadow space-y-3.5"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/20">
-              <Flame className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-extrabold text-slate-900">FIRE Geo-Arbitrage Engine</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Calculate exact safe withdrawal rates (3.0%–5.0%) abroad. Understand how living on $2,200/mo vs $5,000/mo slashes your needed nest egg in half.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => scrollToSection('fire-calculator')}
-                className="text-xs font-extrabold text-orange-700 hover:text-orange-900 inline-flex items-center gap-1 group cursor-pointer"
-              >
-                <span>Calculate your FIRE</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Card 3: Emerald / Teal */}
-          <motion.div
-            whileHover={{ y: -6 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-            className="relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 border border-emerald-200/80 shadow-sm hover:shadow-xl hover:shadow-teal-950/5 transition-shadow space-y-3.5"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-teal-500/20">
-              <Globe className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-extrabold text-slate-900">Vetted Visas &amp; Mobility</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              D7 Passive Income, Non-Lucrative Visas, Pensionado schemes, and Schengen rules. Plus travel ease and mobility ratings for couple and solo retirees.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={handleOpenAdvancedExplorer}
-                className="text-xs font-extrabold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 group cursor-pointer"
-              >
-                <span>Open Advanced Haven Explorer</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Built For Real Planners: Everything You Need to Relocate Abroad with Clarity (incl. Visa Check, Scout & Hop, Expats, Meetups, Profile Badges) */}
+      <RelocationEcosystemShowcase
+        countriesCount={countries.length}
+        isGuestUser={isGuestUser}
+        onScrollTo={scrollToSection}
+        onNavigateView={handleNavigateView}
+        onOpenExplorer={handleOpenAdvancedExplorer}
+        onOpenBadges={() => openBadgeModal('all')}
+        onOpenAuth={openAuthModal}
+      />
 
       {/* ============================================================ */}
       {/* 3. UNIFIED INTERACTIVE MATCH ENGINE & VERIFIED HAVEN DIRECTORY */}
@@ -3393,98 +3358,133 @@ export const LandingPage: React.FC = () => {
       {/* ============================================================ */}
       {/* 6. REAL EXPAT VOICES & SOCIAL PROOF                            */}
       {/* ============================================================ */}
-      <section className="bg-gradient-to-b from-indigo-50/40 via-white to-teal-50/40 border-y border-indigo-100/80 py-8 md:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 md:space-y-10">
-          
-          <div className="text-center max-w-2xl mx-auto space-y-2 md:space-y-2.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-[11px] md:text-xs font-extrabold text-amber-800 uppercase tracking-widest">
-              <Users className="w-3.5 h-3.5 text-amber-600" />
-              <span>Boots on the Ground</span>
+      <section className="bg-gradient-to-b from-indigo-50/55 via-sky-50/35 to-teal-50/55 border-y border-indigo-200/70 py-10 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 md:space-y-10">
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="max-w-2xl space-y-2">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-amber-800">
+                <Users className="w-4 h-4 text-amber-600" />
+                <span>Boots on the Ground</span>
+                <span aria-hidden="true" className="text-amber-300">·</span>
+                <span className="text-slate-600">Verified Member Stories</span>
+              </div>
+              <h2 className="text-xl md:text-3xl font-extrabold text-slate-950 tracking-tight text-balance">
+                Hear from{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                  Expats Who Already Made the Leap
+                </span>
+              </h2>
+              <p className="hidden md:block text-sm text-slate-600">
+                Honest reflections from early retirees and remote workers living comfortably abroad.
+              </p>
             </div>
-            <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Hear from{' '}
-              <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
-                Expats Who Already Made the Leap
-              </span>
-            </h2>
-            <p className="hidden md:block text-xs sm:text-sm text-slate-600">
-              Honest reflections from early retirees living comfortably abroad.
-            </p>
+
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleNavigateView('community')}
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-800 font-bold text-xs border border-indigo-200 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+              >
+                <Users className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Browse Expat Profiles</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleNavigateView('meetups')}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-xs shadow-sm inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Join Local Meetups</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <motion.div
-              whileHover={{ y: -6 }}
+              whileHover={{ y: -5 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="relative overflow-hidden p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-amber-200/80 shadow-sm hover:shadow-xl hover:shadow-amber-950/5 space-y-3 md:space-y-4"
+              className="relative overflow-hidden p-5 md:p-6 rounded-2xl md:rounded-3xl bg-gradient-to-br from-white via-amber-50/40 to-orange-50/45 border border-amber-200/85 shadow-sm hover:shadow-xl hover:shadow-amber-950/5 space-y-3.5 flex flex-col justify-between"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80"
-                  alt="Sarah and David"
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-orange-500/30"
-                />
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm">Sarah &amp; David M.</h4>
-                  <span className="text-xs text-slate-500">Relocated to Algarve, Portugal (2023)</span>
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-sm flex items-center justify-center shadow-sm shrink-0">
+                    <span>SM</span>
+                    <span className="absolute -bottom-1 -right-1 rounded-md overflow-hidden shadow-xs ring-2 ring-white">
+                      <CountryFlag countryCode="PT" size="xs" />
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-950 text-sm">Sarah &amp; David M.</h4>
+                    <span className="text-xs text-slate-600">Algarve, Portugal · Relocated 2023</span>
+                  </div>
                 </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  &ldquo;Our monthly living cost dropped from $6,200 in Seattle to $2,700 in Lagos. Private health insurance is $92/month each with zero deductible surprises. We retired 7 years earlier than our 401(k) suggested.&rdquo;
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-                &ldquo;Our monthly living cost dropped from $6,200 in Seattle to $2,700 in Lagos. Private health insurance is $92/month each with zero deductible surprises. We retired 7 years earlier than our 401(k) suggested.&rdquo;
-              </p>
-              <div className="pt-1 text-xs font-extrabold text-orange-700 bg-orange-50 px-3 py-1 rounded-full w-fit border border-orange-200/70">
-                <span>D7 Passive Income Visa · $2,700/mo Couple</span>
+              <div className="pt-3 border-t border-amber-200/60 flex items-center justify-between text-xs font-bold text-orange-800">
+                <span>D7 Passive Income Visa</span>
+                <span className="font-mono tabular-nums">$2,700/mo Couple</span>
               </div>
             </motion.div>
 
             <motion.div
-              whileHover={{ y: -6 }}
+              whileHover={{ y: -5 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="hidden md:block relative overflow-hidden p-6 rounded-3xl bg-white border border-emerald-200/80 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 space-y-4"
+              className="hidden md:flex flex-col justify-between relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br from-white via-emerald-50/40 to-teal-50/45 border border-emerald-200/85 shadow-sm hover:shadow-xl hover:shadow-emerald-950/5 space-y-4"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                  alt="Mark R."
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500/30"
-                />
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm">Mark R.</h4>
-                  <span className="text-xs text-slate-500">Relocated to Chiang Mai, Thailand (2022)</span>
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white font-black text-sm flex items-center justify-center shadow-sm shrink-0">
+                    <span>MR</span>
+                    <span className="absolute -bottom-1 -right-1 rounded-md overflow-hidden shadow-xs ring-2 ring-white">
+                      <CountryFlag countryCode="TH" size="xs" />
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-950 text-sm">Mark R.</h4>
+                    <span className="text-xs text-slate-600">Chiang Mai, Thailand · Relocated 2022</span>
+                  </div>
                 </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  &ldquo;Solo retirement here is unbelievably easy. A modern condo with mountain views, daily Thai food, high-speed fiber, and world-class hospital visits for $1,600/month. ReFIREly’s visa &amp; mobility guide was spot on.&rdquo;
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-                &ldquo;Solo retirement here is unbelievably easy. A modern condo with mountain views, daily Thai food, high-speed fiber, and world-class hospital visits for $1,600/month. ReFIREly’s travel mobility guide was spot on.&rdquo;
-              </p>
-              <div className="pt-1 text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full w-fit border border-emerald-200/70">
-                <span>Long Stay O-A Scheme · $1,600/mo Solo</span>
+              <div className="pt-3 border-t border-emerald-200/60 flex items-center justify-between text-xs font-bold text-emerald-800">
+                <span>Long Stay O-A Scheme</span>
+                <span className="font-mono tabular-nums">$1,600/mo Solo</span>
               </div>
             </motion.div>
 
             <motion.div
-              whileHover={{ y: -6 }}
+              whileHover={{ y: -5 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="hidden md:block relative overflow-hidden p-6 rounded-3xl bg-white border border-indigo-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-950/5 space-y-4"
+              className="hidden md:flex flex-col justify-between relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br from-white via-indigo-50/45 to-violet-50/45 border border-indigo-200/85 shadow-sm hover:shadow-xl hover:shadow-indigo-950/5 space-y-4"
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                  alt="Elena & Carlos"
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-500/30"
-                />
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm">Elena &amp; Carlos T.</h4>
-                  <span className="text-xs text-slate-500">Relocated to Atenas, Costa Rica (2024)</span>
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-black text-sm flex items-center justify-center shadow-sm shrink-0">
+                    <span>EC</span>
+                    <span className="absolute -bottom-1 -right-1 rounded-md overflow-hidden shadow-xs ring-2 ring-white">
+                      <CountryFlag countryCode="CR" size="xs" />
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-950 text-sm">Elena &amp; Carlos T.</h4>
+                    <span className="text-xs text-slate-600">Atenas, Costa Rica · Relocated 2024</span>
+                  </div>
                 </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  &ldquo;We wanted eternal spring weather and community meetups. The Pensionado visa process took 4 months, and CAJA health coverage is straightforward. We walk everywhere and host weekly expat game nights.&rdquo;
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic">
-                &ldquo;We wanted eternal spring weather and community meetups. The Pensionado visa process took 4 months, and CAJA health coverage is straightforward. We walk everywhere and host weekly expat game nights.&rdquo;
-              </p>
-              <div className="pt-1 text-xs font-extrabold text-indigo-800 bg-indigo-50 px-3 py-1 rounded-full w-fit border border-indigo-200/70">
-                <span>Pensionado Visa · $2,350/mo Couple</span>
+              <div className="pt-3 border-t border-indigo-200/60 flex items-center justify-between text-xs font-bold text-indigo-800">
+                <span>Pensionado Visa</span>
+                <span className="font-mono tabular-nums">$2,350/mo Couple</span>
               </div>
             </motion.div>
           </div>
@@ -3493,83 +3493,106 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 7. HIGH-CONVERSION PORTAL SIGN-UP CALL TO ACTION               */}
+      {/* 7. SUNLIT HIGH-CONVERSION PORTAL SIGN-UP CALL TO ACTION       */}
       {/* ============================================================ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-6 md:p-12 lg:p-16 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white shadow-2xl relative overflow-hidden border border-indigo-500/30">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-indigo-400 to-teal-400" />
-          {/* Ambient glow circles */}
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -mb-12 -ml-12 w-80 h-80 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="p-6 md:p-10 lg:p-14 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-indigo-50/95 via-sky-50/90 to-amber-50/85 text-slate-950 shadow-xl shadow-indigo-950/5 relative overflow-hidden border border-indigo-200/90">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-teal-500 to-amber-500" />
+          {/* Soft pastel ambient glow circles */}
+          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-96 h-96 bg-teal-300/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-80 h-80 bg-indigo-300/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 max-w-3xl space-y-4 md:space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-white/15 border border-white/20 text-amber-300 text-[11px] md:text-xs font-bold backdrop-blur-md">
-              <Compass className="w-3.5 h-3.5 text-amber-400" />
-              <span>Free Membership · Zero Spam</span>
-            </div>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4 md:space-y-6">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-indigo-800">
+                <Compass className="w-4 h-4 text-teal-600" />
+                <span>Free Membership</span>
+                <span aria-hidden="true" className="text-indigo-300">·</span>
+                <span className="text-amber-800">Zero Spam · No Credit Card</span>
+              </div>
 
-            <h2 className="text-2xl md:text-5xl font-black tracking-tight leading-tight">
-              Ready to Turn Your{' '}
-              <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-teal-300 bg-clip-text text-transparent">
-                Overseas Dream
-              </span>{' '}
-              into an Actionable Blueprint?
-            </h2>
+              <h2 className="text-2xl md:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-slate-950 text-balance">
+                Ready to Turn Your{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                  Overseas Dream
+                </span>{' '}
+                into an Actionable Blueprint?
+              </h2>
 
-            <p className="md:hidden text-xs text-indigo-100/90 font-medium leading-relaxed">
-              Save haven shortlists, download PDF dossiers, and plan your FIRE timeline free.
-            </p>
+              <p className="md:hidden text-xs text-slate-700 font-medium leading-relaxed">
+                Save haven shortlists, verify visas, download PDF dossiers, and plan your FIRE timeline free.
+              </p>
 
-            <p className="hidden md:block text-base sm:text-lg text-indigo-100/90 font-medium leading-relaxed">
-              Create your account to save customized haven shortlists, export printable PDF dossiers, simulate multi-currency portfolios, and connect with fellow retirees in local meetups.
-            </p>
+              <p className="hidden md:block text-base sm:text-lg text-slate-700 font-medium leading-relaxed">
+                Create your free account to save customized haven shortlists, export printable PDF dossiers, check global visa rules, map Scout &amp; Hop trips, earn profile badges, and join local expat meetups.
+              </p>
 
-            <div className="pt-1 md:pt-2 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 md:gap-4">
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => openAuthModal('signup')}
-                className="w-full md:w-auto min-h-[48px] px-6 md:px-8 py-3.5 md:py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
-              >
-                <UserPlus className="w-5 h-5 text-slate-950" />
-                <span>Create Free Member Account</span>
-              </motion.button>
+              <div className="pt-1 md:pt-2 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 md:gap-3.5">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => openAuthModal('signup')}
+                  className="w-full md:w-auto min-h-[48px] px-6 md:px-7 py-3.5 md:py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-black text-sm sm:text-base shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
+                >
+                  <UserPlus className="w-5 h-5 text-amber-300" />
+                  <span>Create Free Member Account</span>
+                </motion.button>
 
-              {!isAuthenticated && (
+                {!isAuthenticated && (
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => openAuthModal('login')}
+                    className="w-full md:w-auto min-h-[46px] px-6 py-3.5 md:py-4 rounded-2xl bg-white hover:bg-indigo-50 text-slate-900 font-bold text-sm sm:text-base border border-indigo-200 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                  >
+                    <LogIn className="w-5 h-5 text-indigo-600" />
+                    <span>Existing Member Sign In</span>
+                  </motion.button>
+                )}
+
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => openAuthModal('login')}
-                  className="w-full md:w-auto min-h-[46px] px-6 py-3.5 md:py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-sm sm:text-base border border-white/25 backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleNavigateView('visa-check')}
+                  className="w-full md:w-auto min-h-[46px] px-5 py-3.5 md:py-4 rounded-2xl bg-teal-50 hover:bg-teal-100 text-teal-900 font-extrabold text-sm border border-teal-300/90 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
                 >
-                  <LogIn className="w-5 h-5" />
-                  <span>Existing Member Sign In</span>
+                  <Stamp className="w-4 h-4 text-teal-700" />
+                  <span>Try Global Visa Check</span>
                 </motion.button>
-              )}
+              </div>
+
+              {/* Checklist of Member Features (Desktop Only) */}
+              <div className="hidden md:grid pt-5 border-t border-indigo-200/75 grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-700 font-semibold">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Global Visa Check &amp; Bilateral Treaties</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>{countries.length} Country PDF Dossier Downloads</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Scout &amp; Hop Planner + Profile Badges</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>Direct Member Messaging &amp; Expat Meetups</span>
+                </div>
+              </div>
             </div>
 
-            {/* Checklist of Member Features (Desktop Only) */}
-            <div className="hidden md:grid pt-6 border-t border-white/15 grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-indigo-100 font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{countries.length} Country PDF Dossier Downloads</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Cloud FIRE Portfolio &amp; Net Worth Sync</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>Direct Member Messaging &amp; Expat Meetups</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>Custom Relocation Checklists &amp; Visa Reminders</span>
-              </div>
+            {/* Right Column: Interactive Relocation Readiness Blueprint Infographic */}
+            <div className="hidden lg:block lg:col-span-5">
+              <PortalBlueprintInfographic
+                countriesCount={countries.length}
+                onNavigateView={handleNavigateView}
+                onOpenBadges={() => openBadgeModal('all')}
+              />
             </div>
-
           </div>
         </div>
       </section>
@@ -3607,5 +3630,6 @@ export const LandingPage: React.FC = () => {
       )}
 
     </div>
+    </MotionConfig>
   );
 };
