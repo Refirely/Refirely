@@ -40,8 +40,6 @@ export const AuthModal: React.FC = () => {
     originCountry: 'United States',
     residingCountry: 'United States',
     targetCountry: 'Portugal',
-    retirementTimelineYear: 2027,
-    monthlyBudgetUSD: 2500,
     relocationStatus: 'Exploring Options' as const,
     bio: '',
     avatarUrl: AVATAR_PRESETS[0].url,
@@ -114,8 +112,6 @@ export const AuthModal: React.FC = () => {
       originCountry: signupForm.originCountry,
       residingCountry: signupForm.residingCountry,
       targetCountry: signupForm.targetCountry,
-      retirementTimelineYear: Number(signupForm.retirementTimelineYear),
-      monthlyBudgetUSD: Number(signupForm.monthlyBudgetUSD),
       bio: signupForm.bio.trim() || `Aspiring retiree preparing for life in ${signupForm.targetCountry}.`,
       avatarUrl: signupForm.avatarUrl,
     });
@@ -130,8 +126,6 @@ export const AuthModal: React.FC = () => {
         originCountry: 'United States',
         residingCountry: 'United States',
         targetCountry: 'Portugal',
-        retirementTimelineYear: 2027,
-        monthlyBudgetUSD: 2500,
         relocationStatus: 'Exploring Options',
         bio: '',
         avatarUrl: AVATAR_PRESETS[0].url,
@@ -506,36 +500,6 @@ export const AuthModal: React.FC = () => {
                           </option>
                         ))}
                       </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Target Departure Year
-                      </label>
-                      <input
-                        type="number"
-                        min={2024}
-                        max={2045}
-                        value={signupForm.retirementTimelineYear}
-                        onChange={e => setSignupForm({ ...signupForm, retirementTimelineYear: Number(e.target.value) })}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Monthly Budget ($ USD)
-                      </label>
-                      <input
-                        type="number"
-                        min={500}
-                        max={25000}
-                        step={100}
-                        value={signupForm.monthlyBudgetUSD}
-                        onChange={e => setSignupForm({ ...signupForm, monthlyBudgetUSD: Number(e.target.value) })}
-                        className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
                     </div>
                   </div>
 
