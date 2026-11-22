@@ -74,6 +74,38 @@ export const DirectMessenger: React.FC = () => {
     }
   }, [activeThread?.id, activeThread?.unreadCount, markThreadAsRead, isAuthenticated, currentUserId]);
 
+  // Collect peer user IDs and names with whom there is an active conversation already
+  // (Declared before any early return to satisfy React's Rules of Hooks)
+  const existingChatPeerIds = React.useMemo(() => {
+    return new Set(
+      dmThreads
+        .map(t => t.peerUserId)
+        .filter((id): id is string => Boolean(id))
+    );
+  }, [dmThreads]);
+
+  const existingChatPeerNames = React.useMemo(() => {
+    return new Set(
+      dmThreads.map(t => t.peerName.trim().toLowerCase())
+    );
+  }, [dmThreads]);
+
+  // Remove members with whom there is an active chat already from the suggested directory (and never include Admin)
+  const connectableMembers = React.useMemo(() => {
+    return publicMemberAccounts.filter(acc => {
+      if (acc.id === currentUserId) return false;
+      if (acc.id === 'usr-ganesh' || acc.profile.role === 'admin' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
+        return false;
+      }
+      if (existingChatPeerIds.has(acc.id)) return false;
+      const accProfileName = (acc.profile.name || '').trim().toLowerCase();
+      const accName = (acc.name || '').trim().toLowerCase();
+      if (accProfileName && existingChatPeerNames.has(accProfileName)) return false;
+      if (accName && existingChatPeerNames.has(accName)) return false;
+      return true;
+    });
+  }, [publicMemberAccounts, currentUserId, existingChatPeerIds, existingChatPeerNames]);
+
   // Strictly hide chats window if not authenticated
   if (!isAuthenticated || currentUserId === 'guest') {
     return <DirectMessagesAuthGate />;
@@ -127,37 +159,6 @@ export const DirectMessenger: React.FC = () => {
           acc.name.toLowerCase() === activeThread.peerName.toLowerCase()
       )
     : undefined;
-
-  // Collect peer user IDs and names with whom there is an active conversation already
-  const existingChatPeerIds = React.useMemo(() => {
-    return new Set(
-      dmThreads
-        .map(t => t.peerUserId)
-        .filter((id): id is string => Boolean(id))
-    );
-  }, [dmThreads]);
-
-  const existingChatPeerNames = React.useMemo(() => {
-    return new Set(
-      dmThreads.map(t => t.peerName.trim().toLowerCase())
-    );
-  }, [dmThreads]);
-
-  // Remove members with whom there is an active chat already from the suggested directory (and never include Admin)
-  const connectableMembers = React.useMemo(() => {
-    return publicMemberAccounts.filter(acc => {
-      if (acc.id === currentUserId) return false;
-      if (acc.id === 'usr-ganesh' || acc.profile.role === 'admin' || acc.email?.toLowerCase() === 'ganesh.indireddy@gmail.com') {
-        return false;
-      }
-      if (existingChatPeerIds.has(acc.id)) return false;
-      const accProfileName = (acc.profile.name || '').trim().toLowerCase();
-      const accName = (acc.name || '').trim().toLowerCase();
-      if (accProfileName && existingChatPeerNames.has(accProfileName)) return false;
-      if (accName && existingChatPeerNames.has(accName)) return false;
-      return true;
-    });
-  }, [publicMemberAccounts, currentUserId, existingChatPeerIds, existingChatPeerNames]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

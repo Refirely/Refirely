@@ -291,10 +291,65 @@ const MainContent: React.FC = () => {
   );
 };
 
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return {
+      hasError: true,
+      errorMessage: error?.message || 'An unexpected rendering error occurred.',
+    };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('ReFIREly UI boundary caught an error:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-indigo-200 p-8 shadow-lg text-center space-y-4">
+            <h2 className="text-lg font-extrabold text-slate-900">Something went wrong loading this view</h2>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Your session and saved data are safe. Click below to restore your dashboard immediately.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false, errorMessage: '' })}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer"
+              >
+                Retry View
+              </button>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer"
+              >
+                Reload Page
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <AppProvider>
-      <MainContent />
-    </AppProvider>
+    <AppErrorBoundary>
+      <AppProvider>
+        <MainContent />
+      </AppProvider>
+    </AppErrorBoundary>
   );
 }

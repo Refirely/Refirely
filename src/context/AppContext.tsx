@@ -3156,6 +3156,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isAccountOwnerAdmin) {
       setCurrentView('admin');
       currentViewRef.current = 'admin';
+    } else if (currentViewRef.current === 'admin') {
+      setCurrentView('dashboard');
+      currentViewRef.current = 'dashboard';
     }
 
     // Restore per-account checklist & journal if stored
@@ -3313,6 +3316,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     userProfileRef.current = newProfile;
     setChecklist(INITIAL_CHECKLIST);
     setIsAuthenticated(true);
+    isAuthenticatedRef.current = true;
+    if (currentViewRef.current === 'admin') {
+      setCurrentView('dashboard');
+      currentViewRef.current = 'dashboard';
+    }
 
     try {
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_logged_out_explicitly`);
@@ -3485,8 +3493,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUserProfile(googleAcc.profile);
       userProfileRef.current = googleAcc.profile;
       setIsAuthenticated(true);
+      isAuthenticatedRef.current = true;
       if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
+        currentViewRef.current = 'admin';
+      } else if (currentViewRef.current === 'admin') {
+        setCurrentView('dashboard');
+        currentViewRef.current = 'dashboard';
       }
 
       if (isBrandNewGoogleSignup) {

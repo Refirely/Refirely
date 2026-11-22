@@ -73,6 +73,22 @@ export const UserDashboard: React.FC = () => {
     [registeredAccounts, currentUserId]
   );
 
+  // Badges & Honors Calculations (must run unconditionally before any early returns to satisfy Rules of Hooks)
+  const earnedBadges = useMemo(
+    () =>
+      isAuthenticated
+        ? getUserEarnedBadges(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts)
+        : [],
+    [isAuthenticated, userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
+  );
+  const badgesProgress = useMemo(
+    () =>
+      isAuthenticated
+        ? getAllBadgesProgress(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts)
+        : [],
+    [isAuthenticated, userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
+  );
+
   // Active dashboard module tab (persisted for smooth navigation)
   const [activeTab, setActiveTab] = useState<UserDashboardTab>(() => {
     try {
@@ -432,25 +448,16 @@ export const UserDashboard: React.FC = () => {
 
 
   // My RSVP'd meetups
-  const rsvpedMeetups = meetups.filter(m => userProfile.rsvpMeetupIds.includes(m.id));
+  const rsvpedMeetups = meetups.filter(m => (userProfile.rsvpMeetupIds || []).includes(m.id));
   const journalEntryList = Object.values(journalEntries || {});
-
-  // Badges & Honors Calculations
-  const earnedBadges = React.useMemo(
-    () => getUserEarnedBadges(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts),
-    [userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
-  );
-  const badgesProgress = React.useMemo(
-    () => getAllBadgesProgress(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts),
-    [userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
-  );
 
   // Checklist calculations
   const completedTasks = checklist.filter(t => t.completed).length;
   const progressPercent = checklist.length > 0 ? Math.round((completedTasks / checklist.length) * 100) : 0;
 
   // Check if user knows the target haven language
-  const targetCountryData = countries.find(c => c.name.toLowerCase() === userProfile.targetCountry.toLowerCase());
+  const targetCountryName = (userProfile.targetCountry || '').toLowerCase();
+  const targetCountryData = countries.find(c => c.name.toLowerCase() === targetCountryName);
   const targetLanguage = targetCountryData?.language || '';
   const knowsTargetLanguage = userProfile.languagesKnown?.some(
     l => targetLanguage.toLowerCase().includes(l.language.toLowerCase()) || l.language.toLowerCase().includes(targetLanguage.toLowerCase())
