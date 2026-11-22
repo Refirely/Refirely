@@ -32,6 +32,10 @@ import {
   popPendingNotificationForUser,
   sortDmThreadsByLatest
 } from '../utils/messagingMultiUser';
+import {
+  clearPendingFreedomQuizHydration,
+  hydrateUserProfileFromFreedomQuiz,
+} from '../utils/freedomMapQuiz';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
   onAuthStateChanged,
@@ -2865,11 +2869,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
 
           // 4. Resolve the signed-in Google user's dedicated UserAccount (e.g. usr-<gmail-handle>) with their Google Name, Gmail ID, and Avatar
-          const resolvedGoogleAccount = resolveGoogleAccountForUser(
+          let resolvedGoogleAccount = resolveGoogleAccountForUser(
             user,
             Array.from(mergedMap.values()),
             firestoreRootData
           );
+
+          // Automatically hydrate any pending homepage Freedom Map Quiz answers from localStorage into Firestore
+          const quizHydrationResult = hydrateUserProfileFromFreedomQuiz(
+            resolvedGoogleAccount.profile,
+            countries,
+            DEFAULT_FINANCIAL_PORTFOLIO
+          );
+          if (quizHydrationResult.hydrated) {
+            resolvedGoogleAccount = {
+              ...resolvedGoogleAccount,
+              profile: quizHydrationResult.profile,
+              cloudSynced: false,
+            };
+            setCurrentPersona(quizHydrationResult.persona);
+          }
           mergedMap.set(resolvedGoogleAccount.id, resolvedGoogleAccount);
 
           // 5. Sync accounts to Firestore:
@@ -2936,6 +2955,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             checklist: activeAccount.checklist || checklistRef.current,
             updatedAt: nowIso,
           });
+
+          if (quizHydrationResult.hydrated) {
+            clearPendingFreedomQuizHydration();
+            if (!isAdminUser && activeAccount.id !== 'usr-ganesh' && activeAccount.profile.role !== 'admin') {
+              setCurrentView('dashboard');
+              currentViewRef.current = 'dashboard';
+              try {
+                window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              } catch {}
+            }
+          }
 
           // 4. Fetch user's journal entries from Firestore and sync all entries to top-level /countryJournals
           const journalCollRef = collection(db, 'users', user.uid, 'journalEntries');
@@ -3320,7 +3351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const newId = desiredIdRaw;
-    const newProfile: UserProfile = {
+    const baseNewProfile: UserProfile = {
       id: newId,
       name: data.name.trim(),
       email: cleanEmail,
@@ -3355,6 +3386,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       travelHistory: data.travelHistory || [],
     };
 
+    const signupQuizHydration = hydrateUserProfileFromFreedomQuiz(
+      baseNewProfile,
+      countries,
+      DEFAULT_FINANCIAL_PORTFOLIO
+    );
+    const newProfile: UserProfile = signupQuizHydration.hydrated
+      ? signupQuizHydration.profile
+      : baseNewProfile;
+    if (signupQuizHydration.hydrated) {
+      setCurrentPersona(signupQuizHydration.persona);
+      clearPendingFreedomQuizHydration();
+    }
+
     const isCloudReady = Boolean(auth.currentUser);
     const nowIso = new Date().toISOString();
 
@@ -3382,9 +3426,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChecklist(INITIAL_CHECKLIST);
     setIsAuthenticated(true);
     isAuthenticatedRef.current = true;
-    if (currentViewRef.current === 'admin') {
+    if (currentViewRef.current === 'admin' || signupQuizHydration.hydrated) {
       setCurrentView('dashboard');
       currentViewRef.current = 'dashboard';
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {}
     }
 
     try {
@@ -3544,7 +3591,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         Boolean(additionalUserInfo?.isNewUser) || (!firestoreRootData && !hadExistingLocalAccount);
 
       // Immediately create/resolve the Google user's dedicated User ID (e.g., usr-<gmail-handle>) and profile
-      const googleAcc = resolveGoogleAccountForUser(user, registeredAccountsRef.current, firestoreRootData);
+      let googleAcc = resolveGoogleAccountForUser(user, registeredAccountsRef.current, firestoreRootData);
+      const googleQuizHydration = hydrateUserProfileFromFreedomQuiz(
+        googleAcc.profile,
+        countries,
+        DEFAULT_FINANCIAL_PORTFOLIO
+      );
+      if (googleQuizHydration.hydrated) {
+        googleAcc = {
+          ...googleAcc,
+          profile: googleQuizHydration.profile,
+        };
+        setCurrentPersona(googleQuizHydration.persona);
+      }
+
       const nextAccounts = [
         googleAcc,
         ...registeredAccountsRef.current.filter(a => a.id !== googleAcc.id && a.id !== 'guest'),
@@ -3562,14 +3622,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
         currentViewRef.current = 'admin';
-      } else if (currentViewRef.current === 'admin') {
+      } else if (currentViewRef.current === 'admin' || googleQuizHydration.hydrated) {
         setCurrentView('dashboard');
         currentViewRef.current = 'dashboard';
+        try {
+          window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {}
       }
 
       if (isBrandNewGoogleSignup) {
         try {
-          window.history.pushState({}, '', '/?signup=success');
+          if (!googleQuizHydration.hydrated) {
+            window.history.pushState({}, '', '/?signup=success');
+          }
           if (typeof window !== 'undefined' && window.gtag) {
             window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
           }
@@ -3591,6 +3657,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_is_authenticated`, 'true');
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
       } catch {}
+
+      if (googleQuizHydration.hydrated) {
+        // Persist hydrated Freedom Map quiz profile immediately to Firestore so no re-entry is ever needed
+        syncSingleAccountToFirestore(googleAcc).catch(() => {});
+        syncProfileToFirestore(googleAcc.profile, googleAcc.checklist || checklistRef.current, googleAcc.id).catch(() => {});
+      }
 
       // Load Google user's DM inbox and pop pending notifications
       try {

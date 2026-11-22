@@ -16,12 +16,13 @@ import { CountryFlag } from './CountryFlag';
 import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
+import { computeFreedomMapResults, loadFreedomQuizState } from '../utils/freedomMapQuiz';
 import {
   User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
   Globe, Languages, Star, MapPin, Camera, Check, Trash2, ExternalLink, BookOpen,
   TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins, LayoutDashboard, Layers,
-  Award
+  Award, Stamp, LineChart, CheckCircle2
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -87,6 +88,14 @@ export const UserDashboard: React.FC = () => {
         ? getAllBadgesProgress(userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts)
         : [],
     [isAuthenticated, userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
+  );
+
+  // Unlocked Freedom Map Quiz Report (hydrated seamlessly after 1-click Google OAuth or signup)
+  const [freedomReportTab, setFreedomReportTab] = useState<'matches' | 'visa' | 'inflation'>('matches');
+  const savedFreedomQuiz = useMemo(() => loadFreedomQuizState(), [currentUserId, userProfile.monthlyBudgetUSD]);
+  const freedomMapResults = useMemo(
+    () => (savedFreedomQuiz?.completedReveal ? computeFreedomMapResults(countries, savedFreedomQuiz) : null),
+    [countries, savedFreedomQuiz]
   );
 
   // Active dashboard module tab (persisted for smooth navigation)
@@ -869,6 +878,229 @@ export const UserDashboard: React.FC = () => {
       {/* ===================================================================== */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Unlocked Freedom Map & Visa Report (Auto-Hydrated from Homepage Quiz) */}
+          {freedomMapResults && savedFreedomQuiz && (
+            <div className="rounded-3xl bg-white border border-indigo-200/90 shadow-md shadow-indigo-950/5 overflow-hidden">
+              <div className="h-1.5 w-full bg-gradient-to-r from-indigo-600 via-teal-500 to-emerald-500" />
+              <div className="p-5 sm:p-6 space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Unlocked Freedom Map &amp; Visa Report · Synced to Your Account</span>
+                    </div>
+                    <h2 className="text-lg sm:text-xl font-black text-slate-950 tracking-tight">
+                      Your {freedomMapResults.qualifyingCount}-Country Freedom Map
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-600">
+                      Runway:{' '}
+                      <strong className="font-mono tabular-nums text-indigo-700">
+                        {freedomMapResults.runwayLabel}
+                      </strong>{' '}
+                      · Budget:{' '}
+                      <strong className="font-mono tabular-nums text-slate-900">
+                        ${savedFreedomQuiz.monthlyBudgetUSD.toLocaleString()}/mo
+                      </strong>{' '}
+                      ({savedFreedomQuiz.household === 'couple' ? 'Couple / Family' : 'Solo'})
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFreedomReportTab('matches')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-colors cursor-pointer ${
+                        freedomReportTab === 'matches'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      Top Matches (#1–#4)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFreedomReportTab('visa')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                        freedomReportTab === 'visa'
+                          ? 'bg-teal-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Stamp className="w-3.5 h-3.5" />
+                      <span>Visa Income Check</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFreedomReportTab('inflation')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                        freedomReportTab === 'inflation'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <LineChart className="w-3.5 h-3.5" />
+                      <span>10-Yr Inflation Stress</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentView('compare')}
+                      className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-extrabold transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Compare Side-by-Side</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {freedomReportTab === 'matches' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {freedomMapResults.topMatches.slice(0, 4).map((match, idx) => (
+                      <button
+                        key={match.country.id}
+                        type="button"
+                        onClick={() => navigateToCountry(match.country.id)}
+                        className="text-left p-4 rounded-2xl bg-gradient-to-br from-slate-50/80 via-white to-indigo-50/40 hover:to-indigo-50 border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer space-y-2.5 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-black text-indigo-700">#{idx + 1} Match</span>
+                          <span className="text-[11px] font-mono font-extrabold tabular-nums text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                            {match.matchPercent}% Fit
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <CountryFlag
+                            countryName={match.country.name}
+                            fallbackEmoji={match.country.flag}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-black text-slate-950 truncate group-hover:text-indigo-700">
+                              {match.country.name}
+                            </div>
+                            <div className="text-[11px] text-slate-500 truncate">{match.visaLabel}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                          <span className="font-mono font-extrabold tabular-nums text-slate-900">
+                            ${match.monthlyCostUSD.toLocaleString()}/mo
+                          </span>
+                          <span className="text-[11px] font-bold text-teal-700 inline-flex items-center gap-0.5">
+                            <span>Dossier</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {freedomReportTab === 'visa' && (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider">
+                        <tr>
+                          <th className="px-4 py-2.5">Country</th>
+                          <th className="px-4 py-2.5">Matched Visa Pathway</th>
+                          <th className="px-4 py-2.5">Min Income / Mo</th>
+                          <th className="px-4 py-2.5">Tax Regime</th>
+                          <th className="px-4 py-2.5 text-right">Eligibility</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {freedomMapResults.topMatches.slice(0, 6).map(match => (
+                          <tr
+                            key={match.country.id}
+                            onClick={() => navigateToCountry(match.country.id)}
+                            className="hover:bg-indigo-50/40 cursor-pointer"
+                          >
+                            <td className="px-4 py-2.5 font-extrabold text-slate-950 flex items-center gap-2">
+                              <CountryFlag
+                                countryName={match.country.name}
+                                fallbackEmoji={match.country.flag}
+                                size="xs"
+                              />
+                              <span>{match.country.name}</span>
+                            </td>
+                            <td className="px-4 py-2.5 font-semibold text-indigo-700">{match.visaLabel}</td>
+                            <td className="px-4 py-2.5 font-mono font-bold tabular-nums text-slate-900">
+                              {match.visaIncomeReqUSD > 0 ? `$${match.visaIncomeReqUSD.toLocaleString()}/mo` : 'Savings / Flexible'}
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-600 max-w-[200px] truncate">{match.taxSummary}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-extrabold ${
+                                  match.visaQualifies ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{match.visaQualifies ? 'Qualifies' : 'Stretch'}</span>
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {freedomReportTab === 'inflation' && (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider">
+                        <tr>
+                          <th className="px-4 py-2.5">Country</th>
+                          <th className="px-4 py-2.5">2026 Burn / Mo</th>
+                          <th className="px-4 py-2.5">2036 @ 3% Inflation</th>
+                          <th className="px-4 py-2.5">2036 @ 5% Stress</th>
+                          <th className="px-4 py-2.5 text-right">10-Yr Resilience</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {freedomMapResults.topMatches.slice(0, 6).map(match => {
+                          const resilient = match.inflation10YrLowUSD <= savedFreedomQuiz.monthlyBudgetUSD;
+                          return (
+                            <tr
+                              key={match.country.id}
+                              onClick={() => navigateToCountry(match.country.id)}
+                              className="hover:bg-amber-50/40 cursor-pointer"
+                            >
+                              <td className="px-4 py-2.5 font-extrabold text-slate-950 flex items-center gap-2">
+                                <CountryFlag
+                                  countryName={match.country.name}
+                                  fallbackEmoji={match.country.flag}
+                                  size="xs"
+                                />
+                                <span>{match.country.name}</span>
+                              </td>
+                              <td className="px-4 py-2.5 font-mono font-bold tabular-nums text-slate-900">
+                                ${match.monthlyCostUSD.toLocaleString()}/mo
+                              </td>
+                              <td className="px-4 py-2.5 font-mono font-bold tabular-nums text-teal-700">
+                                ${match.inflation10YrLowUSD.toLocaleString()}/mo
+                              </td>
+                              <td className="px-4 py-2.5 font-mono font-bold tabular-nums text-amber-700">
+                                ${match.inflation10YrHighUSD.toLocaleString()}/mo
+                              </td>
+                              <td className="px-4 py-2.5 text-right">
+                                <span
+                                  className={`px-2 py-0.5 rounded-md font-extrabold ${
+                                    resilient ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'
+                                  }`}
+                                >
+                                  {resilient ? 'Under Budget' : 'Add Cushion'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Quick KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <button
