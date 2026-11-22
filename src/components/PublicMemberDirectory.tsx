@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
 import { getUserEarnedBadges } from '../data/badgeDefinitions';
+import { sanitizePublicBio, sanitizePublicHandle } from '../utils/privacySanitizer';
 import { BadgePill } from './BadgePill';
 import {
   Users,
@@ -119,14 +120,14 @@ export const PublicMemberDirectory: React.FC = () => {
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
         const matchName =
-          p.name.toLowerCase().includes(q) || (acc.username || '').toLowerCase().includes(q);
+          p.name.toLowerCase().includes(q) || sanitizePublicHandle(acc.username).toLowerCase().includes(q);
         const matchOrigin =
           (p.originCountry || '').toLowerCase().includes(q) ||
           (p.residingCountry || '').toLowerCase().includes(q) ||
           (p.originCity || '').toLowerCase().includes(q);
         const matchBio =
-          (p.bio || '').toLowerCase().includes(q) ||
-          (p.aboutMe || '').toLowerCase().includes(q) ||
+          sanitizePublicBio(p.bio).toLowerCase().includes(q) ||
+          sanitizePublicBio(p.aboutMe).toLowerCase().includes(q) ||
           (p.occupationOrBackground || '').toLowerCase().includes(q);
         const matchLang = (p.languagesKnown || []).some(l => l.language.toLowerCase().includes(q));
         const matchInterests = (p.interests || []).some(i => i.toLowerCase().includes(q));
@@ -407,9 +408,9 @@ export const PublicMemberDirectory: React.FC = () => {
                     </div>
 
                     {/* Bio */}
-                    {p.bio && (
+                    {sanitizePublicBio(p.bio) && (
                       <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 font-medium">
-                        {p.bio}
+                        {sanitizePublicBio(p.bio)}
                       </p>
                     )}
 

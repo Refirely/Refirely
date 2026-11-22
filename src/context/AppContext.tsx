@@ -20,6 +20,12 @@ import { parseUrlToRoute, getViewUrl, updatePublicProfileSeo } from '../utils/se
 import { matchesContinentFilter } from '../utils/continents';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import {
+  DEFAULT_PUBLIC_MEMBER_BIO,
+  containsEmailAddress,
+  sanitizePublicBio,
+  sanitizePublicHandle,
+} from '../utils/privacySanitizer';
+import {
   loadUserDmThreads,
   saveUserDmThreads,
   dispatchMessageToRecipient,
@@ -593,12 +599,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? secondaryInterests
           : localInterests;
 
-    const isGenericBio = (b?: string) =>
-      !b ||
-      b.includes('Log in or create a free account') ||
-      b.startsWith('Exploring global retirement havens and expat communities (');
+    const isGenericBio = (b?: string) => {
+      if (!b) return true;
+      const trimmed = b.trim();
+      return (
+        !trimmed ||
+        trimmed.includes('Log in or create a free account') ||
+        trimmed.startsWith('Exploring global retirement havens and expat communities')
+      );
+    };
 
-    const resolvedBio = !isGenericBio(primary.bio)
+    const rawResolvedBio = !isGenericBio(primary.bio)
       ? primary.bio!
       : !isGenericBio(secondary.bio)
         ? secondary.bio!
@@ -606,11 +617,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? cachedLocalAccProfile!.bio!
           : primary.bio || secondary.bio || cachedLocalAccProfile?.bio || '';
 
-    const resolvedAboutMe =
+    const resolvedBio = sanitizePublicBio(rawResolvedBio);
+
+    const resolvedAboutMe = sanitizePublicBio(
       primary.aboutMe?.trim() ||
-      secondary.aboutMe?.trim() ||
-      cachedLocalAccProfile?.aboutMe?.trim() ||
-      '';
+        secondary.aboutMe?.trim() ||
+        cachedLocalAccProfile?.aboutMe?.trim() ||
+        ''
+    );
 
     const resolvedAvatar =
       (primary.avatarUrl && !isSampleStockAvatar(primary.avatarUrl) ? primary.avatarUrl : '') ||
@@ -943,10 +957,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const currentDeleted = getDeletedUserAccountIds();
           const incomingAccounts: UserAccount[] = [];
 
+          const legacyEmailBioAccountIds = new Set<string>();
+
           snapshot.forEach((docSnap) => {
             const data = docSnap.data() as any;
             if (!data || !data.id || data.id === 'guest' || currentDeleted.has(data.id)) {
               return;
+            }
+            if (
+              containsEmailAddress(data.profile?.bio) ||
+              containsEmailAddress(data.profile?.aboutMe) ||
+              containsEmailAddress(data.username)
+            ) {
+              legacyEmailBioAccountIds.add(data.id);
             }
             const cleanName = !isGuestPlaceholder(data.name)
               ? data.name
@@ -961,7 +984,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             const accountObj: UserAccount = {
               id: data.id,
-              username: data.username || data.id,
+              username: sanitizePublicHandle(data.username) || data.id,
               email: cleanEmail,
               password: data.password || 'password123',
               name: cleanName,
@@ -1005,6 +1028,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (!existing) {
                   map.set(remoteAcc.id, remoteAcc);
                   hasNewOrChanged = true;
+                  if (
+                    legacyEmailBioAccountIds.has(remoteAcc.id) &&
+                    !scrubbedEmailBioIdsRef.current.has(remoteAcc.id)
+                  ) {
+                    scrubbedEmailBioIdsRef.current.add(remoteAcc.id);
+                    healedToSyncBack.push(remoteAcc);
+                  }
                 } else {
                   const mergedAcc = mergeUserAccounts(existing, remoteAcc);
                   const prevJson = JSON.stringify(existing.profile);
@@ -1017,9 +1047,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     map.set(remoteAcc.id, mergedAcc);
                     hasNewOrChanged = true;
                   }
+                  const needsEmailBioScrub =
+                    legacyEmailBioAccountIds.has(remoteAcc.id) &&
+                    !scrubbedEmailBioIdsRef.current.has(remoteAcc.id);
+                  if (needsEmailBioScrub) {
+                    scrubbedEmailBioIdsRef.current.add(remoteAcc.id);
+                  }
                   if (
+                    needsEmailBioScrub ||
                     (mergedAcc.profile.travelHistory?.length || 0) >
-                    (remoteAcc.profile.travelHistory?.length || 0)
+                      (remoteAcc.profile.travelHistory?.length || 0)
                   ) {
                     healedToSyncBack.push(mergedAcc);
                   }
@@ -1851,6 +1888,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const enablePeerAutoRepliesRef = React.useRef<boolean>(enablePeerAutoReplies);
   const notificationSoundEnabledRef = React.useRef<boolean>(notificationSoundEnabled);
   const logoutEpochRef = React.useRef<number>(0);
+  const scrubbedEmailBioIdsRef = React.useRef<Set<string>>(new Set());
 
   useEffect(() => { registeredAccountsRef.current = registeredAccounts; }, [registeredAccounts]);
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
@@ -1892,12 +1930,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: safeId,
         name: safeName,
         email: safeEmail,
+        bio: sanitizePublicBio(account.profile?.bio),
+        aboutMe: sanitizePublicBio(account.profile?.aboutMe),
       })
     );
+    const safeUsername =
+      sanitizePublicHandle(String(account.username || safeId)).slice(0, 64) || safeId;
     const safePayload = {
       id: safeId,
       userId: currentUid,
-      username: String(account.username || safeId).trim().slice(0, 64) || safeId,
+      username: safeUsername,
       name: safeName,
       email: safeEmail,
       signupNumber: typeof account.signupNumber === 'number' ? account.signupNumber : (account.profile?.signupNumber || undefined),
@@ -1965,6 +2007,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const docPath = `users/${currentUser.uid}`;
     const safeName = (profileSnapshot.name?.trim() || currentUser.displayName?.trim() || 'Retiree Member').slice(0, 100);
     const safeEmail = (profileSnapshot.email?.trim() || currentUser.email?.trim() || 'member@refirely.org').slice(0, 150);
+    const sanitizedBio = sanitizePublicBio(profileSnapshot.bio);
+    const sanitizedAboutMe = sanitizePublicBio(profileSnapshot.aboutMe);
     const safePayload = {
       ...profileSnapshot,
       id: currentUser.uid,
@@ -1972,6 +2016,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activeAccountId: activeAccId,
       name: safeName,
       email: safeEmail,
+      bio: sanitizedBio,
+      aboutMe: sanitizedAboutMe,
       role: persistedFirestoreRoleRef.current || 'member',
       checklist: checklistSnapshot ?? checklistRef.current,
       updatedAt: new Date().toISOString(),
@@ -2258,7 +2304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             savedCountryIds: ['portugal', 'spain', 'costa-rica'],
             rsvpMeetupIds: [],
             appliedVisas: [],
-            bio: `Exploring global retirement havens and expat communities (${resolvedEmail}).`,
+            bio: DEFAULT_PUBLIC_MEMBER_BIO,
             aboutMe: '',
             occupationOrBackground: 'Global Expat Member',
             relocationStatus: 'Exploring Options',
@@ -2677,6 +2723,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (!uData) return;
               const uDocId = uSnap.id;
               if (currentDeletedUserIds.has(uDocId)) return;
+              // Permanently scrub legacy email-in-bio strings on root /users/{uDocId} docs for existing signups
+              if (
+                (isAdminUser || uDocId === user.uid || uData.userId === user.uid) &&
+                (containsEmailAddress(uData.bio) || containsEmailAddress(uData.aboutMe)) &&
+                !scrubbedEmailBioIdsRef.current.has(`root-user:${uDocId}`)
+              ) {
+                scrubbedEmailBioIdsRef.current.add(`root-user:${uDocId}`);
+                setDoc(
+                  doc(db, 'users', uDocId),
+                  {
+                    ...uData,
+                    id: uDocId,
+                    name: String(uData.name || 'Expat Member').slice(0, 100),
+                    bio: sanitizePublicBio(uData.bio),
+                    aboutMe: sanitizePublicBio(uData.aboutMe),
+                  },
+                  { merge: true }
+                ).catch(() => {});
+              }
               const uActiveAccId = String(uData.activeAccountId || '').trim();
               const uEmailLower = String(uData.email || '').trim().toLowerCase();
 

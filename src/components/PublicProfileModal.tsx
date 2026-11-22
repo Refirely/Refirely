@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getWorldCountryFlag } from '../data/userAccounts';
 import { getUserEarnedBadges } from '../data/badgeDefinitions';
+import { sanitizePublicBio, sanitizePublicHandle } from '../utils/privacySanitizer';
 import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard } from './BadgeShowcase';
 import {
@@ -359,9 +360,9 @@ export const PublicProfileModal: React.FC = () => {
                       <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
                         Member since {memberAccount.createdAt || '2025'}
                       </span>
-                      {memberAccount.username && (
+                      {sanitizePublicHandle(memberAccount.username) && (
                         <span className="font-mono text-amber-300/90 bg-amber-500/15 border border-amber-400/25 px-2 py-0.5 rounded-full break-all">
-                          @{memberAccount.username}
+                          @{sanitizePublicHandle(memberAccount.username)}
                         </span>
                       )}
                     </div>
@@ -586,17 +587,17 @@ export const PublicProfileModal: React.FC = () => {
                 </div>
               </div>
 
-              {profile.bio && (
+              {sanitizePublicBio(profile.bio) && (
                 <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/70 via-teal-50/50 to-amber-50/50 border border-indigo-100/80">
                   <p className="text-sm font-bold text-slate-800 leading-relaxed italic">
-                    &ldquo;{profile.bio}&rdquo;
+                    &ldquo;{sanitizePublicBio(profile.bio)}&rdquo;
                   </p>
                 </div>
               )}
 
-              {profile.aboutMe ? (
+              {sanitizePublicBio(profile.aboutMe) ? (
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {profile.aboutMe}
+                  {sanitizePublicBio(profile.aboutMe)}
                 </p>
               ) : (
                 <p className="text-xs text-slate-500 italic">
