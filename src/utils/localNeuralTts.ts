@@ -1,5 +1,54 @@
-import type { KokoroTTS } from 'kokoro-js';
 import type { VideoSceneSpec } from './promoVideoEngine';
+
+interface KokoroRawAudio {
+  audio: Float32Array;
+  sampling_rate: number;
+}
+
+interface KokoroTtsRuntime {
+  generate(
+    text: string,
+    options?: {
+      voice?: KokoroVoiceId;
+      speed?: number;
+    }
+  ): Promise<KokoroRawAudio>;
+}
+
+interface KokoroModuleExports {
+  KokoroTTS: {
+    from_pretrained(
+      modelId: string,
+      options?: {
+        dtype?: 'fp32' | 'fp16' | 'q8' | 'q4' | 'q4f16';
+        device?: 'wasm' | 'webgpu' | 'cpu' | null;
+        progress_callback?: (progress: unknown) => void;
+      }
+    ): Promise<KokoroTtsRuntime>;
+  };
+}
+
+const KOKORO_CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js',
+  'https://unpkg.com/kokoro-js@1.2.1/dist/kokoro.web.js',
+];
+
+async function loadKokoroWebModule(): Promise<KokoroModuleExports> {
+  let lastError: unknown = null;
+  for (const url of KOKORO_CDN_URLS) {
+    try {
+      const mod = (await import(/* @vite-ignore */ url)) as Partial<KokoroModuleExports>;
+      if (mod?.KokoroTTS && typeof mod.KokoroTTS.from_pretrained === 'function') {
+        return mod as KokoroModuleExports;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Unable to load Kokoro browser neural TTS module from CDN.');
+}
 
 export type KokoroVoiceId =
   | 'af_heart'
@@ -132,8 +181,8 @@ export interface AlignedSceneTrack {
 
 const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 
-let kokoroInstancePromise: Promise<KokoroTTS> | null = null;
-let kokoroLoadedInstance: KokoroTTS | null = null;
+let kokoroInstancePromise: Promise<KokoroTtsRuntime> | null = null;
+let kokoroLoadedInstance: KokoroTtsRuntime | null = null;
 
 interface CachedPcmEntry {
   samples: Float32Array;
@@ -152,7 +201,7 @@ export function isNeuralTtsReady(): boolean {
  */
 export async function getOrLoadNeuralTts(
   onProgress?: (info: TtsProgressInfo) => void
-): Promise<KokoroTTS> {
+): Promise<KokoroTtsRuntime> {
   if (kokoroLoadedInstance) {
     return kokoroLoadedInstance;
   }
@@ -165,7 +214,7 @@ export async function getOrLoadNeuralTts(
     });
 
     kokoroInstancePromise = (async () => {
-      const { KokoroTTS: KokoroClass } = await import('kokoro-js');
+      const { KokoroTTS: KokoroClass } = await loadKokoroWebModule();
       const instance = await KokoroClass.from_pretrained(MODEL_ID, {
         dtype: 'q8',
         device: 'wasm',
