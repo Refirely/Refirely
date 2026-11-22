@@ -23,8 +23,10 @@ import {
   FileText,
   Hash,
   Wand2,
+  Film,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { AdminPromoVideoStudio } from './AdminPromoVideoStudio';
 
 export type PortraitAspect = '9:16' | '4:5';
 
@@ -3188,6 +3190,7 @@ interface AdminSocialPromoStudioProps {
 }
 
 export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ countries }) => {
+  const [studioMode, setStudioMode] = useState<'video' | 'carousel'>('video');
   const [aspect, setAspect] = useState<PortraitAspect>('9:16');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
   const [discardedIds, setDiscardedIds] = useState<string[]>(() => {
@@ -3490,6 +3493,71 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
 
   return (
     <div className="w-full space-y-6">
+      {/* =====================================================================
+          STUDIO MODE SWITCHER: AI PROMO VIDEO STUDIO vs 8-SLIDE CAROUSEL STUDIO
+      ===================================================================== */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-indigo-200/80 p-2.5 shadow-2xs">
+        <div className="inline-flex flex-wrap gap-1.5 p-1 rounded-xl bg-slate-100/90 border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setStudioMode('video')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+              studioMode === 'video'
+                ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-xs'
+                : 'text-slate-700 hover:text-slate-900'
+            }`}
+          >
+            <Film className="w-4 h-4 shrink-0" />
+            <span>Country Promo Video Studio (15s &amp; 30s Reels / YouTube)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudioMode('carousel')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+              studioMode === 'carousel'
+                ? 'bg-gradient-to-r from-indigo-600 to-teal-600 text-white shadow-xs'
+                : 'text-slate-700 hover:text-slate-900'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4 shrink-0" />
+            <span>8-Slide Portrait Carousel &amp; Captions ({allActiveSpecs.length})</span>
+          </button>
+        </div>
+
+        <span className="text-[11px] font-bold text-emerald-700 px-2">
+          100% Local Browser Engine · Zero Paid APIs · 9:16 &amp; 16:9
+        </span>
+      </div>
+
+      {/* Shared Status Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-bold flex items-center justify-between shadow-xs"
+          >
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{toastMessage}</span>
+            </span>
+            <button onClick={() => setToastMessage(null)} className="text-emerald-700 hover:text-emerald-950 cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {studioMode === 'video' ? (
+        <AdminPromoVideoStudio
+          countries={countries}
+          selectedCountryId={selectedCountryId}
+          onSelectCountryId={setSelectedCountryId}
+          onShowToast={showToast}
+        />
+      ) : (
+        <>
       {/* =====================================================================
           SECTION 1: STUDIO HEADER & ASPECT RATIO TOOLBAR (Full-Width Balanced)
       ===================================================================== */}
@@ -3885,26 +3953,6 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
         </div>
       )}
 
-      {/* Status Toast */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-bold flex items-center justify-between shadow-xs"
-          >
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{toastMessage}</span>
-            </span>
-            <button onClick={() => setToastMessage(null)} className="text-emerald-700 hover:text-emerald-950">
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* =====================================================================
           SECTION 3: GALLERY GRID OF PORTRAIT PROMOTIONAL SNAPSHOTS (3-Col Balanced)
       ===================================================================== */}
@@ -4124,6 +4172,8 @@ export const AdminSocialPromoStudio: React.FC<AdminSocialPromoStudioProps> = ({ 
           </motion.div>
         )}
       </AnimatePresence>
+        </>
+      )}
     </div>
   );
 };
