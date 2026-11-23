@@ -68,6 +68,24 @@ export interface FreedomQuizState {
   updatedAt: string;
 }
 
+export interface FreedomPriorityScoreDetail {
+  id: FreedomPriorityId;
+  label: string;
+  score: number; // 0 to 100
+}
+
+export interface FreedomScoreBreakdown {
+  baseScore: number;
+  budgetPoints: number;
+  budgetReason: string;
+  escapePlanPoints: number;
+  escapePlanReason: string;
+  priorityPoints: number;
+  priorityDetails: FreedomPriorityScoreDetail[];
+  curatedBoost: number;
+  whyRankedBullets: string[];
+}
+
 export interface FreedomCountryMatch {
   country: Country;
   matchPercent: number;
@@ -81,6 +99,7 @@ export interface FreedomCountryMatch {
   inflation10YrLowUSD: number; // 3% annual inflation
   inflation10YrHighUSD: number; // 5% annual inflation
   highlightReason: string;
+  scoreBreakdown: FreedomScoreBreakdown;
 }
 
 export interface FreedomMapResults {
@@ -93,11 +112,13 @@ export interface FreedomMapResults {
   topMatch: FreedomCountryMatch | null;
   topMatches: FreedomCountryMatch[];
   blurredMatches: FreedomCountryMatch[];
+  allRanked: FreedomCountryMatch[];
   safeMonthlyWithdrawalUSD: number;
 }
 
 export const FREEDOM_QUIZ_STORAGE_KEY = 'refirely_freedom_map_quiz_v1';
 export const FREEDOM_QUIZ_PENDING_HYDRATE_KEY = 'refirely_freedom_map_quiz_pending_hydrate';
+export const FREEDOM_QUIZ_UPDATED_EVENT = 'refirely_freedom_quiz_updated';
 
 export const DEFAULT_FREEDOM_QUIZ_STATE: FreedomQuizState = {
   nestEggUSD: 250000,
@@ -110,16 +131,21 @@ export const DEFAULT_FREEDOM_QUIZ_STATE: FreedomQuizState = {
 };
 
 export function saveFreedomQuizState(state: FreedomQuizState): void {
+  const payload: FreedomQuizState = {
+    ...state,
+    updatedAt: new Date().toISOString(),
+  };
   try {
-    localStorage.setItem(
-      FREEDOM_QUIZ_STORAGE_KEY,
-      JSON.stringify({
-        ...state,
-        updatedAt: new Date().toISOString(),
-      })
-    );
+    localStorage.setItem(FREEDOM_QUIZ_STORAGE_KEY, JSON.stringify(payload));
   } catch {
     // Ignore storage quota errors
+  }
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(FREEDOM_QUIZ_UPDATED_EVENT, { detail: payload }));
+    }
+  } catch {
+    // Ignore event dispatch issues
   }
 }
 
@@ -417,39 +443,64 @@ export function computeFreedomMapResults(
     }
 
     // Composite lifestyle match score (60–99%)
-    let score = 58;
+    const baseScore = 58;
+    let score = baseScore;
 
     // 1. Budget fit (up to +18 pts)
-    if (monthlySavingsVsBudgetUSD >= 500) score += 18;
-    else if (monthlySavingsVsBudgetUSD >= 0) score += 14;
-    else if (monthlySavingsVsBudgetUSD >= -300) score += 6;
-    else score -= 10;
+    let budgetPoints = 0;
+    let budgetReason = '';
+    if (monthlySavingsVsBudgetUSD >= 500) {
+      budgetPoints = 18;
+      budgetReason = `Est. $${monthlyCostUSD.toLocaleString()}/mo — saves $${monthlySavingsVsBudgetUSD.toLocaleString()}/mo vs your $${monthlyBudget.toLocaleString()}/mo budget`;
+    } else if (monthlySavingsVsBudgetUSD >= 0) {
+      budgetPoints = 14;
+      budgetReason = `Est. $${monthlyCostUSD.toLocaleString()}/mo — fits inside your $${monthlyBudget.toLocaleString()}/mo budget (+$${monthlySavingsVsBudgetUSD.toLocaleString()}/mo cushion)`;
+    } else if (monthlySavingsVsBudgetUSD >= -300) {
+      budgetPoints = 6;
+      budgetReason = `Est. $${monthlyCostUSD.toLocaleString()}/mo — close to target (+$${Math.abs(monthlySavingsVsBudgetUSD).toLocaleString()}/mo above budget)`;
+    } else {
+      budgetPoints = -10;
+      budgetReason = `Est. $${monthlyCostUSD.toLocaleString()}/mo — exceeds your $${monthlyBudget.toLocaleString()}/mo budget by $${Math.abs(monthlySavingsVsBudgetUSD).toLocaleString()}/mo`;
+    }
+    score += budgetPoints;
 
     // 2. Escape plan compatibility (up to +10 pts)
+    let escapePlanPoints = 0;
+    let escapePlanReason = '';
     if (quiz.escapePlan === 'full_fire') {
-      if (country.visa.difficultyRating <= 2) score += 6;
-      else if (country.visa.difficultyRating === 3) score += 3;
-      if (visaQualifies) score += 4;
+      if (country.visa.difficultyRating <= 2) escapePlanPoints += 6;
+      else if (country.visa.difficultyRating === 3) escapePlanPoints += 3;
+      if (visaQualifies) escapePlanPoints += 4;
+      escapePlanReason = `Full FIRE / Passive Income: ${visaLabel} (Difficulty Tier ${country.visa.difficultyRating}/5${visaQualifies ? ' · Qualifies today' : ' · Stretch threshold'})`;
     } else if (quiz.escapePlan === 'coast_fire') {
-      if (hasDnv) score += 6;
-      if (nomad.coworkingDensity === 'World-Class Nomad Hub') score += 4;
-      else if (nomad.coworkingDensity === 'Abundant & Vibrant' || nomad.hasCuratedData) score += 2;
+      if (hasDnv) escapePlanPoints += 6;
+      if (nomad.coworkingDensity === 'World-Class Nomad Hub') escapePlanPoints += 4;
+      else if (nomad.coworkingDensity === 'Abundant & Vibrant' || nomad.hasCuratedData) escapePlanPoints += 2;
+      escapePlanReason = `Coast FIRE / Remote Work: ${hasDnv ? `${visaLabel} available` : 'Flexible long-stay path'} · ${nomad.coworkingDensity} (${nomad.verifiedInternetMbps} Mbps)`;
     } else {
       // Mini-retirement
       const travelScore = getCountryTravelLeisureScore(country);
-      score += Math.round((travelScore / 100) * 6);
-      if (country.visa.difficultyRating <= 3) score += 4;
+      escapePlanPoints += Math.round((travelScore / 100) * 6);
+      if (country.visa.difficultyRating <= 3) escapePlanPoints += 4;
+      escapePlanReason = `Mini-Retirement / Sabbatical: Travel & Leisure ${travelScore}/100 · Entry Tier ${country.visa.difficultyRating}/5 (${visaLabel})`;
     }
+    score += escapePlanPoints;
 
     // 3. Selected Step-4 Priorities (up to +14 pts)
     const activePriorities = quiz.priorities.length > 0 ? quiz.priorities : (['budget-asc', 'healthcare-desc'] as FreedomPriorityId[]);
-    const priorityScores = activePriorities.map(p => scorePriorityForCountry(country, p, quiz.household));
+    const priorityDetails: FreedomPriorityScoreDetail[] = activePriorities.map(p => ({
+      id: p,
+      label: getPriorityShortLabel(p),
+      score: Math.round(scorePriorityForCountry(country, p, quiz.household)),
+    }));
     const avgPriorityScore =
-      priorityScores.reduce((sum, val) => sum + val, 0) / Math.max(1, priorityScores.length);
-    score += Math.round((avgPriorityScore / 100) * 14);
+      priorityDetails.reduce((sum, item) => sum + item.score, 0) / Math.max(1, priorityDetails.length);
+    const priorityPoints = Math.round((avgPriorityScore / 100) * 14);
+    score += priorityPoints;
 
     // Subtle curated-dossier polish boost so flagship rich havens surface cleanly on ties
-    if (nomad.hasCuratedData) score += 2;
+    const curatedBoost = nomad.hasCuratedData ? 2 : 0;
+    score += curatedBoost;
 
     const matchPercent = Math.max(54, Math.min(98, Math.round(score)));
 
@@ -462,6 +513,19 @@ export function computeFreedomMapResults(
       monthlySavingsVsBudgetUSD > 200
         ? `Saves ~$${monthlySavingsVsBudgetUSD.toLocaleString()}/mo vs your budget · Strong ${topPriorityLabel}`
         : `Fits your lifestyle · Ranked high for ${topPriorityLabel}`;
+
+    const prioritySummaryText = priorityDetails
+      .map(d => `${d.label} (${d.score}/100)`)
+      .join(' & ');
+
+    const whyRankedBullets: string[] = [
+      `${budgetReason} (${budgetPoints >= 0 ? `+${budgetPoints}` : budgetPoints} pts)`,
+      `${escapePlanReason} (+${escapePlanPoints} pts)`,
+      `Priority Alignment: ${prioritySummaryText} (+${priorityPoints} pts)`,
+      visaQualifies
+        ? `Qualifies under your ${quiz.household === 'couple' ? 'Couple / Family' : 'Solo'} plan (${visaIncomeReqUSD > 0 ? `Min ~$${visaIncomeReqUSD.toLocaleString()}/mo` : 'Savings / Flexible entry'})`
+        : `Higher threshold (${visaIncomeReqUSD > 0 ? `~$${visaIncomeReqUSD.toLocaleString()}/mo income req` : 'requires larger buffer'})`,
+    ];
 
     return {
       country,
@@ -476,6 +540,17 @@ export function computeFreedomMapResults(
       inflation10YrLowUSD,
       inflation10YrHighUSD,
       highlightReason,
+      scoreBreakdown: {
+        baseScore,
+        budgetPoints,
+        budgetReason,
+        escapePlanPoints,
+        escapePlanReason,
+        priorityPoints,
+        priorityDetails,
+        curatedBoost,
+        whyRankedBullets,
+      },
     };
   });
 
@@ -506,6 +581,7 @@ export function computeFreedomMapResults(
     topMatch,
     topMatches,
     blurredMatches,
+    allRanked: evaluated,
     safeMonthlyWithdrawalUSD,
   };
 }

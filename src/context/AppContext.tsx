@@ -34,6 +34,7 @@ import {
 } from '../utils/messagingMultiUser';
 import {
   clearPendingFreedomQuizHydration,
+  hasPendingFreedomQuizHydration,
   hydrateUserProfileFromFreedomQuiz,
 } from '../utils/freedomMapQuiz';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
@@ -2575,7 +2576,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userProfileRef.current = immediateGoogleAcc.profile;
         setIsAuthenticated(true);
         isAuthenticatedRef.current = true;
+        const hasPendingQuiz = hasPendingFreedomQuizHydration();
         if (
+          !hasPendingQuiz &&
           (isAdminUser || immediateGoogleAcc.id === 'usr-ganesh' || immediateGoogleAcc.profile.role === 'admin') &&
           (currentViewRef.current === 'landing' || currentViewRef.current === 'dashboard')
         ) {
@@ -2957,15 +2960,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
 
           if (quizHydrationResult.hydrated) {
+            // Quiz inputs are now saved to Firestore; stay on the homepage so the user sees their unlocked results right away
+            // and navigates to Dashboard only when clicking "Open My Dashboard".
             clearPendingFreedomQuizHydration();
-            if (!isAdminUser && activeAccount.id !== 'usr-ganesh' && activeAccount.profile.role !== 'admin') {
-              setCurrentView('dashboard');
-              currentViewRef.current = 'dashboard';
-              try {
-                window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              } catch {}
-            }
           }
 
           // 4. Fetch user's journal entries from Firestore and sync all entries to top-level /countryJournals
@@ -3426,12 +3423,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChecklist(INITIAL_CHECKLIST);
     setIsAuthenticated(true);
     isAuthenticatedRef.current = true;
-    if (currentViewRef.current === 'admin' || signupQuizHydration.hydrated) {
+    if (currentViewRef.current === 'admin') {
       setCurrentView('dashboard');
       currentViewRef.current = 'dashboard';
-      try {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch {}
     }
 
     try {
@@ -3619,23 +3613,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userProfileRef.current = googleAcc.profile;
       setIsAuthenticated(true);
       isAuthenticatedRef.current = true;
-      if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
+      if (googleQuizHydration.hydrated) {
+        // Stay right on the Freedom Map Reveal screen so both new signups and returning members
+        // immediately view their unlocked report and click "Open My Dashboard" when ready.
+      } else if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
         currentViewRef.current = 'admin';
-      } else if (currentViewRef.current === 'admin' || googleQuizHydration.hydrated) {
+      } else if (currentViewRef.current === 'admin') {
         setCurrentView('dashboard');
         currentViewRef.current = 'dashboard';
-        try {
-          window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch {}
       }
 
       if (isBrandNewGoogleSignup) {
         try {
-          if (!googleQuizHydration.hydrated) {
-            window.history.pushState({}, '', '/?signup=success');
-          }
+          window.history.pushState({}, '', '/?signup=success');
           if (typeof window !== 'undefined' && window.gtag) {
             window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
           }

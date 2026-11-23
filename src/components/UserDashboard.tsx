@@ -16,7 +16,11 @@ import { CountryFlag } from './CountryFlag';
 import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
-import { computeFreedomMapResults, loadFreedomQuizState } from '../utils/freedomMapQuiz';
+import {
+  FREEDOM_QUIZ_UPDATED_EVENT,
+  computeFreedomMapResults,
+  loadFreedomQuizState,
+} from '../utils/freedomMapQuiz';
 import {
   User, CheckSquare, Calendar, Compass,
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
@@ -90,9 +94,20 @@ export const UserDashboard: React.FC = () => {
     [isAuthenticated, userProfile, activeAccount, earlyPioneerThreshold, registeredAccounts]
   );
 
-  // Unlocked Freedom Map Quiz Report (hydrated seamlessly after 1-click Google OAuth or signup)
+  // Unlocked Freedom Map Quiz Report (hydrated seamlessly after 1-click Google OAuth or signup & synced live with Haven Matcher)
   const [freedomReportTab, setFreedomReportTab] = useState<'matches' | 'visa' | 'inflation'>('matches');
-  const savedFreedomQuiz = useMemo(() => loadFreedomQuizState(), [currentUserId, userProfile.monthlyBudgetUSD]);
+  const [freedomQuizVersion, setFreedomQuizVersion] = useState<number>(0);
+
+  useEffect(() => {
+    const onQuizUpdate = () => setFreedomQuizVersion(v => v + 1);
+    window.addEventListener(FREEDOM_QUIZ_UPDATED_EVENT, onQuizUpdate);
+    return () => window.removeEventListener(FREEDOM_QUIZ_UPDATED_EVENT, onQuizUpdate);
+  }, []);
+
+  const savedFreedomQuiz = useMemo(
+    () => loadFreedomQuizState(),
+    [currentUserId, userProfile.monthlyBudgetUSD, freedomQuizVersion]
+  );
   const freedomMapResults = useMemo(
     () => (savedFreedomQuiz?.completedReveal ? computeFreedomMapResults(countries, savedFreedomQuiz) : null),
     [countries, savedFreedomQuiz]

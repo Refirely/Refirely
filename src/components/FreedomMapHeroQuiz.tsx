@@ -1034,7 +1034,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
               )}
 
               {/* -------------------------------------------------------- */}
-              {/* STEP 4: YOUR IDEAL ENVIRONMENT (90%) — MULTI-COLORED     */}
+              {/* STEP 4: YOUR IDEAL ENVIRONMENT (90%) — COMPACT MULTI-COLOR */}
               {/* -------------------------------------------------------- */}
               {phase === 'quiz' && step === 4 && (
                 <motion.div
@@ -1043,39 +1043,45 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: direction * -20 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                  className="space-y-5"
+                  className="space-y-3.5"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                    <div className="space-y-1">
-                      <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-950 tracking-tight">
                         What matters most in your next home base?
                       </h2>
-                      <p className="text-sm text-slate-600">
-                        Pick up to 2 priorities to rank your top country matches — powered by all Explore Havens filters.
+                      <p className="text-xs sm:text-sm text-slate-600">
+                        Pick up to 2 priorities to rank your top country matches across all Explore Havens filters.
                       </p>
                     </div>
-                    <span className="text-xs font-mono font-extrabold tabular-nums text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-rose-600 px-3.5 py-1.5 rounded-xl shadow-sm shrink-0 self-start sm:self-auto">
+                    <span className="text-xs font-mono font-extrabold tabular-nums text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-rose-600 px-3 py-1 rounded-xl shadow-sm shrink-0 self-start sm:self-auto">
                       {quiz.priorities.length} / 2 selected
                     </span>
                   </div>
 
-                  {/* Multi-Colored Preference Card Groups (Matches "Primary Digital Nomad Priority" Aesthetic) */}
-                  <div className="space-y-4">
+                  {/* Compact Multi-Colored Preference Card Groups */}
+                  <div className="space-y-2.5">
                     {PRIORITY_GROUPS.map(groupName => {
                       const groupItems = FREEDOM_PRIORITY_OPTIONS.filter(
                         opt => opt.group === groupName
                       );
                       const gStyle = GROUP_STYLES[groupName];
+                      const gridCols =
+                        groupName === 'Climate & Tax'
+                          ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+                          : groupName === 'Lifestyle & Nomad'
+                            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+                            : 'grid-cols-2 sm:grid-cols-3';
                       return (
                         <div
                           key={groupName}
-                          className={`p-3.5 sm:p-4 rounded-2xl border space-y-3 ${gStyle.container}`}
+                          className={`p-2.5 sm:p-3 rounded-2xl border space-y-2 ${gStyle.container}`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2 px-0.5">
+                            <div className="flex items-center gap-1.5">
                               <span className={`w-2 h-2 rounded-full ${gStyle.dotColor}`} />
                               <span
-                                className={`text-[11px] font-extrabold uppercase tracking-wider ${gStyle.headerText}`}
+                                className={`text-[10px] font-extrabold uppercase tracking-wider ${gStyle.headerText}`}
                               >
                                 {groupName}
                               </span>
@@ -1083,11 +1089,11 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${gStyle.badgeBg}`}
                             >
-                              {groupItems.length} filters
+                              {groupItems.length}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                          <div className={`grid ${gridCols} gap-1.5 sm:gap-2`}>
                             {groupItems.map(opt => {
                               const selectedIndex = quiz.priorities.indexOf(opt.id);
                               const isSelected = selectedIndex !== -1;
@@ -1097,43 +1103,33 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                                 <motion.button
                                   key={opt.id}
                                   type="button"
-                                  whileHover={{ y: -2, scale: 1.01 }}
-                                  whileTap={{ scale: 0.97 }}
+                                  title={opt.shortHint}
+                                  whileHover={{ y: -1, scale: 1.01 }}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => handleTogglePriority(opt.id)}
-                                  className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                  className={`relative min-h-[40px] px-2.5 py-1.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
                                     isSelected
                                       ? `bg-gradient-to-br ${visual.activeGrad}`
                                       : visual.idleStyle
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span
-                                      className={`p-1.5 rounded-lg transition-colors ${
-                                        isSelected
-                                          ? 'bg-white/20 text-white'
-                                          : visual.iconBoxIdle
-                                      }`}
-                                    >
-                                      <Icon className="w-3.5 h-3.5" />
+                                  <span
+                                    className={`p-1.5 rounded-lg shrink-0 transition-colors ${
+                                      isSelected
+                                        ? 'bg-white/20 text-white'
+                                        : visual.iconBoxIdle
+                                    }`}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                  </span>
+                                  <span className="text-[11px] font-extrabold leading-tight flex-1 min-w-0 line-clamp-2">
+                                    {opt.label}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-md bg-white/25 text-white shrink-0">
+                                      #{selectedIndex + 1}
                                     </span>
-                                    {isSelected && (
-                                      <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white font-mono">
-                                        #{selectedIndex + 1} Active
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-extrabold leading-tight">
-                                      {opt.label}
-                                    </div>
-                                    <div
-                                      className={`text-[10px] font-medium mt-0.5 leading-snug ${
-                                        isSelected ? 'text-white/85' : 'text-slate-500'
-                                      }`}
-                                    >
-                                      {opt.shortHint}
-                                    </div>
-                                  </div>
+                                  )}
                                 </motion.button>
                               );
                             })}
@@ -1144,11 +1140,11 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                   </div>
 
                   {/* Final Submit CTA */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-indigo-100">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-indigo-100">
                     <button
                       type="button"
                       onClick={() => goToStep(3)}
-                      className="min-h-[48px] px-4 sm:px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Back</span>
@@ -1158,7 +1154,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       whileHover={{ scale: 1.01, y: -1 }}
                       whileTap={{ scale: 0.99 }}
                       onClick={handleRevealMatches}
-                      className="flex-1 sm:flex-none min-h-[54px] px-7 sm:px-9 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-black text-base shadow-lg shadow-teal-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="flex-1 sm:flex-none min-h-[48px] px-7 sm:px-9 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-black text-sm sm:text-base shadow-lg shadow-teal-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <span>Reveal My Matching Countries ✨</span>
                     </motion.button>
@@ -1223,10 +1219,18 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                     }`}
                   >
                     <div className="space-y-1">
-                      <div className="text-sm sm:text-base font-black text-slate-950">
-                        {isGuestUser
-                          ? '🎉 Your Freedom Profile is 85% Complete!'
-                          : 'Your Full Freedom Map & Visa Report is Unlocked'}
+                      <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base font-black text-slate-950">
+                        <span>
+                          {isGuestUser
+                            ? '🎉 Your Freedom Profile is 85% Complete!'
+                            : '🎉 Your Full Freedom Map & Visa Report is Unlocked!'}
+                        </span>
+                        {!isGuestUser && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-md">
+                            <Check className="w-3 h-3" />
+                            <span>Saved to your profile</span>
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs sm:text-sm text-slate-600 font-medium">
                         Calculated for{' '}
@@ -1243,10 +1247,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                     {!isGuestUser && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setCurrentView('dashboard');
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
+                        onClick={() => onNavigateView('dashboard')}
                         className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white text-xs sm:text-sm font-extrabold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <span>Open My Dashboard</span>
