@@ -3246,7 +3246,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     userProfileRef.current = restoredProfile;
     setIsAuthenticated(true);
     isAuthenticatedRef.current = true;
-    if (isAccountOwnerAdmin) {
+    if (currentViewRef.current === 'visa-check') {
+      // Keep user right on the Visa Check page so the global country explorer unlocks in place
+    } else if (isAccountOwnerAdmin) {
       setCurrentView('admin');
       currentViewRef.current = 'admin';
     } else if (currentViewRef.current === 'admin') {
@@ -3613,9 +3615,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userProfileRef.current = googleAcc.profile;
       setIsAuthenticated(true);
       isAuthenticatedRef.current = true;
-      if (googleQuizHydration.hydrated) {
-        // Stay right on the Freedom Map Reveal screen so both new signups and returning members
-        // immediately view their unlocked report and click "Open My Dashboard" when ready.
+      if (googleQuizHydration.hydrated || currentViewRef.current === 'visa-check') {
+        // Stay right on the Freedom Map Reveal screen or Visa Check page so both new signups and returning members
+        // immediately view their unlocked results without leaving the page.
       } else if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
         currentViewRef.current = 'admin';
@@ -3626,7 +3628,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isBrandNewGoogleSignup) {
         try {
-          window.history.pushState({}, '', '/?signup=success');
+          if (currentViewRef.current !== 'visa-check') {
+            window.history.pushState({}, '', '/?signup=success');
+          }
           if (typeof window !== 'undefined' && window.gtag) {
             window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
           }
