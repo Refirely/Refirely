@@ -17,7 +17,8 @@ import {
   loadFreedomQuizState,
   mapFreedomPrioritiesToClimate,
   mapFreedomQuizToPersona,
-  saveFreedomQuizState,
+  normalizeFreedomQuizState,
+  pickNewestFreedomQuizState,
 } from '../utils/freedomMapQuiz';
 import {
   Sparkles,
@@ -364,6 +365,7 @@ export const HavenMatcherWidget: React.FC = () => {
     countries,
     userProfile,
     updateUserProfile,
+    saveFreedomMapQuiz,
     navigateToCountry,
     isCountrySaved,
     toggleSaveCountry,
@@ -411,16 +413,42 @@ export const HavenMatcherWidget: React.FC = () => {
   };
 
   const [quizState, setQuizState] = useState<FreedomQuizState>(() => {
-    return loadFreedomQuizState() || buildFallbackQuizFromProfile();
+    return (
+      pickNewestFreedomQuizState(userProfile.freedomMapQuiz, loadFreedomQuizState()) ||
+      buildFallbackQuizFromProfile()
+    );
   });
+
+  // Hydrate immediately whenever cloud-synced userProfile.freedomMapQuiz arrives from another browser/device
+  useEffect(() => {
+    const cloudQuiz = normalizeFreedomQuizState(userProfile.freedomMapQuiz);
+    if (!cloudQuiz) return;
+    setQuizState(prev => {
+      const newest = pickNewestFreedomQuizState(cloudQuiz, prev);
+      if (!newest) return prev;
+      if (
+        prev.updatedAt === newest.updatedAt &&
+        prev.nestEggUSD === newest.nestEggUSD &&
+        prev.monthlyBudgetUSD === newest.monthlyBudgetUSD &&
+        prev.household === newest.household &&
+        prev.escapePlan === newest.escapePlan &&
+        prev.priorities.join(',') === newest.priorities.join(',')
+      ) {
+        return prev;
+      }
+      return newest;
+    });
+  }, [userProfile.freedomMapQuiz]);
 
   // Listen for live updates if changed from Homepage Freedom Map Quiz
   useEffect(() => {
     const handleExternalUpdate = (e: Event) => {
-      const custom = e as CustomEvent<FreedomQuizState>;
-      if (custom.detail && typeof custom.detail.nestEggUSD === 'number') {
+      const custom = e as CustomEvent<FreedomQuizState | null>;
+      if (!custom.detail) return;
+      const incoming = normalizeFreedomQuizState(custom.detail);
+      if (incoming) {
         setQuizState(prev =>
-          prev.updatedAt === custom.detail.updatedAt ? prev : custom.detail
+          prev.updatedAt === incoming.updatedAt ? prev : incoming
         );
       }
     };
@@ -435,7 +463,7 @@ export const HavenMatcherWidget: React.FC = () => {
         completedReveal: true,
         updatedAt: new Date().toISOString(),
       };
-      saveFreedomQuizState(next);
+      saveFreedomMapQuiz(next);
       return next;
     });
   };
@@ -826,7 +854,12 @@ export const HavenMatcherWidget: React.FC = () => {
   ]);
 
   const handleSaveScenarioToProfile = () => {
-    saveFreedomQuizState(quizState);
+    const finalizedQuiz: FreedomQuizState = {
+      ...quizState,
+      completedReveal: true,
+      updatedAt: new Date().toISOString(),
+    };
+    saveFreedomMapQuiz(finalizedQuiz, { immediate: true });
     const topMatchName = freedomResults.topMatch?.country.name || userProfile.targetCountry;
     const top4Ids = freedomResults.topMatches.slice(0, 4).map(m => m.country.id);
     const mergedSaved = Array.from(new Set([...top4Ids, ...(userProfile.savedCountryIds || [])]));
@@ -841,6 +874,7 @@ export const HavenMatcherWidget: React.FC = () => {
       preferredClimate: mappedClimate !== 'Any' ? mappedClimate : userProfile.preferredClimate,
       originCountry: enableNationalityModifier ? interactiveNationality : userProfile.originCountry,
       relocationStatus: quizState.escapePlan === 'full_fire' ? 'Early Retired (FIRE)' : 'Exploring Options',
+      freedomMapQuiz: finalizedQuiz,
       finances: {
         ...finances,
         monthlyCurrentExpensesUSD: quizState.monthlyBudgetUSD,
@@ -857,7 +891,7 @@ export const HavenMatcherWidget: React.FC = () => {
       },
     });
     setCurrentPersona(mapFreedomQuizToPersona(quizState.escapePlan));
-    setSavedBannerMsg('Saved & synced to your Refirely profile and homepage Freedom Map!');
+    setSavedBannerMsg('Saved & cloud-synced across all your devices, profile, and homepage Freedom Map!');
     window.setTimeout(() => setSavedBannerMsg(null), 3500);
   };
 

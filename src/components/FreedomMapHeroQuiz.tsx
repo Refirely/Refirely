@@ -43,13 +43,15 @@ import { CountryFlag } from './CountryFlag';
 import {
   DEFAULT_FREEDOM_QUIZ_STATE,
   FREEDOM_PRIORITY_OPTIONS,
+  FREEDOM_QUIZ_UPDATED_EVENT,
   FreedomEscapePlan,
   FreedomPriorityId,
   FreedomQuizState,
   computeFreedomMapResults,
   loadFreedomQuizState,
   markPendingFreedomQuizHydration,
-  saveFreedomQuizState,
+  normalizeFreedomQuizState,
+  pickNewestFreedomQuizState,
 } from '../utils/freedomMapQuiz';
 
 interface FreedomMapHeroQuizProps {
@@ -370,6 +372,8 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
     countries,
     isAuthenticated,
     currentUserId,
+    userProfile,
+    saveFreedomMapQuiz,
     loginWithGoogle,
     openAuthModal,
     navigateToCountry,
@@ -379,16 +383,22 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
 
   const isGuestUser = !isAuthenticated || currentUserId === 'guest';
 
-  // Restore saved quiz state from localStorage so visitors never lose progress
+  // Restore newest synced quiz state from Firestore userProfile or localStorage without overwriting timestamps on mount
   const [quiz, setQuiz] = useState<FreedomQuizState>(() => {
-    const saved = loadFreedomQuizState();
-    return saved || DEFAULT_FREEDOM_QUIZ_STATE;
+    const initial = pickNewestFreedomQuizState(
+      !isGuestUser ? userProfile.freedomMapQuiz : null,
+      loadFreedomQuizState()
+    );
+    return initial || DEFAULT_FREEDOM_QUIZ_STATE;
   });
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [phase, setPhase] = useState<'quiz' | 'calculating' | 'reveal'>(() => {
-    const saved = loadFreedomQuizState();
-    return saved?.completedReveal ? 'reveal' : 'quiz';
+    const initial = pickNewestFreedomQuizState(
+      !isGuestUser ? userProfile.freedomMapQuiz : null,
+      loadFreedomQuizState()
+    );
+    return initial?.completedReveal ? 'reveal' : 'quiz';
   });
   const [hasInteractedStep1, setHasInteractedStep1] = useState(false);
   const [calcStage, setCalcStage] = useState(0);
@@ -399,10 +409,60 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
 
   const calcTimerRef = useRef<number | null>(null);
   const calcStageTimerRef = useRef<number | null>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
+  // Hydrate when cloud-synced userProfile.freedomMapQuiz arrives (e.g. signing in on another computer/browser)
   useEffect(() => {
-    saveFreedomQuizState(quiz);
-  }, [quiz]);
+    if (isGuestUser) return;
+    const cloudQuiz = normalizeFreedomQuizState(userProfile.freedomMapQuiz);
+    if (!cloudQuiz) return;
+
+    setQuiz(prev => {
+      const newest = pickNewestFreedomQuizState(cloudQuiz, prev);
+      if (!newest) return prev;
+      if (
+        prev.updatedAt === newest.updatedAt &&
+        prev.nestEggUSD === newest.nestEggUSD &&
+        prev.monthlyBudgetUSD === newest.monthlyBudgetUSD &&
+        prev.household === newest.household &&
+        prev.escapePlan === newest.escapePlan &&
+        prev.completedReveal === newest.completedReveal &&
+        prev.priorities.join(',') === newest.priorities.join(',')
+      ) {
+        return prev;
+      }
+      return newest;
+    });
+
+    if (cloudQuiz.completedReveal && phaseRef.current !== 'calculating') {
+      setPhase('reveal');
+    }
+  }, [isGuestUser, currentUserId, userProfile.freedomMapQuiz]);
+
+  // Listen for live updates from Dashboard / Haven Matcher / logout clear
+  useEffect(() => {
+    const handleExternalUpdate = (e: Event) => {
+      const custom = e as CustomEvent<FreedomQuizState | null>;
+      if (custom.detail === null) {
+        setQuiz(DEFAULT_FREEDOM_QUIZ_STATE);
+        setPhase('quiz');
+        setStep(1);
+        return;
+      }
+      const incoming = normalizeFreedomQuizState(custom.detail);
+      if (!incoming) return;
+      setQuiz(prev => {
+        if (prev.updatedAt === incoming.updatedAt) return prev;
+        return incoming;
+      });
+      if (incoming.completedReveal && phaseRef.current !== 'calculating') {
+        setPhase('reveal');
+      }
+    };
+    window.addEventListener(FREEDOM_QUIZ_UPDATED_EVENT, handleExternalUpdate);
+    return () => window.removeEventListener(FREEDOM_QUIZ_UPDATED_EVENT, handleExternalUpdate);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -410,6 +470,20 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
       if (calcStageTimerRef.current) window.clearInterval(calcStageTimerRef.current);
     };
   }, []);
+
+  const updateQuizFromUser = (
+    updater: (prev: FreedomQuizState) => FreedomQuizState,
+    options?: { immediate?: boolean }
+  ) => {
+    setQuiz(prev => {
+      const next: FreedomQuizState = {
+        ...updater(prev),
+        updatedAt: new Date().toISOString(),
+      };
+      saveFreedomMapQuiz(next, options);
+      return next;
+    });
+  };
 
   const results = useMemo(
     () => computeFreedomMapResults(countries, quiz),
@@ -423,7 +497,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
   };
 
   const handleTogglePriority = (priorityId: FreedomPriorityId) => {
-    setQuiz(prev => {
+    updateQuizFromUser(prev => {
       const exists = prev.priorities.includes(priorityId);
       if (exists) {
         return {
@@ -451,7 +525,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
       updatedAt: new Date().toISOString(),
     };
     setQuiz(finalized);
-    saveFreedomQuizState(finalized);
+    saveFreedomMapQuiz(finalized, { immediate: true });
     setPhase('calculating');
     setCalcStage(0);
 
@@ -496,7 +570,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
   };
 
   const handleResetQuiz = () => {
-    setQuiz(prev => ({ ...prev, completedReveal: false }));
+    updateQuizFromUser(prev => ({ ...prev, completedReveal: false }), { immediate: true });
     setStep(1);
     setPhase('quiz');
     setDirection(-1);
@@ -687,7 +761,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                         value={Math.min(1500000, quiz.nestEggUSD)}
                         onChange={e => {
                           setHasInteractedStep1(true);
-                          setQuiz(prev => ({
+                          updateQuizFromUser(prev => ({
                             ...prev,
                             nestEggUSD: Number(e.target.value),
                           }));
@@ -718,7 +792,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                             whileTap={{ scale: 0.97 }}
                             onClick={() => {
                               setHasInteractedStep1(true);
-                              setQuiz(prev => ({ ...prev, nestEggUSD: preset.value }));
+                              updateQuizFromUser(prev => ({ ...prev, nestEggUSD: preset.value }));
                             }}
                             className={`min-h-[54px] px-3 py-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                               isSelected ? `bg-gradient-to-br ${preset.activeGrad}` : preset.idleStyle
@@ -783,7 +857,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       For context:{' '}
                       <button
                         type="button"
-                        onClick={() => setQuiz(prev => ({ ...prev, monthlyBudgetUSD: 1800 }))}
+                        onClick={() => updateQuizFromUser(prev => ({ ...prev, monthlyBudgetUSD: 1800 }))}
                         className="font-bold text-teal-700 hover:text-teal-900 underline decoration-teal-300 underline-offset-2 cursor-pointer"
                       >
                         $1,800/mo
@@ -791,7 +865,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       lives comfortably in Chiang Mai;{' '}
                       <button
                         type="button"
-                        onClick={() => setQuiz(prev => ({ ...prev, monthlyBudgetUSD: 3200 }))}
+                        onClick={() => updateQuizFromUser(prev => ({ ...prev, monthlyBudgetUSD: 3200 }))}
                         className="font-bold text-amber-700 hover:text-amber-900 underline decoration-amber-300 underline-offset-2 cursor-pointer"
                       >
                         $3,200/mo
@@ -813,7 +887,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                     <div className="grid grid-cols-2 p-1 rounded-xl bg-white border border-indigo-200/80 shadow-2xs shrink-0 gap-1">
                       <button
                         type="button"
-                        onClick={() => setQuiz(prev => ({ ...prev, household: 'solo' }))}
+                        onClick={() => updateQuizFromUser(prev => ({ ...prev, household: 'solo' }))}
                         className={`min-h-[42px] px-4 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           quiz.household === 'solo'
                             ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
@@ -825,7 +899,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setQuiz(prev => ({ ...prev, household: 'couple' }))}
+                        onClick={() => updateQuizFromUser(prev => ({ ...prev, household: 'couple' }))}
                         className={`min-h-[42px] px-4 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           quiz.household === 'couple'
                             ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-sm'
@@ -859,7 +933,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                         step={100}
                         value={quiz.monthlyBudgetUSD}
                         onChange={e =>
-                          setQuiz(prev => ({
+                          updateQuizFromUser(prev => ({
                             ...prev,
                             monthlyBudgetUSD: Number(e.target.value),
                           }))
@@ -946,7 +1020,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                           whileHover={{ y: -2, scale: 1.01 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() =>
-                            setQuiz(prev => ({ ...prev, escapePlan: option.id }))
+                            updateQuizFromUser(prev => ({ ...prev, escapePlan: option.id }))
                           }
                           className={`group relative text-left p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-4 ${
                             isSelected ? `bg-gradient-to-br ${option.activeGrad}` : option.idleStyle

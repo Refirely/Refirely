@@ -20,6 +20,7 @@ import {
   FREEDOM_QUIZ_UPDATED_EVENT,
   computeFreedomMapResults,
   loadFreedomQuizState,
+  pickNewestFreedomQuizState,
 } from '../utils/freedomMapQuiz';
 import {
   User, CheckSquare, Calendar, Compass,
@@ -105,8 +106,8 @@ export const UserDashboard: React.FC = () => {
   }, []);
 
   const savedFreedomQuiz = useMemo(
-    () => loadFreedomQuizState(),
-    [currentUserId, userProfile.monthlyBudgetUSD, freedomQuizVersion]
+    () => pickNewestFreedomQuizState(userProfile.freedomMapQuiz, loadFreedomQuizState()),
+    [currentUserId, userProfile.freedomMapQuiz, userProfile.monthlyBudgetUSD, freedomQuizVersion]
   );
   const freedomMapResults = useMemo(
     () => (savedFreedomQuiz?.completedReveal ? computeFreedomMapResults(countries, savedFreedomQuiz) : null),

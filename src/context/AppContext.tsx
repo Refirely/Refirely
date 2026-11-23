@@ -33,9 +33,15 @@ import {
   sortDmThreadsByLatest
 } from '../utils/messagingMultiUser';
 import {
+  FreedomQuizState,
+  clearFreedomQuizState,
   clearPendingFreedomQuizHydration,
   hasPendingFreedomQuizHydration,
   hydrateUserProfileFromFreedomQuiz,
+  loadFreedomQuizState,
+  normalizeFreedomQuizState,
+  pickNewestFreedomQuizState,
+  saveFreedomQuizState,
 } from '../utils/freedomMapQuiz';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -156,6 +162,7 @@ interface AppContextType {
   toggleRole: () => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   updateFinances: (finances: Partial<UserFinancialPortfolio>) => void;
+  saveFreedomMapQuiz: (quizState: FreedomQuizState, options?: { immediate?: boolean }) => void;
 
   // Travel History, Languages, Interests actions
   addVisitedCountry: (entry: Omit<VisitedCountry, 'id'>) => void;
@@ -653,11 +660,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     };
 
+    const resolvedFreedomMapQuiz = pickNewestFreedomQuizState(
+      primary.freedomMapQuiz,
+      secondary.freedomMapQuiz,
+      cachedLocalAccProfile?.freedomMapQuiz
+    );
+
     return {
       ...DEFAULT_ACCOUNTS[0].profile,
       ...cachedLocalAccProfile,
       ...secondary,
       ...primary,
+      ...(resolvedFreedomMapQuiz ? { freedomMapQuiz: resolvedFreedomMapQuiz } : {}),
       id: resolvedId,
       name:
         (customSavedName && !isGuestPlaceholder(customSavedName) ? customSavedName.trim() : '') ||
@@ -1075,6 +1089,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(merged));
                 } catch {}
               }
+
+              // Live cross-device Freedom Map Quiz sync for active signed-in user (covers Email/Password & Google sessions)
+              const activeId = currentUserIdRef.current;
+              if (isAuthenticatedRef.current && activeId && activeId !== 'guest') {
+                const activeRemoteAcc = map.get(activeId);
+                const remoteQuiz = normalizeFreedomQuizState(activeRemoteAcc?.profile?.freedomMapQuiz);
+                const currentQuiz = normalizeFreedomQuizState(userProfileRef.current?.freedomMapQuiz);
+                const newest = pickNewestFreedomQuizState(remoteQuiz, currentQuiz);
+                if (newest && (!currentQuiz || newest.updatedAt !== currentQuiz.updatedAt)) {
+                  setUserProfile(prevProf => {
+                    const nextProf = { ...prevProf, freedomMapQuiz: newest };
+                    userProfileRef.current = nextProf;
+                    return nextProf;
+                  });
+                  saveFreedomQuizState(newest, { preserveTimestamp: true });
+                }
+              }
+
               return hasNewOrChanged ? merged : prevAccounts;
             });
 
@@ -1170,11 +1202,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const prevLangLen = acc.profile.languagesKnown?.length || 0;
               const nextLangLen = updatedProfile.languagesKnown?.length || 0;
 
+              const prevQuizTs = acc.profile.freedomMapQuiz?.updatedAt || '';
+              const nextQuizTs = updatedProfile.freedomMapQuiz?.updatedAt || '';
+
               if (
                 nextTravelLen > prevTravelLen ||
                 nextLangLen > prevLangLen ||
                 JSON.stringify(acc.profile.travelHistory || []) !==
-                  JSON.stringify(updatedProfile.travelHistory || [])
+                  JSON.stringify(updatedProfile.travelHistory || []) ||
+                (nextQuizTs && nextQuizTs !== prevQuizTs)
               ) {
                 changed = true;
                 const healedAcc: UserAccount = {
@@ -1211,6 +1247,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   setUserProfile((prevProf) => {
                     const nextProf = mergeUserProfiles(prevProf, enrichedActive.profile, false);
                     userProfileRef.current = nextProf;
+                    if (
+                      nextProf.freedomMapQuiz &&
+                      nextProf.freedomMapQuiz.updatedAt !== prevProf.freedomMapQuiz?.updatedAt
+                    ) {
+                      const normalizedRemote = normalizeFreedomQuizState(nextProf.freedomMapQuiz);
+                      if (normalizedRemote) {
+                        saveFreedomQuizState(normalizedRemote, { preserveTimestamp: true });
+                      }
+                    }
                     return nextProf;
                   });
                 }
@@ -2046,9 +2091,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Helper to sync workspace state (community threads, meetups, direct messages, custom countries) to /users/{uid}/workspace/{docId} AND top-level collections
+  // Helper to sync workspace state (community threads, meetups, direct messages, custom countries, freedomMapQuiz) to /users/{uid}/workspace/{docId} AND top-level collections
   const syncWorkspaceToFirestore = async (
-    docId: 'community' | 'countries',
+    docId: 'community' | 'countries' | 'freedomMapQuiz',
     payloadData: Record<string, unknown>
   ): Promise<boolean> => {
     const currentUser = auth.currentUser;
@@ -2925,8 +2970,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             localStorage.setItem(`${LOCAL_STORAGE_KEY}_registered_accounts`, JSON.stringify(mergedAccountsList));
           } catch {}
 
-          // 6. Activate the signed-in Google user's User ID and profile
-          const activeAccount = mergedMap.get(resolvedGoogleAccount.id) || resolvedGoogleAccount;
+          // 6. Reconcile cross-device Freedom Map Quiz from Firestore workspace, root user doc, saved account, and localStorage
+          let activeAccount = mergedMap.get(resolvedGoogleAccount.id) || resolvedGoogleAccount;
+          let workspaceFreedomQuiz: FreedomQuizState | null = null;
+          try {
+            const quizWorkspaceSnap = await getDoc(doc(db, 'users', user.uid, 'workspace', 'freedomMapQuiz'));
+            if (quizWorkspaceSnap.exists()) {
+              const qData = quizWorkspaceSnap.data() as any;
+              workspaceFreedomQuiz = normalizeFreedomQuizState(qData?.quiz || qData);
+            }
+          } catch {}
+
+          const localSavedQuiz = loadFreedomQuizState();
+          const bestSyncedQuiz = quizHydrationResult.hydrated
+            ? normalizeFreedomQuizState(activeAccount.profile.freedomMapQuiz) || localSavedQuiz
+            : pickNewestFreedomQuizState(
+                workspaceFreedomQuiz,
+                firestoreRootData?.freedomMapQuiz,
+                activeAccount.profile.freedomMapQuiz,
+                localSavedQuiz
+              );
+
+          if (bestSyncedQuiz) {
+            const updatedProfileWithQuiz: UserProfile = {
+              ...activeAccount.profile,
+              freedomMapQuiz: bestSyncedQuiz,
+            };
+            activeAccount = {
+              ...activeAccount,
+              profile: updatedProfileWithQuiz,
+            };
+            mergedMap.set(activeAccount.id, activeAccount);
+            saveFreedomQuizState(bestSyncedQuiz, { preserveTimestamp: true });
+
+            const needsCloudQuizWrite =
+              quizHydrationResult.hydrated ||
+              !workspaceFreedomQuiz ||
+              workspaceFreedomQuiz.updatedAt !== bestSyncedQuiz.updatedAt ||
+              firestoreRootData?.freedomMapQuiz?.updatedAt !== bestSyncedQuiz.updatedAt;
+            if (needsCloudQuizWrite) {
+              syncWorkspaceToFirestore('freedomMapQuiz', { quiz: bestSyncedQuiz }).catch(() => {});
+              syncSingleAccountToFirestore(activeAccount).catch(() => {});
+            }
+          }
+
+          // Activate the signed-in Google user's User ID and profile
           setCurrentUserId(activeAccount.id);
           currentUserIdRef.current = activeAccount.id;
           setUserProfile({
@@ -3048,6 +3136,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => unsubscribe();
   }, []);
+
+  // Real-time cross-device listener for Freedom Map Quiz stored in /users/{uid}/workspace/freedomMapQuiz
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const quizDocRef = doc(db, 'users', firebaseUser.uid, 'workspace', 'freedomMapQuiz');
+    const unsubscribe = onSnapshot(
+      quizDocRef,
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() as any;
+        const remoteQuiz = normalizeFreedomQuizState(data?.quiz || data);
+        if (!remoteQuiz) return;
+        const localQuiz = normalizeFreedomQuizState(userProfileRef.current?.freedomMapQuiz) || loadFreedomQuizState();
+        const newest = pickNewestFreedomQuizState(remoteQuiz, localQuiz);
+        if (newest && (!localQuiz || newest.updatedAt !== localQuiz.updatedAt)) {
+          setUserProfile(prev => {
+            const next = { ...prev, freedomMapQuiz: newest };
+            userProfileRef.current = next;
+            try {
+              localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile`, JSON.stringify(next));
+              if (currentUserIdRef.current && currentUserIdRef.current !== 'guest') {
+                localStorage.setItem(`${LOCAL_STORAGE_KEY}_profile_${currentUserIdRef.current}`, JSON.stringify(next));
+              }
+            } catch {}
+            return next;
+          });
+          saveFreedomQuizState(newest, { preserveTimestamp: true });
+        }
+      },
+      (err) => {
+        console.warn('Real-time freedomMapQuiz listener notice:', err);
+      }
+    );
+    return () => unsubscribe();
+  }, [firebaseUser]);
 
   // Sync to local storage
   useEffect(() => {
@@ -3244,10 +3367,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentUserIdRef.current = account.id;
     setUserProfile(restoredProfile);
     userProfileRef.current = restoredProfile;
+    if (restoredProfile.freedomMapQuiz) {
+      const normalizedQuiz = normalizeFreedomQuizState(restoredProfile.freedomMapQuiz);
+      if (normalizedQuiz) {
+        saveFreedomQuizState(normalizedQuiz, { preserveTimestamp: true });
+      }
+    }
     setIsAuthenticated(true);
     isAuthenticatedRef.current = true;
-    if (currentViewRef.current === 'visa-check') {
-      // Keep user right on the Visa Check page so the global country explorer unlocks in place
+    if (currentViewRef.current === 'visa-check' || currentViewRef.current === 'explore') {
+      // Keep user right on the Visa Check or Explore Havens page so gated listings unlock in place
     } else if (isAccountOwnerAdmin) {
       setCurrentView('admin');
       currentViewRef.current = 'admin';
@@ -3462,7 +3591,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
-      window.history.pushState({}, '', '/?signup=success');
+      if (currentViewRef.current !== 'visa-check' && currentViewRef.current !== 'explore') {
+        window.history.pushState({}, '', '/?signup=success');
+      }
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
       }
@@ -3534,6 +3665,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       window.history.pushState({ view: 'landing' }, '', '/');
     } catch {}
+
+    if (freedomQuizSyncTimerRef.current) {
+      window.clearTimeout(freedomQuizSyncTimerRef.current);
+      freedomQuizSyncTimerRef.current = null;
+    }
+    clearFreedomQuizState();
 
     try {
       // IMPORTANT: Never delete _registered_accounts or per-user snapshots on logout!
@@ -3613,11 +3750,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUserIdRef.current = googleAcc.id;
       setUserProfile(googleAcc.profile);
       userProfileRef.current = googleAcc.profile;
+      const syncedGoogleQuiz = pickNewestFreedomQuizState(
+        googleAcc.profile.freedomMapQuiz,
+        firestoreRootData?.freedomMapQuiz
+      );
+      if (syncedGoogleQuiz) {
+        saveFreedomQuizState(syncedGoogleQuiz, { preserveTimestamp: true });
+      }
       setIsAuthenticated(true);
       isAuthenticatedRef.current = true;
-      if (googleQuizHydration.hydrated || currentViewRef.current === 'visa-check') {
-        // Stay right on the Freedom Map Reveal screen or Visa Check page so both new signups and returning members
-        // immediately view their unlocked results without leaving the page.
+      if (
+        googleQuizHydration.hydrated ||
+        currentViewRef.current === 'visa-check' ||
+        currentViewRef.current === 'explore'
+      ) {
+        // Stay right on the Freedom Map Reveal screen, Visa Check page, or Explore Havens page
+        // so both new signups and returning members immediately view unlocked results in place.
       } else if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
         currentViewRef.current = 'admin';
@@ -3628,7 +3776,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isBrandNewGoogleSignup) {
         try {
-          if (currentViewRef.current !== 'visa-check') {
+          if (currentViewRef.current !== 'visa-check' && currentViewRef.current !== 'explore') {
             window.history.pushState({}, '', '/?signup=success');
           }
           if (typeof window !== 'undefined' && window.gtag) {
@@ -3657,6 +3805,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Persist hydrated Freedom Map quiz profile immediately to Firestore so no re-entry is ever needed
         syncSingleAccountToFirestore(googleAcc).catch(() => {});
         syncProfileToFirestore(googleAcc.profile, googleAcc.checklist || checklistRef.current, googleAcc.id).catch(() => {});
+        if (googleAcc.profile.freedomMapQuiz) {
+          syncWorkspaceToFirestore('freedomMapQuiz', { quiz: googleAcc.profile.freedomMapQuiz }).catch(() => {});
+        }
       }
 
       // Load Google user's DM inbox and pop pending notifications
@@ -3939,6 +4090,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUserIdRef.current = acc.id;
       setUserProfile(restoredProfile);
       userProfileRef.current = restoredProfile;
+      if (restoredProfile.freedomMapQuiz) {
+        const normalizedQuiz = normalizeFreedomQuizState(restoredProfile.freedomMapQuiz);
+        if (normalizedQuiz) {
+          saveFreedomQuizState(normalizedQuiz, { preserveTimestamp: true });
+        }
+      } else {
+        clearFreedomQuizState();
+      }
       setIsAuthenticated(true);
       if (isAccAdmin) {
         setCurrentView('admin');
@@ -4392,6 +4551,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (auth.currentUser) {
       syncProfileToFirestore(updated, checklistRef.current, activeAccId);
+    }
+  };
+
+  const freedomQuizSyncTimerRef = React.useRef<number | null>(null);
+
+  const saveFreedomMapQuiz = (
+    quizState: FreedomQuizState,
+    options?: { immediate?: boolean }
+  ) => {
+    const saved = saveFreedomQuizState(quizState);
+
+    if (!isAuthenticatedRef.current || !currentUserIdRef.current || currentUserIdRef.current === 'guest') {
+      return;
+    }
+
+    // Immediately mirror into in-memory userProfile so Homepage & Dashboard stay in sync without flicker
+    const nextProfile: UserProfile = {
+      ...userProfileRef.current,
+      freedomMapQuiz: saved,
+    };
+    userProfileRef.current = nextProfile;
+    setUserProfile(nextProfile);
+
+    const flushToCloud = () => {
+      if (!isAuthenticatedRef.current || !currentUserIdRef.current || currentUserIdRef.current === 'guest') {
+        return;
+      }
+      updateUserProfile({ freedomMapQuiz: saved });
+      if (auth.currentUser) {
+        syncWorkspaceToFirestore('freedomMapQuiz', { quiz: saved }).catch(() => {});
+      }
+    };
+
+    if (freedomQuizSyncTimerRef.current) {
+      window.clearTimeout(freedomQuizSyncTimerRef.current);
+      freedomQuizSyncTimerRef.current = null;
+    }
+
+    if (options?.immediate) {
+      flushToCloud();
+    } else {
+      freedomQuizSyncTimerRef.current = window.setTimeout(() => {
+        freedomQuizSyncTimerRef.current = null;
+        flushToCloud();
+      }, 450);
     }
   };
 
@@ -5368,6 +5572,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleRole,
         updateUserProfile,
         updateFinances,
+        saveFreedomMapQuiz,
         addVisitedCountry,
         updateVisitedCountry,
         removeVisitedCountry,

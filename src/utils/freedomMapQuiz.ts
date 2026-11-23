@@ -130,10 +130,82 @@ export const DEFAULT_FREEDOM_QUIZ_STATE: FreedomQuizState = {
   updatedAt: '',
 };
 
-export function saveFreedomQuizState(state: FreedomQuizState): void {
-  const payload: FreedomQuizState = {
+const VALID_FREEDOM_PRIORITY_SET = new Set<string>(
+  FREEDOM_PRIORITY_OPTIONS.map(opt => opt.id)
+);
+
+export function normalizeFreedomQuizState(raw: unknown): FreedomQuizState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const parsed = raw as Partial<FreedomQuizState> & { priorities?: unknown };
+  if (typeof parsed.nestEggUSD !== 'number' || !Number.isFinite(parsed.nestEggUSD)) {
+    return null;
+  }
+  if (typeof parsed.monthlyBudgetUSD !== 'number' || !Number.isFinite(parsed.monthlyBudgetUSD)) {
+    return null;
+  }
+  const cleanPriorities: FreedomPriorityId[] = Array.isArray(parsed.priorities)
+    ? (parsed.priorities
+        .filter((p): p is FreedomPriorityId => typeof p === 'string' && VALID_FREEDOM_PRIORITY_SET.has(p))
+        .slice(0, 2) as FreedomPriorityId[])
+    : ['budget-asc', 'healthcare-desc'];
+
+  const updatedAtStr =
+    typeof parsed.updatedAt === 'string' && parsed.updatedAt.trim().length > 0
+      ? parsed.updatedAt.trim().slice(0, 40)
+      : '';
+
+  return {
+    nestEggUSD: Math.max(0, Math.min(5000000, Math.round(parsed.nestEggUSD))),
+    monthlyBudgetUSD: Math.max(1000, Math.min(10000, Math.round(parsed.monthlyBudgetUSD))),
+    household: parsed.household === 'couple' ? 'couple' : 'solo',
+    escapePlan:
+      parsed.escapePlan === 'full_fire' ||
+      parsed.escapePlan === 'coast_fire' ||
+      parsed.escapePlan === 'mini_retirement'
+        ? parsed.escapePlan
+        : 'coast_fire',
+    priorities: cleanPriorities,
+    completedReveal: Boolean(parsed.completedReveal),
+    updatedAt: updatedAtStr,
+  };
+}
+
+export function pickNewestFreedomQuizState(
+  ...candidates: Array<unknown>
+): FreedomQuizState | null {
+  let best: FreedomQuizState | null = null;
+  for (const candidate of candidates) {
+    const normalized = normalizeFreedomQuizState(candidate);
+    if (!normalized) continue;
+    if (!best) {
+      best = normalized;
+      continue;
+    }
+    const bestTs = best.updatedAt ? Date.parse(best.updatedAt) : 0;
+    const candTs = normalized.updatedAt ? Date.parse(normalized.updatedAt) : 0;
+    if (candTs > bestTs) {
+      best = normalized;
+    } else if (candTs === bestTs && normalized.completedReveal && !best.completedReveal) {
+      best = normalized;
+    }
+  }
+  return best;
+}
+
+export function saveFreedomQuizState(
+  state: FreedomQuizState,
+  options?: { preserveTimestamp?: boolean }
+): FreedomQuizState {
+  const normalized = normalizeFreedomQuizState(state) || {
+    ...DEFAULT_FREEDOM_QUIZ_STATE,
     ...state,
-    updatedAt: new Date().toISOString(),
+  };
+  const payload: FreedomQuizState = {
+    ...normalized,
+    updatedAt:
+      options?.preserveTimestamp && normalized.updatedAt
+        ? normalized.updatedAt
+        : new Date().toISOString(),
   };
   try {
     localStorage.setItem(FREEDOM_QUIZ_STORAGE_KEY, JSON.stringify(payload));
@@ -147,32 +219,30 @@ export function saveFreedomQuizState(state: FreedomQuizState): void {
   } catch {
     // Ignore event dispatch issues
   }
+  return payload;
+}
+
+export function clearFreedomQuizState(): void {
+  try {
+    localStorage.removeItem(FREEDOM_QUIZ_STORAGE_KEY);
+    localStorage.removeItem(FREEDOM_QUIZ_PENDING_HYDRATE_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(FREEDOM_QUIZ_UPDATED_EVENT, { detail: null }));
+    }
+  } catch {
+    // Ignore event dispatch issues
+  }
 }
 
 export function loadFreedomQuizState(): FreedomQuizState | null {
   try {
     const raw = localStorage.getItem(FREEDOM_QUIZ_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<FreedomQuizState>;
-    if (typeof parsed.nestEggUSD !== 'number' || typeof parsed.monthlyBudgetUSD !== 'number') {
-      return null;
-    }
-    return {
-      nestEggUSD: Math.max(0, Math.min(5000000, parsed.nestEggUSD)),
-      monthlyBudgetUSD: Math.max(1000, Math.min(10000, parsed.monthlyBudgetUSD)),
-      household: parsed.household === 'couple' ? 'couple' : 'solo',
-      escapePlan:
-        parsed.escapePlan === 'full_fire' ||
-        parsed.escapePlan === 'coast_fire' ||
-        parsed.escapePlan === 'mini_retirement'
-          ? parsed.escapePlan
-          : 'coast_fire',
-      priorities: Array.isArray(parsed.priorities)
-        ? (parsed.priorities.slice(0, 2) as FreedomPriorityId[])
-        : ['budget-asc', 'healthcare-desc'],
-      completedReveal: Boolean(parsed.completedReveal),
-      updatedAt: parsed.updatedAt || new Date().toISOString(),
-    };
+    return normalizeFreedomQuizState(JSON.parse(raw));
   } catch {
     return null;
   }
@@ -624,6 +694,12 @@ export function hydrateUserProfileFromFreedomQuiz(
     updatedAt: new Date().toISOString().split('T')[0],
   };
 
+  const syncedQuiz: FreedomQuizState = {
+    ...quiz,
+    completedReveal: true,
+    updatedAt: quiz.updatedAt || new Date().toISOString(),
+  };
+
   const hydratedProfile: UserProfile = {
     ...profile,
     monthlyBudgetUSD: quiz.monthlyBudgetUSD,
@@ -633,6 +709,7 @@ export function hydrateUserProfileFromFreedomQuiz(
     relocationStatus:
       quiz.escapePlan === 'full_fire' ? 'Early Retired (FIRE)' : 'Exploring Options',
     finances: hydratedFinances,
+    freedomMapQuiz: syncedQuiz,
   };
 
   return {

@@ -311,6 +311,16 @@ export interface UserFinancialPortfolio {
   updatedAt?: string;
 }
 
+export interface UserFreedomMapPreferences {
+  nestEggUSD: number;
+  monthlyBudgetUSD: number;
+  household: 'solo' | 'couple';
+  escapePlan: 'full_fire' | 'coast_fire' | 'mini_retirement';
+  priorities: string[];
+  completedReveal: boolean;
+  updatedAt: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -335,6 +345,7 @@ export interface UserProfile {
   interests?: string[];
   travelHistory?: VisitedCountry[];
   finances?: UserFinancialPortfolio;
+  freedomMapQuiz?: UserFreedomMapPreferences;
   role: 'member' | 'admin';
   signupNumber?: number;
   badges?: EarnedBadge[];

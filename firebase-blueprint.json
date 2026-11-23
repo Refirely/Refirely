@@ -99,6 +99,10 @@
           "type": "array",
           "description": "Earned profile honors and badges (Globetrotter, Polyglot, Early Pioneer)"
         },
+        "freedomMapQuiz": {
+          "type": "object",
+          "description": "Synced 4-step Freedom Map Quiz preferences (nest egg, monthly budget, household, escape plan, up to 2 priorities, and reveal status)"
+        },
         "updatedAt": {
           "type": "string",
           "description": "ISO timestamp of last profile update"

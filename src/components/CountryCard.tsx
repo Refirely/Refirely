@@ -20,7 +20,6 @@ import {
   Sparkles,
   FileBadge,
   Users,
-  Zap,
   Wifi,
   Laptop,
   Flame,
@@ -131,57 +130,149 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
     });
   };
 
+  // Single compact dynamic highlight row so card height stays sleek and >=35% shorter
+  const renderCompactHighlightRow = () => {
+    if (sortBy === 'travel-leisure-desc') {
+      return (
+        <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50/90 to-teal-50/70 border border-emerald-200/80 flex items-center justify-between gap-2 text-[11px]">
+          <span className="font-bold text-emerald-900 flex items-center gap-1.5 truncate">
+            <Compass className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>Travel &amp; Leisure</span>
+          </span>
+          <span className="font-mono tabular-nums font-extrabold text-emerald-950 shrink-0">
+            {travelLeisureScore}/100{' '}
+            <span className="text-[10px] font-sans font-semibold text-emerald-700">
+              · Transit {mobility.domesticTransit.publicTransitScore} · Solo ♀ {mobility.soloFemale.femaleSafetyScore}
+            </span>
+          </span>
+        </div>
+      );
+    }
+
+    if (sortBy === 'dating-nightlife-desc') {
+      const avgScore = ((country.demographics.datingRating + country.adultEntertainment.nightlifeScore) / 2).toFixed(1);
+      return (
+        <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-50/90 to-fuchsia-50/70 border border-violet-200/80 flex items-center justify-between gap-2 text-[11px]">
+          <span className="font-bold text-violet-900 flex items-center gap-1.5 truncate">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+            <span className="truncate">Dating {country.demographics.datingRating}/5 · Night {country.adultEntertainment.nightlifeScore}/5</span>
+          </span>
+          <span className="font-mono tabular-nums font-extrabold text-purple-950 bg-white/90 border border-purple-200 px-1.5 py-0.5 rounded-md text-[10px] shrink-0">
+            {avgScore}/5 Avg
+          </span>
+        </div>
+      );
+    }
+
+    if (sortBy === 'female-ratio-desc') {
+      return (
+        <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-50/90 to-amber-50/70 border border-rose-200/80 flex items-center justify-between gap-2 text-[11px]">
+          <span className="font-bold text-rose-900 flex items-center gap-1.5 truncate">
+            <Users className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+            <span>Female Ratio</span>
+          </span>
+          <span className="font-mono tabular-nums font-extrabold text-rose-950 shrink-0">
+            {country.demographics.femalesPer100Males.toFixed(1)}♀ : 100♂{' '}
+            <span className="text-[10px] font-sans font-semibold text-rose-700">
+              · Dating {country.demographics.datingRating}/5
+            </span>
+          </span>
+        </div>
+      );
+    }
+
+    if (
+      currentPersona === 'nomad' ||
+      sortBy === 'coworking-friendly' ||
+      sortBy === 'internet-speed-desc' ||
+      sortBy === 'dnv-friendly' ||
+      sortBy === 'nomad-burn-asc'
+    ) {
+      return (
+        <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-50/85 via-sky-50/60 to-white border border-teal-200/80 flex items-center justify-between gap-2 text-[11px]">
+          <span className="font-bold text-slate-800 flex items-center gap-1.5 min-w-0 truncate">
+            <Wifi className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+            <span className="truncate">
+              {nomadProfile.verifiedInternetMbps} Mbps · {nomadProfile.coworkingDensity.split(' ')[0]} Hub
+            </span>
+          </span>
+          <span className="font-mono tabular-nums font-extrabold text-teal-950 bg-white border border-teal-200/90 px-1.5 py-0.5 rounded-md text-[10px] shrink-0">
+            6-Mo ${(nomadProfile.sixMonthRunwayUSD / 1000).toFixed(0)}k
+          </span>
+        </div>
+      );
+    }
+
+    // Default Retiree concise key line: FIRE 25x Nest Egg + Approval time + English
+    return (
+      <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-50/85 via-orange-50/50 to-white border border-amber-200/80 flex items-center justify-between gap-2 text-[11px]">
+        <span className="font-bold text-slate-800 flex items-center gap-1.5 min-w-0 truncate">
+          <Flame className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+          <span className="truncate">
+            FIRE 25x:{' '}
+            <strong className="font-mono tabular-nums text-orange-950">
+              ${(retireeFireNestEgg / 1000).toFixed(0)}k
+            </strong>
+          </span>
+        </span>
+        <span className="text-[10px] font-semibold text-slate-600 shrink-0 whitespace-nowrap">
+          ~{country.visa.processingMonths}m visa · <strong className="text-indigo-700">{country.lifestyle.englishProficiency} EN</strong>
+        </span>
+      </div>
+    );
+  };
+
   return (
     <motion.article
       layout
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.93 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       transition={{
         type: 'spring',
-        stiffness: 290,
+        stiffness: 300,
         damping: 26,
-        delay: Math.min(index * 0.025, 0.25),
+        delay: Math.min(index * 0.02, 0.2),
       }}
-      whileHover={{ y: -6 }}
-      className={`group relative bg-white rounded-2xl border border-slate-200/90 ${theme.borderHover} transition-shadow shadow-sm hover:shadow-xl flex flex-col justify-between overflow-hidden`}
+      whileHover={{ y: -4 }}
+      className={`group relative bg-white rounded-2xl border border-slate-200/90 ${theme.borderHover} transition-shadow shadow-sm hover:shadow-lg flex flex-col justify-between overflow-hidden`}
     >
       {/* Top Multi-Colored Gradient Accent Ribbon */}
-      <div className={`h-1.5 w-full bg-gradient-to-r ${theme.topBar}`} />
+      <div className={`h-1 w-full bg-gradient-to-r ${theme.topBar}`} />
 
       <div>
-        {/* Scenic Destination Thumbnail & Background Header */}
+        {/* Compact Scenic Destination Thumbnail */}
         <div
           onClick={() => navigateToCountry(country.id)}
           className="cursor-pointer relative overflow-hidden"
         >
           <CountryThumbnail
             country={country}
-            className="h-44 sm:h-48 transition-transform duration-700 ease-out group-hover:scale-105"
+            className="h-32 sm:h-36 transition-transform duration-700 ease-out group-hover:scale-105"
           >
-            {/* Top-Left Region & Climate Pill Badges */}
-            <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5">
+            {/* Top-Left Region & Climate Badges */}
+            <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap items-center gap-1">
               <span
-                className={`px-2.5 py-0.5 rounded-full backdrop-blur-md text-[11px] font-bold border shadow-2xs ${theme.regionPill}`}
+                className={`px-2 py-0.5 rounded-full backdrop-blur-md text-[10px] font-bold border shadow-2xs ${theme.regionPill}`}
               >
                 {country.region}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-950/70 backdrop-blur-md text-amber-300 border border-amber-400/25 text-[11px] font-semibold flex items-center gap-1 shadow-2xs">
-                <Sun className="w-3 h-3 text-amber-400" />
+              <span className="px-2 py-0.5 rounded-full bg-slate-950/70 backdrop-blur-md text-amber-300 border border-amber-400/25 text-[10px] font-semibold flex items-center gap-1 shadow-2xs">
+                <Sun className="w-2.5 h-2.5 text-amber-400" />
                 <span>{country.climate.category}</span>
               </span>
             </div>
 
             {/* Save Action Button Top-Right */}
-            <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+            <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={e => {
                   e.stopPropagation();
                   toggleSaveCountry(country.id);
                 }}
-                className={`p-2 rounded-full backdrop-blur-md transition-colors cursor-pointer shadow-sm ${
+                className={`p-1.5 rounded-full backdrop-blur-md transition-colors cursor-pointer shadow-sm ${
                   saved
                     ? 'bg-rose-500 text-white shadow-rose-500/30'
                     : 'text-white/90 bg-slate-950/55 hover:text-white hover:bg-rose-500/85'
@@ -189,22 +280,22 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
                 title={saved ? 'Remove from saved shortlist' : 'Save country to shortlist'}
                 aria-label={`Save ${country.name}`}
               >
-                <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+                <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-current' : ''}`} />
               </motion.button>
             </div>
 
-            {/* Bottom-Left Country Title & Metadata over Measured Scrim */}
-            <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
+            {/* Bottom-Left Country Title & Key Cost over Scrim */}
+            <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <CountryFlag
                   countryCode={country.code}
                   countryName={country.name}
                   fallbackEmoji={country.flag}
-                  size="xl"
-                  className="w-9 h-6 sm:w-10 sm:h-7 rounded-sm shadow-md shrink-0 ring-1 ring-white/25"
+                  size="lg"
+                  className="w-8 h-5.5 rounded-sm shadow-md shrink-0 ring-1 ring-white/25"
                 />
                 <div className="min-w-0">
-                  <h3 className="text-xl font-extrabold text-white group-hover:text-amber-200 transition-colors tracking-tight truncate drop-shadow-sm">
+                  <h3 className="text-lg font-extrabold text-white group-hover:text-amber-200 transition-colors tracking-tight truncate drop-shadow-sm leading-tight">
                     <a
                       href={countryUrl}
                       onClick={handleSpaCountryClick}
@@ -213,23 +304,17 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
                       {country.name}
                     </a>
                   </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-200/95 mt-0.5 truncate font-medium">
-                    <span>Capital: {country.capital}</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-200/95 truncate font-medium">
+                    <span className="truncate">{country.capital}</span>
                     <span aria-hidden="true">·</span>
                     {currentPersona === 'retiree' ? (
-                      <span className="text-emerald-300 font-semibold">
-                        Couple ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
+                      <span className="text-emerald-300 font-semibold shrink-0">
+                        ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo couple
                       </span>
                     ) : (
-                      <>
-                        <span className="text-amber-300 font-semibold">
-                          Burn ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo
-                        </span>
-                        <span aria-hidden="true">·</span>
-                        <span className="text-teal-300 font-semibold">
-                          {nomadProfile.verifiedInternetMbps} Mbps
-                        </span>
-                      </>
+                      <span className="text-amber-300 font-semibold shrink-0">
+                        ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo · {nomadProfile.verifiedInternetMbps} Mbps
+                      </span>
                     )}
                   </div>
                 </div>
@@ -238,318 +323,130 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
           </CountryThumbnail>
         </div>
 
-        {/* Card Body */}
-        <div className="p-5 pb-4 space-y-4">
-          {/* Tagline */}
-          <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium">
+        {/* Compact High-Signal Card Body */}
+        <div className="p-3.5 pb-3 space-y-2.5">
+          {/* Crisp 1-Line Tagline */}
+          <p className="text-[11px] text-slate-600 line-clamp-1 font-medium">
             {country.tagline}
           </p>
 
-          {/* 4-Color Empirical Metrics Matrix */}
-          <div className="grid grid-cols-2 gap-2.5 text-xs">
-            {/* Tile 1: Monthly Living (Emerald / Teal) */}
+          {/* 4-Color Essential Metrics Matrix */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Tile 1: Monthly Living */}
             {currentPersona === 'retiree' ? (
               <div
-                className={`p-2.5 rounded-xl border transition-colors ${
+                className={`px-2.5 py-1.5 rounded-xl border transition-colors ${
                   isCoupleUnderFilter
-                    ? 'bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border-emerald-200/80'
+                    ? 'bg-gradient-to-br from-emerald-50/90 via-teal-50/45 to-white border-emerald-200/80'
                     : 'bg-gradient-to-br from-amber-50/80 to-white border-amber-200/80'
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-emerald-800">
                   <span>Single / Couple</span>
-                  <Wallet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Wallet className="w-3 h-3 text-emerald-600 shrink-0" />
                 </div>
-                <div className="font-mono tabular-nums text-emerald-950 font-extrabold text-sm mt-1 flex items-baseline gap-1">
+                <div className="font-mono tabular-nums text-emerald-950 font-extrabold text-[13px] mt-0.5 flex items-baseline gap-1">
                   <span>${country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}</span>
                   <span className="text-slate-400 font-normal">/</span>
                   <span className="text-teal-800">${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}</span>
                 </div>
               </div>
             ) : (
-              <div className="p-2.5 rounded-xl border bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-amber-200/80">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                  <span>Nomad Living Burn</span>
-                  <Flame className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <div className="px-2.5 py-1.5 rounded-xl border bg-gradient-to-br from-amber-50/90 via-orange-50/45 to-white border-amber-200/80">
+                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-amber-800">
+                  <span>Nomad Burn</span>
+                  <Flame className="w-3 h-3 text-amber-600 shrink-0" />
                 </div>
-                <div className="font-mono tabular-nums text-amber-950 font-extrabold text-sm mt-1 flex items-baseline gap-1">
+                <div className="font-mono tabular-nums text-amber-950 font-extrabold text-[13px] mt-0.5 flex items-baseline gap-1">
                   <span>${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}</span>
-                  <span className="text-[10px] font-sans font-normal text-slate-400">/mo turnkey</span>
+                  <span className="text-[10px] font-sans font-normal text-slate-400">/mo</span>
                 </div>
               </div>
             )}
 
-            {/* Tile 2: Healthcare Tier (Rose / Purple) - Shared Metric */}
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-rose-50/85 via-purple-50/45 to-white border border-rose-200/80">
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-rose-800">
-                <span>Healthcare Index</span>
-                <HeartPulse className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+            {/* Tile 2: Healthcare Index */}
+            <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-br from-rose-50/85 via-purple-50/45 to-white border border-rose-200/80">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-rose-800">
+                <span>Healthcare</span>
+                <HeartPulse className="w-3 h-3 text-rose-500 shrink-0" />
               </div>
-              <div className="font-mono tabular-nums text-purple-950 font-extrabold text-sm mt-1 flex items-baseline gap-1.5">
+              <div className="font-mono tabular-nums text-purple-950 font-extrabold text-[13px] mt-0.5 flex items-baseline gap-1.5">
                 <span>{country.lifestyle.healthcareScore}/100</span>
-                <span className="text-[10px] font-sans font-bold px-1.5 py-0.2 rounded bg-rose-100/80 text-rose-800">
+                <span className="text-[9px] font-sans font-bold px-1 py-0.2 rounded bg-rose-100/80 text-rose-800">
                   {country.lifestyle.healthcareScore >= 80 ? 'Premier' : 'Solid'}
                 </span>
               </div>
             </div>
 
-            {/* Tile 3: Annual Sunshine (Amber / Orange) - Shared Metric */}
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-50/85 via-orange-50/45 to-white border border-amber-200/80">
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                <span>Annual Sunshine</span>
-                <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            {/* Tile 3: Annual Sunshine */}
+            <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-br from-amber-50/85 via-orange-50/45 to-white border border-amber-200/80">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-amber-800">
+                <span>Sunshine</span>
+                <Sun className="w-3 h-3 text-amber-500 shrink-0" />
               </div>
-              <div className="font-mono tabular-nums text-amber-950 font-extrabold text-sm mt-1 flex items-center gap-1">
+              <div className="font-mono tabular-nums text-amber-950 font-extrabold text-[13px] mt-0.5 flex items-baseline gap-1">
                 <span>{country.climate.annualSunnyDays}</span>
-                <span className="text-[11px] font-sans font-semibold text-amber-800/80">sunny days/yr</span>
+                <span className="text-[10px] font-sans font-semibold text-amber-800/80">days/yr</span>
               </div>
             </div>
 
-            {/* Tile 4: Safety Score (Indigo / Sky) - Shared Metric */}
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50/85 via-sky-50/45 to-white border border-indigo-200/80">
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-indigo-800">
-                <span>Safety &amp; Peace</span>
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            {/* Tile 4: Safety Score */}
+            <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-br from-indigo-50/85 via-sky-50/45 to-white border border-indigo-200/80">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-indigo-800">
+                <span>Safety</span>
+                <ShieldCheck className="w-3 h-3 text-indigo-600 shrink-0" />
               </div>
-              <div className="font-mono tabular-nums text-indigo-950 font-extrabold text-sm mt-1 flex items-baseline gap-1.5">
+              <div className="font-mono tabular-nums text-indigo-950 font-extrabold text-[13px] mt-0.5 flex items-baseline gap-1.5">
                 <span>{country.lifestyle.safetyScore}/100</span>
-                <span className="text-[10px] font-sans font-bold px-1.5 py-0.2 rounded bg-indigo-100/80 text-indigo-800">
+                <span className="text-[9px] font-sans font-bold px-1 py-0.2 rounded bg-indigo-100/80 text-indigo-800">
                   {country.lifestyle.safetyScore >= 82 ? 'High' : 'Verified'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Visa & Target Portfolio / Runway Multi-Color Breakdown */}
-          <div className="space-y-2 pt-1">
-            {currentPersona === 'retiree' ? (
-              <>
-                {/* Retiree Required FIRE Portfolio (4% Rule) */}
-                <div className="p-2 rounded-xl bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-white border border-amber-200/80 flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Flame className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                    <span className="text-slate-800 font-bold truncate">Required FIRE Nest Egg (4%)</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-amber-200/90 font-mono tabular-nums text-orange-950 font-black text-[11px] shrink-0 shadow-2xs">
-                    ${(retireeFireNestEgg / 1000).toFixed(0)}k <span className="text-[10px] font-normal text-slate-500">(25x)</span>
-                  </span>
-                </div>
-
-                {/* Primary Passive Visa Pathway */}
-                <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-slate-50 border border-teal-200/70 flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <FileBadge className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                    <span className="text-slate-800 font-bold truncate" title={country.visa.retirementVisaName}>
-                      {country.visa.retirementVisaName}
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-teal-200/80 font-mono tabular-nums text-teal-900 font-extrabold text-[11px] shrink-0 shadow-2xs">
-                    Min. ${country.visa.minimumIncomeUSD.toLocaleString()}/mo
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
-                  <span>
-                    Visa Approval: <strong className="text-slate-700">~{country.visa.processingMonths} mos</strong>
-                  </span>
-                  <span>
-                    English: <strong className="text-indigo-700">{country.lifestyle.englishProficiency}</strong>
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Nomad 6-Month Runway Burn */}
-                <div className="p-2 rounded-xl bg-gradient-to-r from-teal-50/80 via-emerald-50/60 to-white border border-teal-200/80 flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Wifi className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                    <span className="text-slate-800 font-bold truncate">Fiber: {nomadProfile.verifiedInternetMbps} Mbps ({nomadProfile.internetReliability.split('/')[0]})</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-teal-200/90 font-mono tabular-nums text-teal-950 font-black text-[11px] shrink-0 shadow-2xs">
-                    6-Mo Runway: ${(nomadProfile.sixMonthRunwayUSD / 1000).toFixed(0)}k
-                  </span>
-                </div>
-
-                {/* Remote Work / DNV Visa Status */}
-                <div className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-50/70 via-teal-50/50 to-slate-50 border border-indigo-200/70 flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Laptop className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                    <span className="text-slate-800 font-bold truncate" title={nomadProfile.remoteWorkVisaName}>
-                      {nomadProfile.remoteWorkVisaName}
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-indigo-200/80 font-mono tabular-nums text-indigo-900 font-extrabold text-[11px] shrink-0 shadow-2xs">
-                    {nomadProfile.remoteWorkVisaIncomeUSD > 0
-                      ? `Min. $${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo`
-                      : 'Liquid Solvency / Zero Min.'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
-                  <span>
-                    Coworking: <strong className="text-teal-700">{nomadProfile.coworkingDensity.split(' ')[0]} Hub</strong>
-                  </span>
-                  <span>
-                    English: <strong className="text-indigo-700">{country.lifestyle.englishProficiency}</strong>
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Demographic Gender Ratio (Females per 100 Males) */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs px-1">
-              <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-amber-600" />
-                <span>Females per 100 Males</span>
-              </span>
-              <span className="font-mono tabular-nums text-slate-800 font-bold">
-                {country.demographics.femalesPer100Males.toFixed(1)}{' '}
-                <span className="text-slate-400 font-normal">/ 100 ♂</span>
-                <span className="text-[11px] text-amber-700 font-bold ml-1.5">
-                  ({(country.demographics.femalesPer100Males / 100).toFixed(2)}:1)
-                </span>
-              </span>
-            </div>
-
-            {/* Dating & Nightlife Rating */}
-            <div className="pt-1 flex items-center justify-between text-xs px-1">
-              <span
-                className={`font-medium flex items-center gap-1.5 ${
-                  sortBy === 'dating-nightlife-desc' ? 'text-purple-700 font-bold' : 'text-slate-500'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                <span>Dating &amp; Nightlife</span>
-              </span>
-              <span className="font-mono tabular-nums text-slate-800 font-semibold">
-                Dating {country.demographics.datingRating}/5 <span className="text-slate-300">·</span> Night{' '}
-                {country.adultEntertainment.nightlifeScore}/5
-                <span className="text-[11px] text-purple-700 font-bold ml-1.5">
-                  ({((country.demographics.datingRating + country.adultEntertainment.nightlifeScore) / 2).toFixed(1)}/5)
-                </span>
-              </span>
-            </div>
-
-            {/* Travel & Leisure Mobility Index */}
-            <div className="pt-1 flex items-center justify-between text-xs px-1">
-              <span
-                className={`font-medium flex items-center gap-1.5 ${
-                  sortBy === 'travel-leisure-desc' ? 'text-emerald-700 font-bold' : 'text-slate-500'
-                }`}
-              >
-                <Compass className="w-3.5 h-3.5 text-teal-600" />
-                <span>Travel &amp; Leisure</span>
-              </span>
-              <span className="font-mono tabular-nums text-slate-800 font-bold flex items-center gap-1">
-                <span className="text-teal-800">{travelLeisureScore}/100</span>
-                <span
-                  className={`text-[11px] font-medium ml-1 ${
-                    sortBy === 'travel-leisure-desc' ? 'text-emerald-700' : 'text-slate-400'
-                  }`}
-                >
-                  (Transit {mobility.domesticTransit.publicTransitScore} · Solo ♀ {mobility.soloFemale.femaleSafetyScore})
-                </span>
-              </span>
-            </div>
-          </div>
-
-          {/* Contextual Travel & Leisure Spotlight when sorted by Travel & Leisure */}
-          {sortBy === 'travel-leisure-desc' && (
-            <div className="mt-3 pt-2.5 border-t border-emerald-200/80 flex flex-col gap-1.5 text-xs bg-gradient-to-r from-emerald-50/90 to-teal-50/70 -mx-5 px-5 py-2.5">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-950 flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Travel &amp; Leisure Spotlight</span>
-                </span>
-                <span className="font-mono tabular-nums font-bold text-emerald-800 bg-white/90 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
-                  {mobility.couples.safetyVerdict}
+          {/* Primary Visa Pathway + Min Income */}
+          {currentPersona === 'retiree' ? (
+            <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-50/75 via-indigo-50/45 to-slate-50 border border-teal-200/75 flex items-center justify-between gap-2 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <FileBadge className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                <span className="text-slate-800 font-bold truncate" title={country.visa.retirementVisaName}>
+                  {country.visa.retirementVisaName}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-700 line-clamp-1 italic font-medium">
-                &ldquo;{mobility.activitiesHeadline}&rdquo;
-              </p>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-emerald-200/50">
-                <span>Couples Safe: {mobility.couples.safetyRating}/100</span>
-                <span>•</span>
-                <span>Solo Safe: {mobility.solo.safetyRating}/100</span>
-                <span>•</span>
-                <span>Solo ♀: {mobility.soloFemale.femaleSafetyScore}/100</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-white border border-teal-200/80 font-mono tabular-nums text-teal-900 font-extrabold text-[10px] shrink-0">
+                ${country.visa.minimumIncomeUSD.toLocaleString()}/mo
+              </span>
+            </div>
+          ) : (
+            <div className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50/75 via-teal-50/45 to-slate-50 border border-indigo-200/75 flex items-center justify-between gap-2 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Laptop className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="text-slate-800 font-bold truncate" title={nomadProfile.remoteWorkVisaName}>
+                  {nomadProfile.remoteWorkVisaName}
+                </span>
               </div>
+              <span className="px-1.5 py-0.5 rounded-md bg-white border border-indigo-200/80 font-mono tabular-nums text-indigo-900 font-extrabold text-[10px] shrink-0">
+                {nomadProfile.remoteWorkVisaIncomeUSD > 0
+                  ? `$${nomadProfile.remoteWorkVisaIncomeUSD.toLocaleString()}/mo`
+                  : 'Zero Min.'}
+              </span>
             </div>
           )}
 
-          {/* Contextual Digital Nomad & Coworking Spotlight when sorted by Nomad criteria */}
-          {(sortBy === 'coworking-friendly' ||
-            sortBy === 'internet-speed-desc' ||
-            sortBy === 'dnv-friendly' ||
-            sortBy === 'nomad-burn-asc') && (
-            <div className="mt-3 pt-2.5 border-t border-teal-200/80 flex flex-col gap-1.5 text-xs bg-gradient-to-r from-teal-50/90 via-indigo-50/60 to-amber-50/60 -mx-5 px-5 py-2.5">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-teal-950 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Nomad Infrastructure Spotlight</span>
-                </span>
-                <span className="font-mono tabular-nums font-bold text-teal-900 bg-white/90 border border-teal-200 px-1.5 py-0.5 rounded text-[10px]">
-                  {nomadProfile.cafeWorkCulture}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-700 line-clamp-1 font-medium">
-                Hubs: <strong className="text-slate-900">{nomadProfile.topNomadCities.slice(0, 3).join(' · ')}</strong>
-              </p>
-              <div className="flex items-center justify-between text-[10px] text-slate-600 pt-1 border-t border-teal-200/50 font-medium">
-                <span>Desk: ~${nomadProfile.coworkingMonthlyUSD}/mo</span>
-                <span>•</span>
-                <span>1BR Furnished: ~${nomadProfile.furnishedShortTermRentUSD}/mo</span>
-                <span>•</span>
-                <span>Grid: {nomadProfile.powerAndBackupStability.split(' ')[0]}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Permanent Lifestyle, Dating & Nightlife Dynamics Strip (Always Visible Under All Sort Parameters) */}
-          <div className="mt-3 pt-2.5 border-t border-violet-200/80 -mx-5 px-5 py-2.5 bg-gradient-to-r from-violet-50/95 via-fuchsia-50/70 to-purple-50/80">
-            <div className="flex items-center justify-between text-xs">
-              <div>
-                <span className="text-violet-700 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-purple-600" />
-                  <span>Lifestyle &amp; Nightlife</span>
-                </span>
-                <span className="font-bold text-slate-800 text-[11px] block mt-0.5">
-                  {country.adultEntertainment.nightlifeVibrancy}
-                  <span className="text-purple-700 font-mono font-semibold ml-1">({country.adultEntertainment.nightlifeScore}/5)</span>
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-purple-700 font-bold text-[10px] uppercase tracking-wider block">
-                  Dating &amp; Ratio
-                </span>
-                <span className="font-mono tabular-nums font-extrabold text-purple-900 text-[11px] block mt-0.5">
-                  {country.demographics.femalesPer100Males}♀:100♂ <span className="text-slate-300">·</span> Dating {country.demographics.datingRating}/5
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-2 pt-1.5 border-t border-violet-200/50 flex items-center justify-between text-[10px]">
-              <span className="text-slate-600 truncate max-w-[210px]" title={country.adultEntertainment.legalStatus}>
-                <span className="text-slate-400 font-medium">Social Scene:</span>{' '}
-                <strong className="text-slate-800 font-semibold">{country.adultEntertainment.legalStatus}</strong>
-              </span>
-              <span className="font-mono tabular-nums text-purple-900 font-bold bg-white/90 border border-purple-200 px-1.5 py-0.5 rounded shadow-2xs shrink-0 ml-1">
-                Youth {country.demographics.youngPopulationPercent}%
-              </span>
-            </div>
-          </div>
+          {/* Single Compact Key-Stat / Active-Sort Highlight Row */}
+          {renderCompactHighlightRow()}
         </div>
       </div>
 
-      {/* Card Footer: Compare selector, Quick PDF Export & Vibrant Dossier CTA */}
-      <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50/95 via-indigo-50/35 to-teal-50/40 border-t border-slate-200/75 flex items-center justify-between gap-2">
+      {/* Compact Card Footer */}
+      <div className="px-3.5 py-2.5 bg-gradient-to-r from-slate-50/95 via-indigo-50/35 to-teal-50/40 border-t border-slate-200/75 flex items-center justify-between gap-2">
         {/* Compare Button */}
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => toggleCompareCountry(country.id)}
-          className={`flex items-center gap-1.5 text-xs font-bold py-1.5 px-2.5 rounded-xl transition-all cursor-pointer border ${
+          className={`flex items-center gap-1.5 text-[11px] font-bold py-1.5 px-2.5 rounded-xl transition-all cursor-pointer border ${
             compared
               ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs'
               : 'bg-white text-slate-700 border-slate-200/90 hover:border-indigo-300 hover:text-indigo-950'
@@ -572,25 +469,24 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             onClick={handleQuickExportPdf}
-            className="inline-flex items-center gap-1 text-xs font-bold text-purple-800 hover:text-purple-950 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/90 transition-colors py-1.5 px-2.5 rounded-xl whitespace-nowrap cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-800 hover:text-purple-950 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/90 transition-colors py-1.5 px-2 rounded-xl whitespace-nowrap cursor-pointer shadow-2xs"
             title={`Download complete 35-page ${country.name} master retirement dossier PDF`}
           >
             <Download className="w-3 h-3 text-purple-700" />
-            <span>35p PDF</span>
+            <span>PDF</span>
           </motion.button>
 
-          {/* Deep Dive Page CTA (Crawlable SEO Link + Instant SPA Navigation) */}
+          {/* Deep Dive Page CTA */}
           <a
             href={countryUrl}
             onClick={handleSpaCountryClick}
-            className={`inline-flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r ${theme.ctaBtn} transition-all py-1.5 px-3 rounded-xl shadow-xs whitespace-nowrap`}
+            className={`inline-flex items-center gap-1 text-[11px] font-bold text-white bg-gradient-to-r ${theme.ctaBtn} transition-all py-1.5 px-2.5 rounded-xl shadow-xs whitespace-nowrap`}
           >
             <span>Explore Dossier</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
           </a>
         </div>
       </div>
     </motion.article>
   );
 };
-

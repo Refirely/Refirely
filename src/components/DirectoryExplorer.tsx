@@ -10,8 +10,235 @@ import {
   Search, SlidersHorizontal, Compass, RotateCcw,
   Sun, Shield, DollarSign, Scale, ArrowRight, Map, X,
   Sparkles, Globe2, HeartHandshake, ChevronDown, Check, ArrowUp, ChevronRight,
-  UserPlus, LogIn
+  UserPlus, LogIn, Lock, Loader2, AlertCircle, CheckCircle2,
+  Wifi, Coffee, Flame, HeartPulse, ShieldCheck, FileBadge, Coins,
+  Plane, Heart, Users, ArrowDownAZ, ArrowUpZA, Laptop, Waves, Mountain, CloudSun, Palmtree
 } from 'lucide-react';
+import type { SortByType } from '../types';
+
+const REGION_CHIPS: Array<{
+  value: string;
+  idle: string;
+  active: string;
+}> = [
+  {
+    value: 'All',
+    idle: 'bg-slate-100/90 text-slate-800 border-slate-200/90 hover:bg-slate-200/70',
+    active: 'bg-gradient-to-r from-slate-800 to-indigo-700 text-white border-indigo-700 shadow-xs',
+  },
+  {
+    value: 'Europe',
+    idle: 'bg-indigo-50/90 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
+    active: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-600 shadow-xs',
+  },
+  {
+    value: 'Americas',
+    idle: 'bg-emerald-50/90 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
+    active: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-600 shadow-xs',
+  },
+  {
+    value: 'North & Central America',
+    idle: 'bg-teal-50/90 text-teal-900 border-teal-200/90 hover:bg-teal-100/80',
+    active: 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white border-teal-600 shadow-xs',
+  },
+  {
+    value: 'South America',
+    idle: 'bg-lime-50/90 text-lime-900 border-lime-200/90 hover:bg-lime-100/80',
+    active: 'bg-gradient-to-r from-lime-600 to-emerald-600 text-white border-lime-600 shadow-xs',
+  },
+  {
+    value: 'Southeast Asia',
+    idle: 'bg-amber-50/90 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
+    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+  },
+  {
+    value: 'Asia & Middle East',
+    idle: 'bg-orange-50/90 text-orange-900 border-orange-200/90 hover:bg-orange-100/80',
+    active: 'bg-gradient-to-r from-orange-500 to-rose-600 text-white border-orange-500 shadow-xs',
+  },
+  {
+    value: 'Africa',
+    idle: 'bg-rose-50/90 text-rose-900 border-rose-200/90 hover:bg-rose-100/80',
+    active: 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-600 shadow-xs',
+  },
+  {
+    value: 'Oceania',
+    idle: 'bg-sky-50/90 text-sky-900 border-sky-200/90 hover:bg-sky-100/80',
+    active: 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-600 shadow-xs',
+  },
+];
+
+const CLIMATE_CHOCO_CHIPS: Array<{
+  value: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  idle: string;
+  active: string;
+}> = [
+  {
+    value: 'All',
+    label: 'All Zones',
+    icon: Globe2,
+    idle: 'bg-slate-100/90 text-slate-800 border-slate-200/90 hover:bg-slate-200/70',
+    active: 'bg-gradient-to-r from-slate-800 to-amber-600 text-white border-slate-800 shadow-xs',
+  },
+  {
+    value: 'Mediterranean',
+    label: 'Mediterranean',
+    icon: Sun,
+    idle: 'bg-amber-50/95 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
+    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+  },
+  {
+    value: 'Tropical',
+    label: 'Tropical',
+    icon: Palmtree,
+    idle: 'bg-emerald-50/95 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
+    active: 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-xs',
+  },
+  {
+    value: 'Subtropical',
+    label: 'Subtropical',
+    icon: Waves,
+    idle: 'bg-cyan-50/95 text-cyan-900 border-cyan-200/90 hover:bg-cyan-100/80',
+    active: 'bg-gradient-to-r from-cyan-600 to-sky-600 text-white border-cyan-600 shadow-xs',
+  },
+  {
+    value: 'Temperate',
+    label: 'Temperate',
+    icon: CloudSun,
+    idle: 'bg-indigo-50/95 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
+    active: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-600 shadow-xs',
+  },
+  {
+    value: 'Highlands / Mild',
+    label: 'Highlands / Mild',
+    icon: Mountain,
+    idle: 'bg-violet-50/95 text-violet-900 border-violet-200/90 hover:bg-violet-100/80',
+    active: 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-600 shadow-xs',
+  },
+];
+
+const SORT_CHOCO_CHIPS: Array<{
+  value: SortByType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  idle: string;
+  active: string;
+}> = [
+  {
+    value: 'recommended',
+    label: 'Curated Match',
+    icon: Sparkles,
+    idle: 'bg-indigo-50/90 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
+    active: 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white border-indigo-600 shadow-xs',
+  },
+  {
+    value: 'budget-asc',
+    label: 'Lowest Cost',
+    icon: DollarSign,
+    idle: 'bg-emerald-50/90 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
+    active: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-600 shadow-xs',
+  },
+  {
+    value: 'nomad-burn-asc',
+    label: 'Nomad Burn',
+    icon: Flame,
+    idle: 'bg-amber-50/90 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
+    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+  },
+  {
+    value: 'dnv-friendly',
+    label: 'Nomad Visa',
+    icon: Laptop,
+    idle: 'bg-sky-50/90 text-sky-900 border-sky-200/90 hover:bg-sky-100/80',
+    active: 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-600 shadow-xs',
+  },
+  {
+    value: 'internet-speed-desc',
+    label: 'Fastest Fiber',
+    icon: Wifi,
+    idle: 'bg-cyan-50/90 text-cyan-900 border-cyan-200/90 hover:bg-cyan-100/80',
+    active: 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white border-cyan-600 shadow-xs',
+  },
+  {
+    value: 'coworking-friendly',
+    label: 'Coworking',
+    icon: Coffee,
+    idle: 'bg-orange-50/90 text-orange-900 border-orange-200/90 hover:bg-orange-100/80',
+    active: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 shadow-xs',
+  },
+  {
+    value: 'healthcare-desc',
+    label: 'Healthcare',
+    icon: HeartPulse,
+    idle: 'bg-rose-50/90 text-rose-900 border-rose-200/90 hover:bg-rose-100/80',
+    active: 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-600 shadow-xs',
+  },
+  {
+    value: 'safety-desc',
+    label: 'Safety Score',
+    icon: ShieldCheck,
+    idle: 'bg-blue-50/90 text-blue-900 border-blue-200/90 hover:bg-blue-100/80',
+    active: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-600 shadow-xs',
+  },
+  {
+    value: 'visa-difficulty-asc',
+    label: 'Easiest Visa',
+    icon: FileBadge,
+    idle: 'bg-teal-50/90 text-teal-900 border-teal-200/90 hover:bg-teal-100/80',
+    active: 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white border-teal-600 shadow-xs',
+  },
+  {
+    value: 'visa-income-asc',
+    label: 'Lowest Visa Min',
+    icon: Coins,
+    idle: 'bg-lime-50/90 text-lime-900 border-lime-200/90 hover:bg-lime-100/80',
+    active: 'bg-gradient-to-r from-lime-600 to-emerald-600 text-white border-lime-600 shadow-xs',
+  },
+  {
+    value: 'sunny-desc',
+    label: 'Most Sunshine',
+    icon: Sun,
+    idle: 'bg-yellow-50/90 text-amber-900 border-amber-200/90 hover:bg-yellow-100/80',
+    active: 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-amber-500 shadow-xs',
+  },
+  {
+    value: 'travel-leisure-desc',
+    label: 'Travel & Leisure',
+    icon: Plane,
+    idle: 'bg-violet-50/90 text-violet-900 border-violet-200/90 hover:bg-violet-100/80',
+    active: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-xs',
+  },
+  {
+    value: 'dating-nightlife-desc',
+    label: 'Dating & Nightlife',
+    icon: Heart,
+    idle: 'bg-fuchsia-50/90 text-fuchsia-900 border-fuchsia-200/90 hover:bg-fuchsia-100/80',
+    active: 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white border-fuchsia-600 shadow-xs',
+  },
+  {
+    value: 'female-ratio-desc',
+    label: 'Female Ratio',
+    icon: Users,
+    idle: 'bg-pink-50/90 text-pink-900 border-pink-200/90 hover:bg-pink-100/80',
+    active: 'bg-gradient-to-r from-pink-600 to-rose-600 text-white border-pink-600 shadow-xs',
+  },
+  {
+    value: 'alpha-asc',
+    label: 'A – Z',
+    icon: ArrowDownAZ,
+    idle: 'bg-slate-100/90 text-slate-700 border-slate-200/90 hover:bg-slate-200/70',
+    active: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-800 shadow-xs',
+  },
+  {
+    value: 'alpha-desc',
+    label: 'Z – A',
+    icon: ArrowUpZA,
+    idle: 'bg-slate-100/90 text-slate-700 border-slate-200/90 hover:bg-slate-200/70',
+    active: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-800 shadow-xs',
+  },
+];
 
 export const DirectoryExplorer: React.FC = () => {
   const {
@@ -40,10 +267,16 @@ export const DirectoryExplorer: React.FC = () => {
     isAuthenticated,
     currentUserId,
     openAuthModal,
+    loginWithGoogle,
   } = useApp();
 
   const [showMap, setShowMap] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [loadMoreGateOpen, setLoadMoreGateOpen] = useState(false);
+  const [pendingLoadMoreMode, setPendingLoadMoreMode] = useState<'desktop' | 'mobile' | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [justUnlockedBatch, setJustUnlockedBatch] = useState<number | null>(null);
 
   // Progressive 24-country pagination on desktop (6 on mobile < md)
   const PAGE_SIZE = 24;
@@ -69,27 +302,65 @@ export const DirectoryExplorer: React.FC = () => {
   const mobileNextBatchCount = Math.min(MOBILE_PAGE_SIZE, mobileRemainingCount);
   const isGuestUser = !isAuthenticated || currentUserId === 'guest';
 
+  // Auto-load the requested batch the instant a guest finishes Google or Email sign-in, staying right on Explore Havens
+  useEffect(() => {
+    if (!isGuestUser && pendingLoadMoreMode) {
+      if (pendingLoadMoreMode === 'desktop') {
+        const added = Math.min(PAGE_SIZE, Math.max(0, filteredCountries.length - visibleCount));
+        setVisibleCount(prev => prev + PAGE_SIZE);
+        setJustUnlockedBatch(added || PAGE_SIZE);
+      } else {
+        const added = Math.min(MOBILE_PAGE_SIZE, Math.max(0, filteredCountries.length - mobileVisibleCount));
+        setMobileVisibleCount(prev => prev + MOBILE_PAGE_SIZE);
+        setJustUnlockedBatch(added || MOBILE_PAGE_SIZE);
+      }
+      setLoadMoreGateOpen(false);
+      setPendingLoadMoreMode(null);
+      setAuthError(null);
+      const timer = window.setTimeout(() => setJustUnlockedBatch(null), 5000);
+      return () => window.clearTimeout(timer);
+    }
+  }, [isGuestUser, pendingLoadMoreMode, filteredCountries.length, visibleCount, mobileVisibleCount]);
+
   const handleLoadMore = () => {
+    if (isGuestUser) {
+      setAuthError(null);
+      setPendingLoadMoreMode('desktop');
+      setLoadMoreGateOpen(true);
+      return;
+    }
     setVisibleCount(prev => prev + PAGE_SIZE);
   };
 
   const handleMobileLoadMore = () => {
+    if (isGuestUser) {
+      setAuthError(null);
+      setPendingLoadMoreMode('mobile');
+      setLoadMoreGateOpen(true);
+      return;
+    }
     setMobileVisibleCount(prev => prev + MOBILE_PAGE_SIZE);
   };
 
-  const regions = [
-    'All',
-    'Europe',
-    'Americas',
-    'North & Central America',
-    'South America',
-    'Southeast Asia',
-    'Asia & Middle East',
-    'Africa',
-    'Oceania',
-  ];
+  const handleContinueWithGoogleGate = async () => {
+    setAuthError(null);
+    setIsGoogleLoading(true);
+    try {
+      const res = await loginWithGoogle();
+      if (!res.success && res.error) {
+        setAuthError(res.error);
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Unable to complete Google sign-in. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
-  const climates = ['All', 'Mediterranean', 'Tropical', 'Subtropical', 'Temperate', 'Highlands / Mild'];
+  const handleEmailFallbackGate = () => {
+    setLoadMoreGateOpen(false);
+    openAuthModal('signup');
+  };
 
   // Most searched countries (resolved from live country directory) + high-intent keywords shown before user types
   const mostSearchedCountries = useMemo(() => {
@@ -613,103 +884,125 @@ export const DirectoryExplorer: React.FC = () => {
             {/* Hairline Divider */}
             <div className="border-t border-slate-200/80" />
 
-            {/* Zone 2: Region & Continent Selector + Sort By & Reset Controls (Stacked cleanly to prevent overlap) */}
-            <div className="space-y-3.5">
-              {/* Row A: Full-Width Region & Continent Selector Pills */}
-              <div className="flex flex-wrap items-center gap-2 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
-                <span className="text-xs font-bold text-slate-600 mr-1 shrink-0 flex items-center gap-1.5 px-1">
+            {/* Zone 2: Multi-Colored Choco-Chip Selectors — Region, Climate Zone, and Sort By */}
+            <div className="space-y-2.5">
+              {/* Row A: Multi-Colored Region & Continent Choco Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-slate-50/90 via-indigo-50/35 to-teal-50/35 border border-slate-200/80 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 mr-1 shrink-0 flex items-center gap-1.5 px-1">
                   <Globe2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                   <span>Region:</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                  {regions.map(r => {
-                    const isSelected = selectedRegion === r;
+                  {REGION_CHIPS.map(chip => {
+                    const isSelected = selectedRegion === chip.value;
                     return (
                       <motion.button
-                        key={r}
-                        whileHover={{ y: -1 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setSelectedRegion(r)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                          isSelected
-                            ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-xs'
-                            : 'bg-white text-slate-600 border border-slate-200/80 hover:text-slate-900 hover:border-indigo-300 hover:bg-indigo-50/40'
+                        key={chip.value}
+                        type="button"
+                        whileHover={{ y: -1, scale: 1.02 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setSelectedRegion(chip.value)}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                          isSelected ? chip.active : chip.idle
                         }`}
                       >
-                        {r}
+                        {chip.value}
                       </motion.button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Row B: Sort By & Reset Controls Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
-                <div className="text-xs font-medium text-slate-500 flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-indigo-500" />
-                  <span>
-                    Showing <strong className="font-bold text-slate-800">{filteredCountries.length}</strong> of{' '}
-                    <strong className="font-bold text-slate-800">{countries.length}</strong> destinations
-                    {selectedRegion !== 'All' && (
-                      <>
-                        {' '}in <strong className="font-bold text-indigo-700">{selectedRegion}</strong>
-                      </>
-                    )}
-                  </span>
+              {/* Row B: Multi-Colored Climate Zone Choco Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-amber-50/65 via-white to-emerald-50/55 border border-amber-200/75 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 mr-1 shrink-0 flex items-center gap-1.5 px-1">
+                  <Sun className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Climate Zone:</span>
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                  {CLIMATE_CHOCO_CHIPS.map(chip => {
+                    const isSelected = selectedClimate === chip.value;
+                    const Icon = chip.icon;
+                    return (
+                      <motion.button
+                        key={chip.value}
+                        type="button"
+                        whileHover={{ y: -1, scale: 1.02 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setSelectedClimate(chip.value)}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5 ${
+                          isSelected ? chip.active : chip.idle
+                        }`}
+                      >
+                        <Icon className={`w-3 h-3 shrink-0 ${isSelected ? 'text-white' : ''}`} />
+                        <span>{chip.label}</span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="flex flex-wrap items-center gap-2.5 sm:justify-end shrink-0">
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50/90 via-violet-50/70 to-sky-50/90 border border-indigo-200/80 px-3 py-1.5 rounded-xl shadow-2xs max-w-full">
-                    <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 shrink-0">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Sort By:</span>
-                    </span>
-                    <select
-                      value={sortBy}
-                      onChange={e => setSortBy(e.target.value as any)}
-                      className="px-2.5 py-1 text-xs font-bold text-slate-900 border border-indigo-200/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white hover:border-indigo-300 transition-colors cursor-pointer shadow-2xs min-w-0 max-w-[220px] sm:max-w-none truncate"
-                    >
-                      <option value="recommended">Curated Haven Match</option>
-                      <option value="dnv-friendly">Digital Nomad Visa Friendly</option>
-                      <option value="internet-speed-desc">Fastest Internet Speeds</option>
-                      <option value="coworking-friendly">Best Coworking &amp; Cafe Culture</option>
-                      <option value="nomad-burn-asc">Lowest Monthly Runway Burn</option>
-                      <option value="dating-nightlife-desc">Best Dating &amp; Nightlife</option>
-                      <option value="female-ratio-desc">Highest Female-to-Male Ratio</option>
-                      <option value="budget-asc">Lowest Cost of Living</option>
-                      <option value="healthcare-desc">Highest Healthcare Index</option>
-                      <option value="travel-leisure-desc">Top Travel &amp; Leisure (Mobility &amp; Activities)</option>
-                      <option value="sunny-desc">Most Sunny Days</option>
-                      <option value="safety-desc">Highest Safety Score</option>
-                      <option value="visa-difficulty-asc">Easiest Visa Process (Tier 1-2)</option>
-                      <option value="visa-income-asc">Lowest Visa Income Requirement</option>
-                      <option value="alpha-asc">Alphabetical (A – Z)</option>
-                      <option value="alpha-desc">Alphabetical (Z – A)</option>
-                    </select>
-                  </div>
-
+              {/* Row C: Multi-Colored Sort By Choco Chips + Reset Action */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-indigo-50/65 via-violet-50/45 to-rose-50/50 border border-indigo-200/75 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+                <div className="flex items-center justify-between w-full sm:w-auto gap-2 mr-1 shrink-0 px-1">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>Sort By:</span>
+                  </span>
                   <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={resetFilters}
+                    className="sm:hidden px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200/90 flex items-center gap-1 transition-all cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </motion.button>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                  {SORT_CHOCO_CHIPS.map(chip => {
+                    const isSelected = sortBy === chip.value;
+                    const Icon = chip.icon;
+                    return (
+                      <motion.button
+                        key={chip.value}
+                        type="button"
+                        whileHover={{ y: -1, scale: 1.02 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setSortBy(chip.value)}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-full border transition-all whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5 ${
+                          isSelected ? chip.active : chip.idle
+                        }`}
+                      >
+                        <Icon className={`w-3 h-3 shrink-0 ${isSelected ? 'text-white' : ''}`} />
+                        <span>{chip.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                  <motion.button
+                    type="button"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={resetFilters}
-                    className="group px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200/90 hover:border-rose-600 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0"
+                    className="hidden sm:inline-flex group px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200/90 hover:border-rose-600 items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0 ml-auto"
                     title="Reset all filters to default"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-90 transition-transform duration-300" />
-                    <span>Reset</span>
+                    <RotateCcw className="w-3 h-3 group-hover:-rotate-90 transition-transform duration-300" />
+                    <span>Reset All</span>
                   </motion.button>
                 </div>
               </div>
             </div>
 
-            {/* Zone 3: 4 Multi-Colored Granular Filter Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Zone 3: 3 Balanced Multi-Colored Granular Slider Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               
               {/* Card 1: Max Monthly Budget (Emerald / Teal Theme) */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/75 via-teal-50/50 to-white border border-emerald-200/80 shadow-2xs flex flex-col justify-between gap-2.5"
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/75 via-teal-50/50 to-white border border-emerald-200/80 shadow-2xs flex flex-col justify-between gap-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
@@ -738,46 +1031,11 @@ export const DirectoryExplorer: React.FC = () => {
                 </div>
               </motion.div>
 
-              {/* Card 2: Climate Preference (Amber / Warm Gold Theme) */}
+              {/* Card 2: Visa Complexity (Indigo / Violet Theme) */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-orange-50/45 to-white border border-amber-200/80 shadow-2xs flex flex-col justify-between gap-2.5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <label htmlFor="explore-climate-select" className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                    <span className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-700 flex items-center justify-center">
-                      <Sun className="w-3.5 h-3.5" />
-                    </span>
-                    <span>Climate Zone</span>
-                  </label>
-                  <span className="px-2 py-0.5 rounded-md bg-white border border-amber-200/90 text-[10px] font-bold text-amber-800">
-                    {selectedClimate === 'All' ? 'All Zones' : selectedClimate}
-                  </span>
-                </div>
-                <select
-                  id="explore-climate-select"
-                  value={selectedClimate}
-                  onChange={e => setSelectedClimate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-bold text-slate-900 border border-amber-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white hover:border-amber-300 transition-colors cursor-pointer shadow-2xs"
-                >
-                  {climates.map(c => (
-                    <option key={c} value={c}>
-                      {c === 'All' ? 'Any Climate Category' : c}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex justify-between text-[10px] text-amber-800/70 font-medium">
-                  <span>Year-round sun</span>
-                  <span>Seasonal &amp; mild</span>
-                </div>
-              </motion.div>
-
-              {/* Card 3: Visa Complexity (Indigo / Violet Theme) */}
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/75 via-violet-50/45 to-white border border-indigo-200/80 shadow-2xs flex flex-col justify-between gap-2.5"
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/75 via-violet-50/45 to-white border border-indigo-200/80 shadow-2xs flex flex-col justify-between gap-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
@@ -805,11 +1063,11 @@ export const DirectoryExplorer: React.FC = () => {
                 </div>
               </motion.div>
 
-              {/* Card 4: Max Visa Income Requirement (Sky / Cyan Theme) */}
+              {/* Card 3: Max Visa Income Requirement (Sky / Cyan Theme) */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/80 via-cyan-50/45 to-white border border-sky-200/80 shadow-2xs flex flex-col justify-between gap-2.5"
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50/80 via-cyan-50/45 to-white border border-sky-200/80 shadow-2xs flex flex-col justify-between gap-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-sky-950 flex items-center gap-1.5">
@@ -1010,6 +1268,33 @@ export const DirectoryExplorer: React.FC = () => {
 
               {/* Progressive Pagination Controls & Catchy Haven Matcher Signup Section */}
               <div className="space-y-6 md:space-y-8 pt-2 md:pt-4">
+
+                {/* Instant Unlocked Feedback Banner right after Google/Email sign-in */}
+                <AnimatePresence>
+                  {justUnlockedBatch !== null && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200/90 shadow-xs flex items-center justify-between gap-3 text-xs font-bold text-emerald-950"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>
+                          All {countries.length} global havens unlocked! Loaded +{justUnlockedBatch} more destinations right here.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setJustUnlockedBatch(null)}
+                        className="p-1 rounded-lg hover:bg-emerald-100 text-emerald-700 cursor-pointer"
+                        aria-label="Dismiss notification"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
                 {/* Mobile-only 6-Card Pagination Toolbar (< md) */}
                 <div className="flex md:hidden p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex-col gap-3">
@@ -1031,13 +1316,13 @@ export const DirectoryExplorer: React.FC = () => {
                       onClick={handleMobileLoadMore}
                       className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-700 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <ChevronDown className="w-4 h-4" />
+                      {isGuestUser ? <Lock className="w-3.5 h-3.5" /> : <ChevronDown className="w-4 h-4" />}
                       <span>Load {mobileNextBatchCount} More Havens ({mobileRemainingCount} left)</span>
                     </button>
                   )}
                 </div>
 
-                {/* Desktop 24 More Havens Action Toolbar (unchanged >= md) */}
+                {/* Desktop 24 More Havens Action Toolbar (>= md) */}
                 <div className="hidden md:flex p-4 sm:p-5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
                     <span className="font-extrabold text-slate-900">
@@ -1064,7 +1349,11 @@ export const DirectoryExplorer: React.FC = () => {
                         onClick={handleLoadMore}
                         className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-700 hover:from-teal-700 hover:via-indigo-700 hover:to-teal-800 text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
                       >
-                        <ChevronDown className="w-4 h-4 animate-bounce" />
+                        {isGuestUser ? (
+                          <Lock className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 animate-bounce" />
+                        )}
                         <span>Load 24 More Havens</span>
                         <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md font-mono">
                           +{nextBatchCount} ({remainingCount} left)
@@ -1087,7 +1376,7 @@ export const DirectoryExplorer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Catchy Matcher Signup Promotion Card: "Still confused? Sign up here and let us do the work for you..." */}
+                {/* Catchy Matcher Signup Promotion Card */}
                 <HavenMatcherPromoCard variant="explore" />
 
               </div>
@@ -1096,6 +1385,174 @@ export const DirectoryExplorer: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Gated "Load More Havens" Google Sign-In Popup Modal (Shown Only for Guests) */}
+      <AnimatePresence>
+        {loadMoreGateOpen && isGuestUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setLoadMoreGateOpen(false);
+              setPendingLoadMoreMode(null);
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-lg rounded-3xl bg-white border border-indigo-200/90 shadow-2xl shadow-indigo-950/25 overflow-hidden"
+            >
+              {/* Multi-Colored Top Ribbon */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-indigo-600 via-teal-500 via-55% to-amber-500" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadMoreGateOpen(false);
+                  setPendingLoadMoreMode(null);
+                }}
+                className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Close sign-in popup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="p-6 sm:p-7 space-y-5">
+                {/* Curiosity Eyebrow & Stats */}
+                <div className="text-center space-y-2.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-50 via-teal-50 to-amber-50 border border-indigo-200/80 text-[11px] font-extrabold uppercase tracking-wider text-indigo-800">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>
+                      {pendingLoadMoreMode === 'mobile' ? mobileRemainingCount : remainingCount} More Hidden Havens Waiting
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-snug">
+                    Don&apos;t miss the hidden gems beyond the top{' '}
+                    <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                      {pendingLoadMoreMode === 'mobile' ? mobileShownCount : Math.min(visibleCount, filteredCountries.length)}
+                    </span>
+                    .
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                    Sign in free with Google in one click to unlock all{' '}
+                    <strong className="text-slate-900">{filteredCountries.length}</strong> matching havens right here—plus unlimited comparisons, 35-page PDF dossiers, and live FIRE runway syncing.
+                  </p>
+                </div>
+
+                {/* Teaser Stat Chips */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-white border border-indigo-200/80 text-center">
+                    <div className="font-mono text-base sm:text-lg font-black text-indigo-900 tabular-nums">
+                      {countries.length}
+                    </div>
+                    <div className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
+                      Total Havens
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-teal-50/90 to-white border border-teal-200/80 text-center">
+                    <div className="font-mono text-base sm:text-lg font-black text-teal-900 tabular-nums">
+                      +{pendingLoadMoreMode === 'mobile' ? mobileRemainingCount : remainingCount}
+                    </div>
+                    <div className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">
+                      Ready to Load
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 text-center">
+                    <div className="font-mono text-base sm:text-lg font-black text-amber-900 tabular-nums">
+                      $0
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+                      Free Forever
+                    </div>
+                  </div>
+                </div>
+
+                {/* Error Banner */}
+                {authError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{authError}</span>
+                  </div>
+                )}
+
+                {/* Primary 1-Click Google OAuth CTA */}
+                <div className="space-y-2.5">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.01, y: -1 }}
+                    whileTap={{ scale: 0.99 }}
+                    disabled={isGoogleLoading}
+                    onClick={handleContinueWithGoogleGate}
+                    className="w-full min-h-[50px] px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-black text-sm sm:text-base shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
+                  >
+                    {isGoogleLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Unlocking all havens...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              fill="#4285F4"
+                              d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.3h6.44a5.5 5.5 0 0 1-2.39 3.61v3h3.87c2.26-2.08 3.57-5.15 3.57-8.64Z"
+                            />
+                            <path
+                              fill="#34A853"
+                              d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3c-1.07.72-2.44 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.3v3.09A12 12 0 0 0 12 24Z"
+                            />
+                            <path
+                              fill="#FBBC05"
+                              d="M5.29 14.29A7.2 7.2 0 0 1 4.91 12c0-.8.14-1.57.38-2.29V6.62H1.3A12 12 0 0 0 0 12c0 1.94.46 3.77 1.3 5.38l3.99-3.09Z"
+                            />
+                            <path
+                              fill="#EA4335"
+                              d="M12 4.75c1.76 0 3.34.61 4.58 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.3 6.62l3.99 3.09C6.23 6.86 8.88 4.75 12 4.75Z"
+                            />
+                          </svg>
+                        </span>
+                        <span>Continue with Google &amp; Load More</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  <button
+                    type="button"
+                    onClick={handleEmailFallbackGate}
+                    className="w-full py-2 text-xs font-bold text-slate-600 hover:text-indigo-700 transition-colors cursor-pointer text-center"
+                  >
+                    Or sign in / sign up free with Email &amp; Password
+                  </button>
+                </div>
+
+                {/* Clean Value Bullets */}
+                <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-semibold text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Stay right on this page</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                    <span>Save &amp; compare shortlists</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>100% free • No card</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
