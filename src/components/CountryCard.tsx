@@ -199,18 +199,19 @@ export const CountryCard: React.FC<CountryCardProps> = ({ country, index = 0 }) 
       className="group relative bg-white rounded-xl border border-slate-200/90 hover:border-slate-300 transition-all shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden"
     >
       <div>
-        {/* Compact 4-Across Scenic Destination Header */}
+        {/* Balanced Scenic Landmark Header */}
         <div
           onClick={() => navigateToCountry(country.id)}
           className="cursor-pointer relative overflow-hidden"
         >
           <CountryThumbnail
             country={country}
-            className="h-28 sm:h-32 transition-transform duration-500 ease-out group-hover:scale-105"
+            hideLandmarkLabel
+            className="h-44 sm:h-48 transition-transform duration-500 ease-out group-hover:scale-105"
           >
             {/* Quiet Scrim Metadata Top-Left */}
-            <div className="absolute top-2 left-2.5 right-10 z-10 flex items-center gap-1.5 text-[10px] font-medium text-white/90 drop-shadow-xs truncate">
-              <span className="px-1.5 py-0.5 rounded bg-slate-950/60 backdrop-blur-xs truncate">
+            <div className="absolute top-2.5 left-2.5 right-10 z-10 flex items-center gap-1.5 text-[10px] font-medium text-white/95 drop-shadow-xs truncate">
+              <span className="px-2 py-0.5 rounded bg-slate-950/55 backdrop-blur-xs truncate">
                 {country.region} · {country.climate.category}
               </span>
             </div>

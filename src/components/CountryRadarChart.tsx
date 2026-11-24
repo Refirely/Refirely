@@ -10,6 +10,7 @@ import {
   X,
   Plus,
   Eye,
+  Lock,
 } from 'lucide-react';
 
 interface CountryRadarChartProps {
@@ -19,6 +20,8 @@ interface CountryRadarChartProps {
   onToggleCompareCountry: (countryId: string) => void;
   onReplaceCompareCountry: (oldId: string, newId: string) => void;
   onNavigateToCountry?: (countryId: string) => void;
+  isGuestUser?: boolean;
+  onRequestThirdCountryGate?: () => void;
 }
 
 interface CountryMetricScore {
@@ -107,6 +110,8 @@ export const CountryRadarChart: React.FC<CountryRadarChartProps> = ({
   onToggleCompareCountry,
   onReplaceCompareCountry,
   onNavigateToCountry,
+  isGuestUser = false,
+  onRequestThirdCountryGate,
 }) => {
   const [hoveredAxisKey, setHoveredAxisKey] = useState<string | null>(null);
   const [spotlightCountryId, setSpotlightCountryId] = useState<string | null>(null);
@@ -401,32 +406,71 @@ export const CountryRadarChart: React.FC<CountryRadarChartProps> = ({
 
             {/* Empty Add Slot(s) up to 4 */}
             {comparedCountries.length < 4 && (
-              <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border border-dashed border-slate-600 bg-slate-900/50 hover:border-teal-400/60 transition-colors">
-                <Plus className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <select
-                  value=""
-                  onChange={e => {
-                    if (e.target.value) {
-                      onToggleCompareCountry(e.target.value);
-                    }
-                  }}
-                  aria-label="Add another country to comparison"
-                  className="bg-transparent text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer w-full"
-                >
-                  <option value="" className="bg-slate-900 text-slate-400">
-                    + Add Country ({comparedCountries.length}/4)...
-                  </option>
-                  {uncomparedCountries.map(c => (
-                    <option
-                      key={`add-slot-${c.id}`}
-                      value={c.id}
-                      className="bg-slate-900 text-white"
+              isGuestUser && comparedCountries.length >= 2 && onRequestThirdCountryGate ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onRequestThirdCountryGate}
+                    className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 border border-dashed border-amber-400/70 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-300 text-left transition-all cursor-pointer group"
+                    title="Sign in free with Google to compare a 3rd & 4th country side-by-side"
+                  >
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <Plus className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold text-amber-100 truncate">
+                        Add 3rd Country
+                      </span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-400/20 border border-amber-300/30 text-[10px] font-bold text-amber-200 shrink-0">
+                      <Lock className="w-2.5 h-2.5" />
+                      <span>Free</span>
+                    </span>
+                  </button>
+
+                  {comparedCountries.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={onRequestThirdCountryGate}
+                      className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 border border-dashed border-slate-600/80 bg-slate-900/40 hover:bg-slate-800/70 hover:border-teal-400/60 text-left transition-all cursor-pointer group"
+                      title="Sign in free with Google to unlock up to 4 countries simultaneously"
                     >
-                      {c.name} ({c.region})
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-300 shrink-0 transition-colors" />
+                        <span className="text-xs font-semibold text-slate-300 group-hover:text-white truncate">
+                          Add 4th Country
+                        </span>
+                      </span>
+                      <Lock className="w-3 h-3 text-slate-400 group-hover:text-teal-300 shrink-0 transition-colors" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border border-dashed border-slate-600 bg-slate-900/50 hover:border-teal-400/60 transition-colors">
+                  <Plus className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                  <select
+                    value=""
+                    onChange={e => {
+                      if (e.target.value) {
+                        onToggleCompareCountry(e.target.value);
+                      }
+                    }}
+                    aria-label="Add another country to comparison"
+                    className="bg-transparent text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer w-full"
+                  >
+                    <option value="" className="bg-slate-900 text-slate-400">
+                      + Add Country ({comparedCountries.length}/4)...
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {uncomparedCountries.map(c => (
+                      <option
+                        key={`add-slot-${c.id}`}
+                        value={c.id}
+                        className="bg-slate-900 text-white"
+                      >
+                        {c.name} ({c.region})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
             )}
           </div>
         </div>

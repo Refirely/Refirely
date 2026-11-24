@@ -2,6 +2,7 @@ import { Country, Persona } from '../types';
 import { AppView } from '../context/AppContext';
 import { getCountryGastronomyProfile } from '../data/countryFoodAndGastronomy';
 import { getCountryNomadProfile } from '../data/countryNomadProfiles';
+import { COUNTRY_LANDMARK_PHOTOS } from '../data/countryLandmarkPhotos';
 import {
   PUBLIC_SITE_ORIGIN,
   STATIC_PAGE_SEO,
@@ -557,10 +558,12 @@ export function updatePageSeo(
 
     keywords = `digital nomad ${selectedCountry.name}, ${selectedCountry.name} monthly cash burn, ${selectedCountry.name} digital nomad visa, ${dnvName}, ${selectedCountry.name} internet speed Mbps, coworking in ${selectedCountry.name}, retire in ${selectedCountry.name}, ${selectedCountry.name} retirement visa, ${visaName}, ${selectedCountry.name} cost of living, ${selectedCountry.name} housing rent costs, ${selectedCountry.name} furnished apartment rent, ${selectedCountry.name} food and gastronomy, ${selectedCountry.name} expat healthcare, ReFirely ${selectedCountry.name}`;
     canonicalUrl = `${origin}/country/${encodeURIComponent(selectedCountry.id)}`;
+    const curatedLandmarkUrl = COUNTRY_LANDMARK_PHOTOS[selectedCountry.id]?.photoUrl;
     activeImage =
-      selectedCountry.imageUrl && selectedCountry.imageUrl.startsWith('https://')
+      curatedLandmarkUrl ||
+      (selectedCountry.imageUrl && selectedCountry.imageUrl.startsWith('https://')
         ? selectedCountry.imageUrl
-        : STATIC_PAGE_SEO.explore.ogImage;
+        : STATIC_PAGE_SEO.explore.ogImage);
     activeImageAlt = `${selectedCountry.name} Retirement (FIRE) & Digital Nomad Guide – ReFirely`;
   } else if (
     currentView !== 'landing' &&

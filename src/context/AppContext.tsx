@@ -3375,8 +3375,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setIsAuthenticated(true);
     isAuthenticatedRef.current = true;
-    if (currentViewRef.current === 'visa-check' || currentViewRef.current === 'explore') {
-      // Keep user right on the Visa Check or Explore Havens page so gated listings unlock in place
+    if (
+      currentViewRef.current === 'visa-check' ||
+      currentViewRef.current === 'explore' ||
+      currentViewRef.current === 'compare'
+    ) {
+      // Keep user right on Visa Check, Explore Havens, or Compare Studio so gated features unlock in place
     } else if (isAccountOwnerAdmin) {
       setCurrentView('admin');
       currentViewRef.current = 'admin';
@@ -3581,7 +3585,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createUserWithEmailAndPassword(auth, cleanEmail, data.password)
         .then(async () => {
           try {
-            window.history.pushState({}, '', '/?signup=success');
+            if (
+              currentViewRef.current !== 'visa-check' &&
+              currentViewRef.current !== 'explore' &&
+              currentViewRef.current !== 'compare'
+            ) {
+              window.history.pushState({}, '', '/?signup=success');
+            }
           } catch {}
           await syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
         })
@@ -3591,7 +3601,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
-      if (currentViewRef.current !== 'visa-check' && currentViewRef.current !== 'explore') {
+      if (
+        currentViewRef.current !== 'visa-check' &&
+        currentViewRef.current !== 'explore' &&
+        currentViewRef.current !== 'compare'
+      ) {
         window.history.pushState({}, '', '/?signup=success');
       }
       if (typeof window !== 'undefined' && window.gtag) {
@@ -3762,9 +3776,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (
         googleQuizHydration.hydrated ||
         currentViewRef.current === 'visa-check' ||
-        currentViewRef.current === 'explore'
+        currentViewRef.current === 'explore' ||
+        currentViewRef.current === 'compare'
       ) {
-        // Stay right on the Freedom Map Reveal screen, Visa Check page, or Explore Havens page
+        // Stay right on the Freedom Map Reveal screen, Visa Check, Explore Havens, or Compare Studio
         // so both new signups and returning members immediately view unlocked results in place.
       } else if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
@@ -3776,7 +3791,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isBrandNewGoogleSignup) {
         try {
-          if (currentViewRef.current !== 'visa-check' && currentViewRef.current !== 'explore') {
+          if (
+            currentViewRef.current !== 'visa-check' &&
+            currentViewRef.current !== 'explore' &&
+            currentViewRef.current !== 'compare'
+          ) {
             window.history.pushState({}, '', '/?signup=success');
           }
           if (typeof window !== 'undefined' && window.gtag) {
