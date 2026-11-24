@@ -23,48 +23,48 @@ const REGION_CHIPS: Array<{
 }> = [
   {
     value: 'All',
-    idle: 'bg-slate-100/90 text-slate-800 border-slate-200/90 hover:bg-slate-200/70',
-    active: 'bg-gradient-to-r from-slate-800 to-indigo-700 text-white border-indigo-700 shadow-xs',
+    idle: 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300',
+    active: 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/15',
   },
   {
     value: 'Europe',
-    idle: 'bg-indigo-50/90 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
-    active: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-600 shadow-xs',
+    idle: 'bg-white text-indigo-800 border-indigo-200/80 hover:bg-indigo-50/70',
+    active: 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-600/20',
   },
   {
     value: 'Americas',
-    idle: 'bg-emerald-50/90 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
-    active: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-600 shadow-xs',
+    idle: 'bg-white text-emerald-800 border-emerald-200/80 hover:bg-emerald-50/70',
+    active: 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20',
   },
   {
     value: 'North & Central America',
-    idle: 'bg-teal-50/90 text-teal-900 border-teal-200/90 hover:bg-teal-100/80',
-    active: 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white border-teal-600 shadow-xs',
+    idle: 'bg-white text-teal-800 border-teal-200/80 hover:bg-teal-50/70',
+    active: 'bg-teal-600 text-white border-teal-600 shadow-sm ring-2 ring-teal-600/20',
   },
   {
     value: 'South America',
-    idle: 'bg-lime-50/90 text-lime-900 border-lime-200/90 hover:bg-lime-100/80',
-    active: 'bg-gradient-to-r from-lime-600 to-emerald-600 text-white border-lime-600 shadow-xs',
+    idle: 'bg-white text-lime-800 border-lime-300/80 hover:bg-lime-50/70',
+    active: 'bg-lime-600 text-white border-lime-600 shadow-sm ring-2 ring-lime-600/20',
   },
   {
     value: 'Southeast Asia',
-    idle: 'bg-amber-50/90 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
-    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+    idle: 'bg-white text-amber-800 border-amber-200/90 hover:bg-amber-50/70',
+    active: 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/20',
   },
   {
     value: 'Asia & Middle East',
-    idle: 'bg-orange-50/90 text-orange-900 border-orange-200/90 hover:bg-orange-100/80',
-    active: 'bg-gradient-to-r from-orange-500 to-rose-600 text-white border-orange-500 shadow-xs',
+    idle: 'bg-white text-orange-800 border-orange-200/90 hover:bg-orange-50/70',
+    active: 'bg-orange-600 text-white border-orange-600 shadow-sm ring-2 ring-orange-600/20',
   },
   {
     value: 'Africa',
-    idle: 'bg-rose-50/90 text-rose-900 border-rose-200/90 hover:bg-rose-100/80',
-    active: 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-600 shadow-xs',
+    idle: 'bg-white text-rose-800 border-rose-200/80 hover:bg-rose-50/70',
+    active: 'bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-600/20',
   },
   {
     value: 'Oceania',
-    idle: 'bg-sky-50/90 text-sky-900 border-sky-200/90 hover:bg-sky-100/80',
-    active: 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-600 shadow-xs',
+    idle: 'bg-white text-sky-800 border-sky-200/80 hover:bg-sky-50/70',
+    active: 'bg-sky-600 text-white border-sky-600 shadow-sm ring-2 ring-sky-600/20',
   },
 ];
 
@@ -79,43 +79,43 @@ const CLIMATE_CHOCO_CHIPS: Array<{
     value: 'All',
     label: 'All Zones',
     icon: Globe2,
-    idle: 'bg-slate-100/90 text-slate-800 border-slate-200/90 hover:bg-slate-200/70',
-    active: 'bg-gradient-to-r from-slate-800 to-amber-600 text-white border-slate-800 shadow-xs',
+    idle: 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300',
+    active: 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/15',
   },
   {
     value: 'Mediterranean',
     label: 'Mediterranean',
     icon: Sun,
-    idle: 'bg-amber-50/95 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
-    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+    idle: 'bg-white text-amber-800 border-amber-200/90 hover:bg-amber-50/70',
+    active: 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/20',
   },
   {
     value: 'Tropical',
     label: 'Tropical',
     icon: Palmtree,
-    idle: 'bg-emerald-50/95 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
-    active: 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-xs',
+    idle: 'bg-white text-emerald-800 border-emerald-200/80 hover:bg-emerald-50/70',
+    active: 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20',
   },
   {
     value: 'Subtropical',
     label: 'Subtropical',
     icon: Waves,
-    idle: 'bg-cyan-50/95 text-cyan-900 border-cyan-200/90 hover:bg-cyan-100/80',
-    active: 'bg-gradient-to-r from-cyan-600 to-sky-600 text-white border-cyan-600 shadow-xs',
+    idle: 'bg-white text-cyan-800 border-cyan-200/80 hover:bg-cyan-50/70',
+    active: 'bg-cyan-600 text-white border-cyan-600 shadow-sm ring-2 ring-cyan-600/20',
   },
   {
     value: 'Temperate',
     label: 'Temperate',
     icon: CloudSun,
-    idle: 'bg-indigo-50/95 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
-    active: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-600 shadow-xs',
+    idle: 'bg-white text-indigo-800 border-indigo-200/80 hover:bg-indigo-50/70',
+    active: 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-600/20',
   },
   {
     value: 'Highlands / Mild',
     label: 'Highlands / Mild',
     icon: Mountain,
-    idle: 'bg-violet-50/95 text-violet-900 border-violet-200/90 hover:bg-violet-100/80',
-    active: 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-600 shadow-xs',
+    idle: 'bg-white text-violet-800 border-violet-200/80 hover:bg-violet-50/70',
+    active: 'bg-violet-600 text-white border-violet-600 shadow-sm ring-2 ring-violet-600/20',
   },
 ];
 
@@ -130,113 +130,113 @@ const SORT_CHOCO_CHIPS: Array<{
     value: 'recommended',
     label: 'Curated Match',
     icon: Sparkles,
-    idle: 'bg-indigo-50/90 text-indigo-900 border-indigo-200/90 hover:bg-indigo-100/80',
-    active: 'bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white border-indigo-600 shadow-xs',
+    idle: 'bg-white text-indigo-800 border-indigo-200/80 hover:bg-indigo-50/70',
+    active: 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-600/20',
   },
   {
     value: 'budget-asc',
     label: 'Lowest Cost',
     icon: DollarSign,
-    idle: 'bg-emerald-50/90 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100/80',
-    active: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-600 shadow-xs',
+    idle: 'bg-white text-emerald-800 border-emerald-200/80 hover:bg-emerald-50/70',
+    active: 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20',
   },
   {
     value: 'nomad-burn-asc',
     label: 'Nomad Burn',
     icon: Flame,
-    idle: 'bg-amber-50/90 text-amber-900 border-amber-200/90 hover:bg-amber-100/80',
-    active: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-500 shadow-xs',
+    idle: 'bg-white text-amber-800 border-amber-200/90 hover:bg-amber-50/70',
+    active: 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/20',
   },
   {
     value: 'dnv-friendly',
     label: 'Nomad Visa',
     icon: Laptop,
-    idle: 'bg-sky-50/90 text-sky-900 border-sky-200/90 hover:bg-sky-100/80',
-    active: 'bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-600 shadow-xs',
+    idle: 'bg-white text-sky-800 border-sky-200/80 hover:bg-sky-50/70',
+    active: 'bg-sky-600 text-white border-sky-600 shadow-sm ring-2 ring-sky-600/20',
   },
   {
     value: 'internet-speed-desc',
     label: 'Fastest Fiber',
     icon: Wifi,
-    idle: 'bg-cyan-50/90 text-cyan-900 border-cyan-200/90 hover:bg-cyan-100/80',
-    active: 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white border-cyan-600 shadow-xs',
+    idle: 'bg-white text-cyan-800 border-cyan-200/80 hover:bg-cyan-50/70',
+    active: 'bg-cyan-600 text-white border-cyan-600 shadow-sm ring-2 ring-cyan-600/20',
   },
   {
     value: 'coworking-friendly',
     label: 'Coworking',
     icon: Coffee,
-    idle: 'bg-orange-50/90 text-orange-900 border-orange-200/90 hover:bg-orange-100/80',
-    active: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 shadow-xs',
+    idle: 'bg-white text-orange-800 border-orange-200/90 hover:bg-orange-50/70',
+    active: 'bg-orange-600 text-white border-orange-600 shadow-sm ring-2 ring-orange-600/20',
   },
   {
     value: 'healthcare-desc',
     label: 'Healthcare',
     icon: HeartPulse,
-    idle: 'bg-rose-50/90 text-rose-900 border-rose-200/90 hover:bg-rose-100/80',
-    active: 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-600 shadow-xs',
+    idle: 'bg-white text-rose-800 border-rose-200/80 hover:bg-rose-50/70',
+    active: 'bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-600/20',
   },
   {
     value: 'safety-desc',
     label: 'Safety Score',
     icon: ShieldCheck,
-    idle: 'bg-blue-50/90 text-blue-900 border-blue-200/90 hover:bg-blue-100/80',
-    active: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-600 shadow-xs',
+    idle: 'bg-white text-blue-800 border-blue-200/80 hover:bg-blue-50/70',
+    active: 'bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-600/20',
   },
   {
     value: 'visa-difficulty-asc',
     label: 'Easiest Visa',
     icon: FileBadge,
-    idle: 'bg-teal-50/90 text-teal-900 border-teal-200/90 hover:bg-teal-100/80',
-    active: 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white border-teal-600 shadow-xs',
+    idle: 'bg-white text-teal-800 border-teal-200/80 hover:bg-teal-50/70',
+    active: 'bg-teal-600 text-white border-teal-600 shadow-sm ring-2 ring-teal-600/20',
   },
   {
     value: 'visa-income-asc',
     label: 'Lowest Visa Min',
     icon: Coins,
-    idle: 'bg-lime-50/90 text-lime-900 border-lime-200/90 hover:bg-lime-100/80',
-    active: 'bg-gradient-to-r from-lime-600 to-emerald-600 text-white border-lime-600 shadow-xs',
+    idle: 'bg-white text-lime-800 border-lime-300/80 hover:bg-lime-50/70',
+    active: 'bg-lime-600 text-white border-lime-600 shadow-sm ring-2 ring-lime-600/20',
   },
   {
     value: 'sunny-desc',
     label: 'Most Sunshine',
     icon: Sun,
-    idle: 'bg-yellow-50/90 text-amber-900 border-amber-200/90 hover:bg-yellow-100/80',
-    active: 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-amber-500 shadow-xs',
+    idle: 'bg-white text-yellow-800 border-yellow-300/90 hover:bg-yellow-50/70',
+    active: 'bg-yellow-600 text-white border-yellow-600 shadow-sm ring-2 ring-yellow-600/20',
   },
   {
     value: 'travel-leisure-desc',
     label: 'Travel & Leisure',
     icon: Plane,
-    idle: 'bg-violet-50/90 text-violet-900 border-violet-200/90 hover:bg-violet-100/80',
-    active: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-xs',
+    idle: 'bg-white text-violet-800 border-violet-200/80 hover:bg-violet-50/70',
+    active: 'bg-violet-600 text-white border-violet-600 shadow-sm ring-2 ring-violet-600/20',
   },
   {
     value: 'dating-nightlife-desc',
     label: 'Dating & Nightlife',
     icon: Heart,
-    idle: 'bg-fuchsia-50/90 text-fuchsia-900 border-fuchsia-200/90 hover:bg-fuchsia-100/80',
-    active: 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white border-fuchsia-600 shadow-xs',
+    idle: 'bg-white text-fuchsia-800 border-fuchsia-200/80 hover:bg-fuchsia-50/70',
+    active: 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm ring-2 ring-fuchsia-600/20',
   },
   {
     value: 'female-ratio-desc',
     label: 'Female Ratio',
     icon: Users,
-    idle: 'bg-pink-50/90 text-pink-900 border-pink-200/90 hover:bg-pink-100/80',
-    active: 'bg-gradient-to-r from-pink-600 to-rose-600 text-white border-pink-600 shadow-xs',
+    idle: 'bg-white text-pink-800 border-pink-200/80 hover:bg-pink-50/70',
+    active: 'bg-pink-600 text-white border-pink-600 shadow-sm ring-2 ring-pink-600/20',
   },
   {
     value: 'alpha-asc',
     label: 'A – Z',
     icon: ArrowDownAZ,
-    idle: 'bg-slate-100/90 text-slate-700 border-slate-200/90 hover:bg-slate-200/70',
-    active: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-800 shadow-xs',
+    idle: 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50',
+    active: 'bg-slate-800 text-white border-slate-800 shadow-sm ring-2 ring-slate-800/15',
   },
   {
     value: 'alpha-desc',
     label: 'Z – A',
     icon: ArrowUpZA,
-    idle: 'bg-slate-100/90 text-slate-700 border-slate-200/90 hover:bg-slate-200/70',
-    active: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-slate-800 shadow-xs',
+    idle: 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50',
+    active: 'bg-slate-800 text-white border-slate-800 shadow-sm ring-2 ring-slate-800/15',
   },
 ];
 
@@ -884,12 +884,12 @@ export const DirectoryExplorer: React.FC = () => {
             {/* Hairline Divider */}
             <div className="border-t border-slate-200/80" />
 
-            {/* Zone 2: Multi-Colored Choco-Chip Selectors — Region, Climate Zone, and Sort By */}
+            {/* Zone 2: Multi-Colored Choco-Chip Selectors on Calm Matte Light Surfaces */}
             <div className="space-y-2.5">
               {/* Row A: Multi-Colored Region & Continent Choco Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-slate-50/90 via-indigo-50/35 to-teal-50/35 border border-slate-200/80 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 mr-1 shrink-0 flex items-center gap-1.5 px-1">
-                  <Globe2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-100/85 border border-stone-200/90 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+                <span className="text-[11px] font-bold tracking-wide text-stone-600 mr-1 shrink-0 flex items-center gap-1.5 px-1">
+                  <Globe2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
                   <span>Region:</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
@@ -914,9 +914,9 @@ export const DirectoryExplorer: React.FC = () => {
               </div>
 
               {/* Row B: Multi-Colored Climate Zone Choco Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-amber-50/65 via-white to-emerald-50/55 border border-amber-200/75 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 mr-1 shrink-0 flex items-center gap-1.5 px-1">
-                  <Sun className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-100/85 border border-stone-200/90 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+                <span className="text-[11px] font-bold tracking-wide text-stone-600 mr-1 shrink-0 flex items-center gap-1.5 px-1">
+                  <Sun className="w-3.5 h-3.5 text-stone-500 shrink-0" />
                   <span>Climate Zone:</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
@@ -943,10 +943,10 @@ export const DirectoryExplorer: React.FC = () => {
               </div>
 
               {/* Row C: Multi-Colored Sort By Choco Chips + Reset Action */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-gradient-to-r from-indigo-50/65 via-violet-50/45 to-rose-50/50 border border-indigo-200/75 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-100/85 border border-stone-200/90 rounded-2xl p-2.5 sm:px-3.5 sm:py-2.5">
                 <div className="flex items-center justify-between w-full sm:w-auto gap-2 mr-1 shrink-0 px-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span className="text-[11px] font-bold tracking-wide text-stone-600 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-stone-500 shrink-0" />
                     <span>Sort By:</span>
                   </span>
                   <motion.button
@@ -954,7 +954,7 @@ export const DirectoryExplorer: React.FC = () => {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={resetFilters}
-                    className="sm:hidden px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200/90 flex items-center gap-1 transition-all cursor-pointer"
+                    className="sm:hidden px-2.5 py-1 rounded-full text-[11px] font-bold bg-white hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 flex items-center gap-1 transition-all cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Reset</span>
@@ -985,7 +985,7 @@ export const DirectoryExplorer: React.FC = () => {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={resetFilters}
-                    className="hidden sm:inline-flex group px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200/90 hover:border-rose-600 items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0 ml-auto"
+                    className="hidden sm:inline-flex group px-3 py-1 rounded-full text-[11px] font-bold bg-white hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 items-center gap-1.5 transition-all cursor-pointer shrink-0 ml-auto"
                     title="Reset all filters to default"
                   >
                     <RotateCcw className="w-3 h-3 group-hover:-rotate-90 transition-transform duration-300" />
@@ -1132,8 +1132,8 @@ export const DirectoryExplorer: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Directory Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 md:space-y-6">
+      {/* Main Directory Container (Full 1440px Desktop Presence for 4-Up Cards) */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-5 md:space-y-6">
         
         {/* Mobile-Only Prominent Quick Sign-Up / Log-In Banner for Guests (< md) */}
         {isGuestUser && (
@@ -1243,7 +1243,7 @@ export const DirectoryExplorer: React.FC = () => {
             <div className="space-y-6 md:space-y-8">
               <motion.div
                 layout
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 md:gap-4"
               >
                 <AnimatePresence mode="popLayout">
                   {displayedCountries.map((country, idx) => {
