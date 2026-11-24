@@ -5,10 +5,7 @@ import { CountryThumbnail } from './CountryThumbnail';
 import { CountryFlag } from './CountryFlag';
 import { getCountryTravelLeisureScore } from '../data/countryTravelMobility';
 import {
-  CONTINENT_FILTER_OPTIONS,
-  ContinentFilter,
   getCountryContinentLabel,
-  matchesContinentFilter,
 } from '../utils/continents';
 import {
   Compass, Sparkles, Flame, ArrowRight, Heart,
@@ -60,30 +57,16 @@ export const LandingPage: React.FC = () => {
   } = useApp();
 
   // -------------------------------------------------------------
-  // 1. Unified Interactive Match Engine & Verified Haven Directory State
+  // 1. Unified Interactive Match Engine & Curated Haven Showcase State
   // -------------------------------------------------------------
-  const [matchBudget, setMatchBudget] = useState<number>(2800);
-  const [nomadMatchBurn, setNomadMatchBurn] = useState<number>(2200);
-  const [strictBudgetFilter, setStrictBudgetFilter] = useState<boolean>(false);
-  const [matchPriority, setMatchPriority] = useState<'value' | 'healthcare' | 'safety' | 'leisure'>('leisure');
-  const [nomadPriority, setNomadPriority] = useState<NomadMatchPriority>('high_speed_internet');
-  const [previewContinent, setPreviewContinent] = useState<ContinentFilter>('All');
+  const DEFAULT_RETIREE_BUDGET_REF = 2800;
+  const DEFAULT_NOMAD_BURN_REF = 2200;
   const [matchSearchQuery, setMatchSearchQuery] = useState<string>('');
   const [mobileShowMoreMatches, setMobileShowMoreMatches] = useState<boolean>(false);
-  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState<boolean>(false);
   const [mobileStickyDismissed, setMobileStickyDismissed] = useState<boolean>(false);
   const isGuestUser = !isAuthenticated || currentUserId === 'guest';
 
-  // Continent counts across all countries
-  const continentCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const opt of CONTINENT_FILTER_OPTIONS) {
-      counts[opt.value] = countries.filter(c => matchesContinentFilter(c, opt.value)).length;
-    }
-    return counts;
-  }, [countries]);
-
-  // Compute match score, filter by continent and strict budget/burn, and sort by live match fit for active persona
+  // Compute curated persona match score and rank destinations for the active persona (or live search query)
   const sortedMatchedCountries = useMemo(() => {
     const scored = countries.map(country => {
       const travelScore = getCountryTravelLeisureScore(country);
@@ -93,13 +76,13 @@ export const LandingPage: React.FC = () => {
         let score = 66; // nomad baseline
 
         // 1. Monthly Turnkey Burn fit (up to 14 pts)
-        const burnDiff = nomadMatchBurn - nomadProfile.monthlyNomadBurnUSD;
+        const burnDiff = DEFAULT_NOMAD_BURN_REF - nomadProfile.monthlyNomadBurnUSD;
         if (burnDiff >= 450) {
-          score += 14; // comfortably under burn target
+          score += 14;
         } else if (burnDiff >= 0) {
-          score += 11; // within burn target
+          score += 11;
         } else if (burnDiff >= -350) {
-          score += 5; // slightly over
+          score += 5;
         } else {
           score -= 9;
         }
@@ -108,130 +91,38 @@ export const LandingPage: React.FC = () => {
         if (nomadProfile.hasCuratedData) score += 3;
         if (nomadProfile.coworkingDensity === 'World-Class Nomad Hub') score += 2;
 
-        // 3. Nomad Priority Factor (up to 20 pts)
-        if (nomadPriority === 'high_speed_internet') {
-          const speedPts = Math.min(14, (nomadProfile.verifiedInternetMbps / 270) * 14);
-          const relPts =
-            nomadProfile.internetReliability === 'Ultra-Fast Fiber'
-              ? 4
-              : nomadProfile.internetReliability === 'High-Speed Reliable'
-              ? 2
-              : 0;
-          const gridPts = nomadProfile.powerAndBackupStability.includes('99.9%') ? 2 : 1;
-          score += speedPts + relPts + gridPts;
-        } else if (nomadPriority === 'coworking_cafe') {
-          const densityPts =
-            nomadProfile.coworkingDensity === 'World-Class Nomad Hub'
-              ? 10
-              : nomadProfile.coworkingDensity === 'Abundant & Vibrant'
-              ? 6.5
-              : 3;
-          const cafePts =
-            nomadProfile.cafeWorkCulture === 'Legendary Laptop Friendly'
-              ? 6.5
-              : nomadProfile.cafeWorkCulture === 'Widely Welcomed'
-              ? 3.5
-              : 1;
-          const deskValuePts = Math.max(0, Math.min(3.5, (185 - nomadProfile.coworkingMonthlyUSD) / 25));
-          score += densityPts + cafePts + deskValuePts;
-        } else if (nomadPriority === 'nomad_visa') {
-          const hasDedicatedVisa =
-            nomadProfile.hasCuratedData ||
-            nomadProfile.remoteWorkVisaName.toLowerCase().includes('nomad') ||
-            nomadProfile.remoteWorkVisaName.toLowerCase().includes('remote') ||
-            nomadProfile.remoteWorkVisaName.toLowerCase().includes('dtv');
-          const visaBasePts = hasDedicatedVisa ? 8.5 : 3;
-          const incomeReq = nomadProfile.remoteWorkVisaIncomeUSD || 0;
-          const incomePts =
-            incomeReq === 0
-              ? 7.5
-              : incomeReq <= 1600
-              ? 6.5
-              : incomeReq <= 2500
-              ? 5
-              : incomeReq <= 3500
-              ? 3.5
-              : 1.5;
-          const detailsLower = (nomadProfile.remoteWorkVisaDetails + ' ' + country.visa.taxStatus).toLowerCase();
-          const taxPts =
-            detailsLower.includes('0%') ||
-            detailsLower.includes('exempt') ||
-            detailsLower.includes('territorial') ||
-            detailsLower.includes('1%') ||
-            detailsLower.includes('10%') ||
-            detailsLower.includes('15%') ||
-            detailsLower.includes('50%')
-              ? 4
-              : 1.5;
-          score += visaBasePts + incomePts + taxPts;
-        } else if (nomadPriority === 'low_burn') {
-          const burn = nomadProfile.monthlyNomadBurnUSD;
-          const burnPts =
-            burn <= 1250
-              ? 16
-              : burn <= 1500
-              ? 13.5
-              : burn <= 1850
-              ? 10.5
-              : burn <= 2250
-              ? 7
-              : 2.5;
-          const valueRatioPts = Math.min(4, (nomadProfile.verifiedInternetMbps / Math.max(900, burn)) * 22);
-          score += burnPts + valueRatioPts;
-        } else if (nomadPriority === 'community_vibe') {
-          const hubPts =
-            nomadProfile.coworkingDensity === 'World-Class Nomad Hub'
-              ? 7
-              : nomadProfile.coworkingDensity === 'Abundant & Vibrant'
-              ? 4.5
-              : 2;
-          const socialPts = ((country.adultEntertainment.nightlifeScore + country.demographics.datingRating) / 10) * 6.5;
-          const englishPts =
-            country.lifestyle.englishProficiency === 'Very High'
-              ? 4
-              : country.lifestyle.englishProficiency === 'High'
-              ? 3
-              : 1.5;
-          const leisurePts = (travelScore / 100) * 2.5;
-          score += hubPts + socialPts + englishPts + leisurePts;
-        } else if (nomadPriority === 'safety_walkability') {
-          const safePts = (country.lifestyle.safetyScore / 100) * 10.5;
-          const walkPts = (country.lifestyle.walkabilityScore / 100) * 6.5;
-          const powerPts = nomadProfile.powerAndBackupStability.includes('99.9%') ? 3 : 1.5;
-          score += safePts + walkPts + powerPts;
-        }
+        // 3. Curated Fiber Speed & Power Reliability Factor (up to 20 pts)
+        const speedPts = Math.min(14, (nomadProfile.verifiedInternetMbps / 270) * 14);
+        const relPts =
+          nomadProfile.internetReliability === 'Ultra-Fast Fiber'
+            ? 4
+            : nomadProfile.internetReliability === 'High-Speed Reliable'
+            ? 2
+            : 0;
+        const gridPts = nomadProfile.powerAndBackupStability.includes('99.9%') ? 2 : 1;
+        score += speedPts + relPts + gridPts;
 
         const normalizedScore = Math.min(99, Math.max(68, Math.round(score)));
         return { country, matchScore: normalizedScore, travelScore, nomadProfile };
       }
 
-      // Retiree Mode Scoring
+      // Retiree Mode Curated Scoring
       let score = 68; // baseline
 
-      // Budget match (up to 16 pts)
-      const diff = matchBudget - country.costOfLiving.monthlyBudgetCoupleUSD;
+      // Budget fit (up to 16 pts)
+      const diff = DEFAULT_RETIREE_BUDGET_REF - country.costOfLiving.monthlyBudgetCoupleUSD;
       if (diff >= 400) {
-        score += 16; // comfortably under budget
+        score += 16;
       } else if (diff >= 0) {
-        score += 13; // within budget
+        score += 13;
       } else if (diff >= -450) {
-        score += 6; // slightly over
+        score += 6;
       } else {
         score -= 8;
       }
 
-      // Priority factor (up to 15 pts)
-      if (matchPriority === 'value') {
-        if (country.costOfLiving.monthlyBudgetCoupleUSD <= 2000) score += 15;
-        else if (country.costOfLiving.monthlyBudgetCoupleUSD <= 2800) score += 11;
-        else score += 5;
-      } else if (matchPriority === 'healthcare') {
-        score += (country.lifestyle.healthcareScore / 100) * 15;
-      } else if (matchPriority === 'safety') {
-        score += (country.lifestyle.safetyScore / 100) * 15;
-      } else if (matchPriority === 'leisure') {
-        score += (travelScore / 100) * 15;
-      }
+      // Lifestyle & Leisure Factor (up to 15 pts)
+      score += (travelScore / 100) * 15;
 
       const normalizedScore = Math.min(99, Math.max(68, Math.round(score)));
       return { country, matchScore: normalizedScore, travelScore, nomadProfile };
@@ -263,33 +154,12 @@ export const LandingPage: React.FC = () => {
       return 0;
     };
 
-    // Apply Search Query, Continent, and Strict Budget / Burn filters
-    const filtered = scored.filter(({ country, nomadProfile }) => {
-      if (normalizedQuery) {
-        const searchRank = getSearchMatchRank(country, nomadProfile);
-        if (searchRank === 0) return false;
-        // If user explicitly types a country name, auto-load it across all continents & budget tiers
-        // unless the query is a general region/vibe keyword, in which case respect active continent tab
-        if (searchRank < 2 && !matchesContinentFilter(country, previewContinent)) {
-          return false;
-        }
-        return true;
-      }
+    // Apply Instant Search Query if present
+    const filtered = normalizedQuery
+      ? scored.filter(({ country, nomadProfile }) => getSearchMatchRank(country, nomadProfile) > 0)
+      : scored;
 
-      if (!matchesContinentFilter(country, previewContinent)) {
-        return false;
-      }
-      if (strictBudgetFilter) {
-        if (currentPersona === 'nomad') {
-          if (nomadProfile.monthlyNomadBurnUSD > nomadMatchBurn) return false;
-        } else {
-          if (country.costOfLiving.monthlyBudgetCoupleUSD > matchBudget) return false;
-        }
-      }
-      return true;
-    });
-
-    // Rank by search relevance first (when searching), then by live Match Score (with Persona & Priority metric tie-breaker)
+    // Rank by search relevance first (when searching), then by persona curated Match Score
     filtered.sort((a, b) => {
       if (normalizedQuery) {
         const rankA = getSearchMatchRank(a.country, a.nomadProfile);
@@ -300,96 +170,30 @@ export const LandingPage: React.FC = () => {
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
 
       if (currentPersona === 'nomad') {
-        if (nomadPriority === 'high_speed_internet') {
-          return b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
-        }
-        if (nomadPriority === 'coworking_cafe') {
-          const densityVal = (d: string) =>
-            d === 'World-Class Nomad Hub' ? 3 : d === 'Abundant & Vibrant' ? 2 : 1;
-          const cafeVal = (c: string) =>
-            c === 'Legendary Laptop Friendly' ? 3 : c === 'Widely Welcomed' ? 2 : 1;
-          const scoreA = densityVal(a.nomadProfile.coworkingDensity) * 10 + cafeVal(a.nomadProfile.cafeWorkCulture) * 5;
-          const scoreB = densityVal(b.nomadProfile.coworkingDensity) * 10 + cafeVal(b.nomadProfile.cafeWorkCulture) * 5;
-          if (scoreB !== scoreA) return scoreB - scoreA;
-          return b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
-        }
-        if (nomadPriority === 'nomad_visa') {
-          if (b.nomadProfile.hasCuratedData !== a.nomadProfile.hasCuratedData) {
-            return b.nomadProfile.hasCuratedData ? 1 : -1;
-          }
-          return (a.nomadProfile.remoteWorkVisaIncomeUSD || 0) - (b.nomadProfile.remoteWorkVisaIncomeUSD || 0);
-        }
-        if (nomadPriority === 'low_burn') {
-          return a.nomadProfile.monthlyNomadBurnUSD - b.nomadProfile.monthlyNomadBurnUSD;
-        }
-        if (nomadPriority === 'community_vibe') {
-          const vibeA = a.country.adultEntertainment.nightlifeScore + a.country.demographics.datingRating + (a.nomadProfile.hasCuratedData ? 3 : 0);
-          const vibeB = b.country.adultEntertainment.nightlifeScore + b.country.demographics.datingRating + (b.nomadProfile.hasCuratedData ? 3 : 0);
-          return vibeB - vibeA;
-        }
-        if (nomadPriority === 'safety_walkability') {
-          return (
-            b.country.lifestyle.safetyScore +
-            b.country.lifestyle.walkabilityScore -
-            (a.country.lifestyle.safetyScore + a.country.lifestyle.walkabilityScore)
-          );
-        }
+        return b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
       }
 
-      if (matchPriority === 'value') {
-        return a.country.costOfLiving.monthlyBudgetCoupleUSD - b.country.costOfLiving.monthlyBudgetCoupleUSD;
-      }
-      if (matchPriority === 'healthcare') {
-        return b.country.lifestyle.healthcareScore - a.country.lifestyle.healthcareScore;
-      }
-      if (matchPriority === 'safety') {
-        return b.country.lifestyle.safetyScore - a.country.lifestyle.safetyScore;
-      }
       return b.travelScore - a.travelScore;
     });
 
     return filtered;
-  }, [
-    countries,
-    currentPersona,
-    matchBudget,
-    nomadMatchBurn,
-    strictBudgetFilter,
-    matchPriority,
-    nomadPriority,
-    previewContinent,
-    matchSearchQuery,
-  ]);
+  }, [countries, currentPersona, matchSearchQuery]);
 
   const displayedCountries = sortedMatchedCountries.slice(0, 12);
   const remainingCountriesCount = Math.max(0, sortedMatchedCountries.length - displayedCountries.length);
 
   const handleResetMatchEngine = () => {
-    setMatchBudget(2800);
-    setNomadMatchBurn(2200);
-    setStrictBudgetFilter(false);
-    setMatchPriority('leisure');
-    setNomadPriority('high_speed_internet');
-    setPreviewContinent('All');
     setMatchSearchQuery('');
   };
 
   const handleOpenAdvancedExplorer = () => {
-    setSelectedRegion(previewContinent);
+    setSelectedRegion('All');
     setSelectedClimate('All');
     setSearchQuery(matchSearchQuery.trim());
     if (currentPersona === 'nomad') {
-      if (nomadPriority === 'high_speed_internet') setSortBy('internet-speed-desc');
-      else if (nomadPriority === 'coworking_cafe') setSortBy('coworking-friendly');
-      else if (nomadPriority === 'nomad_visa') setSortBy('dnv-friendly');
-      else if (nomadPriority === 'low_burn') setSortBy('nomad-burn-asc');
-      else if (nomadPriority === 'community_vibe') setSortBy('dating-nightlife-desc');
-      else if (nomadPriority === 'safety_walkability') setSortBy('safety-desc');
+      setSortBy('internet-speed-desc');
     } else {
-      if (matchPriority === 'value') setSortBy('budget-asc');
-      else if (matchPriority === 'healthcare') setSortBy('healthcare-desc');
-      else if (matchPriority === 'safety') setSortBy('safety-desc');
-      else if (matchPriority === 'leisure') setSortBy('travel-leisure-desc');
+      setSortBy('travel-leisure-desc');
     }
     setCurrentView('explore');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -679,13 +483,13 @@ export const LandingPage: React.FC = () => {
               <p className="hidden md:block text-sm text-slate-600 leading-relaxed">
                 {currentPersona === 'retiree' ? (
                   <>
-                    Tune your target monthly couple budget, primary lifestyle priority, and preferred continent to preview your top 12 live-ranked destinations—then launch the full{' '}
-                    <strong className="text-slate-900 font-semibold">Explore Havens</strong> studio for climate filters, custom sorting, and 55+ deep metrics.
+                    Search any destination or browse our top 12 curated retirement havens—then dive into{' '}
+                    <strong className="text-slate-900 font-semibold">Explore Havens</strong> for budget, region, climate filters, custom sorting, and 55+ deep metrics across all {countries.length} countries.
                   </>
                 ) : (
                   <>
-                    Tune your target monthly turnkey living burn, remote work priority—like{' '}
-                    <strong className="text-slate-900 font-semibold">high-speed fiber internet, coworking &amp; cafe culture, or Digital Nomad Visas</strong>—and preferred continent to preview your top 12 live-ranked remote bases.
+                    Search any remote hub or browse our top 12 curated digital nomad bases—then dive into{' '}
+                    <strong className="text-slate-900 font-semibold">Explore Havens</strong> for fiber speed, coworking, Digital Nomad Visa, region, and climate filters across all {countries.length} destinations.
                   </>
                 )}
               </p>
@@ -820,21 +624,6 @@ export const LandingPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Mobile-only Compact Filter Toggle Row (< md) */}
-              <div className="flex md:hidden items-center justify-between gap-2 pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => setMobileFiltersExpanded(prev => !prev)}
-                  className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-950 text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{mobileFiltersExpanded ? 'Hide Filters' : 'Tune Budget & Filters'}</span>
-                </button>
-                <span className="text-[11px] font-mono font-bold text-slate-600 truncate">
-                  ${(currentPersona === 'nomad' ? nomadMatchBurn : matchBudget).toLocaleString()}/mo · {previewContinent}
-                </span>
-              </div>
-
               {/* Auto-Loaded Country Name Pills (Live Matches when typing, or Quick-Pick Spotlight when idle) */}
               {matchSearchQuery.trim() !== '' ? (
                 <div className="pt-1 space-y-2">
@@ -942,457 +731,6 @@ export const LandingPage: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Collapsible Filters Container on Mobile (< md); Always Visible on Desktop (>= md) */}
-            <div className={`${mobileFiltersExpanded ? 'block' : 'hidden'} md:block space-y-4 md:space-y-6`}>
-            {/* Row 1: Two-Column Core Match Parameters (Budget/Burn + Priority) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              
-              {/* Control 1: Monthly Couple Budget OR Monthly Nomad Living Burn (5 cols) */}
-              {currentPersona === 'retiree' ? (
-                <div className="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white border border-emerald-200/80 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <label className="text-xs font-extrabold uppercase tracking-wider text-emerald-950 flex items-center gap-2">
-                        <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-xs">
-                          <Wallet className="w-3.5 h-3.5" />
-                        </span>
-                        <span>Monthly Couple Budget</span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <motion.span
-                          key={matchBudget}
-                          initial={{ scale: 0.92, opacity: 0.7 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-                          className="font-mono tabular-nums px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 font-black text-sm shadow-xs"
-                        >
-                          ${matchBudget.toLocaleString()}/mo
-                        </motion.span>
-                        <button
-                          type="button"
-                          onClick={() => setStrictBudgetFilter(prev => !prev)}
-                          title="Toggle between scoring all countries by budget fit vs strictly hiding countries above this budget"
-                          className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
-                            strictBudgetFilter
-                              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
-                              : 'bg-white text-slate-600 border-emerald-200 hover:bg-emerald-100/60 hover:text-emerald-950'
-                          }`}
-                        >
-                          {strictBudgetFilter ? 'Strict ≤ Budget' : 'Score All'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Custom Progress + Range Input */}
-                    <div className="space-y-2 pt-1">
-                      <input
-                        type="range"
-                        min={1000}
-                        max={5000}
-                        step={50}
-                        value={matchBudget}
-                        onChange={e => setMatchBudget(Number(e.target.value))}
-                        className="w-full h-2.5 bg-emerald-200/80 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                      />
-                      <div className="flex justify-between text-[11px] text-emerald-800/80 font-mono font-semibold">
-                        <span>$1,000 (Frugal)</span>
-                        <span>$2,800 (Balanced)</span>
-                        <span>$5,000+ (Luxury)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Budget Presets */}
-                  <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-emerald-900/70">Quick Tiers:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {[
-                        { label: '$1.5k Lean', val: 1500 },
-                        { label: '$2.4k Sweet Spot', val: 2400 },
-                        { label: '$3.2k Comfort', val: 3200 },
-                        { label: '$4.5k Plush', val: 4500 },
-                      ].map(preset => {
-                        const isPresetActive = matchBudget === preset.val;
-                        return (
-                          <button
-                            key={preset.val}
-                            type="button"
-                            onClick={() => setMatchBudget(preset.val)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                              isPresetActive
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'bg-white/90 text-emerald-900 hover:bg-emerald-100 border border-emerald-200/80'
-                            }`}
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-teal-50/40 to-white border border-amber-200/80 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div>
-                        <label className="text-xs font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-2">
-                          <span className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-xs">
-                            <Flame className="w-3.5 h-3.5" />
-                          </span>
-                          <span>Monthly Nomad Living Burn</span>
-                        </label>
-                        <span className="text-[10px] font-semibold text-slate-500 block mt-0.5 pl-8">
-                          Turnkey 1-Mo Furnished Stay + Coworking + Dining
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <motion.span
-                          key={nomadMatchBurn}
-                          initial={{ scale: 0.92, opacity: 0.7 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-                          className="font-mono tabular-nums px-3 py-1 rounded-xl bg-slate-950 text-amber-300 font-black text-sm shadow-xs"
-                        >
-                          ${nomadMatchBurn.toLocaleString()}/mo
-                        </motion.span>
-                        <button
-                          type="button"
-                          onClick={() => setStrictBudgetFilter(prev => !prev)}
-                          title="Toggle between scoring all hubs by burn fit vs strictly hiding hubs above this monthly burn"
-                          className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
-                            strictBudgetFilter
-                              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
-                              : 'bg-white text-slate-600 border-amber-200 hover:bg-amber-100/60 hover:text-amber-950'
-                          }`}
-                        >
-                          {strictBudgetFilter ? 'Strict ≤ Burn' : 'Score All'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Custom Progress + Range Input for Nomad Burn */}
-                    <div className="space-y-2 pt-1">
-                      <input
-                        type="range"
-                        min={800}
-                        max={4500}
-                        step={50}
-                        value={nomadMatchBurn}
-                        onChange={e => setNomadMatchBurn(Number(e.target.value))}
-                        className="w-full h-2.5 bg-amber-200/80 rounded-lg appearance-none cursor-pointer accent-orange-600"
-                      />
-                      <div className="flex justify-between text-[11px] text-amber-900/80 font-mono font-semibold">
-                        <span>$800 (SE Asia Lean)</span>
-                        <span>$2,200 (Nomad Hub)</span>
-                        <span>$4,500+ (Exec)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Nomad Burn Presets */}
-                  <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-amber-950/75">Nomad Tiers:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {[
-                        { label: '$1.3k Lean Hub', val: 1300 },
-                        { label: '$1.8k Sweet Spot', val: 1800 },
-                        { label: '$2.5k Euro/Med', val: 2500 },
-                        { label: '$3.6k Luxury', val: 3600 },
-                      ].map(preset => {
-                        const isPresetActive = nomadMatchBurn === preset.val;
-                        return (
-                          <button
-                            key={preset.val}
-                            type="button"
-                            onClick={() => setNomadMatchBurn(preset.val)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                              isPresetActive
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-xs'
-                                : 'bg-white/90 text-amber-950 hover:bg-amber-100 border border-amber-200/80'
-                            }`}
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Control 2: Primary Relocation Priority Multi-Color Interactive Cards (7 cols) */}
-              <div className="lg:col-span-7 p-5 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-violet-50/40 to-amber-50/40 border border-indigo-200/80 flex flex-col justify-between space-y-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-xs">
-                      {currentPersona === 'retiree' ? (
-                        <Sparkles className="w-3.5 h-3.5" />
-                      ) : (
-                        <Zap className="w-3.5 h-3.5 text-amber-300" />
-                      )}
-                    </span>
-                    <span>
-                      {currentPersona === 'retiree'
-                        ? 'Primary Relocation Priority'
-                        : 'Primary Digital Nomad Priority'}
-                    </span>
-                  </label>
-                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-100/80 px-2.5 py-0.5 rounded-full">
-                    {currentPersona === 'retiree'
-                      ? 'Dynamically weights your live retirement rankings'
-                      : 'Ranks hubs by fiber speed, coworking, visas & burn'}
-                  </span>
-                </div>
-
-                {currentPersona === 'retiree' ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {[
-                      {
-                        id: 'value' as const,
-                        label: 'Low Cost',
-                        sub: 'Max Geo-Arbitrage',
-                        icon: Wallet,
-                        activeGrad: 'from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-emerald-50/90 text-slate-800 border-emerald-200/80',
-                        iconColor: 'text-emerald-600',
-                      },
-                      {
-                        id: 'healthcare' as const,
-                        label: 'Healthcare',
-                        sub: 'Hospitals & Care',
-                        icon: HeartPulse,
-                        activeGrad: 'from-rose-600 to-pink-600 text-white border-rose-500 shadow-md shadow-rose-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-rose-50/90 text-slate-800 border-rose-200/80',
-                        iconColor: 'text-rose-600',
-                      },
-                      {
-                        id: 'safety' as const,
-                        label: 'Top Safety',
-                        sub: 'Peace & Stability',
-                        icon: ShieldCheck,
-                        activeGrad: 'from-indigo-600 to-blue-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80',
-                        iconColor: 'text-indigo-600',
-                      },
-                      {
-                        id: 'leisure' as const,
-                        label: 'Travel & Leisure',
-                        sub: 'Culture & Mobility',
-                        icon: Plane,
-                        activeGrad: 'from-amber-500 to-orange-600 text-white border-amber-500 shadow-md shadow-orange-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-amber-50/90 text-slate-800 border-amber-200/80',
-                        iconColor: 'text-amber-600',
-                      },
-                    ].map(item => {
-                      const Icon = item.icon;
-                      const isSelected = matchPriority === item.id;
-                      return (
-                        <motion.button
-                          key={item.id}
-                          type="button"
-                          whileHover={{ y: -2, scale: 1.01 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => setMatchPriority(item.id)}
-                          className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                            isSelected ? `bg-gradient-to-br ${item.activeGrad}` : item.idleStyle
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={`p-2 rounded-lg ${
-                                isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 ' + item.iconColor
-                              }`}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </span>
-                            {isSelected && (
-                              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold leading-tight">{item.label}</div>
-                            <div
-                              className={`hidden md:block text-[10px] font-medium mt-0.5 ${
-                                isSelected ? 'text-white/85' : 'text-slate-500'
-                              }`}
-                            >
-                              {item.sub}
-                            </div>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {[
-                      {
-                        id: 'high_speed_internet' as const,
-                        label: 'High-Speed Internet',
-                        sub: 'Fiber Mbps & 5G Uptime',
-                        icon: Wifi,
-                        activeGrad: 'from-teal-600 to-emerald-600 text-white border-teal-500 shadow-md shadow-teal-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-teal-50/90 text-slate-800 border-teal-200/80',
-                        iconColor: 'text-teal-600',
-                      },
-                      {
-                        id: 'coworking_cafe' as const,
-                        label: 'Coworking Friendly',
-                        sub: '24/7 Hubs & Laptop Cafes',
-                        icon: Coffee,
-                        activeGrad: 'from-amber-500 to-orange-600 text-white border-amber-500 shadow-md shadow-orange-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-amber-50/90 text-slate-800 border-amber-200/80',
-                        iconColor: 'text-amber-600',
-                      },
-                      {
-                        id: 'nomad_visa' as const,
-                        label: 'Nomad Visa & Tax',
-                        sub: 'DNV & 0% Foreign Tax',
-                        icon: FileBadge,
-                        activeGrad: 'from-indigo-600 to-violet-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80',
-                        iconColor: 'text-indigo-600',
-                      },
-                      {
-                        id: 'low_burn' as const,
-                        label: 'Low Monthly Burn',
-                        sub: 'Max Runway & Coliving',
-                        icon: Flame,
-                        activeGrad: 'from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-emerald-50/90 text-slate-800 border-emerald-200/80',
-                        iconColor: 'text-emerald-600',
-                      },
-                      {
-                        id: 'community_vibe' as const,
-                        label: 'Creator Community',
-                        sub: 'Meetups, English & Vibe',
-                        icon: Users,
-                        activeGrad: 'from-rose-600 to-pink-600 text-white border-rose-500 shadow-md shadow-rose-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-rose-50/90 text-slate-800 border-rose-200/80',
-                        iconColor: 'text-rose-600',
-                      },
-                      {
-                        id: 'safety_walkability' as const,
-                        label: 'Safety & Walkability',
-                        sub: 'Transit, Peace & Grid',
-                        icon: ShieldCheck,
-                        activeGrad: 'from-blue-600 to-indigo-600 text-white border-blue-500 shadow-md shadow-blue-600/20',
-                        idleStyle: 'bg-white/90 hover:bg-blue-50/90 text-slate-800 border-blue-200/80',
-                        iconColor: 'text-blue-600',
-                      },
-                    ].map(item => {
-                      const Icon = item.icon;
-                      const isSelected = nomadPriority === item.id;
-                      return (
-                        <motion.button
-                          key={item.id}
-                          type="button"
-                          whileHover={{ y: -2, scale: 1.01 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => setNomadPriority(item.id)}
-                          className={`relative p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                            isSelected ? `bg-gradient-to-br ${item.activeGrad}` : item.idleStyle
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={`p-1.5 rounded-lg ${
-                                isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 ' + item.iconColor
-                              }`}
-                            >
-                              <Icon className="w-3.5 h-3.5" />
-                            </span>
-                            {isSelected && (
-                              <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-white/20 text-white">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold leading-tight">{item.label}</div>
-                            <div
-                              className={`hidden md:block text-[10px] font-medium mt-0.5 ${
-                                isSelected ? 'text-white/85' : 'text-slate-500'
-                              }`}
-                            >
-                              {item.sub}
-                            </div>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Row 2: Continent & Region Filter Ribbon + Reset Controls */}
-            <div className="pt-5 border-t border-indigo-100/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-2.5 flex-1">
-                <div className="flex items-center justify-between sm:justify-start gap-3">
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Continent &amp; Region Filter</span>
-                  </label>
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80">
-                    {sortedMatchedCountries.length} matching {currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {CONTINENT_FILTER_OPTIONS.map(option => {
-                    const active = previewContinent === option.value;
-                    const count = continentCounts[option.value] ?? 0;
-                    return (
-                      <motion.button
-                        key={option.value}
-                        type="button"
-                        whileHover={{ y: -1.5 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => setPreviewContinent(option.value)}
-                        className={`relative px-3.5 py-2 text-xs rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          active
-                            ? 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-md shadow-indigo-600/20'
-                            : 'bg-slate-100/90 text-slate-700 hover:bg-indigo-50 hover:text-indigo-950 border border-slate-200/70'
-                        }`}
-                      >
-                        <span>{option.label}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-extrabold ${
-                            active
-                              ? 'bg-white/20 text-white'
-                              : 'bg-white text-slate-600 border border-slate-200/60'
-                          }`}
-                        >
-                          {count}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Reset & Quick Explore Actions */}
-              <div className="flex items-center gap-2.5 self-start lg:self-end shrink-0">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleResetMatchEngine}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200/80 hover:border-rose-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset Filters</span>
-                </motion.button>
-              </div>
-            </div>
-            </div>
-
           </div>
 
           {/* Results Header Strip */}
@@ -1413,38 +751,12 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Results Header Strip (unchanged >= md) */}
+            {/* Desktop Results Header Strip */}
             <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 bg-indigo-100/80 border border-indigo-200/80 px-3 py-1 rounded-full">
-                  Top {displayedCountries.length} Live {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Matches'} (of {sortedMatchedCountries.length})
+                  Top {displayedCountries.length} Curated {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Havens'} (of {sortedMatchedCountries.length})
                 </span>
-                <span className="px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-200/90 text-xs font-bold">
-                  {currentPersona === 'nomad'
-                    ? nomadPriority === 'high_speed_internet'
-                      ? '⚡ Priority: High-Speed Fiber & 5G'
-                      : nomadPriority === 'coworking_cafe'
-                      ? '☕ Priority: Coworking & Laptop Cafes'
-                      : nomadPriority === 'nomad_visa'
-                      ? '🛂 Priority: Digital Nomad Visa & Tax'
-                      : nomadPriority === 'low_burn'
-                      ? '🔥 Priority: Lowest Monthly Burn'
-                      : nomadPriority === 'community_vibe'
-                      ? '🌐 Priority: Creator Community & Vibe'
-                      : '🛡️ Priority: Safety & Walkability'
-                    : matchPriority === 'value'
-                    ? '🌿 Priority: Low Cost Geo-Arbitrage'
-                    : matchPriority === 'healthcare'
-                    ? '🏥 Priority: Healthcare Quality'
-                    : matchPriority === 'safety'
-                    ? '🛡️ Priority: Safety & Peace'
-                    : '✈️ Priority: Travel & Leisure'}
-                </span>
-                {previewContinent !== 'All' && (
-                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-indigo-600 to-teal-600 text-white text-xs font-bold shadow-2xs">
-                    Region: {previewContinent}
-                  </span>
-                )}
                 {matchSearchQuery.trim() !== '' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold shadow-2xs">
                     <Search className="w-3 h-3" />
@@ -1459,11 +771,6 @@ export const LandingPage: React.FC = () => {
                     </button>
                   </span>
                 )}
-                {strictBudgetFilter && (
-                  <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold">
-                    Strict ≤ ${(currentPersona === 'nomad' ? nomadMatchBurn : matchBudget).toLocaleString()}/mo
-                  </span>
-                )}
               </div>
 
               <button
@@ -1471,12 +778,12 @@ export const LandingPage: React.FC = () => {
                 onClick={handleOpenAdvancedExplorer}
                 className="text-indigo-700 hover:text-teal-700 text-xs sm:text-sm font-extrabold inline-flex items-center gap-1.5 cursor-pointer self-start sm:self-auto transition-colors group"
               >
-                <span>Need Climate Filters or Custom Sorting? Open Explore Havens</span>
+                <span>Filter by Budget, Region &amp; Climate in Explore Havens</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
 
-            {/* Empty State if filters or search are too restrictive */}
+            {/* Empty State if search returns zero matches */}
             {displayedCountries.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -1487,25 +794,21 @@ export const LandingPage: React.FC = () => {
                   <Compass className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  {matchSearchQuery.trim() !== ''
-                    ? `No ${currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match "${matchSearchQuery.trim()}"`
-                    : `No ${currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match this strict budget & region combination`}
+                  No {currentPersona === 'nomad' ? 'nomad hubs' : 'destinations'} match &ldquo;{matchSearchQuery.trim()}&rdquo;
                 </h3>
                 <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                  {matchSearchQuery.trim() !== ''
-                    ? 'Try searching for another country name, capital city, or expat hub (such as Portugal, Spain, Thailand, Costa Rica, or Malaysia), or clear the search filter.'
-                    : `Try increasing your ${currentPersona === 'nomad' ? 'Monthly Nomad Living Burn' : 'Monthly Couple Budget'} slider, switching from “Strict ≤ ${currentPersona === 'nomad' ? 'Burn' : 'Budget'}” to “Score All”, or selecting “All Continents”.`}
+                  Try searching for another country name, capital city, or expat hub (such as Portugal, Spain, Thailand, Costa Rica, or Malaysia), or open Explore Havens to browse all {countries.length} countries.
                 </p>
                 <button
                   type="button"
                   onClick={handleResetMatchEngine}
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
                 >
-                  Reset Match Engine &amp; Search
+                  Clear Search
                 </button>
               </motion.div>
             ) : (
-              /* Buttery-Smooth Animated 12-Card Top Match Grid */
+              /* Buttery-Smooth Animated 12-Card Top Curated Grid */
               <motion.div
                 layout
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
@@ -1517,8 +820,8 @@ export const LandingPage: React.FC = () => {
                     const continentLabel = getCountryContinentLabel(country);
                     const isUnderBudget =
                       currentPersona === 'nomad'
-                        ? nomadProfile.monthlyNomadBurnUSD <= nomadMatchBurn
-                        : country.costOfLiving.monthlyBudgetCoupleUSD <= matchBudget;
+                        ? nomadProfile.monthlyNomadBurnUSD <= DEFAULT_NOMAD_BURN_REF
+                        : country.costOfLiving.monthlyBudgetCoupleUSD <= DEFAULT_RETIREE_BUDGET_REF;
 
                     // Multi-colored top accent bar per card rank/continent
                     const cardAccentGradients = [
@@ -1730,18 +1033,10 @@ export const LandingPage: React.FC = () => {
                                 </div>
                                 <div className="p-2 md:p-2.5 rounded-xl bg-teal-50/80 border border-teal-200/80">
                                   <span className="text-teal-800 font-semibold block text-[10px] uppercase tracking-wider truncate">
-                                    {nomadPriority === 'coworking_cafe'
-                                      ? 'Coworking Desk'
-                                      : nomadPriority === 'low_burn'
-                                      ? '6-Mo Runway'
-                                      : 'Verified Fiber'}
+                                    Verified Fiber
                                   </span>
                                   <span className="font-mono tabular-nums font-extrabold text-teal-950 text-sm">
-                                    {nomadPriority === 'coworking_cafe'
-                                      ? `$${nomadProfile.coworkingMonthlyUSD}/mo`
-                                      : nomadPriority === 'low_burn'
-                                      ? `$${(nomadProfile.sixMonthRunwayUSD / 1000).toFixed(1)}k`
-                                      : `${nomadProfile.verifiedInternetMbps} Mbps`}
+                                    {nomadProfile.verifiedInternetMbps} Mbps
                                   </span>
                                 </div>
                               </div>
@@ -2001,7 +1296,7 @@ export const LandingPage: React.FC = () => {
                     )}
 
                     <span className="hidden md:inline text-[11px] text-slate-500 text-center lg:text-right font-medium">
-                      Auto-transfers your active filters ({previewContinent})
+                      Filter by budget, continent, climate &amp; 55+ metrics in Explore Havens
                     </span>
                   </div>
                 </div>
