@@ -3,7 +3,7 @@ import type { HeldVisaId } from '../types/visaCheck';
 export const PUBLIC_SITE_ORIGIN = 'https://refirely.com';
 
 export interface StaticPageSeoConfig {
-  view: 'landing' | 'explore' | 'compare' | 'scout' | 'visa-check' | 'community' | 'meetups' | 'dashboard' | 'messages';
+  view: 'landing' | 'explore' | 'compare' | 'fire-calculator' | 'scout' | 'visa-check' | 'community' | 'meetups' | 'dashboard' | 'messages';
   path: string;
   title: string;
   description: string;
@@ -130,21 +130,37 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     schemaType: 'CollectionPage',
     schemaName: 'Worldwide Expat, Retiree & Digital Nomad Meetups',
   },
-  dashboard: {
-    view: 'dashboard',
-    path: '/dashboard',
-    title: 'Global FIRE Nest Egg & Digital Nomad Runway Burn Calculator | ReFirely',
+  'fire-calculator': {
+    view: 'fire-calculator',
+    path: '/fire-calculator',
+    title: 'FIRE Calculator Abroad & Nomad Runway Simulator | ReFirely',
     description:
-      'Simulate your 4% SWR FIRE retirement portfolio or Digital Nomad liquid cash runway across 209 countries. Calculate geoarbitrage savings, saved shortlists & earned milestone badges.',
+      'Calculate your FIRE number abroad with our International Geo-Arbitrage Engine. Compare 3%–5% SWR nest eggs, years saved & digital nomad runway across 209 countries.',
     keywords:
-      'FIRE calculator abroad, 4 percent rule geoarbitrage, digital nomad cash runway calculator, retire years earlier abroad, expat portfolio simulator, ReFirely FIRE dashboard',
+      'FIRE calculator abroad, international FIRE calculator, geoarbitrage calculator, 4 percent rule retirement abroad, retire early abroad calculator, FIRE number by country, digital nomad runway calculator, monthly cash burn simulator, safe withdrawal rate SWR calculator, early retirement overseas, ReFirely FIRE calculator',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/fire-calculator.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1280',
     ogImageHeight: '960',
-    ogImageAlt: 'Global FIRE Nest Egg & Digital Nomad Runway Calculator on ReFirely',
+    ogImageAlt: 'FIRE Calculator Abroad & International Geo-Arbitrage Engine on ReFirely',
     schemaType: 'WebApplication',
-    schemaName: 'Global FIRE Nest Egg & Digital Nomad Runway Burn Calculator',
+    schemaName: 'ReFirely FIRE Calculator Abroad & International Geo-Arbitrage Engine',
+  },
+  dashboard: {
+    view: 'dashboard',
+    path: '/dashboard',
+    title: 'Member Relocation Dashboard, Saved Havens & FIRE Hub | ReFirely',
+    description:
+      'Manage your saved retirement havens, personal relocation checklist, country research journal, multi-asset portfolio tracker & earned expat badges on ReFirely.',
+    keywords:
+      'expat relocation dashboard, saved retirement countries, relocation checklist tracker, personal FIRE portfolio hub, country research journal, ReFirely member dashboard',
+    ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/fire-calculator.jpg`,
+    ogImageType: 'image/jpeg',
+    ogImageWidth: '1280',
+    ogImageHeight: '960',
+    ogImageAlt: 'ReFirely Member Relocation Dashboard & Portfolio Hub',
+    schemaType: 'WebApplication',
+    schemaName: 'ReFirely Member Relocation Dashboard & Portfolio Hub',
   },
   messages: {
     view: 'messages',

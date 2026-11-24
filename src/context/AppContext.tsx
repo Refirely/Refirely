@@ -61,6 +61,7 @@ export type AppView =
   | 'explore' 
   | 'country-detail' 
   | 'compare' 
+  | 'fire-calculator'
   | 'scout'
   | 'visa-check'
   | 'community' 
@@ -3378,9 +3379,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (
       currentViewRef.current === 'visa-check' ||
       currentViewRef.current === 'explore' ||
-      currentViewRef.current === 'compare'
+      currentViewRef.current === 'compare' ||
+      currentViewRef.current === 'fire-calculator'
     ) {
-      // Keep user right on Visa Check, Explore Havens, or Compare Studio so gated features unlock in place
+      // Keep user right on Visa Check, Explore Havens, Compare Studio, or FIRE Calculator so gated features unlock in place
     } else if (isAccountOwnerAdmin) {
       setCurrentView('admin');
       currentViewRef.current = 'admin';
@@ -3588,7 +3590,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (
               currentViewRef.current !== 'visa-check' &&
               currentViewRef.current !== 'explore' &&
-              currentViewRef.current !== 'compare'
+              currentViewRef.current !== 'compare' &&
+              currentViewRef.current !== 'fire-calculator'
             ) {
               window.history.pushState({}, '', '/?signup=success');
             }
@@ -3604,7 +3607,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (
         currentViewRef.current !== 'visa-check' &&
         currentViewRef.current !== 'explore' &&
-        currentViewRef.current !== 'compare'
+        currentViewRef.current !== 'compare' &&
+        currentViewRef.current !== 'fire-calculator'
       ) {
         window.history.pushState({}, '', '/?signup=success');
       }
@@ -3777,9 +3781,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         googleQuizHydration.hydrated ||
         currentViewRef.current === 'visa-check' ||
         currentViewRef.current === 'explore' ||
-        currentViewRef.current === 'compare'
+        currentViewRef.current === 'compare' ||
+        currentViewRef.current === 'fire-calculator'
       ) {
-        // Stay right on the Freedom Map Reveal screen, Visa Check, Explore Havens, or Compare Studio
+        // Stay right on the Freedom Map Reveal screen, Visa Check, Explore Havens, Compare Studio, or FIRE Calculator
         // so both new signups and returning members immediately view unlocked results in place.
       } else if (googleAcc.id === 'usr-ganesh' || googleAcc.profile.role === 'admin') {
         setCurrentView('admin');
@@ -3794,7 +3799,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (
             currentViewRef.current !== 'visa-check' &&
             currentViewRef.current !== 'explore' &&
-            currentViewRef.current !== 'compare'
+            currentViewRef.current !== 'compare' &&
+            currentViewRef.current !== 'fire-calculator'
           ) {
             window.history.pushState({}, '', '/?signup=success');
           }

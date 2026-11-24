@@ -18,6 +18,7 @@ const VALID_VIEWS: AppView[] = [
   'explore',
   'country-detail',
   'compare',
+  'fire-calculator',
   'scout',
   'visa-check',
   'community',
@@ -78,7 +79,13 @@ export function parseUrlToRoute(countries: Country[]): { view: AppView; countryI
   const params = new URLSearchParams(window.location.search);
   const countryParam = params.get('country')?.trim().toLowerCase();
   const rawViewParam = params.get('view')?.trim().toLowerCase();
-  const viewParam = (rawViewParam === 'expats' ? 'community' : rawViewParam) as AppView | undefined;
+  const viewParam = (
+    rawViewParam === 'expats'
+      ? 'community'
+      : rawViewParam === 'fire'
+      ? 'fire-calculator'
+      : rawViewParam
+  ) as AppView | undefined;
 
   const findMatchingCountry = (slugOrId: string): Country | undefined => {
     const clean = decodeURIComponent(slugOrId).trim().toLowerCase();
@@ -120,10 +127,18 @@ export function parseUrlToRoute(countries: Country[]): { view: AppView; countryI
     return { view: viewParam };
   }
 
-  // 4. Check clean path /explore, /compare, /visa-check, /scout, /expats, /community, /meetups, /dashboard, /messages, /admin
+  // 4. Check clean path /explore, /compare, /fire-calculator, /fire, /visa-check, /scout, /expats, /community, /meetups, /dashboard, /messages, /admin
   if (pathSegments.length === 1) {
     const rawSeg = pathSegments[0];
-    const seg = (rawSeg === 'expats' ? 'community' : rawSeg === 'visa' ? 'visa-check' : rawSeg) as AppView;
+    const seg = (
+      rawSeg === 'expats'
+        ? 'community'
+        : rawSeg === 'visa'
+        ? 'visa-check'
+        : rawSeg === 'fire'
+        ? 'fire-calculator'
+        : rawSeg
+    ) as AppView;
     if (VALID_VIEWS.includes(seg)) {
       return { view: seg };
     }
@@ -446,6 +461,75 @@ function updateStructuredDataJsonLd(
       ],
     };
     scriptEl.textContent = JSON.stringify(visaJsonLd);
+  } else if (currentView === 'fire-calculator') {
+    const cfg = STATIC_PAGE_SEO['fire-calculator'];
+    const fullUrl = `${origin}${cfg.path}`;
+    const fireJsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'ReFirely Home',
+              item: `${origin}/`,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: cfg.schemaName,
+              item: fullUrl,
+            },
+          ],
+        },
+        {
+          '@type': 'WebApplication',
+          name: cfg.schemaName,
+          url: fullUrl,
+          applicationCategory: 'FinanceApplication',
+          operatingSystem: 'All',
+          description: cfg.description,
+          image: cfg.ogImage,
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+          },
+        },
+        {
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'How does international geo-arbitrage reduce my FIRE number?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Your FIRE nest egg equals Annual Living Expenses divided by your Safe Withdrawal Rate (e.g., 25x at 4% SWR). Relocating from a $4,800/month domestic base ($1.44M nest egg) to a $2,400/month overseas haven ($720k nest egg) cuts required capital by 50% and can shave 5 to 12 years off your retirement timeline.',
+              },
+            },
+            {
+              '@type': 'Question',
+              name: 'What Safe Withdrawal Rate (SWR) should early retirees abroad use?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Standard 30-year FIRE models use 4.0% SWR (25x annual expenses). Early retirees planning a 40-to-50-year horizon abroad often stress-test at 3.5% SWR (28.6x) or 3.25% SWR to account for currency shifts, healthcare inflation, and sequence-of-returns risk.',
+              },
+            },
+            {
+              '@type': 'Question',
+              name: 'How is Digital Nomad cash runway calculated?',
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Digital Nomad runway divides your liquid cash buffer by your net monthly cash burn (short-term furnished stay, coworking, and living costs minus any monthly remote work or freelance income). When remote inflow matches or exceeds monthly burn, your runway becomes self-sustaining.',
+              },
+            },
+          ],
+        },
+      ],
+    };
+    scriptEl.textContent = JSON.stringify(fireJsonLd);
   } else if (
     currentView === 'scout' ||
     currentView === 'community' ||
@@ -842,6 +926,7 @@ const VIEW_RING_PALETTES: Record<AppView, [string, string, string, string]> = {
   explore: ['#10b981', '#06b6d4', '#6366f1', '#f97316'],
   'country-detail': ['#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6'],
   compare: ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'],
+  'fire-calculator': ['#f59e0b', '#ea580c', '#10b981', '#6366f1'],
   scout: ['#14b8a6', '#6366f1', '#f59e0b', '#10b981'],
   'visa-check': ['#0d9488', '#4f46e5', '#f59e0b', '#10b981'],
   community: ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b'],

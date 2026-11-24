@@ -203,6 +203,38 @@ function buildStaticViewJsonLd(cfg: StaticPageSeoConfig): Record<string, unknown
     });
   }
 
+  if (cfg.view === 'fire-calculator') {
+    graph.push({
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'How does international geo-arbitrage reduce my FIRE number?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Your FIRE nest egg equals Annual Living Expenses divided by your Safe Withdrawal Rate (e.g., 25x at 4% SWR). Relocating from a $4,800/month domestic base ($1.44M nest egg) to a $2,400/month overseas haven ($720k nest egg) cuts required capital by 50% and can shave 5 to 12 years off your retirement timeline.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'What Safe Withdrawal Rate (SWR) should early retirees abroad use?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Standard 30-year FIRE models use 4.0% SWR (25x annual expenses). Early retirees planning a 40-to-50-year horizon abroad often stress-test at 3.5% SWR (28.6x) or 3.25% SWR to account for currency shifts, healthcare inflation, and sequence-of-returns risk.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How is Digital Nomad cash runway calculated?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Digital Nomad runway divides your liquid cash buffer by your net monthly cash burn (short-term furnished stay, coworking, and living costs minus any monthly remote work or freelance income).',
+          },
+        },
+      ],
+    });
+  }
+
   return {
     '@context': 'https://schema.org',
     '@graph': graph,
@@ -220,9 +252,10 @@ function main() {
   const templateHtml = fs.readFileSync(rootIndexPath, 'utf8');
   let generatedCount = 0;
 
-  // 1. Prerender all primary feature pages (/visa-check, /explore, /compare, /scout, /expats, /community, /meetups, /dashboard, /messages)
+  // 1. Prerender all primary feature pages (/visa-check, /fire-calculator, /explore, /compare, /scout, /expats, /community, /meetups, /dashboard, /messages)
   const staticViews: StaticPageSeoConfig['view'][] = [
     'visa-check',
+    'fire-calculator',
     'explore',
     'compare',
     'scout',
@@ -254,6 +287,11 @@ function main() {
     // Also mirror /community -> same SEO as /expats (with canonical pointing to /expats)
     if (viewKey === 'community') {
       writePrerenderedHtml(distDir, 'community', pageHtml);
+      generatedCount++;
+    }
+    // Also mirror /fire -> same SEO as /fire-calculator (with canonical pointing to /fire-calculator)
+    if (viewKey === 'fire-calculator') {
+      writePrerenderedHtml(distDir, 'fire', pageHtml);
       generatedCount++;
     }
   }

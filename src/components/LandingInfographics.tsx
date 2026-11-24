@@ -72,7 +72,7 @@ export const HeroVisualShowcase: React.FC<HeroVisualShowcaseProps> = ({
       icon: Flame,
       accent: 'from-amber-500 to-orange-600',
       tint: 'bg-amber-50/90 border-amber-200/80 text-amber-900',
-      onClick: () => onScrollTo('fire-calculator'),
+      onClick: () => onNavigateView('fire-calculator'),
     },
     {
       id: 'scout',
@@ -255,7 +255,7 @@ export const RelocationEcosystemShowcase: React.FC<RelocationEcosystemShowcasePr
       gradient: 'from-amber-50 via-white to-orange-50 border-amber-200/90',
       iconBg: 'from-amber-500 to-orange-600',
       ctaColor: 'text-orange-700',
-      onClick: () => onScrollTo('fire-calculator'),
+      onClick: () => onNavigateView('fire-calculator'),
     },
     {
       id: 'scout-hop',
@@ -398,7 +398,7 @@ export const RelocationEcosystemShowcase: React.FC<RelocationEcosystemShowcasePr
                 title: 'Model FIRE & Runway',
                 detail: '3%–5% SWR & monthly burn math',
                 accent: 'from-amber-500 to-orange-600',
-                onClick: () => onScrollTo('fire-calculator'),
+                onClick: () => onNavigateView('fire-calculator'),
               },
               {
                 num: '04',
@@ -666,7 +666,7 @@ export const RelocationEcosystemShowcase: React.FC<RelocationEcosystemShowcasePr
               <div className="pt-2 border-t border-amber-100 flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => onScrollTo('fire-calculator')}
+                  onClick={() => onNavigateView('fire-calculator')}
                   className="text-xs font-extrabold text-orange-700 hover:text-orange-950 inline-flex items-center gap-1 group cursor-pointer"
                 >
                   <span>Simulate FIRE &amp; Runway</span>

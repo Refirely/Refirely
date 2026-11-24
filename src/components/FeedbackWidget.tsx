@@ -118,8 +118,10 @@ export const FeedbackWidget: React.FC = () => {
       let locationContext = currentView as string;
       if (currentView === 'country-detail' && selectedCountry) {
         locationContext = `Country Dossier (${selectedCountry.name})`;
+      } else if (currentView === 'fire-calculator') {
+        locationContext = 'FIRE & Geo-Arbitrage Calculator';
       } else if (currentView === 'dashboard') {
-        locationContext = 'User Dashboard & FIRE Calculator';
+        locationContext = 'Member Relocation Dashboard';
       } else if (currentView === 'explore') {
         locationContext = 'Haven Directory Explorer';
       } else if (currentView === 'compare') {

@@ -23,7 +23,7 @@
       "name": "FIRE & Nomad Calculator",
       "short_name": "FIRE Calc",
       "description": "Simulate 4% SWR FIRE nest eggs & nomad cash runway",
-      "url": "/dashboard"
+      "url": "/fire-calculator"
     },
     {
       "name": "Scout & Hop Planner",

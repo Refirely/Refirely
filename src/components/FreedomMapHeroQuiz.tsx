@@ -1843,7 +1843,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
           <span aria-hidden="true" className="text-slate-300 hidden sm:inline">•</span>
           <button
             type="button"
-            onClick={() => onScrollTo('fire-calculator')}
+            onClick={() => onNavigateView('fire-calculator')}
             className="inline-flex items-center gap-1.5 hover:text-amber-700 transition-colors cursor-pointer py-1"
           >
             <Flame className="w-3.5 h-3.5 text-amber-500" />

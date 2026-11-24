@@ -16,6 +16,7 @@ export type ViewState =
   | 'explore'
   | 'country-detail'
   | 'compare'
+  | 'fire-calculator'
   | 'scout'
   | 'visa-check'
   | 'community'

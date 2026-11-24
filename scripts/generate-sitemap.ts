@@ -25,9 +25,9 @@ export function generateSitemapXml(todayDate: string): string {
   const entries: SitemapEntry[] = [
     { loc: `${SITE_ORIGIN}/`, lastmod: todayDate, changefreq: 'weekly', priority: '1.0' },
     { loc: `${SITE_ORIGIN}/visa-check`, lastmod: todayDate, changefreq: 'weekly', priority: '0.95' },
+    { loc: `${SITE_ORIGIN}/fire-calculator`, lastmod: todayDate, changefreq: 'weekly', priority: '0.95' },
     { loc: `${SITE_ORIGIN}/explore`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
     { loc: `${SITE_ORIGIN}/compare`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
-    { loc: `${SITE_ORIGIN}/dashboard`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
     { loc: `${SITE_ORIGIN}/scout`, lastmod: todayDate, changefreq: 'weekly', priority: '0.9' },
     { loc: `${SITE_ORIGIN}/expats`, lastmod: todayDate, changefreq: 'weekly', priority: '0.85' },
     { loc: `${SITE_ORIGIN}/meetups`, lastmod: todayDate, changefreq: 'weekly', priority: '0.85' },

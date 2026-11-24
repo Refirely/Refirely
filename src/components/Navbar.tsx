@@ -73,13 +73,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     { view: 'landing', label: 'Home', isActive: currentView === 'landing' },
     { view: 'explore', label: 'Explore Havens', isActive: currentView === 'explore' || currentView === 'country-detail' },
     { view: 'compare', label: 'Compare', isActive: currentView === 'compare' },
+    { view: 'fire-calculator', label: 'FIRE', isActive: currentView === 'fire-calculator' },
     { view: 'scout', label: 'Scout & Hop', isActive: currentView === 'scout' },
     { view: 'visa-check', label: 'Visa Check', isActive: currentView === 'visa-check', badge: 'New' },
     { view: 'community', label: 'Expats', isActive: currentView === 'community' },
     { view: 'meetups', label: 'Meetups', isActive: currentView === 'meetups' },
-    ...(!canAccessAdmin
-      ? [{ view: 'dashboard' as typeof currentView, label: 'Dashboard', isActive: currentView === 'dashboard' }]
-      : []),
   ];
 
   return (
@@ -186,11 +184,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             )}
           </button>
 
-          {/* Saved Shortlist button (Normal/Guest users only) */}
-          {!canAccessAdmin && (
+          {/* Saved Shortlist button (Logged-in Normal users only) */}
+          {isAuthenticated && !canAccessAdmin && (
             <button
               onClick={() => handleNav('dashboard')}
-              className={`${!isAuthenticated ? 'hidden sm:inline-flex' : 'inline-flex'} relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer`}
+              className="inline-flex relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer"
               title="My Saved Havens & Tracker"
             >
               <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -539,6 +537,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               Compare Matrix ({comparedCountryIds.length})
             </button>
             <button
+              onClick={() => handleNav('fire-calculator')}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
+                currentView === 'fire-calculator' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              FIRE Calculator
+            </button>
+            <button
               onClick={() => handleNav('scout')}
               className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
                 currentView === 'scout' ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
@@ -602,14 +608,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                     </span>
                   ) : null}
                 </button>
-                <button
-                  onClick={() => handleNav('dashboard')}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentView === 'dashboard' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  My Dashboard
-                </button>
               </>
             )}
           </div>
@@ -640,27 +638,40 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 </div>
 
                 {!canAccessAdmin && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        openEditProfile('about');
-                      }}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
+                      onClick={() => handleNav('dashboard')}
+                      className={`w-full px-3 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 cursor-pointer ${
+                        currentView === 'dashboard'
+                          ? 'bg-orange-600 text-white border-orange-600'
+                          : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border-orange-200'
+                      }`}
                     >
-                      <Settings className="w-3.5 h-3.5 text-orange-600" />
-                      <span>Edit Profile</span>
+                      <User className="w-3.5 h-3.5" />
+                      <span>My Dashboard &amp; Relocation Hub</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        openEditProfile('travel');
-                      }}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
-                    >
-                      <Globe className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Travel Log</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          openEditProfile('about');
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-orange-600" />
+                        <span>Edit Profile</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          openEditProfile('travel');
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Travel Log</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 
