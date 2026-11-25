@@ -42,6 +42,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
 import {
   doc,
@@ -2137,6 +2138,13 @@ export const ScoutHopPlanner: React.FC = () => {
         try {
           const cred = await createUserWithEmailAndPassword(auth, cleanEmail, authPassword);
           fbUid = cred.user.uid;
+          if (getAdditionalUserInfo(cred)?.isNewUser) {
+            if (typeof window.gtag === 'function') {
+              window.gtag('event', 'sign_up', {
+                method: 'Email',
+              });
+            }
+          }
           try {
             window.history.pushState({}, '', '/?signup=success');
           } catch {}

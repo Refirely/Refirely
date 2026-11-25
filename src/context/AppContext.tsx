@@ -3610,7 +3610,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (data.password && data.password.length >= 6) {
       // Optionally attempt Firebase Email/Password creation if enabled in Firebase Console
       createUserWithEmailAndPassword(auth, cleanEmail, data.password)
-        .then(async () => {
+        .then(async userCredential => {
+          if (getAdditionalUserInfo(userCredential)?.isNewUser) {
+            if (typeof window.gtag === 'function') {
+              window.gtag('event', 'sign_up', {
+                method: 'Email',
+              });
+            }
+          }
           try {
             if (
               currentViewRef.current !== 'visa-check' &&
@@ -3742,6 +3749,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const additionalUserInfo = getAdditionalUserInfo(result);
+      if (additionalUserInfo?.isNewUser) {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'sign_up', {
+            method: 'Google',
+          });
+        }
+      }
 
       // Detect user country via GeoIP for new Google/Gmail signup
       const detectedCountry = await detectUserCountryAsync();
