@@ -94,6 +94,21 @@ input[type="range"].accent-sky-600 {
   --range-fill-color: #0284c7;
   --range-track-bg: #bae6fd;
 }
+input[type="range"].accent-cyan-600,
+input[type="range"].accent-cyan-700 {
+  --range-fill-color: #0e7490;
+  --range-track-bg: #cffafe;
+}
+input[type="range"].accent-green-600,
+input[type="range"].accent-green-700 {
+  --range-fill-color: #15803d;
+  --range-track-bg: #dcfce7;
+}
+input[type="range"].accent-stone-600,
+input[type="range"].accent-stone-700 {
+  --range-fill-color: #57534e;
+  --range-track-bg: #e7e5e4;
+}
 input[type="range"].accent-slate-700,
 input[type="range"].accent-slate-800 {
   --range-fill-color: #334155;

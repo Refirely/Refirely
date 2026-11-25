@@ -113,42 +113,42 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
         name: 'Liquid Assets Today',
         shortLabel: 'Liquid Assets',
         amountUSD: liquidAssetsUSD,
-        fill: '#0284c7', // sky-600
+        fill: '#0e7490', // cyan-700 (Freedom Horizon)
       },
       {
         id: 'net-fire',
         name: 'Current Net FIRE Corpus',
         shortLabel: 'Net FIRE Corpus',
         amountUSD: startingCorpusTodayUSD,
-        fill: '#0d9488', // teal-600
+        fill: '#15803d', // green-700 (Money Green)
       },
       {
         id: 'coast-fire',
         name: `Coast FIRE (Age ${targetFireAge})`,
         shortLabel: 'Coast FIRE',
         amountUSD: coastFireTargetTodayUSD,
-        fill: '#6366f1', // indigo-500
+        fill: '#0284c7', // sky-600 (Open Sky Freedom)
       },
       {
         id: 'lean-fire',
         name: 'Lean FIRE Target (80%)',
         shortLabel: 'Lean FIRE',
         amountUSD: leanFireTargetTodayUSD + totalFutureGoalsTodayUSD,
-        fill: '#f59e0b', // amber-500
+        fill: '#16a34a', // green-600 (Mint Wealth)
       },
       {
         id: 'target-fire',
         name: 'Target Retirement Corpus',
         shortLabel: 'Target Corpus',
         amountUSD: comprehensiveFireNumberTodayUSD,
-        fill: '#ea580c', // orange-600
+        fill: '#166534', // green-800 (Sovereign Capital)
       },
       {
         id: 'fat-fire',
         name: 'Fat FIRE Target (135%)',
         shortLabel: 'Fat FIRE',
         amountUSD: fatFireTargetTodayUSD + totalFutureGoalsTodayUSD,
-        fill: '#9333ea', // purple-600
+        fill: '#155e75', // cyan-800 (Deep Ocean Freedom)
       },
     ];
   }, [
@@ -219,14 +219,14 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
       {/* Visual Path Sub-Header & View/Horizon Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white flex items-center justify-center shadow-2xs shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-700 to-cyan-700 text-white flex items-center justify-center shadow-2xs shrink-0">
             <BarChart3 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+            <h3 className="text-sm sm:text-base font-extrabold text-stone-900 tracking-tight">
               Visual Path: Current Assets vs. Target Corpus &amp; {horizonYears}-Year Growth Trajectory
             </h3>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-stone-500">
               Live visual projection synced with your calculator inputs above ({costBasisMode === 'residing' ? selectedBasisCountry : targetHavenCountryName} basis).
             </p>
           </div>
@@ -235,8 +235,8 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
         {/* View Mode & Horizon Controls */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Horizon Selector */}
-          <div className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 p-1 rounded-xl text-xs font-semibold">
-            <span className="text-[11px] text-slate-500 px-1.5">Horizon:</span>
+          <div className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200 p-1 rounded-xl text-xs font-semibold">
+            <span className="text-[11px] text-stone-500 px-1.5">Horizon:</span>
             {([10, 15, 20, 25] as HorizonYears[]).map(yr => (
               <button
                 key={yr}
@@ -244,8 +244,8 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                 onClick={() => setHorizonYears(yr)}
                 className={`px-2 py-1 rounded-lg font-mono text-[11px] cursor-pointer transition-all ${
                   horizonYears === yr
-                    ? 'bg-slate-900 text-white font-bold shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-green-700 text-white font-bold shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 {yr}Y
@@ -254,14 +254,14 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
           </div>
 
           {/* View Mode Segmented Control */}
-          <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold">
+          <div className="inline-flex items-center p-1 rounded-xl bg-stone-100 border border-stone-200 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setViewMode('combined')}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'combined'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-green-950 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Split View
@@ -271,8 +271,8 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
               onClick={() => setViewMode('comparison')}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'comparison'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-green-950 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Assets vs. Target
@@ -282,8 +282,8 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
               onClick={() => setViewMode('timeline')}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'timeline'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-green-950 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Growth Timeline
@@ -303,19 +303,19 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
           <div
             className={`${
               viewMode === 'combined' ? 'xl:col-span-5' : 'w-full'
-            } p-5 rounded-2xl border border-slate-200 bg-white flex flex-col justify-between space-y-4`}
+            } p-5 rounded-2xl border border-stone-200 bg-white flex flex-col justify-between space-y-4`}
           >
             <div>
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-teal-600" />
+                <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 uppercase tracking-wider flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-green-700" />
                   <span>Current Assets vs. Target Retirement Corpus</span>
                 </h4>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className="text-[11px] font-mono text-stone-500">
                   Today&apos;s Value ({currentYear})
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-stone-500 mt-1">
                 Direct benchmark comparison between your current liquid &amp; net investable assets and each retirement corpus tier.
               </p>
             </div>
@@ -327,17 +327,17 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                   layout="vertical"
                   margin={{ top: 8, right: 24, left: 12, bottom: 8 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    tick={{ fontSize: 11, fill: '#57534e' }}
                     tickFormatter={formatAxisValue}
                   />
                   <YAxis
                     type="category"
                     dataKey="shortLabel"
                     width={118}
-                    tick={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: '#1c1917', fontWeight: 600 }}
                   />
                   <Tooltip
                     formatter={((value: any, _name: any, props: any) => [
@@ -347,13 +347,13 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                     contentStyle={{
                       borderRadius: '12px',
                       fontSize: '12px',
-                      borderColor: '#cbd5e1',
-                      boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                      borderColor: '#d6d3d1',
+                      boxShadow: '0 4px 12px rgba(28, 25, 23, 0.08)',
                     }}
                   />
                   <ReferenceLine
                     x={startingCorpusTodayUSD}
-                    stroke="#0d9488"
+                    stroke="#15803d"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                   />
@@ -367,41 +367,41 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
             </div>
 
             {/* 5-Scheme Current Asset Composition Strip */}
-            <div className="pt-3 border-t border-slate-100 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600">
+            <div className="pt-3 border-t border-stone-100 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-stone-600">
                 <span>Current 5-Scheme Gross Asset Composition</span>
-                <span className="font-mono text-slate-900">
+                <span className="font-mono text-stone-900">
                   {formatDualCurrency(totalGrossAssetsUSD, countryMacro, true)}
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70">
-                  <span className="text-slate-500 block">Savings</span>
-                  <span className="font-mono font-bold text-slate-900">
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+                  <span className="text-stone-500 block">Savings</span>
+                  <span className="font-mono font-bold text-stone-900">
                     ${Math.round((investments.savingsUSD || 0) / 1000)}k
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70">
-                  <span className="text-slate-500 block">Stocks/MF</span>
-                  <span className="font-mono font-bold text-emerald-800">
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+                  <span className="text-stone-500 block">Stocks/MF</span>
+                  <span className="font-mono font-bold text-green-800">
                     ${Math.round((investments.stocksMutualFundsUSD || 0) / 1000)}k
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70">
-                  <span className="text-slate-500 block">Real Estate</span>
-                  <span className="font-mono font-bold text-indigo-800">
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+                  <span className="text-stone-500 block">Real Estate</span>
+                  <span className="font-mono font-bold text-cyan-800">
                     ${Math.round((investments.realEstateUSD || 0) / 1000)}k
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70">
-                  <span className="text-slate-500 block">Gold</span>
-                  <span className="font-mono font-bold text-amber-800">
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+                  <span className="text-stone-500 block">Gold</span>
+                  <span className="font-mono font-bold text-stone-800">
                     ${Math.round((investments.goldUSD || 0) / 1000)}k
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200/70">
-                  <span className="text-slate-500 block">Others</span>
-                  <span className="font-mono font-bold text-purple-800">
+                <div className="p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+                  <span className="text-stone-500 block">Others</span>
+                  <span className="font-mono font-bold text-sky-800">
                     ${Math.round((investments.othersUSD || 0) / 1000)}k
                   </span>
                 </div>
@@ -415,18 +415,18 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
           <div
             className={`${
               viewMode === 'combined' ? 'xl:col-span-7' : 'w-full'
-            } p-5 rounded-2xl border border-slate-200 bg-white flex flex-col justify-between space-y-4`}
+            } p-5 rounded-2xl border border-stone-200 bg-white flex flex-col justify-between space-y-4`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 uppercase tracking-wider flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-700" />
                   <span>
                     {horizonYears}-Year Timeline Growth Projection ({currentYear}–
                     {currentYear + horizonYears})
                   </span>
                 </h4>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-stone-500 mt-1">
                   Tracks projected portfolio growth ({expectedReturnPct}%/yr return +{' '}
                   {sipStepUpPct}%/yr SIP step-up) vs. inflation-adjusted retirement corpus ({inflationPct}%/yr inflation).
                 </p>
@@ -434,16 +434,16 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
 
               {/* Legend */}
               <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold shrink-0">
-                <span className="flex items-center gap-1.5 text-teal-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block" />
+                <span className="flex items-center gap-1.5 text-green-800">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-700 inline-block" />
                   Projected Assets
                 </span>
-                <span className="flex items-center gap-1.5 text-sky-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
+                <span className="flex items-center gap-1.5 text-cyan-800">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-600 inline-block" />
                   Principal + SIPs
                 </span>
-                <span className="flex items-center gap-1.5 text-orange-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
+                <span className="flex items-center gap-1.5 text-stone-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-stone-600 inline-block" />
                   Target Corpus
                 </span>
               </div>
@@ -462,24 +462,24 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                 >
                   <defs>
                     <linearGradient id="fireProgressAssetsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#0d9488" stopOpacity={0.02} />
+                      <stop offset="5%" stopColor="#15803d" stopOpacity={0.32} />
+                      <stop offset="95%" stopColor="#15803d" stopOpacity={0.02} />
                     </linearGradient>
                     <linearGradient id="fireProgressContribGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0284c7" stopOpacity={0.22} />
-                      <stop offset="95%" stopColor="#0284c7" stopOpacity={0.02} />
+                      <stop offset="5%" stopColor="#0e7490" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#0e7490" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                   <XAxis
                     dataKey="year"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    tick={{ fontSize: 11, fill: '#57534e' }}
                     tickFormatter={yr =>
                       `${yr} (Age ${currentAge + (Number(yr) - currentYear)})`
                     }
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    tick={{ fontSize: 11, fill: '#57534e' }}
                     tickFormatter={formatAxisValue}
                   />
                   <Tooltip
@@ -505,21 +505,21 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                     contentStyle={{
                       borderRadius: '12px',
                       fontSize: '12px',
-                      borderColor: '#cbd5e1',
-                      boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                      borderColor: '#d6d3d1',
+                      boxShadow: '0 4px 12px rgba(28, 25, 23, 0.08)',
                     }}
                   />
                   {crossoverYear &&
                     crossoverYear <= currentYear + horizonYears && (
                       <ReferenceLine
                         x={crossoverYear}
-                        stroke="#10b981"
+                        stroke="#15803d"
                         strokeDasharray="4 4"
                         strokeWidth={2}
                         label={{
                           value: `FIRE in ${crossoverYear} (Age ${crossoverAge})`,
                           position: 'top',
-                          fill: '#047857',
+                          fill: '#166534',
                           fontSize: 11,
                           fontWeight: 700,
                         }}
@@ -528,7 +528,7 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                   <Area
                     type="monotone"
                     dataKey="projectedCorpusUSD"
-                    stroke="#0d9488"
+                    stroke="#15803d"
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#fireProgressAssetsGrad)"
@@ -536,7 +536,7 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                   <Area
                     type="monotone"
                     dataKey="cumulativeContributionsUSD"
-                    stroke="#0284c7"
+                    stroke="#0e7490"
                     strokeWidth={1.75}
                     strokeDasharray="3 3"
                     fillOpacity={1}
@@ -545,7 +545,7 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                   <Line
                     type="monotone"
                     dataKey="fireTargetUSD"
-                    stroke="#ea580c"
+                    stroke="#57534e"
                     strokeWidth={2.25}
                     strokeDasharray="6 3"
                     dot={false}
@@ -556,7 +556,7 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                       <Line
                         type="monotone"
                         dataKey="targetHavenCorpusUSD"
-                        stroke="#9333ea"
+                        stroke="#0284c7"
                         strokeWidth={1.5}
                         strokeDasharray="2 3"
                         dot={false}
@@ -568,19 +568,19 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
 
             {/* Interactive Year Inspection Bar */}
             {activeInspectionNode && (
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Award className="w-4 h-4 text-teal-600 shrink-0" />
-                  <span className="font-bold text-slate-800">
+                  <Award className="w-4 h-4 text-green-700 shrink-0" />
+                  <span className="font-bold text-stone-800">
                     Snapshot {activeInspectionNode.year} (Age {activeInspectionNode.age}):
                   </span>
-                  <span className="text-slate-600">
+                  <span className="text-stone-600">
                     Assets{' '}
-                    <strong className="font-mono text-teal-800">
+                    <strong className="font-mono text-green-800">
                       {formatDualCurrency(activeInspectionNode.projectedCorpusUSD, countryMacro, true)}
                     </strong>{' '}
                     vs. Target{' '}
-                    <strong className="font-mono text-orange-800">
+                    <strong className="font-mono text-cyan-900">
                       {formatDualCurrency(activeInspectionNode.fireTargetUSD, countryMacro, true)}
                     </strong>
                   </span>
@@ -588,8 +588,8 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                         activeInspectionNode.isSipActiveInYear
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-700'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-stone-200 text-stone-700'
                       }`}
                     >
                       {activeInspectionNode.isSipActiveInYear
@@ -598,15 +598,15 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 font-mono font-bold flex-wrap">
+                <div className="flex items-center gap-3 text-stone-700 font-mono font-bold flex-wrap">
                   {activeInspectionNode.sipReturnsUSD !== undefined && activeInspectionNode.sipReturnsUSD > 0 && (
-                    <span className="text-purple-800 text-[11px]">
+                    <span className="text-cyan-800 text-[11px]">
                       SIP Gains: +{formatDualCurrency(activeInspectionNode.sipReturnsUSD, countryMacro, true)}
                     </span>
                   )}
                   <span>
                     Compounding Gains:{' '}
-                    <span className="text-emerald-700">
+                    <span className="text-green-700">
                       +{formatDualCurrency(activeInspectionNode.compoundingGainsUSD, countryMacro, true)}
                     </span>{' '}
                     · {activeInspectionNode.fundingRatioPct}% Funded
@@ -630,32 +630,32 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
               onClick={() => setSelectedCheckpointYear(cp.data.year)}
               className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-teal-500 bg-teal-50/40 shadow-2xs'
-                  : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300'
+                  ? 'border-green-600 bg-green-50/45 shadow-2xs'
+                  : 'border-stone-200 bg-stone-50/60 hover:bg-stone-50 hover:border-stone-300'
               }`}
             >
-              <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 font-semibold">
+              <div className="flex items-center justify-between gap-2 text-[11px] text-stone-500 font-semibold">
                 <span className="truncate">{cp.label}</span>
                 <span
                   className={`font-mono font-bold ${
-                    isFunded ? 'text-emerald-700' : 'text-orange-700'
+                    isFunded ? 'text-green-700' : 'text-cyan-800'
                   }`}
                 >
                   {cp.data.fundingRatioPct}%
                 </span>
               </div>
               <div className="mt-1.5 flex items-baseline justify-between gap-2">
-                <span className="text-xs font-extrabold font-mono text-slate-900">
+                <span className="text-xs font-extrabold font-mono text-stone-900">
                   {formatDualCurrency(cp.data.projectedCorpusUSD, countryMacro, true)}
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-[10px] font-mono text-stone-500">
                   Goal: ${Math.round(cp.data.fireTargetUSD / 1000)}k
                 </span>
               </div>
-              <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+              <div className="mt-1.5 h-1.5 w-full rounded-full bg-stone-200 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
-                    isFunded ? 'bg-emerald-600' : 'bg-teal-600'
+                    isFunded ? 'bg-green-700' : 'bg-cyan-700'
                   }`}
                   style={{ width: `${Math.min(100, cp.data.fundingRatioPct)}%` }}
                 />

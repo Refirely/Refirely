@@ -41,27 +41,27 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
     countries.length > 0 ? Math.round((totalUnlocked / countries.length) * 100) : 0;
 
   return (
-    <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-5">
+    <div className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center shrink-0">
               <Globe className="w-4 h-4" />
             </div>
             <h3
-              className="text-sm sm:text-base font-extrabold text-slate-900"
+              className="text-sm sm:text-base font-extrabold text-stone-900"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               Global Haven FIRE Feasibility Breakdown ({corpusDisplay} Investable Corpus)
             </h3>
             {isGuestUser && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold">
-                <Lock className="w-3 h-3 text-indigo-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-50 text-green-800 border border-green-200 text-[10px] font-bold">
+                <Lock className="w-3 h-3 text-green-700" />
                 <span>Stats Live · Login to Reveal Countries</span>
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="text-xs text-stone-600 mt-1">
             Based on your {corpusDisplay} active financial portfolio and Safe Withdrawal Rate (SWR),
             here is your financial independence readiness across {countries.length} global
             retirement havens.
@@ -69,10 +69,10 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+          <span className="px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-800 text-xs font-bold">
             {feasibility.achieved.length} Achieved (100%+)
           </span>
-          <span className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-bold">
+          <span className="px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold">
             {feasibility.close.length} Close (70-99%)
           </span>
         </div>
@@ -80,41 +80,41 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
 
       {/* Live Asset-Based Country Unlock Statistics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="p-3 rounded-2xl bg-slate-50/70 border border-slate-200/80">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+        <div className="p-3 rounded-2xl bg-stone-50/80 border border-stone-200/80">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">
             Total Havens Unlocked (70%+ Funded)
           </span>
-          <div className="text-base sm:text-lg font-black font-mono text-slate-900 mt-0.5">
+          <div className="text-base sm:text-lg font-black font-mono text-stone-900 mt-0.5">
             {totalUnlocked} / {countries.length}{' '}
-            <span className="text-xs font-bold text-indigo-700">({unlockedPercent}%)</span>
+            <span className="text-xs font-bold text-green-700">({unlockedPercent}%)</span>
           </div>
         </div>
 
-        <div className="p-3 rounded-2xl bg-emerald-50/40 border border-emerald-200/70">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+        <div className="p-3 rounded-2xl bg-green-50/45 border border-green-200/80">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-green-800 block">
             100%+ FIRE Achieved
           </span>
-          <div className="text-base sm:text-lg font-black font-mono text-emerald-900 mt-0.5 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="text-base sm:text-lg font-black font-mono text-green-900 mt-0.5 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
             <span>{feasibility.achieved.length} Countries</span>
           </div>
         </div>
 
-        <div className="p-3 rounded-2xl bg-sky-50/40 border border-sky-200/70">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 block">
+        <div className="p-3 rounded-2xl bg-cyan-50/45 border border-cyan-200/80">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-800 block">
             70% – 99% Close to FIRE
           </span>
-          <div className="text-base sm:text-lg font-black font-mono text-sky-900 mt-0.5 flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-sky-600 shrink-0" />
+          <div className="text-base sm:text-lg font-black font-mono text-cyan-900 mt-0.5 flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-cyan-600 shrink-0" />
             <span>{feasibility.close.length} Countries</span>
           </div>
         </div>
 
-        <div className="p-3 rounded-2xl bg-slate-50/70 border border-slate-200/80">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
+        <div className="p-3 rounded-2xl bg-stone-50/80 border border-stone-200/80">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600 block">
             &lt;70% Long-Term Horizon
           </span>
-          <div className="text-base sm:text-lg font-black font-mono text-slate-800 mt-0.5 flex items-center gap-1.5">
+          <div className="text-base sm:text-lg font-black font-mono text-stone-800 mt-0.5 flex items-center gap-1.5">
             <Flame className="w-4 h-4 text-rose-500 shrink-0" />
             <span>{feasibility.far.length} Countries</span>
           </div>
@@ -123,22 +123,22 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
 
       {isGuestUser ? (
         /* GUEST LOCKED PREVIEW MODE (Stats Visible, Country Names Gated) */
-        <div className="relative rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-4 space-y-4">
+        <div className="relative rounded-2xl border border-dashed border-stone-300 bg-stone-50/50 p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Locked Column 1: Achieved Freedom Havens (100%+) */}
-            <div className="p-4 rounded-2xl bg-emerald-50/35 border border-emerald-200/70 space-y-3">
+            <div className="p-4 rounded-2xl bg-green-50/40 border border-green-200/75 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-green-900 flex items-center gap-1.5">
                   <span>Achieved Freedom (100%+ Funded)</span>
                 </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-100/80 text-emerald-900 text-xs font-mono font-bold">
+                <span className="px-2 py-0.5 rounded bg-green-100/80 text-green-900 text-xs font-mono font-bold">
                   {feasibility.achieved.length} Unlocked
                 </span>
               </div>
 
               <div className="space-y-2 opacity-80 pointer-events-none select-none">
                 {feasibility.achieved.length === 0 ? (
-                  <p className="text-xs text-emerald-800 italic py-2 text-center">
+                  <p className="text-xs text-green-800 italic py-2 text-center">
                     No havens fully funded yet. Increase your Current Invested Assets slider above
                     to unlock 100%+ funded retirement havens!
                   </p>
@@ -147,20 +147,20 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                     {feasibility.achieved.slice(0, 3).map((item, idx) => (
                       <div
                         key={`locked-ach-${idx}`}
-                        className="p-2.5 rounded-xl bg-white border border-emerald-200/70 flex items-center justify-between gap-3"
+                        className="p-2.5 rounded-xl bg-white border border-green-200/70 flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-6 h-6 rounded-md bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                          <div className="w-6 h-6 rounded-md bg-green-50 border border-green-200 flex items-center justify-center text-green-700 shrink-0">
                             <Lock className="w-3.5 h-3.5" />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-stone-800 truncate flex items-center gap-1.5">
                               <span>Locked FIRE-Ready Haven #{idx + 1}</span>
-                              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              <span className="text-[10px] font-semibold text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
                                 {item.country.region}
                               </span>
                             </h4>
-                            <p className="text-[10px] text-slate-500 truncate">
+                            <p className="text-[10px] text-stone-500 truncate">
                               Cost: $
                               {item.country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
                               /mo · Nest Egg: ${(item.nestEggUSD / 1000).toFixed(0)}k · Log in to
@@ -168,13 +168,13 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                             </p>
                           </div>
                         </div>
-                        <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-mono font-black shrink-0">
+                        <span className="px-2 py-1 rounded-lg bg-green-50 text-green-900 border border-green-200 text-xs font-mono font-black shrink-0">
                           {item.fundedPercent}%
                         </span>
                       </div>
                     ))}
                     {feasibility.achieved.length > 3 && (
-                      <div className="p-2 rounded-xl bg-white/90 border border-emerald-200/70 text-center text-[11px] font-bold text-emerald-800">
+                      <div className="p-2 rounded-xl bg-white/90 border border-green-200/70 text-center text-[11px] font-bold text-green-800">
                         +{feasibility.achieved.length - 3} more 100%+ funded FIRE countries
                         unlocked — Log in to reveal all
                       </div>
@@ -185,19 +185,19 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
             </div>
 
             {/* Locked Column 2: Close to FIRE Havens (70% - 99%) */}
-            <div className="p-4 rounded-2xl bg-sky-50/35 border border-sky-200/70 space-y-3">
+            <div className="p-4 rounded-2xl bg-cyan-50/40 border border-cyan-200/75 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-sky-900 flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-900 flex items-center gap-1.5">
                   <span>Close to FIRE (70% - 99% Funded)</span>
                 </span>
-                <span className="px-2 py-0.5 rounded bg-sky-100/80 text-sky-900 text-xs font-mono font-bold">
+                <span className="px-2 py-0.5 rounded bg-cyan-100/80 text-cyan-900 text-xs font-mono font-bold">
                   {feasibility.close.length} Unlocked
                 </span>
               </div>
 
               <div className="space-y-2 opacity-80 pointer-events-none select-none">
                 {feasibility.close.length === 0 ? (
-                  <p className="text-xs text-sky-800 italic py-2 text-center">
+                  <p className="text-xs text-cyan-800 italic py-2 text-center">
                     No havens currently in the 70-99% striking distance band.
                   </p>
                 ) : (
@@ -205,20 +205,20 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                     {feasibility.close.slice(0, 3).map((item, idx) => (
                       <div
                         key={`locked-cls-${idx}`}
-                        className="p-2.5 rounded-xl bg-white border border-sky-200/70 flex items-center justify-between gap-3"
+                        className="p-2.5 rounded-xl bg-white border border-cyan-200/70 flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-6 h-6 rounded-md bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
+                          <div className="w-6 h-6 rounded-md bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-700 shrink-0">
                             <Lock className="w-3.5 h-3.5" />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-stone-800 truncate flex items-center gap-1.5">
                               <span>Locked Near-FIRE Haven #{idx + 1}</span>
-                              <span className="text-[10px] font-semibold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                              <span className="text-[10px] font-semibold text-cyan-800 bg-cyan-50 px-1.5 py-0.5 rounded border border-cyan-200">
                                 {item.country.region}
                               </span>
                             </h4>
-                            <p className="text-[10px] text-slate-500 truncate">
+                            <p className="text-[10px] text-stone-500 truncate">
                               Cost: $
                               {item.country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}
                               /mo · Nest Egg: ${(item.nestEggUSD / 1000).toFixed(0)}k · Log in to
@@ -226,13 +226,13 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                             </p>
                           </div>
                         </div>
-                        <span className="px-2 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-mono font-black shrink-0">
+                        <span className="px-2 py-1 rounded-lg bg-cyan-50 text-cyan-900 border border-cyan-200 text-xs font-mono font-black shrink-0">
                           {item.fundedPercent}%
                         </span>
                       </div>
                     ))}
                     {feasibility.close.length > 3 && (
-                      <div className="p-2 rounded-xl bg-white/90 border border-sky-200/70 text-center text-[11px] font-bold text-sky-800">
+                      <div className="p-2 rounded-xl bg-white/90 border border-cyan-200/70 text-center text-[11px] font-bold text-cyan-800">
                         +{feasibility.close.length - 3} more 70–99% funded countries unlocked —
                         Log in to reveal all
                       </div>
@@ -243,17 +243,17 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50/70 via-white to-teal-50/70 border border-indigo-200/80 text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-green-50/60 via-white to-cyan-50/60 border border-green-200/80 text-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
-              <div className="text-xs font-extrabold flex items-center gap-1.5 text-indigo-900">
-                <Lock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <div className="text-xs font-extrabold flex items-center gap-1.5 text-green-900">
+                <Lock className="w-3.5 h-3.5 text-green-700 shrink-0" />
                 <span>
                   {totalUnlocked} Retirement Havens Unlocked with Your {corpusDisplay} Corpus (
                   {feasibility.achieved.length} Fully Funded · {feasibility.close.length} Close to
                   FIRE) — Log In to Reveal All Countries!
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 leading-snug">
+              <p className="text-[11px] text-stone-600 leading-snug">
                 Sign up free or log in to unlock the full list of {totalUnlocked} matching countries,
                 compare required FIRE nest eggs, and save your progress to your dashboard.
               </p>
@@ -262,7 +262,7 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
               <button
                 type="button"
                 onClick={() => openAuthModal('signup')}
-                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs transition-colors"
+                className="px-3.5 py-2 rounded-lg bg-green-700 hover:bg-green-800 text-white font-bold text-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Sign Up Free</span>
@@ -270,7 +270,7 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
               <button
                 type="button"
                 onClick={() => openAuthModal('login')}
-                className="px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 transition-colors"
+                className="px-3 py-2 rounded-lg bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 font-bold text-xs cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 transition-colors"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Log In</span>
@@ -283,19 +283,19 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Achieved Freedom Havens (100%+) */}
-            <div className="p-4 rounded-2xl bg-emerald-50/35 border border-emerald-200/70 space-y-3">
+            <div className="p-4 rounded-2xl bg-green-50/40 border border-green-200/75 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-green-900 flex items-center gap-1.5">
                   <span>Achieved Freedom (100%+ Funded)</span>
                 </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-100/80 text-emerald-900 text-xs font-mono font-bold">
+                <span className="px-2 py-0.5 rounded bg-green-100/80 text-green-900 text-xs font-mono font-bold">
                   {feasibility.achieved.length}
                 </span>
               </div>
 
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {feasibility.achieved.length === 0 ? (
-                  <p className="text-xs text-emerald-800 italic py-2 text-center">
+                  <p className="text-xs text-green-800 italic py-2 text-center">
                     No havens fully funded yet. Increase your investments or explore lower-cost
                     retirement havens below!
                   </p>
@@ -304,7 +304,7 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                     <div
                       key={`ach-widget-${item.country.id}`}
                       onClick={() => onSelectCountry && onSelectCountry(item.country.name)}
-                      className="p-2.5 rounded-xl bg-white border border-emerald-200/70 hover:border-emerald-400 transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                      className="p-2.5 rounded-xl bg-white border border-green-200/70 hover:border-green-400 transition-all flex items-center justify-between gap-3 cursor-pointer group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <CountryFlag
@@ -314,17 +314,17 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                           className="rounded-xs shrink-0"
                         />
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">
+                          <h4 className="text-xs font-bold text-stone-900 truncate group-hover:text-green-700 transition-colors">
                             {item.country.name}
                           </h4>
-                          <p className="text-[10px] text-slate-500 truncate">
+                          <p className="text-[10px] text-stone-500 truncate">
                             Cost: $
                             {item.country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo ·
                             Nest Egg: ${(item.nestEggUSD / 1000).toFixed(0)}k
                           </p>
                         </div>
                       </div>
-                      <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-mono font-black shrink-0">
+                      <span className="px-2 py-1 rounded-lg bg-green-50 text-green-900 border border-green-200 text-xs font-mono font-black shrink-0">
                         {item.fundedPercent}%
                       </span>
                     </div>
@@ -334,19 +334,19 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
             </div>
 
             {/* Close to FIRE Havens (70% - 99%) */}
-            <div className="p-4 rounded-2xl bg-sky-50/35 border border-sky-200/70 space-y-3">
+            <div className="p-4 rounded-2xl bg-cyan-50/40 border border-cyan-200/75 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-sky-900 flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-900 flex items-center gap-1.5">
                   <span>Close to FIRE (70% - 99% Funded)</span>
                 </span>
-                <span className="px-2 py-0.5 rounded bg-sky-100/80 text-sky-900 text-xs font-mono font-bold">
+                <span className="px-2 py-0.5 rounded bg-cyan-100/80 text-cyan-900 text-xs font-mono font-bold">
                   {feasibility.close.length}
                 </span>
               </div>
 
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {feasibility.close.length === 0 ? (
-                  <p className="text-xs text-sky-800 italic py-2 text-center">
+                  <p className="text-xs text-cyan-800 italic py-2 text-center">
                     No havens currently in the 70-99% striking distance band.
                   </p>
                 ) : (
@@ -354,7 +354,7 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                     <div
                       key={`cls-widget-${item.country.id}`}
                       onClick={() => onSelectCountry && onSelectCountry(item.country.name)}
-                      className="p-2.5 rounded-xl bg-white border border-sky-200/70 hover:border-sky-400 transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                      className="p-2.5 rounded-xl bg-white border border-cyan-200/70 hover:border-cyan-400 transition-all flex items-center justify-between gap-3 cursor-pointer group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <CountryFlag
@@ -364,17 +364,17 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                           className="rounded-xs shrink-0"
                         />
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-sky-700 transition-colors">
+                          <h4 className="text-xs font-bold text-stone-900 truncate group-hover:text-cyan-700 transition-colors">
                             {item.country.name}
                           </h4>
-                          <p className="text-[10px] text-slate-500 truncate">
+                          <p className="text-[10px] text-stone-500 truncate">
                             Cost: $
                             {item.country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo ·
                             Nest Egg: ${(item.nestEggUSD / 1000).toFixed(0)}k
                           </p>
                         </div>
                       </div>
-                      <span className="px-2 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-mono font-black shrink-0">
+                      <span className="px-2 py-1 rounded-lg bg-cyan-50 text-cyan-900 border border-cyan-200 text-xs font-mono font-black shrink-0">
                         {item.fundedPercent}%
                       </span>
                     </div>
@@ -385,11 +385,11 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
           </div>
 
           {/* Toggle On-Demand for Far Countries (<70%) */}
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-2 border-t border-stone-100">
             <button
               type="button"
               onClick={() => setShowFarCountries(prev => !prev)}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-800 text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>
                 {showFarCountries
@@ -397,9 +397,9 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                   : `Show Long-Term Horizon Havens (${feasibility.far.length} Countries <70%)`}
               </span>
               {showFarCountries ? (
-                <ChevronUp className="w-4 h-4 text-slate-600" />
+                <ChevronUp className="w-4 h-4 text-stone-600" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-slate-600" />
+                <ChevronDown className="w-4 h-4 text-stone-600" />
               )}
             </button>
 
@@ -415,7 +415,7 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                     <div
                       key={`far-widget-${item.country.id}`}
                       onClick={() => onSelectCountry && onSelectCountry(item.country.name)}
-                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-all flex items-center justify-between gap-2 cursor-pointer group"
+                      className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 hover:border-stone-300 transition-all flex items-center justify-between gap-2 cursor-pointer group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <CountryFlag
@@ -425,15 +425,15 @@ export const GlobalHavenFeasibilityWidget: React.FC<GlobalHavenFeasibilityWidget
                           className="rounded-xs shrink-0"
                         />
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">
+                          <h4 className="text-xs font-bold text-stone-800 truncate group-hover:text-cyan-700 transition-colors">
                             {item.country.name}
                           </h4>
-                          <p className="text-[10px] text-slate-500 truncate">
+                          <p className="text-[10px] text-stone-500 truncate">
                             ${item.country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo
                           </p>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded bg-slate-200/70 text-slate-800 text-[10px] font-mono font-bold shrink-0">
+                      <span className="px-2 py-0.5 rounded bg-stone-200/70 text-stone-800 text-[10px] font-mono font-bold shrink-0">
                         {item.fundedPercent}%
                       </span>
                     </div>
