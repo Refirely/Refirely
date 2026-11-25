@@ -26,6 +26,7 @@ import { BrandLogo } from './components/BrandLogo';
 import { BrandKitModal } from './components/BrandKitModal';
 import { BadgeCodexModal } from './components/BadgeCodexModal';
 import { ShareableFireCardModal } from './components/ShareableFireCardModal';
+import { AndroidAppShell } from './components/android/AndroidAppShell';
 import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { initGoogleAnalytics, trackPageView } from './utils/analytics';
@@ -51,6 +52,7 @@ const MainContent: React.FC = () => {
     isShareFireCardModalOpen,
     shareFireCardData,
     closeShareFireCardModal,
+    isAndroidApp,
   } = useApp();
 
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -78,6 +80,31 @@ const MainContent: React.FC = () => {
       navigateToCountry(countryId);
     }
   };
+
+  if (isAndroidApp) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-950 overflow-x-hidden">
+        <AndroidAppShell />
+
+        {/* Global Shared Modals & Notifications */}
+        <MessageNotificationToast />
+        <AuthModal />
+        <EditProfileModal />
+        <FirebaseConnectionModal />
+        <PublicProfileModal />
+        <BadgeCodexModal
+          isOpen={isBadgeModalOpen}
+          onClose={() => setIsBadgeModalOpen(false)}
+          initialCategory={badgeModalCategory}
+        />
+        <ShareableFireCardModal
+          isOpen={isShareFireCardModalOpen}
+          onClose={closeShareFireCardModal}
+          initialData={shareFireCardData}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-indigo-50/15 to-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-950">

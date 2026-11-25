@@ -7,7 +7,7 @@ import { doc, setDoc, getDocs, deleteDoc, collection } from 'firebase/firestore'
 import { HavenMatcherWidget } from './HavenMatcherWidget';
 import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
-import { FireCalculatorTracker } from './FireCalculatorTracker';
+import { FireCalculatorPage } from './FireCalculatorPage';
 import { WORLD_COUNTRIES, getWorldCountryFlag, ALL_INTEREST_SUGGESTIONS } from '../data/userAccounts';
 import { getUserEarnedBadges, getAllBadgesProgress } from '../data/badgeDefinitions';
 import { BadgePill } from './BadgePill';
@@ -1616,18 +1616,21 @@ export const UserDashboard: React.FC = () => {
             </div>
 
             {/* Global Haven FIRE / Nomad Runway Feasibility Matrix (Dual Persona) */}
-            <div className="pt-2">
-              {currentPersona === 'nomad' ? (
-                <NomadHavenRunwayWidget
-                  userProfile={userProfile}
-                  countries={countries}
-                  liquidSavingsUSD={(userProfile.finances?.investments?.savingsUSD || 0) + (userProfile.finances?.investments?.stocksMutualFundsUSD || 0) || 36000}
-                  onSelectCountry={(cName) => {
-                    updateUserProfile({ targetCountry: cName });
-                    setActiveTab('financials');
-                  }}
-                />
-              ) : (
+            <div className="pt-2 space-y-4">
+              <NomadHavenRunwayWidget
+                userProfile={userProfile}
+                countries={countries}
+                liquidSavingsUSD={
+                  (userProfile.finances?.investments?.savingsUSD || 0) ||
+                  36000
+                }
+                personaMode={currentPersona}
+                onSelectCountry={(cName) => {
+                  updateUserProfile({ targetCountry: cName });
+                  setActiveTab('financials');
+                }}
+              />
+              {currentPersona !== 'nomad' && (
                 <GlobalHavenFeasibilityWidget
                   userProfile={userProfile}
                   countries={countries}
@@ -2381,7 +2384,7 @@ export const UserDashboard: React.FC = () => {
       {/* ===================================================================== */}
       {(activeTab === 'fire' || activeTab === 'all') && (
         <div className="animate-in fade-in duration-200">
-          <FireCalculatorTracker />
+          <FireCalculatorPage isEmbeddedInDashboard />
         </div>
       )}
 

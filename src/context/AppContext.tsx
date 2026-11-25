@@ -17,6 +17,7 @@ import { INITIAL_FEEDBACK_REPORTS } from '../data/seedFeedback';
 import { INITIAL_DOSSIER_DOWNLOADS } from '../data/seedDossierDownloads';
 import { playNotificationChime } from '../utils/audioNotification';
 import { parseUrlToRoute, getViewUrl, updatePublicProfileSeo } from '../utils/seo';
+import { checkIsAndroidApp } from '../utils/platform';
 import { matchesContinentFilter } from '../utils/continents';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import {
@@ -72,6 +73,8 @@ export type AppView =
 
 interface AppContextType {
   // Navigation & View
+  isAndroidApp: boolean;
+  exitAndroidAppPreview: () => void;
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
   activeCountryId: string;
@@ -370,11 +373,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeCountryId, setActiveCountryId] = useState<string>(initialRoute.countryId || 'portugal');
   const isPopStateNavigationRef = React.useRef<boolean>(false);
 
+  const [isAndroidApp, setIsAndroidApp] = useState<boolean>(() => checkIsAndroidApp());
+
+  const exitAndroidAppPreview = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('refirely_android_app_mode');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('app');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      } catch {}
+    }
+    setIsAndroidApp(false);
+  };
+
   // Listen to browser Back / Forward buttons (popstate)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handlePopState = () => {
       isPopStateNavigationRef.current = true;
+      setIsAndroidApp(checkIsAndroidApp());
       const parsed = parseUrlToRoute(countries);
       if (parsed.countryId) {
         setActiveCountryId(parsed.countryId);
@@ -392,7 +410,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isPopStateNavigationRef.current = false;
       return;
     }
-    const targetUrl = getViewUrl(currentView, currentView === 'country-detail' ? activeCountryId : undefined);
+    const baseTargetUrl = getViewUrl(currentView, currentView === 'country-detail' ? activeCountryId : undefined);
+    const hasAndroidPreviewParam =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('app')?.toLowerCase() === 'android';
+    const targetUrl =
+      hasAndroidPreviewParam && !baseTargetUrl.includes('app=android')
+        ? `${baseTargetUrl}${baseTargetUrl.includes('?') ? '&' : '?'}app=android`
+        : baseTargetUrl;
     const currentFull = window.location.pathname + window.location.search;
     // Preserve '/?signup=success' query parameter for Google Ads conversion tracking
     if (window.location.search === '?signup=success' && currentView === 'landing') {
@@ -5542,6 +5567,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        isAndroidApp,
+        exitAndroidAppPreview,
         currentView,
         setCurrentView,
         activeCountryId,
