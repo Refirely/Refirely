@@ -1343,10 +1343,10 @@ export const AndroidAppShell: React.FC = () => {
                   </div>
                   <input
                     type="range"
-                    min={5000}
-                    max={200000}
-                    step={2500}
-                    value={nomadCash}
+                    min={10000}
+                    max={1000000}
+                    step={2000}
+                    value={Math.min(1000000, Math.max(10000, nomadCash))}
                     onChange={e => setNomadCash(Number(e.target.value))}
                     className="w-full h-2.5 bg-teal-100 rounded-lg appearance-none cursor-pointer accent-teal-600"
                   />

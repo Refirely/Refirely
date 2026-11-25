@@ -1384,7 +1384,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
         className={
           isEmbeddedInDashboard
             ? 'space-y-8'
-            : 'pt-5 md:pt-8 pb-16 md:pb-24 space-y-10 md:space-y-14 overflow-x-clip bg-gradient-to-b from-amber-50/35 via-white to-teal-50/30'
+            : 'pt-5 md:pt-8 pb-16 md:pb-24 space-y-10 md:space-y-14 overflow-x-clip bg-gradient-to-b from-slate-50/80 via-white to-slate-50/50'
         }
       >
         {/* ============================================================ */}
@@ -1398,22 +1398,22 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
               : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20'
           }
         >
-          <div className="relative overflow-hidden p-4 md:p-10 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-amber-50/75 via-white to-emerald-50/75 border border-amber-200/80 shadow-xl shadow-amber-950/5">
-            {/* Decorative Multi-Color Top Ribbon & Ambient Orbs */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 via-50% to-emerald-500" />
-            <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full bg-amber-400/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-emerald-400/15 blur-3xl" />
+          <div className="relative overflow-hidden p-4 md:p-10 rounded-2xl md:rounded-[2rem] bg-white border border-slate-200/90 shadow-lg shadow-slate-900/5">
+            {/* Decorative Top Ribbon & Subtle Ambient Orbs */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500" />
+            <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full bg-indigo-200/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-teal-200/15 blur-3xl" />
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 md:mb-8">
               <div className="max-w-3xl space-y-2.5 md:space-y-3">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-[11px] md:text-xs font-bold shadow-xs">
-                    <Flame className="w-3.5 h-3.5 text-amber-100" />
+                  <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200/80 text-[11px] md:text-xs font-bold">
+                    <Flame className="w-3.5 h-3.5 text-indigo-600" />
                     <span>
                       International Geo-Arbitrage Engine &amp; FIRE Independence Planner
                     </span>
                   </div>
-                  <span className="text-xs font-bold text-slate-600 bg-white/80 px-2.5 py-1 rounded-full border border-amber-200/80">
+                  <span className="text-xs font-bold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
                     {isGuestUser
                       ? 'Guest Mode · Basic Calculator + Full Scorecard Generator'
                       : `Synced to ${userProfile.name}'s Account`}
@@ -1422,17 +1422,17 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                 {/* Duo-Calculator Segmented Tab Switcher */}
                 <div className="pt-1 flex flex-wrap items-center gap-2.5">
-                  <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-slate-900/10 border border-slate-300/80 backdrop-blur-md shadow-xs">
+                  <div className="grid grid-cols-2 w-full md:w-auto md:inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-2xs">
                     <button
                       type="button"
                       onClick={() => setCalculatorTab('fire')}
                       className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 md:gap-2 ${
                         calculatorTab === 'fire'
-                          ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-md'
-                          : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-700 hover:text-slate-950 hover:bg-white/80'
                       }`}
                     >
-                      <Flame className="w-4 h-4 text-amber-200 shrink-0" />
+                      <Flame className="w-4 h-4 text-indigo-200 shrink-0" />
                       <span className="md:hidden">FIRE &amp; Trajectory</span>
                       <span className="hidden md:inline">
                         Tab 1: FIRE Calculator, Visual Trajectory &amp; Independence Planner
@@ -1443,11 +1443,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       onClick={() => setCalculatorTab('nomad')}
                       className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 md:gap-2 ${
                         calculatorTab === 'nomad'
-                          ? 'bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 text-white shadow-md'
-                          : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                          ? 'bg-teal-600 text-white shadow-xs'
+                          : 'text-slate-700 hover:text-slate-950 hover:bg-white/80'
                       }`}
                     >
-                      <Zap className="w-4 h-4 text-amber-300 shrink-0" />
+                      <Zap className="w-4 h-4 text-teal-200 shrink-0" />
                       <span className="md:hidden">Nomad Runway</span>
                       <span className="hidden md:inline">
                         Tab 2: Nomad Runway &amp; Monthly Burn
@@ -1460,7 +1460,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                   {calculatorTab === 'fire' ? (
                     <>
                       Calculate Your{' '}
-                      <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 bg-clip-text text-transparent">
+                      <span className="bg-gradient-to-r from-indigo-700 via-teal-600 to-emerald-600 bg-clip-text text-transparent">
                         FIRE Number, Visual Trajectory &amp; Survival Runway Abroad
                       </span>
                     </>
@@ -1555,7 +1555,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
               <>
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   {/* Left Column: Unified Core Sliders + Gated/Unlocked Personal Financial Parameters */}
-                  <div className="lg:col-span-6 space-y-4 bg-white/95 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-amber-200/80 shadow-md">
+                  <div className="lg:col-span-6 space-y-4 bg-slate-50/40 p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs">
                     {/* Country Pair & FIRE Lifestyle Tier Bar */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-slate-100 text-xs">
                       <div>
@@ -1637,7 +1637,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             onClick={() => setFireTier(t.id as FireTierMode)}
                             className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
                               fireTier === t.id
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-2xs'
+                                ? 'bg-indigo-600 text-white shadow-2xs'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
                           >
@@ -1648,9 +1648,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     </div>
 
                     {/* Core Parameter 1: Current Invested Assets */}
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-200/70 space-y-1.5">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-indigo-950 uppercase tracking-wider">
+                        <label className="font-extrabold text-slate-800 uppercase tracking-wider">
                           1. Current Invested Assets{' '}
                           {!isGuestUser && '(Auto-Synced with 5 Schemes)'}
                         </label>
@@ -1658,7 +1658,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           key={currentNetWorth}
                           initial={{ scale: 0.92 }}
                           animate={{ scale: 1 }}
-                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-indigo-950 text-indigo-200 text-sm"
+                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-sm"
                         >
                           ${currentNetWorth.toLocaleString()}
                         </motion.span>
@@ -1674,7 +1674,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         }
                         className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
-                      <div className="flex justify-between text-[11px] text-indigo-700/80 font-mono">
+                      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
                         <span>$20k</span>
                         <span>$500k</span>
                         <span>$2.0M+</span>
@@ -1682,16 +1682,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     </div>
 
                     {/* Core Parameter 2: Target Monthly Budget Abroad */}
-                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-amber-950 uppercase tracking-wider">
+                        <label className="font-extrabold text-slate-800 uppercase tracking-wider">
                           2. Target Monthly Budget Abroad ({selectedTargetHaven})
                         </label>
                         <motion.span
                           key={targetMonthlyExpenseAbroad}
                           initial={{ scale: 0.92 }}
                           animate={{ scale: 1 }}
-                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-sm"
+                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-teal-50 text-teal-900 border border-teal-200 text-sm"
                         >
                           ${targetMonthlyExpenseAbroad.toLocaleString()}/mo
                         </motion.span>
@@ -1705,9 +1705,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         onChange={e =>
                           setTargetMonthlyExpenseAbroad(Number(e.target.value))
                         }
-                        className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                        className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
-                      <div className="flex justify-between text-[11px] text-amber-800/80 font-mono">
+                      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
                         <span>$500 (Ultra-Lean)</span>
                         <span>$2,400 (Standard Haven)</span>
                         <span>$6,000 (Fat FIRE)</span>
@@ -1715,12 +1715,12 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     </div>
 
                     {/* Core Parameter 3: Current Monthly Cost (At Home) */}
-                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
                         <label className="font-extrabold text-slate-800 uppercase tracking-wider">
                           3. Current Monthly Cost at Home ({selectedBasisCountry})
                         </label>
-                        <span className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-white text-sm">
+                        <span className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 text-sm">
                           ${domesticMonthlyExpense.toLocaleString()}/mo
                         </span>
                       </div>
@@ -1994,15 +1994,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             </div>
                           </div>
 
-                          <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/80 via-white to-teal-50/80 border border-indigo-200/80 text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="space-y-0.5">
-                              <div className="text-xs font-extrabold flex items-center gap-1.5 text-amber-300">
-                                <Lock className="w-3.5 h-3.5 shrink-0" />
+                              <div className="text-xs font-extrabold flex items-center gap-1.5 text-indigo-900">
+                                <Lock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                                 <span>
                                   Log in to enter personal assets, loans &amp; milestones—or generate with basic info below!
                                 </span>
                               </div>
-                              <p className="text-[11px] text-slate-300 leading-snug">
+                              <p className="text-[11px] text-slate-600 leading-snug">
                                 You can proceed right now with the basic sliders above to generate your full FIRE scorecard &amp; visual trajectory, or log in to unlock all 5 asset schemes.
                               </p>
                             </div>
@@ -2010,14 +2010,14 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               <button
                                 type="button"
                                 onClick={() => openAuthModal('signup')}
-                                className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] cursor-pointer whitespace-nowrap"
+                                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] cursor-pointer whitespace-nowrap"
                               >
                                 Sign Up Free
                               </button>
                               <button
                                 type="button"
                                 onClick={() => openAuthModal('login')}
-                                className="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] cursor-pointer whitespace-nowrap"
+                                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-[11px] cursor-pointer whitespace-nowrap"
                               >
                                 Log In
                               </button>
@@ -2491,9 +2491,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
                       }}
-                      className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-black text-xs sm:text-sm shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-indigo-500/15 transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
-                      <BarChart3 className="w-4 h-4 text-amber-100" />
+                      <BarChart3 className="w-4 h-4 text-teal-100" />
                       <span>
                         {isGuestUser
                           ? 'Generate Full FIRE Scorecard, Trajectory & Survival Analysis'
@@ -2509,16 +2509,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                       <motion.div
                         whileHover={{ y: -3 }}
-                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-amber-50 via-orange-50/80 to-white border border-amber-300/90 shadow-sm space-y-1"
+                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-teal-50/45 via-white to-emerald-50/30 border border-teal-200/80 shadow-xs space-y-1"
                       >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-                        <span className="text-xs font-extrabold text-orange-800 uppercase tracking-wide">
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
+                        <span className="text-xs font-extrabold text-teal-800 uppercase tracking-wide">
                           Nest Egg Abroad ({selectedTargetHaven})
                         </span>
-                        <div className="text-2xl sm:text-3xl font-black text-orange-950 font-mono tabular-nums">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tabular-nums">
                           ${fireNestEggAbroad.toLocaleString()}
                         </div>
-                        <div className="text-xs text-orange-700 font-medium">
+                        <div className="text-xs text-teal-700 font-medium">
                           ${annualExpenseAbroad.toLocaleString()}/yr net ×{' '}
                           {swrMultiplier} ({safeWithdrawalRate.toFixed(1)}% SWR)
                         </div>
@@ -2526,9 +2526,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       <motion.div
                         whileHover={{ y: -3 }}
-                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-slate-100 via-slate-50 to-white border border-slate-300/80 shadow-sm space-y-1"
+                        className="relative overflow-hidden p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-1"
                       >
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-500 to-indigo-500" />
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-400 to-indigo-500" />
                         <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wide">
                           Nest Egg at Home ({selectedBasisCountry})
                         </span>
@@ -2542,33 +2542,33 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       </motion.div>
                     </div>
 
-                    {/* Geo-Arbitrage Savings Banner */}
-                    <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-700 text-white shadow-lg shadow-teal-950/10 space-y-2">
+                    {/* Geo-Arbitrage Savings Banner (Light & Elegant) */}
+                    <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/50 border border-emerald-200/80 text-slate-900 shadow-xs space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
                           {capitalSaved >= 0
                             ? 'Capital Required Slashed'
                             : 'Target Lifestyle Comparison'}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-extrabold backdrop-blur-md">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100/80 text-emerald-900 border border-emerald-200 text-xs font-extrabold">
                           {capitalSaved >= 0
                             ? `${capitalSavedPercent}% Less Capital`
                             : `${Math.abs(capitalSavedPercent)}% Higher Target`}
                         </span>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black">
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900">
                         {capitalSaved >= 0
                           ? `Save $${capitalSaved.toLocaleString()} in Required Net Worth`
                           : `+$${Math.abs(capitalSaved).toLocaleString()} Additional Nest Egg vs. Home`}
                       </div>
-                      <p className="text-xs text-emerald-50/90 leading-relaxed">
+                      <p className="text-xs text-slate-600 leading-relaxed">
                         With ${effectiveNetCorpusTodayUSD.toLocaleString()} net FIRE
                         corpus today, you have already funded{' '}
-                        <span className="font-extrabold text-amber-300">
+                        <span className="font-extrabold text-emerald-700">
                           {fireProgressPercent}%
                         </span>{' '}
                         of your abroad retirement goal (vs.{' '}
-                        <span className="font-extrabold text-white">
+                        <span className="font-extrabold text-indigo-700">
                           {fireProgressDomesticPercent}%
                         </span>{' '}
                         of your domestic goal).
@@ -2576,12 +2576,12 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     </div>
 
                     {/* Years to Retirement Comparison */}
-                    <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-indigo-100 shadow-md space-y-4">
+                    <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                           Years to Financial Freedom &amp; Work-Free Survival
                         </span>
-                        <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-300 text-xs font-extrabold text-orange-800">
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-800">
                           {yearsToFireAbroad === 0 && yearsToFireDomestic === 0
                             ? 'Ready Today (Abroad & At Home)!'
                             : yearsToFireAbroad === 0
@@ -2608,7 +2608,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               {fireNestEggAbroad.toLocaleString()} goal)
                             </span>
                           </span>
-                          <span className="font-extrabold text-orange-600 font-mono">
+                          <span className="font-extrabold text-teal-700 font-mono">
                             {yearsToFireAbroad === 0
                               ? '0 Years (100% Funded Today!)'
                               : `${yearsToFireAbroad} ${yearsToFireAbroad === 1 ? 'Year' : 'Years'} (${fireProgressPercent}% Funded)`}
@@ -2616,7 +2616,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         </div>
                         <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
                           <div
-                            className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 rounded-full transition-all duration-500"
+                            className="h-full bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500 rounded-full transition-all duration-500"
                             style={{ width: `${fireProgressPercent}%` }}
                           />
                         </div>
@@ -2746,23 +2746,23 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                 {/* ========================================================== */}
                 <div
                   id="unified-fire-scorecard-section"
-                  className="relative z-10 mt-8 pt-8 border-t border-amber-200/80 space-y-6 scroll-mt-20"
+                  className="relative z-10 mt-8 pt-8 border-t border-slate-200/80 space-y-6 scroll-mt-20"
                 >
                   {!hasGeneratedScorecard && isGuestUser ? (
-                    /* STEP 1 FOR GUESTS: VALUE-FIRST GATE SHOWING WHAT THE EXHAUSTIVE CALCULATOR INCLUDES */
-                    <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white border border-indigo-500/30 shadow-xl space-y-6">
+                    /* STEP 1 FOR GUESTS: VALUE-FIRST GATE IN CLEAN LIGHT STYLE */
+                    <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-50/45 via-white to-teal-50/45 text-slate-900 border border-indigo-200/80 shadow-xs space-y-6">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="space-y-2.5 max-w-2xl">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 text-[11px] font-extrabold uppercase tracking-wider">
-                            <Sparkles className="w-3.5 h-3.5" />
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-extrabold uppercase tracking-wider">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                             <span>
                               Exhaustive FIRE Calculator, Visual Trajectory &amp; Independence Planner
                             </span>
                           </div>
-                          <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">
+                          <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
                             Generate Your Full FIRE Scorecard, 25-Year Visual Trajectory &amp; 50-Year Survival Report
                           </h2>
-                          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                             Proceed with your basic sliders above ($
                             {currentNetWorth.toLocaleString()} assets, $
                             {targetMonthlyExpenseAbroad.toLocaleString()}/mo abroad, $
@@ -2777,7 +2777,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           <button
                             type="button"
                             onClick={() => setHasGeneratedScorecard(true)}
-                            className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                            className="px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
                           >
                             <BarChart3 className="w-4 h-4" />
                             <span>Generate Full FIRE Scorecard Now (With Basic Info)</span>
@@ -2785,45 +2785,45 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           <button
                             type="button"
                             onClick={() => openAuthModal('signup')}
-                            className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                            className="px-4 py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                           >
-                            <UserPlus className="w-4 h-4 text-teal-300" />
+                            <UserPlus className="w-4 h-4 text-teal-600" />
                             <span>Sign Up &amp; Enter Full Portfolio</span>
                           </button>
                         </div>
                       </div>
 
                       {/* Preview Grid of What's Unlocked inside the Full FIRE Scorecard */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs pt-2 border-t border-white/10">
-                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                          <span className="text-amber-300 font-extrabold block">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs pt-4 border-t border-slate-200/80">
+                        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 space-y-1">
+                          <span className="text-indigo-800 font-extrabold block">
                             1. 4-Stage FIRE Thermometer &amp; KPIs
                           </span>
-                          <p className="text-[11px] text-slate-300">
+                          <p className="text-[11px] text-slate-600">
                             Coast, Lean, Standard &amp; Fat FIRE thresholds plus itemized corpus &amp; formula audit.
                           </p>
                         </div>
-                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                          <span className="text-teal-300 font-extrabold block">
+                        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 space-y-1">
+                          <span className="text-teal-800 font-extrabold block">
                             2. 25-Year Visual Trajectory Chart
                           </span>
-                          <p className="text-[11px] text-slate-300">
+                          <p className="text-[11px] text-slate-600">
                             Interactive Recharts compounding curve, SIP returns breakdown &amp; crossover year.
                           </p>
                         </div>
-                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                          <span className="text-indigo-300 font-extrabold block">
+                        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 space-y-1">
+                          <span className="text-indigo-800 font-extrabold block">
                             3. 50-Year Work-Free Survival Simulator
                           </span>
-                          <p className="text-[11px] text-slate-300">
+                          <p className="text-[11px] text-slate-600">
                             Exact calendar year your money lasts with 0 work, remote nomad income, or a career break.
                           </p>
                         </div>
-                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                          <span className="text-emerald-300 font-extrabold block">
+                        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 space-y-1">
+                          <span className="text-emerald-800 font-extrabold block">
                             4. Diagnostics &amp; 1-Click Accelerators
                           </span>
-                          <p className="text-[11px] text-slate-300">
+                          <p className="text-[11px] text-slate-600">
                             Personalized strengths, inflation watchouts, and quantified levers to retire years earlier.
                           </p>
                         </div>
@@ -2832,20 +2832,20 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                   ) : (
                     /* STEP 2: FULL GENERATED FIRE SCORECARD, VISUAL TRAJECTORY & INDEPENDENCE PLANNER */
                     <div className="space-y-6 animate-in fade-in duration-300">
-                      {/* High-Conversion Guest Callout Banner at Top of Generated Scorecard */}
+                      {/* Light Guest Callout Banner at Top of Generated Scorecard */}
                       {isGuestUser && (
-                        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white border border-indigo-400/40 shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-indigo-50/60 via-white to-teal-50/60 text-slate-900 border border-indigo-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                           <div className="space-y-1 max-w-3xl">
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 text-[11px] font-extrabold uppercase">
-                              <Sparkles className="w-3.5 h-3.5" />
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-extrabold uppercase">
+                              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                               <span>
                                 Basic FIRE Scorecard Generated · {fireProgressPercent}% Funded (${monthlySafeWithdrawalIncomeUSD.toLocaleString()}/mo Safe Withdrawal)
                               </span>
                             </div>
-                            <h3 className="text-base sm:text-lg font-extrabold text-white">
+                            <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                               Want Your Personalized FIRE Scorecard with 5 Asset Schemes, Loans &amp; Family Milestones?
                             </h3>
-                            <p className="text-xs text-slate-300 leading-relaxed">
+                            <p className="text-xs text-slate-600 leading-relaxed">
                               This scorecard was generated from your basic sliders. Sign up free to enter your <strong>5-Scheme Asset Breakdown (Cash, Stocks, Real Estate, Family Gold, Crypto)</strong>, deduct <strong>Active Loans/EMIs</strong>, add <strong>Passive Income &amp; Future Milestones</strong>, and save this scorecard to your dashboard to track your progress over time.
                             </p>
                           </div>
@@ -2853,7 +2853,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             <button
                               type="button"
                               onClick={() => openAuthModal('signup')}
-                              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black cursor-pointer inline-flex items-center gap-1.5 shadow-md"
+                              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 shadow-2xs transition-colors"
                             >
                               <UserPlus className="w-4 h-4" />
                               <span>Sign Up Free &amp; Save Scorecard</span>
@@ -2861,7 +2861,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             <button
                               type="button"
                               onClick={() => openAuthModal('login')}
-                              className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold cursor-pointer"
+                              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold cursor-pointer transition-colors"
                             >
                               Log In
                             </button>
@@ -2947,37 +2947,37 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         </div>
 
                         {/* KPI 2: Target FIRE Corpus Abroad */}
-                        <div className="p-5 rounded-2xl border-2 border-orange-400/60 bg-gradient-to-br from-orange-50/70 via-amber-50/30 to-white shadow-2xs flex flex-col justify-between">
+                        <div className="p-5 rounded-2xl border border-indigo-200/90 bg-gradient-to-br from-indigo-50/35 via-white to-teal-50/25 shadow-2xs flex flex-col justify-between">
                           <div>
                             <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-[11px] font-bold text-orange-950 uppercase tracking-wider">
+                              <span className="text-[11px] font-bold text-indigo-950 uppercase tracking-wider">
                                 2. Target {fireTier.toUpperCase()} FIRE Corpus
                               </span>
-                              <Flame className="w-4 h-4 text-orange-600" />
+                              <Flame className="w-4 h-4 text-indigo-600" />
                             </div>
-                            <div className="text-xl sm:text-2xl font-extrabold font-mono text-orange-950 tabular-nums">
+                            <div className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 tabular-nums">
                               ${fireNestEggAbroad.toLocaleString()}
                             </div>
-                            <div className="mt-2.5 p-2 rounded-xl bg-white/90 border border-orange-200/70 space-y-1 text-[10px] font-mono text-orange-950/90">
+                            <div className="mt-2.5 p-2 rounded-xl bg-white/90 border border-slate-200/80 space-y-1 text-[10px] font-mono text-slate-700">
                               <div className="flex items-center justify-between">
-                                <span className="font-sans text-slate-600">
+                                <span className="font-sans text-slate-500">
                                   Net Abroad Need (${netMonthlyAbroadPortfolioNeedUSD.toLocaleString()}/mo × 12):
                                 </span>
-                                <span className="font-bold">
+                                <span className="font-bold text-slate-800">
                                   ${annualExpenseAbroad.toLocaleString()}/yr
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="font-sans text-slate-600">
+                                <span className="font-sans text-slate-500">
                                   Living Corpus (×{swrMultiplier} at{' '}
                                   {safeWithdrawalRate.toFixed(1)}% SWR):
                                 </span>
-                                <span className="font-bold">
+                                <span className="font-bold text-slate-800">
                                   +${activeFireTargetTodayUSD.toLocaleString()}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between border-t border-orange-100 pt-0.5">
-                                <span className="font-sans text-slate-600">
+                              <div className="flex items-center justify-between border-t border-slate-100 pt-0.5">
+                                <span className="font-sans text-slate-500">
                                   Plus One-Time Future Milestones:
                                 </span>
                                 <span className="font-bold text-purple-800">
@@ -2986,9 +2986,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               </div>
                             </div>
                           </div>
-                          <div className="mt-3 pt-2 border-t border-orange-200/70 text-[11px] text-orange-950/80 flex items-center justify-between">
+                          <div className="mt-3 pt-2 border-t border-slate-200/70 text-[11px] text-slate-600 flex items-center justify-between">
                             <span>Haven: {selectedTargetHaven}</span>
-                            <span className="font-mono font-bold">
+                            <span className="font-mono font-bold text-emerald-700">
                               Saves ${Math.max(0, capitalSaved).toLocaleString()} vs. Home
                             </span>
                           </div>
@@ -3161,7 +3161,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               <button
                                 type="button"
                                 onClick={() => openAuthModal('signup')}
-                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black text-xs shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+                                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
                               >
                                 <UserPlus className="w-3.5 h-3.5" />
                                 <span>Sign Up Free to Customize &amp; Save</span>
@@ -3478,16 +3478,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             </p>
                           </div>
 
-                          <div className="p-4 rounded-2xl bg-white border border-amber-200/90 shadow-2xs space-y-2">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-950 block">
+                          <div className="p-4 rounded-2xl bg-white border border-emerald-200/80 shadow-2xs space-y-2">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-900 block">
                               D. Perpetual Survival Threshold
                             </span>
-                            <div className="text-lg font-black font-mono text-amber-950">
+                            <div className="text-lg font-black font-mono text-emerald-950">
                               {survivalSimulations.zeroWorkAbroadSim.isPerpetual
                                 ? '$0 / mo Needed!'
                                 : `$${survivalSimulations.minMonthlyNomadForPerpetualUSD.toLocaleString()}/mo`}
                             </div>
-                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-950 font-mono text-[11px] font-bold">
+                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-900 font-mono text-[11px] font-bold">
                               <span>
                                 {survivalSimulations.zeroWorkAbroadSim.isPerpetual
                                   ? 'Already Perpetual on 0 Work!'
@@ -3813,11 +3813,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               onClick={() => setActiveLedgerTab('diagnostics')}
                               className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                                 activeLedgerTab === 'diagnostics'
-                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                               }`}
                             >
-                              <Zap className="w-3.5 h-3.5 text-amber-400" />
+                              <Zap className="w-3.5 h-3.5 text-teal-200" />
                               <span>
                                 Strengths, Weaknesses &amp; FIRE Accelerators
                               </span>
@@ -3828,11 +3828,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               onClick={() => setActiveLedgerTab('future-goals')}
                               className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                                 activeLedgerTab === 'future-goals'
-                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                               }`}
                             >
-                              <GraduationCap className="w-3.5 h-3.5 text-purple-500" />
+                              <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
                               <span>
                                 Future Milestones &amp; Insurance (
                                 {isGuestUser ? '🔒' : futureGoalsList.length})
@@ -3844,11 +3844,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               onClick={() => setActiveLedgerTab('loans')}
                               className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                                 activeLedgerTab === 'loans'
-                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                               }`}
                             >
-                              <Landmark className="w-3.5 h-3.5 text-rose-500" />
+                              <Landmark className="w-3.5 h-3.5 text-rose-400" />
                               <span>
                                 Loans &amp; EMIs ({isGuestUser ? '🔒' : loansList.length}
                                 )
@@ -3860,11 +3860,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               onClick={() => setActiveLedgerTab('side-income')}
                               className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                                 activeLedgerTab === 'side-income'
-                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                               }`}
                             >
-                              <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
+                              <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
                               <span>
                                 Side &amp; Passive Incomes (
                                 {isGuestUser ? '🔒' : sideIncomesList.length})
@@ -3877,7 +3877,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                               {/* Strengths Column */}
-                              <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/30 space-y-3">
+                              <div className="p-5 rounded-2xl border border-emerald-200/80 bg-emerald-50/25 space-y-3">
                                 <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm">
                                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                   <span>
@@ -3905,9 +3905,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               </div>
 
                               {/* Weaknesses / Watchouts Column */}
-                              <div className="p-5 rounded-2xl border border-amber-200 bg-amber-50/30 space-y-3">
-                                <div className="flex items-center gap-2 text-amber-950 font-extrabold text-sm">
-                                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                              <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-3">
+                                <div className="flex items-center gap-2 text-slate-800 font-extrabold text-sm">
+                                  <AlertTriangle className="w-4 h-4 text-rose-500" />
                                   <span>
                                     Gaps, Inflation Drag &amp; Watchouts (
                                     {diagnosticsAndAccelerators.weaknesses.length})
@@ -3918,7 +3918,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                     (w, idx) => (
                                       <div
                                         key={idx}
-                                        className="p-3 rounded-xl bg-white border border-amber-100 shadow-2xs"
+                                        className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs"
                                       >
                                         <p className="text-xs font-bold text-slate-900">
                                           {w.title}
@@ -3934,15 +3934,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             </div>
 
                             {/* Actionable "Achieve FIRE Earlier" Levers */}
-                            <div className="p-5 rounded-2xl border border-purple-200 bg-gradient-to-r from-orange-50/60 via-purple-50/50 to-white space-y-3">
+                            <div className="p-5 rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/35 via-teal-50/25 to-white space-y-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <Zap className="w-4 h-4 text-orange-600" />
+                                  <Zap className="w-4 h-4 text-indigo-600" />
                                   <h4 className="text-sm font-extrabold text-slate-900">
                                     How to Achieve FIRE Earlier — Quantified 1-Click Action Levers
                                   </h4>
                                 </div>
-                                <span className="text-[11px] text-purple-800 font-semibold">
+                                <span className="text-[11px] text-indigo-800 font-semibold">
                                   Click any lever to test &amp; apply immediately
                                 </span>
                               </div>
@@ -3955,7 +3955,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                       className="p-4 rounded-xl bg-white border border-slate-200/90 flex flex-col justify-between shadow-2xs"
                                     >
                                       <div>
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 inline-block mb-1.5">
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 border border-emerald-200 text-emerald-800 inline-block mb-1.5">
                                           Retire ~{acc.impactYears} Yrs Earlier
                                         </span>
                                         <h5 className="text-xs font-bold text-slate-900 leading-snug">
@@ -3968,7 +3968,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                       <button
                                         type="button"
                                         onClick={acc.onApply}
-                                        className="mt-3 w-full py-2 px-3 rounded-lg bg-slate-900 hover:bg-orange-600 text-white font-bold text-[11px] transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                                        className="mt-3 w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] transition-colors flex items-center justify-center gap-1 cursor-pointer"
                                       >
                                         <span>{acc.actionLabel}</span>
                                         <ArrowRight className="w-3 h-3" />
@@ -3981,15 +3981,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           </div>
                         ) : isGuestUser ? (
                           /* Gated Prompt When Guest Clicks Future Milestones, Loans, or Side Incomes Tab */
-                          <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-50/70 via-white to-teal-50/70 border border-indigo-200/80 text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1.5 max-w-2xl">
-                              <div className="inline-flex items-center gap-1.5 text-amber-300 text-xs font-extrabold">
-                                <Lock className="w-4 h-4" />
+                              <div className="inline-flex items-center gap-1.5 text-indigo-900 text-xs font-extrabold">
+                                <Lock className="w-4 h-4 text-indigo-600" />
                                 <span>
                                   Unlock Personal Loans, Passive Income &amp; Family Milestone Modeling
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-300 leading-relaxed">
+                              <p className="text-xs text-slate-600 leading-relaxed">
                                 Sign in or create a free ReFIREly account to enter your multi-loan EMI payoff schedules, continuing retirement passive income streams (rentals, dividends, pensions), and inflation-adjusted family milestones (children&apos;s college, medical buffer, property purchases).
                               </p>
                             </div>
@@ -3997,14 +3997,14 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               <button
                                 type="button"
                                 onClick={() => openAuthModal('signup')}
-                                className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs cursor-pointer"
+                                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs cursor-pointer transition-colors"
                               >
                                 Sign Up Free to Unlock
                               </button>
                               <button
                                 type="button"
                                 onClick={() => openAuthModal('login')}
-                                className="px-3.5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs cursor-pointer"
+                                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs cursor-pointer transition-colors"
                               >
                                 Log In
                               </button>
@@ -4063,10 +4063,10 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       {/* Bottom Guest Sign-Up & Save Conversion Banner */}
                       {isGuestUser && (
-                        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/90 to-teal-50 border-2 border-amber-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-indigo-50/50 via-white to-teal-50/50 border border-indigo-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1 max-w-2xl">
-                            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-orange-900 uppercase tracking-wider">
-                              <Award className="w-4 h-4 text-orange-600" />
+                            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-800 uppercase tracking-wider">
+                              <Award className="w-4 h-4 text-indigo-600" />
                               <span>
                                 Save Your FIRE Scorecard &amp; Track Progress Over Time
                               </span>
@@ -4075,7 +4075,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               Don&apos;t Lose Your ${fireNestEggAbroad.toLocaleString()}{' '}
                               FIRE Target &amp; {fireProgressPercent}% Readiness Score
                             </h3>
-                            <p className="text-xs text-slate-700 leading-relaxed">
+                            <p className="text-xs text-slate-600 leading-relaxed">
                               Sign up for a free ReFIREly account to unlock your
                               personal 5-scheme financial portfolio, log loans and
                               passive income, and save this FIRE scorecard to your
@@ -4086,15 +4086,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             <button
                               type="button"
                               onClick={() => openAuthModal('signup')}
-                              className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-950 text-white text-xs font-black cursor-pointer inline-flex items-center gap-2 shadow-md"
+                              className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer inline-flex items-center gap-2 shadow-xs transition-colors"
                             >
-                              <UserPlus className="w-4 h-4 text-amber-300" />
+                              <UserPlus className="w-4 h-4" />
                               <span>Create Free Account &amp; Save Scorecard</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => openAuthModal('login')}
-                              className="px-4 py-3 rounded-2xl bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 text-xs font-bold cursor-pointer"
+                              className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold cursor-pointer transition-colors"
                             >
                               Log In
                             </button>
@@ -4137,12 +4137,12 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                 </div>
 
                 {/* Live Matching Retirement Havens for the User's FIRE Parameters */}
-                <div className="relative z-10 mt-6 md:mt-10 pt-5 md:pt-8 border-t border-amber-200/70 space-y-5 md:space-y-6">
-                  <div className="p-4 md:p-7 rounded-2xl md:rounded-3xl bg-gradient-to-br from-teal-50/85 via-white to-indigo-50/85 border border-teal-200/80 shadow-md space-y-4 md:space-y-5">
+                <div className="relative z-10 mt-6 md:mt-10 pt-5 md:pt-8 border-t border-slate-200/80 space-y-5 md:space-y-6">
+                  <div className="p-4 md:p-7 rounded-2xl md:rounded-3xl bg-slate-50/60 border border-slate-200/90 shadow-xs space-y-4 md:space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                       <div>
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider mb-2 shadow-2xs">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-teal-600" />
                           <span>Live FIRE-Ready Destination Matches</span>
                         </div>
                         <h2 className="text-base md:text-xl font-extrabold text-slate-900 tracking-tight">
@@ -4153,7 +4153,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           &amp; {safeWithdrawalRate.toFixed(1)}% SWR
                         </h2>
                       </div>
-                      <span className="hidden md:inline-block text-xs font-bold text-indigo-900 bg-white px-3.5 py-1.5 rounded-xl border border-indigo-200/80 shadow-2xs self-start sm:self-auto">
+                      <span className="hidden md:inline-block text-xs font-bold text-slate-700 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200/90 self-start sm:self-auto">
                         Ranked by budget fit, healthcare, safety &amp; portfolio
                         readiness
                       </span>
@@ -4176,8 +4176,8 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           const topBarColors = [
                             'from-emerald-500 via-teal-500 to-cyan-500',
                             'from-indigo-500 via-violet-500 to-purple-500',
-                            'from-amber-500 via-orange-500 to-rose-500',
-                            'from-teal-500 via-indigo-500 to-amber-500',
+                            'from-sky-500 via-teal-500 to-emerald-500',
+                            'from-teal-500 via-indigo-500 to-sky-500',
                           ];
                           return (
                             <motion.div
@@ -4190,7 +4190,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                 damping: 26,
                               }}
                               onClick={() => navigateToCountry(country.id)}
-                              className={`${idx >= 2 ? 'hidden md:flex' : 'flex'} group rounded-2xl bg-white border border-indigo-100 hover:border-indigo-300 transition-shadow cursor-pointer flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-indigo-950/10`}
+                              className={`${idx >= 2 ? 'hidden md:flex' : 'flex'} group rounded-2xl bg-white border border-slate-200/90 hover:border-indigo-300 transition-shadow cursor-pointer flex-col justify-between overflow-hidden shadow-2xs hover:shadow-md`}
                             >
                               <div
                                 className={`h-1.5 w-full bg-gradient-to-r ${topBarColors[idx % topBarColors.length]}`}
@@ -4209,7 +4209,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                     className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0 shadow-xs ${
                                       yearsToFireInCountry === 0
                                         ? 'bg-emerald-500 text-white'
-                                        : 'bg-amber-400 text-slate-950'
+                                        : 'bg-white/95 text-slate-900'
                                     }`}
                                   >
                                     {yearsToFireInCountry === 0
@@ -4239,7 +4239,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                               <div className="p-4 flex-1 flex flex-col justify-between gap-3.5">
                                 <div className="space-y-3">
                                   <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+                                    <div className="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200/70">
                                       <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
                                         {budgetModeLabel} Budget
                                       </span>
@@ -4247,7 +4247,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                         ${referenceMonthlyCost.toLocaleString()}/mo
                                       </span>
                                     </div>
-                                    <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80">
+                                    <div className="p-2.5 rounded-xl bg-indigo-50/50 border border-indigo-200/70">
                                       <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
                                         FIRE Nest Egg
                                       </span>
@@ -4315,10 +4315,10 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
               <>
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   {/* Left Column: Interactive Inputs for Nomads & Creators */}
-                  <div className="lg:col-span-6 space-y-5 bg-white/95 backdrop-blur-xl p-6 rounded-3xl border border-teal-200/80 shadow-md">
-                    <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200/80 space-y-1.5">
+                  <div className="lg:col-span-6 space-y-5 bg-slate-50/40 p-6 rounded-3xl border border-slate-200/90 shadow-xs">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-teal-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                           <Wallet className="w-3.5 h-3.5 text-teal-600" />
                           <span>Liquid Cash Buffer / Savings</span>
                         </label>
@@ -4326,38 +4326,38 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           key={nomadSavings}
                           initial={{ scale: 0.92 }}
                           animate={{ scale: 1 }}
-                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-teal-950 text-teal-200 text-sm"
+                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-teal-50 text-teal-900 border border-teal-200 text-sm"
                         >
                           ${nomadSavings.toLocaleString()}
                         </motion.span>
                       </div>
                       <input
                         type="range"
-                        min="5000"
-                        max="200000"
-                        step="2500"
-                        value={nomadSavings}
+                        min="10000"
+                        max="1000000"
+                        step="2000"
+                        value={Math.min(1000000, Math.max(10000, nomadSavings))}
                         onChange={e => setNomadSavings(Number(e.target.value))}
                         className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
-                      <div className="flex justify-between text-[11px] text-teal-800/80 font-mono">
-                        <span>$5,000</span>
-                        <span>$75,000</span>
-                        <span>$200,000+</span>
+                      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
+                        <span>$10,000</span>
+                        <span>$500,000</span>
+                        <span>$1,000,000+</span>
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
-                          <Flame className="w-3.5 h-3.5 text-amber-600" />
+                        <label className="font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <Flame className="w-3.5 h-3.5 text-teal-600" />
                           <span>Short-Term Living &amp; Coworking Burn</span>
                         </label>
                         <motion.span
                           key={nomadMonthlyBurn}
                           initial={{ scale: 0.92 }}
                           animate={{ scale: 1 }}
-                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-sm"
+                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 text-sm"
                         >
                           ${nomadMonthlyBurn.toLocaleString()}/mo
                         </motion.span>
@@ -4369,18 +4369,18 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         step="50"
                         value={nomadMonthlyBurn}
                         onChange={e => setNomadMonthlyBurn(Number(e.target.value))}
-                        className="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                        className="w-full h-2 bg-teal-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
-                      <div className="flex justify-between text-[11px] text-amber-800/80 font-mono">
+                      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
                         <span>$700 (Lean SE Asia)</span>
                         <span>$1,850 (Standard Nomad Hub)</span>
                         <span>$4,500 (Luxury Lisbon/Tokyo)</span>
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-1.5">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                           <Laptop className="w-3.5 h-3.5 text-indigo-600" />
                           <span>Remote Work / Freelance Inflow</span>
                         </label>
@@ -4388,7 +4388,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           key={nomadRemoteIncome}
                           initial={{ scale: 0.92 }}
                           animate={{ scale: 1 }}
-                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-indigo-950 text-indigo-200 text-sm"
+                          className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-sm"
                         >
                           +${nomadRemoteIncome.toLocaleString()}/mo
                         </motion.span>
@@ -4402,15 +4402,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         onChange={e => setNomadRemoteIncome(Number(e.target.value))}
                         className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
-                      <div className="flex justify-between text-[11px] text-indigo-800/80 font-mono">
+                      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
                         <span>$0 (Full Sabbatical)</span>
                         <span>$1,500 (Part-Time Gig)</span>
                         <span>$6,000+ (Full Remote Job)</span>
                       </div>
                     </div>
 
-                    <div className="hidden md:block p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/60 to-indigo-50/60 border border-teal-200/60 text-[11px] text-slate-600 leading-relaxed space-y-1">
-                      <div className="font-bold text-teal-950 flex items-center gap-1.5">
+                    <div className="hidden md:block p-3.5 rounded-2xl bg-white border border-slate-200/80 text-[11px] text-slate-600 leading-relaxed space-y-1">
+                      <div className="font-bold text-slate-800 flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-teal-600" />
                         <span>The Nomad Runway Formula:</span>
                       </div>
@@ -4434,13 +4434,13 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                       <motion.div
                         whileHover={{ y: -3 }}
-                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-teal-50 via-emerald-50/80 to-white border border-teal-300/90 shadow-sm space-y-1"
+                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-teal-50/45 via-white to-emerald-50/30 border border-teal-200/80 shadow-xs space-y-1"
                       >
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
                         <span className="text-xs font-extrabold text-teal-800 uppercase tracking-wide">
                           Total Calendar Runway
                         </span>
-                        <div className="text-2xl sm:text-3xl font-black text-teal-950 font-mono tabular-nums">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tabular-nums">
                           {nomadNetBurn === 0
                             ? '∞ Infinite'
                             : `${nomadRunwayMonths} Mos`}
@@ -4454,28 +4454,28 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       <motion.div
                         whileHover={{ y: -3 }}
-                        className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-indigo-50 via-sky-50/80 to-white border border-indigo-200/90 shadow-sm space-y-1"
+                        className="relative overflow-hidden p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-1"
                       >
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-sky-500" />
                         <span className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">
                           Net Monthly Cash Burn
                         </span>
-                        <div className="text-2xl sm:text-3xl font-black text-indigo-950 font-mono tabular-nums">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tabular-nums">
                           ${nomadNetBurn.toLocaleString()}/mo
                         </div>
-                        <div className="text-xs text-indigo-700 font-medium">
+                        <div className="text-xs text-slate-600 font-medium">
                           ${nomadMonthlyBurn.toLocaleString()} burn - $
                           {nomadRemoteIncome.toLocaleString()} inflow
                         </div>
                       </motion.div>
                     </div>
 
-                    <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-700 text-white shadow-lg shadow-indigo-950/10 space-y-3">
+                    <div className="p-6 rounded-3xl bg-gradient-to-br from-teal-50/50 via-white to-indigo-50/45 border border-teal-200/80 text-slate-900 shadow-xs space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-teal-200">
+                        <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
                           Runway Safety Thresholds
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-extrabold backdrop-blur-md">
+                        <span className="px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-900 text-xs font-extrabold">
                           {nomadSavings >= nomadTwelveMonthRunwayRequired
                             ? '12+ Months Safe'
                             : nomadSavings >= nomadSixMonthRunwayRequired
@@ -4485,27 +4485,27 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-xs pt-1">
-                        <div className="p-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
-                          <span className="text-teal-200 text-[10px] font-bold uppercase block">
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200/80">
+                          <span className="text-teal-800 text-[10px] font-bold uppercase block">
                             6-Month Runway Target
                           </span>
-                          <div className="text-lg font-black font-mono text-white mt-0.5">
+                          <div className="text-lg font-black font-mono text-slate-900 mt-0.5">
                             ${nomadSixMonthRunwayRequired.toLocaleString()}
                           </div>
-                          <span className="text-[11px] text-teal-100/80">
+                          <span className="text-[11px] text-slate-600">
                             {nomadSavings >= nomadSixMonthRunwayRequired
                               ? '✅ Fully Funded'
                               : `+$${(nomadSixMonthRunwayRequired - nomadSavings).toLocaleString()} needed`}
                           </span>
                         </div>
-                        <div className="p-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md">
-                          <span className="text-indigo-200 text-[10px] font-bold uppercase block">
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200/80">
+                          <span className="text-indigo-800 text-[10px] font-bold uppercase block">
                             12-Month Runway Target
                           </span>
-                          <div className="text-lg font-black font-mono text-white mt-0.5">
+                          <div className="text-lg font-black font-mono text-slate-900 mt-0.5">
                             ${nomadTwelveMonthRunwayRequired.toLocaleString()}
                           </div>
-                          <span className="text-[11px] text-indigo-100/80">
+                          <span className="text-[11px] text-slate-600">
                             {nomadSavings >= nomadTwelveMonthRunwayRequired
                               ? '✅ Fully Funded'
                               : `+$${(nomadTwelveMonthRunwayRequired - nomadSavings).toLocaleString()} needed`}
@@ -4514,7 +4514,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-teal-100 shadow-md space-y-4">
+                    <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-4">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold text-slate-900 uppercase tracking-wider">
                           Cash Runway Depletion Bar
@@ -4528,7 +4528,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
                         <div
-                          className="h-full bg-gradient-to-r from-teal-500 via-indigo-500 to-amber-500 rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-teal-500 via-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
                           style={{
                             width: `${Math.min(100, nomadNetBurn === 0 ? 100 : Math.round((nomadRunwayMonths / 24) * 100))}%`,
                           }}

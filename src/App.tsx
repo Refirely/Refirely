@@ -30,6 +30,7 @@ import { AndroidAppShell } from './components/android/AndroidAppShell';
 import { downloadBrandPng } from './utils/exportBrandLogo';
 import { updatePageSeo, getCountryUrl, getViewUrl } from './utils/seo';
 import { initGoogleAnalytics, trackPageView } from './utils/analytics';
+import { initGlobalRangeSliderFill, syncAllRangeInputs } from './utils/rangeSliderFill';
 import { Compass, Shield, Download, Sparkles, Award } from 'lucide-react';
 
 const MainContent: React.FC = () => {
@@ -59,11 +60,13 @@ const MainContent: React.FC = () => {
 
   useEffect(() => {
     initGoogleAnalytics();
+    initGlobalRangeSliderFill();
   }, []);
 
   useEffect(() => {
     updatePageSeo(currentView, selectedCountry, countries, currentPersona);
     trackPageView(currentView, selectedCountry);
+    requestAnimationFrame(() => syncAllRangeInputs());
   }, [currentView, selectedCountry, countries, currentPersona]);
 
   const handleSpaViewClick = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
