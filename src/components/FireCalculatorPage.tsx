@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, MotionConfig } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { CountryThumbnail } from './CountryThumbnail';
@@ -55,6 +55,8 @@ import {
   AlertTriangle,
   Check,
   PiggyBank,
+  ChevronDown,
+  Search,
 } from 'lucide-react';
 
 type FireTierMode = 'lean' | 'standard' | 'fat' | 'barista';
@@ -110,6 +112,33 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
   const [selectedTargetHaven, setSelectedTargetHaven] = useState<string>(targetHavenCountryName);
   const [fireTier, setFireTier] = useState<FireTierMode>('standard');
   const [inputCurrencyMode, setInputCurrencyMode] = useState<'USD' | 'LOCAL'>('USD');
+  const [isBasisDropdownOpen, setIsBasisDropdownOpen] = useState<boolean>(false);
+  const [basisSearchQuery, setBasisSearchQuery] = useState<string>('');
+  const [isHavenDropdownOpen, setIsHavenDropdownOpen] = useState<boolean>(false);
+  const [havenSearchQuery, setHavenSearchQuery] = useState<string>('');
+  const countryDropdownContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        countryDropdownContainerRef.current &&
+        !countryDropdownContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsBasisDropdownOpen(false);
+        setIsHavenDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedTargetHavenObj = useMemo(
+    () =>
+      countries.find(
+        c => c.name.toLowerCase() === selectedTargetHaven.toLowerCase()
+      ) || null,
+    [countries, selectedTargetHaven]
+  );
 
   const countryMacro = useMemo(() => {
     return getCountryCurrencyMacro(selectedBasisCountry);
@@ -1416,13 +1445,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
   // -------------------------------------------------------------
   // 6. Duo-Calculator Tab State & Nomad Runway Calculation
   // -------------------------------------------------------------
-  const [calculatorTab, setCalculatorTab] = useState<'fire' | 'nomad'>(
-    currentPersona === 'nomad' ? 'nomad' : 'fire'
-  );
-
-  useEffect(() => {
-    setCalculatorTab(currentPersona === 'nomad' ? 'nomad' : 'fire');
-  }, [currentPersona]);
+  const [calculatorTab, setCalculatorTab] = useState<'fire' | 'nomad'>('fire');
 
   const [nomadSavings, setNomadSavings] = useState<number>(36000);
   const [nomadMonthlyBurn, setNomadMonthlyBurn] = useState<number>(1850);
@@ -1648,65 +1671,205 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                   {/* Left Column: Unified Core Sliders + Gated/Unlocked Personal Financial Parameters */}
                   <div className="lg:col-span-6 space-y-4 bg-stone-50/60 p-5 sm:p-6 rounded-3xl border border-stone-200/90 shadow-xs">
                     {/* Country Pair & FIRE Lifestyle Tier Bar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-stone-200/70 text-xs">
-                      <div>
+                    <div
+                      ref={countryDropdownContainerRef}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-stone-200/70 text-xs"
+                    >
+                      {/* Residing Country (At Home) Dropdown with Real Flag Images */}
+                      <div className="relative">
                         <label className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 block mb-1">
                           Residing Country (At Home)
                         </label>
-                        <select
-                          value={selectedBasisCountry}
-                          onChange={e => setSelectedBasisCountry(e.target.value)}
-                          className="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-800 text-xs"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsBasisDropdownOpen(prev => !prev);
+                            setIsHavenDropdownOpen(false);
+                            setBasisSearchQuery('');
+                          }}
+                          className="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white hover:border-stone-400 font-semibold text-stone-800 text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors"
                         >
-                          {!WORLD_COUNTRIES.some(c => c.name === selectedBasisCountry) &&
-                            selectedBasisCountry && (
-                              <option value={selectedBasisCountry}>
-                                🌍 {selectedBasisCountry}
-                              </option>
-                            )}
-                          {WORLD_COUNTRIES.map(c => (
-                            <option key={`basis-${c.code}-${c.name}`} value={c.name}>
-                              {c.flag} {c.name}
-                            </option>
-                          ))}
-                        </select>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <CountryFlag
+                              countryName={selectedBasisCountry}
+                              fallbackEmoji={getWorldCountryFlag(selectedBasisCountry)}
+                              size="sm"
+                              className="rounded-xs shadow-2xs shrink-0"
+                            />
+                            <span className="truncate">{selectedBasisCountry}</span>
+                          </span>
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 text-stone-500 shrink-0 transition-transform ${
+                              isBasisDropdownOpen ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+
+                        {isBasisDropdownOpen && (
+                          <div className="absolute left-0 right-0 mt-1.5 z-50 rounded-2xl bg-white border border-stone-200 shadow-xl overflow-hidden">
+                            <div className="p-2 border-b border-stone-100 bg-stone-50/70">
+                              <div className="relative">
+                                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  value={basisSearchQuery}
+                                  onChange={e => setBasisSearchQuery(e.target.value)}
+                                  placeholder="Search residing country..."
+                                  autoFocus
+                                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-stone-200 bg-white text-xs text-stone-800 focus:outline-none focus:border-green-600"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto divide-y divide-stone-100/70">
+                              {WORLD_COUNTRIES.filter(c =>
+                                c.name
+                                  .toLowerCase()
+                                  .includes(basisSearchQuery.trim().toLowerCase())
+                              ).map(c => {
+                                const isSelected =
+                                  c.name.toLowerCase() ===
+                                  selectedBasisCountry.toLowerCase();
+                                return (
+                                  <button
+                                    key={`basis-opt-${c.code}-${c.name}`}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedBasisCountry(c.name);
+                                      setIsBasisDropdownOpen(false);
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                                      isSelected
+                                        ? 'bg-green-50 text-green-950 font-extrabold'
+                                        : 'hover:bg-stone-50 text-stone-700 font-medium'
+                                    }`}
+                                  >
+                                    <span className="flex items-center gap-2 min-w-0">
+                                      <CountryFlag
+                                        countryCode={c.code}
+                                        countryName={c.name}
+                                        fallbackEmoji={c.flag}
+                                        size="sm"
+                                        className="rounded-xs shadow-2xs shrink-0"
+                                      />
+                                      <span className="truncate">{c.name}</span>
+                                    </span>
+                                    {isSelected && (
+                                      <Check className="w-3.5 h-3.5 text-green-700 shrink-0" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      <div>
+                      {/* Target FIRE Haven Abroad Dropdown with Real Flag Images */}
+                      <div className="relative">
                         <label className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-900 block mb-1">
                           Target FIRE Haven Abroad
                         </label>
-                        <select
-                          value={selectedTargetHaven}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setSelectedTargetHaven(val);
-                            const matched = countries.find(
-                              c => c.name.toLowerCase() === val.toLowerCase()
-                            );
-                            if (matched) {
-                              setTargetMonthlyExpenseAbroad(
-                                matched.costOfLiving.monthlyBudgetCoupleUSD
-                              );
-                            }
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHavenDropdownOpen(prev => !prev);
+                            setIsBasisDropdownOpen(false);
+                            setHavenSearchQuery('');
                           }}
-                          className="w-full px-2.5 py-2 rounded-xl border border-cyan-200 bg-cyan-50/50 font-extrabold text-cyan-950 text-xs"
+                          className="w-full px-2.5 py-2 rounded-xl border border-cyan-200 bg-cyan-50/50 hover:bg-cyan-50 hover:border-cyan-300 font-extrabold text-cyan-950 text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors"
                         >
-                          {!countries.some(c => c.name === selectedTargetHaven) &&
-                            selectedTargetHaven && (
-                              <option value={selectedTargetHaven}>
-                                {getWorldCountryFlag(selectedTargetHaven)}{' '}
-                                {selectedTargetHaven}
-                              </option>
-                            )}
-                          {countries.map(c => (
-                            <option key={`target-${c.id}`} value={c.name}>
-                              {c.flag} {c.name} ($
-                              {c.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
-                              couple)
-                            </option>
-                          ))}
-                        </select>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <CountryFlag
+                              countryName={selectedTargetHaven}
+                              fallbackEmoji={
+                                selectedTargetHavenObj?.flag ||
+                                getWorldCountryFlag(selectedTargetHaven)
+                              }
+                              size="sm"
+                              className="rounded-xs shadow-2xs shrink-0"
+                            />
+                            <span className="truncate">
+                              {selectedTargetHaven}
+                              {selectedTargetHavenObj
+                                ? ` ($${selectedTargetHavenObj.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo couple)`
+                                : ''}
+                            </span>
+                          </span>
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 text-cyan-700 shrink-0 transition-transform ${
+                              isHavenDropdownOpen ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+
+                        {isHavenDropdownOpen && (
+                          <div className="absolute left-0 right-0 mt-1.5 z-50 rounded-2xl bg-white border border-cyan-200 shadow-xl overflow-hidden">
+                            <div className="p-2 border-b border-stone-100 bg-cyan-50/40">
+                              <div className="relative">
+                                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  value={havenSearchQuery}
+                                  onChange={e => setHavenSearchQuery(e.target.value)}
+                                  placeholder="Search 209 global havens..."
+                                  autoFocus
+                                  className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-stone-200 bg-white text-xs text-stone-800 focus:outline-none focus:border-cyan-600"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto divide-y divide-stone-100/70">
+                              {countries
+                                .filter(c =>
+                                  c.name
+                                    .toLowerCase()
+                                    .includes(havenSearchQuery.trim().toLowerCase())
+                                )
+                                .map(c => {
+                                  const isSelected =
+                                    c.name.toLowerCase() ===
+                                    selectedTargetHaven.toLowerCase();
+                                  return (
+                                    <button
+                                      key={`target-opt-${c.id}`}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedTargetHaven(c.name);
+                                        setTargetMonthlyExpenseAbroad(
+                                          c.costOfLiving.monthlyBudgetCoupleUSD
+                                        );
+                                        setIsHavenDropdownOpen(false);
+                                      }}
+                                      className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                                        isSelected
+                                          ? 'bg-cyan-50 text-cyan-950 font-extrabold'
+                                          : 'hover:bg-stone-50 text-stone-700 font-medium'
+                                      }`}
+                                    >
+                                      <span className="flex items-center gap-2 min-w-0">
+                                        <CountryFlag
+                                          countryName={c.name}
+                                          fallbackEmoji={c.flag}
+                                          size="sm"
+                                          className="rounded-xs shadow-2xs shrink-0"
+                                        />
+                                        <span className="truncate">
+                                          {c.name}{' '}
+                                          <span className="text-[11px] font-mono text-stone-500">
+                                            ($
+                                            {c.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}
+                                            /mo couple)
+                                          </span>
+                                        </span>
+                                      </span>
+                                      {isSelected && (
+                                        <Check className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1785,9 +1948,19 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                     {/* Core Parameter 2: Target Monthly Budget Abroad (Freedom Cyan) */}
                     <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 space-y-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-stone-800 uppercase tracking-wider">
-                          2. Target Monthly Budget Abroad ({selectedTargetHaven})
+                      <div className="flex justify-between items-center text-xs gap-2">
+                        <label className="font-extrabold text-stone-800 uppercase tracking-wider inline-flex items-center gap-1.5">
+                          <span>2. Target Monthly Budget Abroad (</span>
+                          <CountryFlag
+                            countryName={selectedTargetHaven}
+                            fallbackEmoji={
+                              selectedTargetHavenObj?.flag ||
+                              getWorldCountryFlag(selectedTargetHaven)
+                            }
+                            size="xs"
+                            className="rounded-xs shadow-2xs"
+                          />
+                          <span>{selectedTargetHaven})</span>
                         </label>
                         <motion.span
                           key={targetMonthlyExpenseAbroad}
@@ -1818,9 +1991,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                     {/* Core Parameter 3: Current Monthly Cost (At Home) */}
                     <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 space-y-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <label className="font-extrabold text-stone-800 uppercase tracking-wider">
-                          3. Current Monthly Cost at Home ({selectedBasisCountry})
+                      <div className="flex justify-between items-center text-xs gap-2">
+                        <label className="font-extrabold text-stone-800 uppercase tracking-wider inline-flex items-center gap-1.5">
+                          <span>3. Current Monthly Cost at Home (</span>
+                          <CountryFlag
+                            countryName={selectedBasisCountry}
+                            fallbackEmoji={getWorldCountryFlag(selectedBasisCountry)}
+                            size="xs"
+                            className="rounded-xs shadow-2xs"
+                          />
+                          <span>{selectedBasisCountry})</span>
                         </label>
                         <span className="font-mono font-black px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-800 border border-stone-200 text-sm">
                           ${domesticMonthlyExpense.toLocaleString()}/mo
@@ -2619,8 +2799,18 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         className="relative overflow-hidden p-5 rounded-3xl bg-gradient-to-br from-cyan-50/45 via-white to-green-50/35 border border-cyan-200/80 shadow-xs space-y-1"
                       >
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-600 to-green-600" />
-                        <span className="text-xs font-extrabold text-cyan-800 uppercase tracking-wide">
-                          Nest Egg Abroad ({selectedTargetHaven})
+                        <span className="text-xs font-extrabold text-cyan-800 uppercase tracking-wide inline-flex items-center gap-1.5 flex-wrap">
+                          <span>Nest Egg Abroad (</span>
+                          <CountryFlag
+                            countryName={selectedTargetHaven}
+                            fallbackEmoji={
+                              selectedTargetHavenObj?.flag ||
+                              getWorldCountryFlag(selectedTargetHaven)
+                            }
+                            size="sm"
+                            className="rounded-xs shadow-2xs"
+                          />
+                          <span>{selectedTargetHaven})</span>
                         </span>
                         <div className="text-2xl sm:text-3xl font-black text-stone-900 font-mono tabular-nums">
                           ${fireNestEggAbroad.toLocaleString()}
@@ -2636,8 +2826,15 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         className="relative overflow-hidden p-5 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-1"
                       >
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stone-400 to-green-600" />
-                        <span className="text-xs font-extrabold text-stone-600 uppercase tracking-wide">
-                          Nest Egg at Home ({selectedBasisCountry})
+                        <span className="text-xs font-extrabold text-stone-600 uppercase tracking-wide inline-flex items-center gap-1.5 flex-wrap">
+                          <span>Nest Egg at Home (</span>
+                          <CountryFlag
+                            countryName={selectedBasisCountry}
+                            fallbackEmoji={getWorldCountryFlag(selectedBasisCountry)}
+                            size="sm"
+                            className="rounded-xs shadow-2xs"
+                          />
+                          <span>{selectedBasisCountry})</span>
                         </span>
                         <div className="text-2xl sm:text-3xl font-black text-stone-800 font-mono tabular-nums">
                           ${fireNestEggDomestic.toLocaleString()}
@@ -2707,9 +2904,19 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       {/* Row 1: Retirement Abroad Timeline & Funding Bar */}
                       <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-stone-700">
-                            Retire Abroad ({selectedTargetHaven}){' '}
+                        <div className="flex justify-between items-center text-xs gap-2">
+                          <span className="font-bold text-stone-700 inline-flex items-center gap-1.5 flex-wrap">
+                            <span>Retire Abroad (</span>
+                            <CountryFlag
+                              countryName={selectedTargetHaven}
+                              fallbackEmoji={
+                                selectedTargetHavenObj?.flag ||
+                                getWorldCountryFlag(selectedTargetHaven)
+                              }
+                              size="sm"
+                              className="rounded-xs shadow-2xs"
+                            />
+                            <span>{selectedTargetHaven})</span>
                             <span className="text-stone-400 font-normal">
                               (${effectiveMonthlyAbroadUSD.toLocaleString()}/mo · $
                               {fireNestEggAbroad.toLocaleString()} goal)
@@ -2731,9 +2938,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
                       {/* Row 2: Retirement At Home Timeline & Funding Bar */}
                       <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-stone-600">
-                            Retire at Home ({selectedBasisCountry}){' '}
+                        <div className="flex justify-between items-center text-xs gap-2">
+                          <span className="font-bold text-stone-600 inline-flex items-center gap-1.5 flex-wrap">
+                            <span>Retire at Home (</span>
+                            <CountryFlag
+                              countryName={selectedBasisCountry}
+                              fallbackEmoji={getWorldCountryFlag(selectedBasisCountry)}
+                              size="sm"
+                              className="rounded-xs shadow-2xs"
+                            />
+                            <span>{selectedBasisCountry})</span>
                             <span className="text-stone-400 font-normal">
                               ($
                               {Math.round(
@@ -2783,20 +2997,35 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       {/* Quick Zero-Work Survival Preview */}
                       <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 grid grid-cols-2 gap-3 text-xs">
                         <div>
-                          <span className="text-[10px] font-bold uppercase text-stone-500 block">
-                            0-Work Money Survival Abroad
+                          <span className="text-[10px] font-bold uppercase text-stone-500 inline-flex items-center gap-1 mb-0.5">
+                            <CountryFlag
+                              countryName={selectedTargetHaven}
+                              fallbackEmoji={
+                                selectedTargetHavenObj?.flag ||
+                                getWorldCountryFlag(selectedTargetHaven)
+                              }
+                              size="xs"
+                              className="rounded-xs shadow-2xs"
+                            />
+                            <span>0-Work Money Survival Abroad ({selectedTargetHaven})</span>
                           </span>
-                          <span className="font-mono font-extrabold text-green-900">
+                          <span className="font-mono font-extrabold text-green-900 block">
                             {survivalSimulations.zeroWorkAbroadSim.isPerpetual
                               ? '50+ Yrs (Perpetual 2076+)'
                               : `${survivalSimulations.zeroWorkAbroadSim.wholeYears}y ${survivalSimulations.zeroWorkAbroadSim.remMonths}m (Until ${survivalSimulations.zeroWorkAbroadSim.survivalYear})`}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold uppercase text-stone-500 block">
-                            0-Work Money Survival at Home
+                          <span className="text-[10px] font-bold uppercase text-stone-500 inline-flex items-center gap-1 mb-0.5">
+                            <CountryFlag
+                              countryName={selectedBasisCountry}
+                              fallbackEmoji={getWorldCountryFlag(selectedBasisCountry)}
+                              size="xs"
+                              className="rounded-xs shadow-2xs"
+                            />
+                            <span>0-Work Money Survival at Home ({selectedBasisCountry})</span>
                           </span>
-                          <span className="font-mono font-extrabold text-cyan-900">
+                          <span className="font-mono font-extrabold text-cyan-900 block">
                             {survivalSimulations.zeroWorkDomesticSim.isPerpetual
                               ? '50+ Yrs (Perpetual 2076+)'
                               : `${survivalSimulations.zeroWorkDomesticSim.wholeYears}y ${survivalSimulations.zeroWorkDomesticSim.remMonths}m (Until ${survivalSimulations.zeroWorkDomesticSim.survivalYear})`}
