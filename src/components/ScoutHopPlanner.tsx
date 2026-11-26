@@ -2135,30 +2135,29 @@ export const ScoutHopPlanner: React.FC = () => {
         }
 
         let fbUid = auth.currentUser?.uid;
-        try {
-          const cred = await createUserWithEmailAndPassword(auth, cleanEmail, authPassword);
-          fbUid = cred.user.uid;
-          if (getAdditionalUserInfo(cred)?.isNewUser) {
-            if (typeof window.gtag === 'function') {
-              window.gtag('event', 'sign_up', {
-                method: 'Email',
-              });
+        if (!signupRes.success) {
+          try {
+            const cred = await createUserWithEmailAndPassword(auth, cleanEmail, authPassword);
+            fbUid = cred.user.uid;
+            if (getAdditionalUserInfo(cred)?.isNewUser) {
+              if (typeof window.gtag === 'function') {
+                window.gtag('event', 'sign_up', {
+                  method: 'Email',
+                });
+                window.gtag('event', 'conversion', {
+                  send_to: 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF',
+                });
+              }
+              try {
+                window.history.pushState({}, '', '/?signup=success');
+              } catch {}
             }
+          } catch {
+            try {
+              const signInCred = await signInWithEmailAndPassword(auth, cleanEmail, authPassword);
+              fbUid = signInCred.user.uid;
+            } catch {}
           }
-          try {
-            window.history.pushState({}, '', '/?signup=success');
-          } catch {}
-        } catch {
-          try {
-            const signInCred = await signInWithEmailAndPassword(auth, cleanEmail, authPassword);
-            fbUid = signInCred.user.uid;
-          } catch {}
-        }
-
-        if (signupRes.success) {
-          try {
-            window.history.pushState({}, '', '/?signup=success');
-          } catch {}
         }
 
         setIsConversionModalOpen(false);

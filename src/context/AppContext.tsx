@@ -419,8 +419,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? `${baseTargetUrl}${baseTargetUrl.includes('?') ? '&' : '?'}app=android`
         : baseTargetUrl;
     const currentFull = window.location.pathname + window.location.search;
-    // Preserve '/?signup=success' query parameter for Google Ads conversion tracking
-    if (window.location.search === '?signup=success' && currentView === 'landing') {
+    // Preserve '?signup=success' query parameter for Google Ads & GTM conversion tracking across any view
+    if (window.location.search.includes('signup=success')) {
       return;
     }
     // Preserve deep-linked Visa Check route parameters (e.g. /visa-check/in-to-pt or /visa-check?from=IN&to=PT)
@@ -3605,49 +3605,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn('Initial cloud sync notice for new account:', err);
     });
 
+    let didFireEmailSignUpEvent = false;
+    const fireEmailSignUpAndAdsConversion = () => {
+      if (didFireEmailSignUpEvent) return;
+      didFireEmailSignUpEvent = true;
+      try {
+        if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+          window.gtag('event', 'sign_up', {
+            method: 'Email',
+          });
+          window.gtag('event', 'conversion', {
+            send_to: 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF',
+          });
+        }
+        const currentPath =
+          currentViewRef.current === 'visa-check' ||
+          currentViewRef.current === 'explore' ||
+          currentViewRef.current === 'compare' ||
+          currentViewRef.current === 'fire-calculator'
+            ? window.location.pathname
+            : '/';
+        window.history.pushState({}, '', `${currentPath}?signup=success`);
+      } catch {}
+    };
+
     if (auth.currentUser) {
+      fireEmailSignUpAndAdsConversion();
       syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
     } else if (data.password && data.password.length >= 6) {
-      // Optionally attempt Firebase Email/Password creation if enabled in Firebase Console
+      // Attempt Firebase Email/Password creation if enabled in Firebase Console
       createUserWithEmailAndPassword(auth, cleanEmail, data.password)
         .then(async userCredential => {
           if (getAdditionalUserInfo(userCredential)?.isNewUser) {
-            if (typeof window.gtag === 'function') {
-              window.gtag('event', 'sign_up', {
-                method: 'Email',
-              });
-            }
+            fireEmailSignUpAndAdsConversion();
           }
-          try {
-            if (
-              currentViewRef.current !== 'visa-check' &&
-              currentViewRef.current !== 'explore' &&
-              currentViewRef.current !== 'compare' &&
-              currentViewRef.current !== 'fire-calculator'
-            ) {
-              window.history.pushState({}, '', '/?signup=success');
-            }
-          } catch {}
           await syncProfileToFirestore(newProfile, INITIAL_CHECKLIST, newId);
         })
         .catch(() => {
-          // Email/password provider not enabled in Firebase Console; account is safely stored in Firestore /savedAccounts
+          // Email/password provider not enabled in Firebase Console; new account is stored in Firestore /savedAccounts
+          fireEmailSignUpAndAdsConversion();
         });
+    } else {
+      fireEmailSignUpAndAdsConversion();
     }
-
-    try {
-      if (
-        currentViewRef.current !== 'visa-check' &&
-        currentViewRef.current !== 'explore' &&
-        currentViewRef.current !== 'compare' &&
-        currentViewRef.current !== 'fire-calculator'
-      ) {
-        window.history.pushState({}, '', '/?signup=success');
-      }
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
-      }
-    } catch {}
 
     return { success: true, createdUserId: newId };
   };
@@ -3833,18 +3833,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentViewRef.current = 'dashboard';
       }
 
-      if (isBrandNewGoogleSignup) {
+      if (additionalUserInfo?.isNewUser) {
         try {
-          if (
-            currentViewRef.current !== 'visa-check' &&
-            currentViewRef.current !== 'explore' &&
-            currentViewRef.current !== 'compare' &&
-            currentViewRef.current !== 'fire-calculator'
-          ) {
-            window.history.pushState({}, '', '/?signup=success');
-          }
-          if (typeof window !== 'undefined' && window.gtag) {
-            window.gtag('event', 'conversion', {'send_to': 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF'});
+          const currentPath =
+            currentViewRef.current === 'visa-check' ||
+            currentViewRef.current === 'explore' ||
+            currentViewRef.current === 'compare' ||
+            currentViewRef.current === 'fire-calculator'
+              ? window.location.pathname
+              : '/';
+          window.history.pushState({}, '', `${currentPath}?signup=success`);
+          if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+            window.gtag('event', 'conversion', {
+              send_to: 'AW-18574633773/IK3tCK-S9rgdEK3WiZlF',
+            });
           }
         } catch {}
       }
