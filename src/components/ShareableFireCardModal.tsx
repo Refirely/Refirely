@@ -212,30 +212,52 @@ export const ShareableFireCardModal: React.FC<ShareableFireCardModalProps> = ({
   // Effective profile for studio calculations incorporating modalCorpusUSD and selectedCountry
   const effectiveProfileForStudio = useMemo(() => {
     const baseFinances = userProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO;
-    const currentTotal = (baseFinances.investments?.savingsUSD || 0) +
-      (baseFinances.investments?.stocksMutualFundsUSD || 0) +
-      (baseFinances.investments?.realEstateUSD || 0) +
-      (baseFinances.investments?.goldUSD || 0) +
+    const otherAssets =
+      (baseFinances.investments?.savingsUSD || 0) +
+      (baseFinances.includePrimaryHomeInFire
+        ? baseFinances.investments?.realEstateUSD || 0
+        : 0) +
+      (baseFinances.includeGoldInFire !== false
+        ? baseFinances.investments?.goldUSD || 0
+        : 0) +
       (baseFinances.investments?.othersUSD || 0);
 
-    const overrideStock = currentTotal === 0 && modalCorpusUSD > 0
-      ? modalCorpusUSD
-      : baseFinances.investments?.stocksMutualFundsUSD !== undefined && baseFinances.investments.stocksMutualFundsUSD > 0
-      ? baseFinances.investments.stocksMutualFundsUSD
-      : modalCorpusUSD;
+    const isUsingInitialCountry =
+      initialData?.topCountry &&
+      selectedCountry.toLowerCase() === initialData.topCountry.toLowerCase();
 
     return {
       ...userProfile,
       targetCountry: selectedCountry,
+      monthlyBudgetUSD:
+        isUsingInitialCountry && initialData?.monthlyBurnUSD
+          ? initialData.monthlyBurnUSD
+          : userProfile.monthlyBudgetUSD,
       finances: {
         ...baseFinances,
+        monthlyRetirementExpensesUSD:
+          isUsingInitialCountry && initialData?.monthlyBurnUSD
+            ? initialData.monthlyBurnUSD
+            : baseFinances.monthlyRetirementExpensesUSD,
+        monthlyCurrentExpensesUSD:
+          initialData?.domesticMonthlyBurnUSD ||
+          baseFinances.monthlyCurrentExpensesUSD,
+        safeWithdrawalRatePercent:
+          initialData?.swrPercent || baseFinances.safeWithdrawalRatePercent,
         investments: {
           ...(baseFinances.investments || DEFAULT_FINANCIAL_PORTFOLIO.investments),
-          stocksMutualFundsUSD: overrideStock,
+          savingsUSD: modalCorpusUSD >= otherAssets ? baseFinances.investments?.savingsUSD || 0 : 0,
+          realEstateUSD: modalCorpusUSD >= otherAssets ? baseFinances.investments?.realEstateUSD || 0 : 0,
+          goldUSD: modalCorpusUSD >= otherAssets ? baseFinances.investments?.goldUSD || 0 : 0,
+          othersUSD: modalCorpusUSD >= otherAssets ? baseFinances.investments?.othersUSD || 0 : 0,
+          stocksMutualFundsUSD:
+            modalCorpusUSD >= otherAssets
+              ? modalCorpusUSD - otherAssets
+              : modalCorpusUSD,
         },
       },
     };
-  }, [userProfile, selectedCountry, modalCorpusUSD]);
+  }, [userProfile, selectedCountry, modalCorpusUSD, initialData]);
 
   // Compute live unified FIRE metrics based on effectiveProfileForStudio & selectedCountry
   const unifiedMetrics = useMemo(() => {

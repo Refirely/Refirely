@@ -1374,6 +1374,9 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
         3;
 
       let fitRank = qualityScore;
+      if (country.name.toLowerCase() === selectedTargetHaven.toLowerCase()) {
+        fitRank += 150;
+      }
       if (budgetDelta >= 0 && budgetDelta <= 700) {
         fitRank += 40;
       } else if (budgetDelta > 700) {
@@ -1399,6 +1402,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
     return evaluated.slice(0, 4);
   }, [
     countries,
+    selectedTargetHaven,
     targetMonthlyExpenseAbroad,
     passiveMonthlyInRetirementUSD,
     totalFutureGoalsTodayUSD,
@@ -2804,7 +2808,12 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         <div className="flex flex-wrap items-center gap-2.5">
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              const chosenHavenObj = countries.find(
+                                c =>
+                                  c.name.toLowerCase() ===
+                                  selectedTargetHaven.toLowerCase()
+                              );
                               openShareFireCardModal({
                                 persona: currentPersona,
                                 badgeTitle:
@@ -2817,10 +2826,16 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                 yearsSaved: Math.max(1, yearsSaved || 8),
                                 fireProgressPercent,
                                 topCountry:
-                                  fireMatchedCountries[0]?.country.name ||
-                                  selectedTargetHaven,
-                                topCountryFlag: fireMatchedCountries[0]?.country.flag,
+                                  chosenHavenObj?.name ||
+                                  selectedTargetHaven ||
+                                  fireMatchedCountries[0]?.country.name,
+                                topCountryFlag:
+                                  chosenHavenObj?.flag ||
+                                  getWorldCountryFlag(selectedTargetHaven) ||
+                                  fireMatchedCountries[0]?.country.flag,
                                 topCity:
+                                  chosenHavenObj?.topCities?.[0]?.name ||
+                                  chosenHavenObj?.capital ||
                                   fireMatchedCountries[0]?.country.topCities?.[0]
                                     ?.name ||
                                   fireMatchedCountries[0]?.country.capital ||
@@ -2832,8 +2847,8 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                 swrPercent: safeWithdrawalRate,
                                 headlineMode:
                                   yearsSaved > 0 ? 'years-saved' : 'fi-percent',
-                              })
-                            }
+                              });
+                            }}
                             className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-50 via-white to-cyan-50 hover:from-green-100 hover:to-cyan-100 text-green-950 border border-green-200/90 text-xs font-extrabold shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                           >
                             <span>🏅 Create Shareable FIRE Card</span>
