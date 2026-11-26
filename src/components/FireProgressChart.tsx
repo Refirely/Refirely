@@ -39,6 +39,8 @@ export interface FireTrajectoryPoint {
   cumulativeSipPrincipalUSD?: number;
   sipPortfolioValueUSD?: number;
   sipReturnsUSD?: number;
+  existingAssetsCompoundedUSD?: number;
+  existingAssetsGainUSD?: number;
   isSipActiveInYear?: boolean;
 }
 
@@ -599,15 +601,37 @@ export const FireProgressChart: React.FC<FireProgressChartProps> = ({
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-stone-700 font-mono font-bold flex-wrap">
-                  {activeInspectionNode.sipReturnsUSD !== undefined && activeInspectionNode.sipReturnsUSD > 0 && (
-                    <span className="text-cyan-800 text-[11px]">
-                      SIP Gains: +{formatDualCurrency(activeInspectionNode.sipReturnsUSD, countryMacro, true)}
-                    </span>
-                  )}
+                  {activeInspectionNode.existingAssetsGainUSD !== undefined &&
+                    activeInspectionNode.existingAssetsGainUSD > 0 && (
+                      <span className="text-green-800 text-[11px]">
+                        Current Assets Gains: +
+                        {formatDualCurrency(
+                          activeInspectionNode.existingAssetsGainUSD,
+                          countryMacro,
+                          true
+                        )}
+                      </span>
+                    )}
+                  {activeInspectionNode.sipReturnsUSD !== undefined &&
+                    activeInspectionNode.sipReturnsUSD > 0 && (
+                      <span className="text-cyan-800 text-[11px]">
+                        SIP Gains: +
+                        {formatDualCurrency(
+                          activeInspectionNode.sipReturnsUSD,
+                          countryMacro,
+                          true
+                        )}
+                      </span>
+                    )}
                   <span>
-                    Compounding Gains:{' '}
+                    Total Compounding Gains:{' '}
                     <span className="text-green-700">
-                      +{formatDualCurrency(activeInspectionNode.compoundingGainsUSD, countryMacro, true)}
+                      +
+                      {formatDualCurrency(
+                        activeInspectionNode.compoundingGainsUSD,
+                        countryMacro,
+                        true
+                      )}
                     </span>{' '}
                     · {activeInspectionNode.fundingRatioPct}% Funded
                   </span>

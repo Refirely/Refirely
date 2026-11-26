@@ -531,6 +531,12 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
 
   const isSipStopped = sipContinuityMode === 'paused' || annualSavings <= 0;
   const effectiveMonthlySipUSD = isSipStopped ? 0 : Math.round(annualSavings / 12);
+  const annualReturnOnCurrentAssetsUSD = Math.round(
+    effectiveNetCorpusTodayUSD * (expectedGrowthRate / 100)
+  );
+  const monthlyReturnOnCurrentAssetsUSD = Math.round(
+    annualReturnOnCurrentAssetsUSD / 12
+  );
 
   const calculateYearsToFire = (
     targetNestEgg: number,
@@ -540,11 +546,30 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
   ) => {
     if (currentSavings >= targetNestEgg) return 0;
     if (annualContribution <= 0 && rate <= 0) return 99;
+    if (currentSavings <= 0 && annualContribution <= 0) return 99;
     const r = rate / 100;
-    let balance = currentSavings;
+    const stepUp = (isGuestUser ? 0 : sipStepUpPct) / 100;
+    let existingAssetsBal = currentSavings;
+    let sipPortfolioBal = 0;
+    let currentAnnualSip = annualContribution;
     let years = 0;
-    while (balance < targetNestEgg && years < 60) {
-      balance = balance * (1 + r) + annualContribution;
+    while (existingAssetsBal + sipPortfolioBal < targetNestEgg && years < 60) {
+      const yrIndex = years + 1;
+      const isContribActive =
+        annualContribution > 0 &&
+        (sipContinuityMode === 'custom-years' ? yrIndex <= sipDurationYears : true);
+      const contrib = isContribActive ? currentAnnualSip : 0;
+      const freedEmi = isGuestUser
+        ? 0
+        : loansList
+            .filter(l => yrIndex >= l.remainingYears)
+            .reduce((s, l) => s + (l.monthlyEmiUSD || 0) * 12, 0);
+      // Apply return % (r) to BOTH currently invested assets AND annual SIP/cashflow contributions
+      existingAssetsBal = existingAssetsBal * (1 + r);
+      sipPortfolioBal = (sipPortfolioBal + contrib + freedEmi) * (1 + r);
+      if (isContribActive) {
+        currentAnnualSip = currentAnnualSip * (1 + stepUp);
+      }
       years++;
     }
     return years;
@@ -580,8 +605,10 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
   // Build 25-Year Visual Trajectory for FireProgressChart
   const trajectoryData = useMemo(() => {
     const points: FireTrajectoryPoint[] = [];
-    let simCorpus = effectiveNetCorpusTodayUSD;
-    let simContrib = effectiveNetCorpusTodayUSD;
+    let simExistingAssets = effectiveNetCorpusTodayUSD;
+    let simSipPortfolio = 0;
+    let simSipPrincipal = 0;
+    let simMilestoneDrag = 0;
     let simAnnualSip = isSipStopped ? 0 : annualSavings;
     const r = expectedGrowthRate / 100;
     const inf = inflationPct / 100;
@@ -645,12 +672,19 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
       if (y > 0) {
         const activeAnnualSip = isSipActiveInYear ? simAnnualSip : 0;
         const totalInjected = Math.round(activeAnnualSip + freedAnnualEmi);
-        simCorpus = Math.max(
+
+        // Apply expectedGrowthRate (r) to BOTH currently invested assets AND monthly SIP / cashflow
+        simExistingAssets = simExistingAssets * (1 + r);
+        simSipPortfolio = (simSipPortfolio + totalInjected) * (1 + r);
+        simSipPrincipal += totalInjected;
+        simMilestoneDrag = simMilestoneDrag * (1 + r) + yearMilestoneOutflow;
+
+        const currentTotalCorpus = Math.max(
           0,
-          Math.round(simCorpus * (1 + r) + totalInjected - yearMilestoneOutflow)
+          Math.round(simExistingAssets + simSipPortfolio - simMilestoneDrag)
         );
-        simContrib += totalInjected;
-        if (crossoverYear === null && simCorpus >= dynamicAbroadTarget) {
+
+        if (crossoverYear === null && currentTotalCorpus >= dynamicAbroadTarget) {
           crossoverYear = yr;
           crossoverAge = age;
         }
@@ -659,7 +693,19 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
         }
       }
 
-      const gains = Math.max(0, simCorpus - simContrib);
+      const cleanExistingCompounded = Math.round(simExistingAssets);
+      const existingAssetsGain = Math.max(
+        0,
+        cleanExistingCompounded - effectiveNetCorpusTodayUSD
+      );
+      const cleanSipMaturity = Math.round(simSipPortfolio);
+      const sipGain = Math.max(0, cleanSipMaturity - simSipPrincipal);
+      const simCorpus = Math.max(
+        0,
+        Math.round(simExistingAssets + simSipPortfolio - simMilestoneDrag)
+      );
+      const simContrib = effectiveNetCorpusTodayUSD + simSipPrincipal;
+      const gains = existingAssetsGain + sipGain;
       const fundingRatio =
         dynamicAbroadTarget > 0
           ? Math.min(250, Math.round((simCorpus / dynamicAbroadTarget) * 100))
@@ -677,6 +723,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
         annualSipInvestedUSD: isSipActiveInYear ? Math.round(simAnnualSip) : 0,
         freedEmiBonusUSD: freedAnnualEmi,
         fundingRatioPct: fundingRatio,
+        cumulativeSipPrincipalUSD: simSipPrincipal,
+        sipPortfolioValueUSD: cleanSipMaturity,
+        sipReturnsUSD: sipGain,
+        existingAssetsCompoundedUSD: cleanExistingCompounded,
+        existingAssetsGainUSD: existingAssetsGain,
         isSipActiveInYear,
       });
     }
@@ -707,49 +758,76 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
   ]);
 
   // -------------------------------------------------------------
-  // 3. Returns on SIP Compounding Breakdown (3Y, 5Y, 10Y, At FIRE)
+  // 3. Portfolio & SIP Compounding Breakdown (3Y, 5Y, 10Y, At FIRE)
+  //    Applies Return % to BOTH Currently Invested Assets & Monthly SIP
   // -------------------------------------------------------------
   const computeSipHorizonReturns = (horizonYrs: number) => {
     const yrs = Math.max(1, Math.min(35, horizonYrs));
-    if (isSipStopped || annualSavings <= 0) {
-      return {
-        durationYears: yrs,
-        totalPrincipalUSD: 0,
-        wealthGainedUSD: 0,
-        finalMaturityUSD: 0,
-        multiplier: '1.0',
-        returnPercent: 0,
-      };
-    }
-    let principal = 0;
-    let maturity = 0;
-    let annualContrib = annualSavings;
     const r = expectedGrowthRate / 100;
     const stepUp = (isGuestUser ? 0 : sipStepUpPct) / 100;
 
+    // 1) Compounding on Currently Invested Assets (effectiveNetCorpusTodayUSD)
+    const startingAssetsUSD = Math.max(0, effectiveNetCorpusTodayUSD);
+    const startingAssetsMaturityUSD = Math.round(
+      startingAssetsUSD * Math.pow(1 + r, yrs)
+    );
+    const startingAssetsGainUSD = Math.max(
+      0,
+      startingAssetsMaturityUSD - startingAssetsUSD
+    );
+
+    // 2) Compounding on Ongoing Monthly SIP & Freed EMI Cashflow
+    let sipPrincipal = 0;
+    let sipMaturity = 0;
+    let annualContrib = isSipStopped || annualSavings <= 0 ? 0 : annualSavings;
+
     for (let y = 1; y <= yrs; y++) {
       const isContribActive =
-        sipContinuityMode === 'custom-years' ? y <= sipDurationYears : true;
+        !isSipStopped &&
+        annualSavings > 0 &&
+        (sipContinuityMode === 'custom-years' ? y <= sipDurationYears : true);
       const contrib = isContribActive ? annualContrib : 0;
-      principal += contrib;
-      maturity = (maturity + contrib) * (1 + r);
+      const freedEmi = isGuestUser
+        ? 0
+        : loansList
+            .filter(l => y >= l.remainingYears)
+            .reduce((s, l) => s + (l.monthlyEmiUSD || 0) * 12, 0);
+      const yearAddition = contrib + freedEmi;
+      sipPrincipal += yearAddition;
+      sipMaturity = (sipMaturity + yearAddition) * (1 + r);
       if (isContribActive) {
         annualContrib = annualContrib * (1 + stepUp);
       }
     }
-    const cleanPrincipal = Math.round(principal);
-    const cleanMaturity = Math.round(maturity);
-    const wealthGained = Math.max(0, cleanMaturity - cleanPrincipal);
+
+    const cleanSipPrincipal = Math.round(sipPrincipal);
+    const cleanSipMaturity = Math.round(sipMaturity);
+    const sipGainUSD = Math.max(0, cleanSipMaturity - cleanSipPrincipal);
+
+    // 3) Combined Total Portfolio (Current Invested Assets + Monthly SIP)
+    const cleanTotalPrincipal = startingAssetsUSD + cleanSipPrincipal;
+    const cleanTotalMaturity = startingAssetsMaturityUSD + cleanSipMaturity;
+    const totalWealthGained = startingAssetsGainUSD + sipGainUSD;
     const mult =
-      cleanPrincipal > 0 ? (cleanMaturity / cleanPrincipal).toFixed(2) : '1.00';
+      cleanTotalPrincipal > 0
+        ? (cleanTotalMaturity / cleanTotalPrincipal).toFixed(2)
+        : '1.00';
     const retPct =
-      cleanPrincipal > 0 ? (wealthGained / cleanPrincipal) * 100 : 0;
+      cleanTotalPrincipal > 0
+        ? (totalWealthGained / cleanTotalPrincipal) * 100
+        : 0;
 
     return {
       durationYears: yrs,
-      totalPrincipalUSD: cleanPrincipal,
-      wealthGainedUSD: wealthGained,
-      finalMaturityUSD: cleanMaturity,
+      startingAssetsUSD,
+      startingAssetsGainUSD,
+      startingAssetsMaturityUSD,
+      sipPrincipalUSD: cleanSipPrincipal,
+      sipGainUSD,
+      sipMaturityUSD: cleanSipMaturity,
+      totalPrincipalUSD: cleanTotalPrincipal,
+      wealthGainedUSD: totalWealthGained,
+      finalMaturityUSD: cleanTotalMaturity,
       multiplier: mult,
       returnPercent: retPct,
     };
@@ -765,6 +843,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
       custom: computeSipHorizonReturns(sipDurationYears),
     };
   }, [
+    effectiveNetCorpusTodayUSD,
     yearsToFireAbroad,
     isSipStopped,
     annualSavings,
@@ -773,6 +852,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
     sipStepUpPct,
     sipContinuityMode,
     sipDurationYears,
+    loansList,
   ]);
 
   // -------------------------------------------------------------
@@ -1030,20 +1110,27 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
       });
     }
 
+    if (effectiveNetCorpusTodayUSD > 0) {
+      strengths.push({
+        title: `Existing Assets Compounding at ${expectedGrowthRate.toFixed(1)}%/yr (+$${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr Year-1 Return)`,
+        detail: `Your currently invested assets ($${effectiveNetCorpusTodayUSD.toLocaleString()}) alone generate +$${sipReturnsDeck.fire.startingAssetsGainUSD.toLocaleString()} in compounded market gains over ${sipReturnsDeck.fire.durationYears} yrs (growing to $${sipReturnsDeck.fire.startingAssetsMaturityUSD.toLocaleString()}).`,
+      });
+    }
+
     if (!isSipStopped && annualSavings >= 24000) {
       strengths.push({
         title: `High Annual Savings Velocity ($${annualSavings.toLocaleString()}/yr · $${effectiveMonthlySipUSD.toLocaleString()}/mo)`,
-        detail: `Your systematic investments compound at ${expectedGrowthRate}%/yr and generate +$${sipReturnsDeck.fire.wealthGainedUSD.toLocaleString()} in pure market gains by FIRE.`,
+        detail: `Combined with your current assets, your systematic SIP adds $${sipReturnsDeck.fire.sipPrincipalUSD.toLocaleString()} in fresh principal plus +$${sipReturnsDeck.fire.sipGainUSD.toLocaleString()} in SIP compounding gains (Total Portfolio Gain: +$${sipReturnsDeck.fire.wealthGainedUSD.toLocaleString()}).`,
       });
     } else if (isSipStopped) {
       weaknesses.push({
         title: `Monthly SIP Paused ($0/mo — Coast Mode Active)`,
-        detail: `Fresh contributions are paused. Resuming even $${Math.round(targetMonthlyExpenseAbroad * 0.5).toLocaleString()}/mo in SIP will accelerate your crossover year.`,
+        detail: `While your $${effectiveNetCorpusTodayUSD.toLocaleString()} existing assets still compound at ${expectedGrowthRate}%/yr (+$${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr), resuming even $${Math.round(targetMonthlyExpenseAbroad * 0.5).toLocaleString()}/mo in SIP will accelerate your crossover year.`,
       });
     } else {
       weaknesses.push({
         title: `Moderate Annual Savings Velocity ($${annualSavings.toLocaleString()}/yr)`,
-        detail: `Stepping up your annual savings by +25% will shave years off your FIRE timeline.`,
+        detail: `Stepping up your annual savings by +25% alongside your compounding $${effectiveNetCorpusTodayUSD.toLocaleString()} existing corpus will shave years off your FIRE timeline.`,
       });
     }
 
@@ -1679,6 +1766,17 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         <span>$500k</span>
                         <span>$2.0M+</span>
                       </div>
+                      <div className="pt-1 flex flex-wrap items-center justify-between gap-1 text-[11px] text-green-800 bg-green-50/70 px-2.5 py-1.5 rounded-xl border border-green-200/70">
+                        <span className="font-semibold">
+                          Compounds at {expectedGrowthRate.toFixed(1)}%/yr:
+                        </span>
+                        <span className="font-mono font-bold">
+                          +${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr (+$
+                          {monthlyReturnOnCurrentAssetsUSD.toLocaleString()}/mo) → $
+                          {sipReturnsDeck.fire.startingAssetsMaturityUSD.toLocaleString()} in{' '}
+                          {sipReturnsDeck.fire.durationYears}y
+                        </span>
+                      </div>
                     </div>
 
                     {/* Core Parameter 2: Target Monthly Budget Abroad (Freedom Cyan) */}
@@ -1832,6 +1930,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           }
                           className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-green-700"
                         />
+                        <span className="block text-[10px] text-green-800 font-medium pt-0.5">
+                          Applied to Current Assets (+$
+                          {annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr) &amp; Monthly
+                          SIP
+                        </span>
                       </div>
 
                       <div className="p-3 rounded-2xl bg-white border border-stone-200/80 space-y-1">
@@ -2649,6 +2752,30 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                         </div>
                       </div>
 
+                      {/* Compounding Breakdown: Current Assets + Monthly SIP & Zero-Work Survival Preview */}
+                      <div className="p-3 rounded-2xl bg-green-50/50 border border-green-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-green-800 block">
+                            Return on Current Assets ({expectedGrowthRate.toFixed(1)}%/yr)
+                          </span>
+                          <span className="font-mono font-extrabold text-green-950">
+                            +${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr · Grows to $
+                            {sipReturnsDeck.fire.startingAssetsMaturityUSD.toLocaleString()} (in{' '}
+                            {sipReturnsDeck.fire.durationYears}y)
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-cyan-800 block">
+                            Return on Monthly SIP ({expectedGrowthRate.toFixed(1)}%/yr)
+                          </span>
+                          <span className="font-mono font-extrabold text-cyan-950">
+                            +${sipReturnsDeck.fire.sipGainUSD.toLocaleString()} Gain on $
+                            {sipReturnsDeck.fire.sipPrincipalUSD.toLocaleString()} SIP (in{' '}
+                            {sipReturnsDeck.fire.durationYears}y)
+                          </span>
+                        </div>
+                      </div>
+
                       {/* Quick Zero-Work Survival Preview */}
                       <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 grid grid-cols-2 gap-3 text-xs">
                         <div>
@@ -2733,7 +2860,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                           )}
                         </div>
                         <span className="text-[11px] text-stone-400">
-                          {expectedGrowthRate}% return · ${(annualSavings / 1000).toFixed(0)}k/yr SIP
+                          {expectedGrowthRate}% return on Assets + ${(annualSavings / 1000).toFixed(0)}k/yr SIP
                         </span>
                       </div>
                     </div>
@@ -2870,6 +2997,192 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       )}
 
                       {/* ====================================================== */}
+                      {/* EXECUTIVE SCENARIO SUMMARY (1-3 READABLE PARAGRAPHS)   */}
+                      {/* ====================================================== */}
+                      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-green-50/55 via-white to-cyan-50/45 border border-green-200/90 shadow-xs space-y-3.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-stone-200/70">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-700 to-cyan-700 text-white flex items-center justify-center shadow-2xs shrink-0">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-extrabold text-stone-900 tracking-tight">
+                                Executive FIRE Scenario Summary: Your Complete Financial Independence Overview
+                              </h3>
+                              <p className="text-[11px] text-stone-500">
+                                Plain-English synthesis of your invested assets, compounding returns ({expectedGrowthRate.toFixed(1)}%/yr on both existing assets &amp; monthly SIP), geo-arbitrage savings, and 50-year survival runway.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-white border border-green-200 text-green-800 text-xs font-extrabold font-mono">
+                            {selectedBasisCountry} → {selectedTargetHaven} ({fireTier.toUpperCase()} FIRE)
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 text-xs sm:text-sm text-stone-700 leading-relaxed">
+                          <p>
+                            <strong className="text-stone-900">
+                              1. Starting Wealth, Existing Asset Compounding &amp; Geo-Arbitrage Advantage:
+                            </strong>{' '}
+                            You are starting with a net invested FIRE corpus of{' '}
+                            <strong className="font-mono text-green-800">
+                              ${effectiveNetCorpusTodayUSD.toLocaleString()}
+                            </strong>
+                            {totalLoanPrincipalUSD > 0
+                              ? ` (after deducting $${totalLoanPrincipalUSD.toLocaleString()} in active loan principal)`
+                              : ''}
+                            . At your expected annual return of{' '}
+                            <strong className="font-mono text-green-800">
+                              {expectedGrowthRate.toFixed(1)}%/yr
+                            </strong>
+                            , your currently invested assets alone generate{' '}
+                            <strong className="font-mono text-green-800">
+                              +${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr
+                            </strong>{' '}
+                            (
+                            <strong className="font-mono text-green-800">
+                              +${monthlyReturnOnCurrentAssetsUSD.toLocaleString()}/mo
+                            </strong>
+                            ) in Year-1 compounding growth and expand to{' '}
+                            <strong className="font-mono text-green-800">
+                              ${sipReturnsDeck.fire.startingAssetsMaturityUSD.toLocaleString()}
+                            </strong>{' '}
+                            over {sipReturnsDeck.fire.durationYears}{' '}
+                            {sipReturnsDeck.fire.durationYears === 1 ? 'year' : 'years'} even before counting new contributions. By targeting a{' '}
+                            <strong className="text-cyan-900">
+                              {fireTier.toUpperCase()} FIRE
+                            </strong>{' '}
+                            lifestyle in <strong className="text-cyan-900">{selectedTargetHaven}</strong> at{' '}
+                            <strong className="font-mono text-cyan-900">
+                              ${effectiveMonthlyAbroadUSD.toLocaleString()}/mo
+                            </strong>{' '}
+                            instead of{' '}
+                            <strong className="font-mono text-stone-900">
+                              ${Math.round(domesticMonthlyExpense * tierMultiplier).toLocaleString()}/mo
+                            </strong>{' '}
+                            in <strong className="text-stone-900">{selectedBasisCountry}</strong>, your required retirement nest egg at a{' '}
+                            <strong className="font-mono">{safeWithdrawalRate.toFixed(1)}%</strong> Safe Withdrawal Rate ({swrMultiplier}x annual expenses) drops from{' '}
+                            <strong className="font-mono text-stone-900">
+                              ${fireNestEggDomestic.toLocaleString()}
+                            </strong>{' '}
+                            to{' '}
+                            <strong className="font-mono text-green-800">
+                              ${fireNestEggAbroad.toLocaleString()}
+                            </strong>
+                            {capitalSaved > 0
+                              ? `—slashing your required capital by $${capitalSaved.toLocaleString()} (${capitalSavedPercent}% less capital) and putting you at ${fireProgressPercent}% funded today (vs. ${fireProgressDomesticPercent}% at home).`
+                              : `—putting your overseas retirement goal at ${fireProgressPercent}% funded today.`}
+                          </p>
+
+                          <p>
+                            <strong className="text-stone-900">
+                              2. Combined Compounding Trajectory (Current Assets + Monthly SIP) &amp; Time to FIRE:
+                            </strong>{' '}
+                            {isSipStopped ? (
+                              <>
+                                With fresh monthly SIP contributions currently paused (
+                                <strong className="font-mono">$0/mo Coast Mode</strong>), 100% of your portfolio growth is powered by your existing{' '}
+                                <strong className="font-mono text-green-800">
+                                  ${effectiveNetCorpusTodayUSD.toLocaleString()}
+                                </strong>{' '}
+                                corpus compounding at{' '}
+                                <strong className="font-mono text-green-800">
+                                  {expectedGrowthRate.toFixed(1)}%/yr
+                                </strong>{' '}
+                                ({realReturnPct}% inflation-adjusted real return after {inflationPct.toFixed(1)}% inflation), adding{' '}
+                                <strong className="font-mono text-green-800">
+                                  +${sipReturnsDeck.fire.startingAssetsGainUSD.toLocaleString()}
+                                </strong>{' '}
+                                in pure market gains over {sipReturnsDeck.fire.durationYears}{' '}
+                                {sipReturnsDeck.fire.durationYears === 1 ? 'year' : 'years'}.
+                              </>
+                            ) : (
+                              <>
+                                When your existing{' '}
+                                <strong className="font-mono text-green-800">
+                                  ${effectiveNetCorpusTodayUSD.toLocaleString()}
+                                </strong>{' '}
+                                invested assets and your ongoing{' '}
+                                <strong className="font-mono text-cyan-900">
+                                  ${effectiveMonthlySipUSD.toLocaleString()}/mo
+                                </strong>{' '}
+                                (<strong className="font-mono">${annualSavings.toLocaleString()}/yr</strong>) systematic investment contributions both compound at{' '}
+                                <strong className="font-mono text-green-800">
+                                  {expectedGrowthRate.toFixed(1)}%/yr
+                                </strong>{' '}
+                                ({realReturnPct}% real return after {inflationPct.toFixed(1)}% inflation) over a {sipReturnsDeck.fire.durationYears}-year horizon, your existing assets generate{' '}
+                                <strong className="font-mono text-green-800">
+                                  +${sipReturnsDeck.fire.startingAssetsGainUSD.toLocaleString()}
+                                </strong>{' '}
+                                in growth while your{' '}
+                                <strong className="font-mono">
+                                  ${sipReturnsDeck.fire.sipPrincipalUSD.toLocaleString()}
+                                </strong>{' '}
+                                in fresh SIP principal generates an additional{' '}
+                                <strong className="font-mono text-cyan-800">
+                                  +${sipReturnsDeck.fire.sipGainUSD.toLocaleString()}
+                                </strong>{' '}
+                                in compounded gains—building a combined projected portfolio of{' '}
+                                <strong className="font-mono text-green-900">
+                                  ${sipReturnsDeck.fire.finalMaturityUSD.toLocaleString()}
+                                </strong>{' '}
+                                (a <strong className="font-mono">{sipReturnsDeck.fire.multiplier}x</strong> total wealth multiplier).
+                              </>
+                            )}{' '}
+                            At this pace,{' '}
+                            {yearsToFireAbroad === 0 ? (
+                              <>
+                                you have <strong className="text-green-800">already achieved 100% Financial Independence abroad today</strong>
+                              </>
+                            ) : (
+                              <>
+                                you reach 100% Financial Independence in <strong className="text-cyan-900">{selectedTargetHaven}</strong> in{' '}
+                                <strong className="font-mono text-green-800">
+                                  {yearsToFireAbroad} {yearsToFireAbroad === 1 ? 'year' : 'years'} (Year {currentYear + yearsToFireAbroad}, Age {currentAge + yearsToFireAbroad})
+                                </strong>
+                              </>
+                            )}
+                            {yearsSaved > 0
+                              ? `, allowing you to retire ${yearsSaved} ${yearsSaved === 1 ? 'year' : 'years'} sooner than waiting for domestic FIRE in ${selectedBasisCountry} (${yearsToFireDomestic} yrs).`
+                              : '.'}{' '}
+                            {effectiveNetCorpusTodayUSD >= coastFireTargetTodayUSD
+                              ? `You have also already crossed your Coast FIRE threshold ($${coastFireTargetTodayUSD.toLocaleString()}), meaning compounding on your existing assets alone can carry you to retirement by Age ${targetFireAge}.`
+                              : `Your Coast FIRE threshold for Age ${targetFireAge} is $${coastFireTargetTodayUSD.toLocaleString()} (a remaining gap of $${(coastFireTargetTodayUSD - effectiveNetCorpusTodayUSD).toLocaleString()}).`}
+                          </p>
+
+                          <p>
+                            <strong className="text-stone-900">
+                              3. 50-Year Work-Free Money Survival &amp; Strategic Outlook:
+                            </strong>{' '}
+                            If you stopped working completely today with{' '}
+                            <strong className="font-mono">$0 active income</strong> and lived in{' '}
+                            <strong className="text-cyan-900">{selectedTargetHaven}</strong> on{' '}
+                            <strong className="font-mono">${effectiveMonthlyAbroadUSD.toLocaleString()}/mo</strong>{' '}
+                            (indexed at {inflationPct.toFixed(1)}%/yr inflation while your remaining portfolio compounds at {expectedGrowthRate.toFixed(1)}%/yr), your money would last{' '}
+                            <strong className="font-mono text-green-800">
+                              {survivalSimulations.zeroWorkAbroadSim.isPerpetual
+                                ? `50+ years perpetually (beyond Year ${currentYear + 50}, Age ${currentAge + 50}+ without ever depleting)`
+                                : `${survivalSimulations.zeroWorkAbroadSim.wholeYears} years and ${survivalSimulations.zeroWorkAbroadSim.remMonths} months (until Year ${survivalSimulations.zeroWorkAbroadSim.survivalYear}, Age ${survivalSimulations.zeroWorkAbroadSim.survivalAge})`}
+                            </strong>
+                            . Supplementing your transition with{' '}
+                            <strong className="font-mono text-cyan-800">
+                              ${expectedNomadMonthlyIncomeUSD.toLocaleString()}/mo
+                            </strong>{' '}
+                            in remote or digital nomad income for {nomadIncomeActiveYears} years extends your overseas portfolio runway to{' '}
+                            <strong className="font-mono text-cyan-900">
+                              {survivalSimulations.withNomadSim.isPerpetual
+                                ? `perpetual 50+ year wealth (Year ${currentYear + 50}+)`
+                                : `Year ${survivalSimulations.withNomadSim.survivalYear} (Age ${survivalSimulations.withNomadSim.survivalAge})`}
+                            </strong>
+                            {!survivalSimulations.zeroWorkAbroadSim.isPerpetual &&
+                            survivalSimulations.minMonthlyNomadForPerpetualUSD > 0
+                              ? `, and earning at least $${survivalSimulations.minMonthlyNomadForPerpetualUSD.toLocaleString()}/mo remotely for ${nomadIncomeActiveYears} years makes your portfolio self-sustaining forever.`
+                              : '.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ====================================================== */}
                       {/* A. TOP 4 UNIFIED EXECUTIVE FIRE KPI CARDS              */}
                       {/* ====================================================== */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2934,14 +3247,22 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                   -${totalLoanPrincipalUSD.toLocaleString()}
                                 </span>
                               </div>
+                              <div className="flex items-center justify-between border-t border-green-200/80 pt-0.5 text-green-800">
+                                <span className="font-sans font-semibold">
+                                  Return ({expectedGrowthRate.toFixed(1)}%/yr):
+                                </span>
+                                <span className="font-bold">
+                                  +${annualReturnOnCurrentAssetsUSD.toLocaleString()}/yr
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <div className="mt-3 pt-2 border-t border-stone-100 text-[11px] text-stone-500 flex items-center justify-between">
                             <span>
-                              {isGuestUser ? 'Basic Estimate' : '5-Scheme Verified'}
+                              Grows to ${sipReturnsDeck.fire.startingAssetsMaturityUSD.toLocaleString()} ({sipReturnsDeck.fire.durationYears}y)
                             </span>
                             <span className="font-mono font-bold text-green-800">
-                              SWR Income: ${monthlySafeWithdrawalIncomeUSD.toLocaleString()}/mo
+                              SWR: ${monthlySafeWithdrawalIncomeUSD.toLocaleString()}/mo
                             </span>
                           </div>
                         </div>
@@ -3649,7 +3970,7 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                       </div>
 
                       {/* ====================================================== */}
-                      {/* D. SIP CONTINUITY & RETURNS ON SIP COMPOUNDING DECK    */}
+                      {/* D. PORTFOLIO & SIP COMPOUNDING DECK (ASSETS + SIP)     */}
                       {/* ====================================================== */}
                       <div className="p-5 sm:p-6 rounded-3xl bg-white/95 border border-green-200/90 shadow-sm space-y-4">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -3659,13 +3980,11 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                                 <TrendingUp className="w-4 h-4" />
                               </div>
                               <h3 className="text-sm sm:text-base font-extrabold text-stone-900">
-                                SIP Earning Continuity Switch &amp; Returns on Your SIP Contributions
+                                Portfolio &amp; SIP Compounding Deck — Return ({expectedGrowthRate.toFixed(1)}%/yr) on Current Assets + Monthly SIP
                               </h3>
                             </div>
                             <p className="text-xs text-stone-600 mt-0.5">
-                              Test whether you invest until FIRE is reached, commit for
-                              a fixed horizon, or stop fresh SIP right away ($0 Coast
-                              Mode).
+                              Tracks how your {expectedGrowthRate.toFixed(1)}%/yr expected return compounds both your currently invested assets (${effectiveNetCorpusTodayUSD.toLocaleString()}) and your ongoing monthly SIP (${effectiveMonthlySipUSD.toLocaleString()}/mo).
                             </p>
                           </div>
 
@@ -3752,49 +4071,49 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                               <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/90 space-y-1">
                                 <span className="text-[10px] font-bold text-stone-500 uppercase block">
-                                  1. Out-of-Pocket SIP Principal
+                                  1. Total Capital Invested (Assets + SIP)
                                 </span>
                                 <div className="text-lg font-extrabold font-mono text-stone-900">
                                   ${activeRet.totalPrincipalUSD.toLocaleString()}
                                 </div>
-                                <span className="text-[11px] text-stone-500">
-                                  Saved over {activeRet.durationYears} yrs
+                                <span className="text-[11px] text-stone-500 block">
+                                  Current Assets: ${activeRet.startingAssetsUSD.toLocaleString()} + SIP: ${activeRet.sipPrincipalUSD.toLocaleString()}
                                 </span>
                               </div>
                               <div className="p-3.5 rounded-2xl bg-green-50/60 border border-green-200 space-y-1">
                                 <span className="text-[10px] font-bold text-green-800 uppercase block">
-                                  2. Compounded Returns on SIP
+                                  2. Return on Current Assets ({expectedGrowthRate.toFixed(1)}%/yr)
                                 </span>
                                 <div className="text-lg font-extrabold font-mono text-green-700">
-                                  +${activeRet.wealthGainedUSD.toLocaleString()}
+                                  +${activeRet.startingAssetsGainUSD.toLocaleString()}
                                 </div>
-                                <span className="text-[11px] text-green-800">
-                                  Generated at {expectedGrowthRate}%/yr return
-                                </span>
-                              </div>
-                              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/90 space-y-1">
-                                <span className="text-[10px] font-bold text-stone-500 uppercase block">
-                                  3. Total SIP Maturity Value
-                                </span>
-                                <div className="text-lg font-extrabold font-mono text-green-950">
-                                  ${activeRet.finalMaturityUSD.toLocaleString()}
-                                </div>
-                                <span className="text-[11px] text-stone-500">
-                                  Principal + compounding gains
+                                <span className="text-[11px] text-green-800 block">
+                                  ${activeRet.startingAssetsUSD.toLocaleString()} grows to ${activeRet.startingAssetsMaturityUSD.toLocaleString()} ({activeRet.durationYears}y)
                                 </span>
                               </div>
                               <div className="p-3.5 rounded-2xl bg-cyan-50/55 border border-cyan-200 space-y-1">
                                 <span className="text-[10px] font-bold text-cyan-900 uppercase block">
-                                  4. Wealth Multiplier &amp; Gain
+                                  3. Return on Monthly SIP ({expectedGrowthRate.toFixed(1)}%/yr)
                                 </span>
-                                <div className="text-lg font-extrabold font-mono text-cyan-900">
-                                  {activeRet.multiplier}x{' '}
+                                <div className="text-lg font-extrabold font-mono text-cyan-800">
+                                  +${activeRet.sipGainUSD.toLocaleString()}
+                                </div>
+                                <span className="text-[11px] text-cyan-800 block">
+                                  ${activeRet.sipPrincipalUSD.toLocaleString()} SIP grows to ${activeRet.sipMaturityUSD.toLocaleString()} ({activeRet.durationYears}y)
+                                </span>
+                              </div>
+                              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-green-50/70 to-cyan-50/60 border border-green-300/80 space-y-1">
+                                <span className="text-[10px] font-bold text-green-950 uppercase block">
+                                  4. Total Portfolio Maturity &amp; Gain
+                                </span>
+                                <div className="text-lg font-extrabold font-mono text-green-950">
+                                  ${activeRet.finalMaturityUSD.toLocaleString()}{' '}
                                   <span className="text-xs font-sans font-bold text-green-700">
-                                    (+{activeRet.returnPercent.toFixed(1)}%)
+                                    ({activeRet.multiplier}x)
                                   </span>
                                 </div>
-                                <span className="text-[11px] text-cyan-800">
-                                  Compounding efficiency
+                                <span className="text-[11px] text-green-900 font-semibold block">
+                                  Total Compounded Gain: +${activeRet.wealthGainedUSD.toLocaleString()} (+{activeRet.returnPercent.toFixed(1)}%)
                                 </span>
                               </div>
                             </div>
