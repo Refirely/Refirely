@@ -54,6 +54,7 @@ const MainContent: React.FC = () => {
     shareFireCardData,
     closeShareFireCardModal,
     isAndroidApp,
+    enterAndroidAppPreview,
   } = useApp();
 
   const [brandKitOpen, setBrandKitOpen] = useState(false);
@@ -306,6 +307,15 @@ const MainContent: React.FC = () => {
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-3">
             <span>© 2026 ReFirely Global Relocation Intelligence. All rights reserved.</span>
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={enterAndroidAppPreview}
+                className="px-2.5 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                title="Switch to Native Android App UI Mode (?app=android)"
+              >
+                <span>📱 Android App Mode</span>
+              </button>
+              <span aria-hidden="true">·</span>
               <button
                 onClick={() => openBadgeModal('all')}
                 className="text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"

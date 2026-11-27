@@ -32,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     journalEntries,
     firebaseUser,
     comparedCountryIds,
+    enterAndroidAppPreview,
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -433,6 +434,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 <span>Admin CMS Console</span>
+              </button>
+
+              <button
+                onClick={enterAndroidAppPreview}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Preview Native Android App Mode (?app=android)"
+              >
+                <span>📱 Android App</span>
               </button>
 
               <button

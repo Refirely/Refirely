@@ -1247,15 +1247,6 @@ export function isPublicMemberAccount(account?: UserAccount | null): boolean {
   if (isSystemTestAccount(account)) return false;
   const emailLower = (account.email || account.profile.email || '').trim().toLowerCase();
   if (emailLower === 'ganesh.indireddy@gmail.com') return false;
-  try {
-    const raw = localStorage.getItem('refirely_deleted_user_ids');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.includes(account.id)) {
-        return false;
-      }
-    }
-  } catch {}
   return true;
 }
 

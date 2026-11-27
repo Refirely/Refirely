@@ -74,6 +74,7 @@ export type AppView =
 interface AppContextType {
   // Navigation & View
   isAndroidApp: boolean;
+  enterAndroidAppPreview: () => void;
   exitAndroidAppPreview: () => void;
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
@@ -375,6 +376,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isAndroidApp, setIsAndroidApp] = useState<boolean>(() => checkIsAndroidApp());
 
+  const enterAndroidAppPreview = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('app', 'android');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      } catch {}
+    }
+    setIsAndroidApp(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const exitAndroidAppPreview = () => {
     if (typeof window !== 'undefined') {
       try {
@@ -385,6 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch {}
     }
     setIsAndroidApp(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Listen to browser Back / Forward buttons (popstate)
@@ -460,27 +474,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return clean.includes('images.unsplash.com');
   };
 
-  // Persistent tombstone set of deleted user account IDs so deleted test personas NEVER reload
+  // Set of built-in demo persona IDs that live in DEFAULT_ACCOUNTS in code.
+  // Only these 6 static demo IDs need persistent tombstones to prevent re-seeding from the JS bundle;
+  // real user accounts are deleted directly from Firestore (/users and /savedAccounts) so they can re-register with the same Gmail ID at any time.
+  const STATIC_DEMO_ACCOUNT_IDS = new Set<string>([
+    'usr-elena',
+    'usr-marcus',
+    'usr-arthur',
+    'usr-margaret',
+    'usr-david',
+    'usr-carlos',
+  ]);
+  const activelyDeletingIdsRef = React.useRef<Set<string>>(new Set());
+
   const getDeletedUserAccountIds = (): Set<string> => {
+    const result = new Set<string>();
+    activelyDeletingIdsRef.current.forEach(id => result.add(id));
     try {
       const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return new Set(parsed);
+        if (Array.isArray(parsed)) {
+          const filteredStatic = parsed.filter(
+            (id: string) => typeof id === 'string' && STATIC_DEMO_ACCOUNT_IDS.has(id)
+          );
+          filteredStatic.forEach((id: string) => result.add(id));
+          if (filteredStatic.length !== parsed.length) {
+            localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(filteredStatic));
+          }
+        }
+      }
+      localStorage.removeItem('refirely_deleted_user_ids');
+    } catch {}
+    return result;
+  };
+
+  const unmarkUserAccountIdsDeleted = (ids: string[]) => {
+    try {
+      const toRemove = new Set(ids.filter(Boolean));
+      toRemove.forEach(id => activelyDeletingIdsRef.current.delete(id));
+      const current = getDeletedUserAccountIds();
+      let changed = false;
+      toRemove.forEach(id => {
+        if (current.has(id)) {
+          current.delete(id);
+          changed = true;
+        }
+      });
+      const arr = Array.from(current).filter(id => STATIC_DEMO_ACCOUNT_IDS.has(id));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
+      localStorage.removeItem('refirely_deleted_user_ids');
+      if (changed) {
+        if (auth.currentUser) {
+          setDoc(doc(db, 'users', auth.currentUser.uid, 'workspace', 'deletedAccounts'), {
+            id: 'deletedAccounts',
+            userId: auth.currentUser.uid,
+            deletedUserIds: arr,
+            updatedAt: new Date().toISOString(),
+          }).catch(() => {});
+        }
+        setDoc(doc(db, 'platformSettings', 'deletedAccounts'), {
+          id: 'deletedAccounts',
+          deletedUserIds: arr,
+          updatedAt: new Date().toISOString(),
+        }).catch(() => {});
       }
     } catch {}
-    return new Set();
   };
 
   const markUserAccountIdsDeleted = (ids: string[]) => {
     try {
-      const current = getDeletedUserAccountIds();
       ids.forEach(id => {
         if (id && id !== 'usr-ganesh') {
+          activelyDeletingIdsRef.current.add(id);
+        }
+      });
+      const current = getDeletedUserAccountIds();
+      ids.forEach(id => {
+        if (id && id !== 'usr-ganesh' && STATIC_DEMO_ACCOUNT_IDS.has(id)) {
           current.add(id);
         }
       });
-      const arr = Array.from(current);
+      const arr = Array.from(current).filter(id => STATIC_DEMO_ACCOUNT_IDS.has(id));
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_accounts_seeded`, 'true');
 
@@ -934,52 +1009,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Listen to /platformSettings/deletedAccounts for real-time cross-device deletion sync
+  // Listen to /platformSettings/deletedAccounts for real-time cross-device deletion sync of static demo accounts
   useEffect(() => {
     let unsubscribeDel: (() => void) | undefined;
+    const syncRemoteDeletedAccounts = (rawIds: unknown) => {
+      if (!Array.isArray(rawIds)) return;
+      const validStaticIds = rawIds.filter(
+        (id): id is string => typeof id === 'string' && STATIC_DEMO_ACCOUNT_IDS.has(id)
+      );
+      const current = getDeletedUserAccountIds();
+      let changed = false;
+      validStaticIds.forEach(id => {
+        if (!current.has(id)) {
+          current.add(id);
+          changed = true;
+        }
+      });
+      const arr = Array.from(current).filter(id => STATIC_DEMO_ACCOUNT_IDS.has(id));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
+      if (changed) {
+        setRegisteredAccounts(prev => prev.filter(acc => !current.has(acc.id)));
+      }
+      // Automatically scrub any stale real-user IDs that were previously stuck in platformSettings/deletedAccounts
+      if (validStaticIds.length !== rawIds.length && auth.currentUser) {
+        setDoc(doc(db, 'platformSettings', 'deletedAccounts'), {
+          id: 'deletedAccounts',
+          deletedUserIds: arr,
+          updatedAt: new Date().toISOString(),
+        }).catch(() => {});
+      }
+    };
     try {
       const delRef = doc(db, 'platformSettings', 'deletedAccounts');
-      getDoc(delRef).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data() as any;
-          if (Array.isArray(data.deletedUserIds)) {
-            const current = getDeletedUserAccountIds();
-            let changed = false;
-            data.deletedUserIds.forEach((id: string) => {
-              if (id && !current.has(id)) {
-                current.add(id);
-                changed = true;
-              }
-            });
-            if (changed) {
-              const arr = Array.from(current);
-              localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
-              setRegisteredAccounts(prev => prev.filter(acc => !current.has(acc.id)));
-            }
+      getDoc(delRef)
+        .then(snap => {
+          if (snap.exists()) {
+            syncRemoteDeletedAccounts((snap.data() as any)?.deletedUserIds);
           }
-        }
-      }).catch(() => {});
+        })
+        .catch(() => {});
 
-      unsubscribeDel = onSnapshot(delRef, (snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as any;
-          if (Array.isArray(data.deletedUserIds)) {
-            const current = getDeletedUserAccountIds();
-            let changed = false;
-            data.deletedUserIds.forEach((id: string) => {
-              if (id && !current.has(id)) {
-                current.add(id);
-                changed = true;
-              }
-            });
-            if (changed) {
-              const arr = Array.from(current);
-              localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_user_ids`, JSON.stringify(arr));
-              setRegisteredAccounts(prev => prev.filter(acc => !current.has(acc.id)));
-            }
+      unsubscribeDel = onSnapshot(
+        delRef,
+        snap => {
+          if (snap.exists()) {
+            syncRemoteDeletedAccounts((snap.data() as any)?.deletedUserIds);
           }
-        }
-      }, () => {});
+        },
+        () => {}
+      );
     } catch {}
     return () => {
       if (unsubscribeDel) unsubscribeDel();
@@ -994,14 +1072,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeUsers: (() => void) | undefined;
 
     try {
+      const buildAccountFromRootUserDoc = (uDocId: string, uData: Record<string, any>): UserAccount | null => {
+        if (!uData || uDocId === 'guest' || uData.id === 'guest') return null;
+        const uEmailRaw = String(uData.email || uData.profile?.email || '').trim();
+        const uEmailLower = uEmailRaw.toLowerCase();
+        const uNameRaw = String(uData.name || uData.profile?.name || '').trim();
+        if (isGuestPlaceholder(uEmailLower) && isGuestPlaceholder(uNameRaw)) {
+          return null;
+        }
+        const uActiveAccId = String(uData.activeAccountId || '').trim();
+        let resolvedAccId = '';
+        if (uEmailLower === 'ganesh.indireddy@gmail.com' || uDocId === 'usr-ganesh' || uActiveAccId === 'usr-ganesh') {
+          resolvedAccId = 'usr-ganesh';
+        } else if (uActiveAccId && uActiveAccId !== 'guest') {
+          resolvedAccId = sanitizeAccountId(uActiveAccId);
+        } else if (uDocId.startsWith('usr-')) {
+          resolvedAccId = sanitizeAccountId(uDocId);
+        } else if (uEmailLower && uEmailLower.includes('@')) {
+          const prefix = uEmailLower.split('@')[0].replace(/[^a-z0-9]/gi, '-');
+          resolvedAccId = sanitizeAccountId(`usr-${prefix || uDocId.slice(0, 8)}`);
+        } else {
+          resolvedAccId = sanitizeAccountId(`usr-${uDocId.slice(0, 10)}`);
+        }
+        if (!resolvedAccId || resolvedAccId === 'guest') return null;
+
+        const cleanName = !isGuestPlaceholder(uNameRaw)
+          ? uNameRaw
+          : formatNameFromEmail(uEmailRaw || resolvedAccId);
+        const cleanEmail = !isGuestPlaceholder(uEmailRaw) ? uEmailRaw : 'member@refirely.org';
+        const candidateProfile: Partial<UserProfile> = {
+          ...(uData.profile || {}),
+          ...uData,
+          id: resolvedAccId,
+          name: cleanName,
+          email: cleanEmail,
+          role: resolvedAccId === 'usr-ganesh' || uEmailLower === 'ganesh.indireddy@gmail.com' ? 'admin' : 'member',
+        };
+        const mergedProfile = mergeUserProfiles(null, {
+          ...candidateProfile,
+          finances: candidateProfile.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+          languagesKnown: candidateProfile.languagesKnown || [
+            { id: `lang-${resolvedAccId}`, language: 'English', proficiency: 'Native' },
+          ],
+          travelHistory: candidateProfile.travelHistory || [],
+          badges: candidateProfile.badges || [],
+        });
+
+        return {
+          id: resolvedAccId,
+          username: sanitizePublicHandle(uData.username) || resolvedAccId,
+          email: cleanEmail,
+          password: uData.password || 'password123',
+          name: cleanName,
+          createdAt: (uData.createdAt || uData.updatedAt || new Date().toISOString()).slice(0, 10),
+          signupNumber:
+            typeof uData.signupNumber === 'number'
+              ? uData.signupNumber
+              : uData.profile?.signupNumber,
+          profile: mergedProfile,
+          checklist: Array.isArray(uData.checklist) ? uData.checklist : INITIAL_CHECKLIST,
+          cloudSynced: true,
+          lastSyncedAt: uData.updatedAt || uData.createdAt || new Date().toISOString(),
+        };
+      };
+
       const savedAccountsColl = collection(db, 'savedAccounts');
       unsubscribeSavedAccounts = onSnapshot(
         savedAccountsColl,
         (snapshot) => {
-          if (snapshot.empty) return;
           const currentDeleted = getDeletedUserAccountIds();
-          const incomingAccounts: UserAccount[] = [];
+          const removedIds = new Set<string>();
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'removed') {
+              const rData = change.doc.data() as any;
+              const rId = sanitizeAccountId(rData?.id || change.doc.id);
+              if (rId && rId !== 'usr-ganesh') {
+                removedIds.add(rId);
+              }
+            }
+          });
 
+          const incomingAccounts: UserAccount[] = [];
           const legacyEmailBioAccountIds = new Set<string>();
 
           snapshot.forEach((docSnap) => {
@@ -1054,19 +1205,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             incomingAccounts.push(accountObj);
           });
 
-          if (incomingAccounts.length > 0) {
+          if (incomingAccounts.length > 0 || removedIds.size > 0) {
             const healedToSyncBack: UserAccount[] = [];
             setRegisteredAccounts((prevAccounts) => {
               const currentDeletedIds = getDeletedUserAccountIds();
               const map = new Map<string, UserAccount>();
+              let hasNewOrChanged = false;
 
               prevAccounts.forEach((acc) => {
-                if (acc && acc.id && !currentDeletedIds.has(acc.id)) {
+                if (acc && acc.id && !currentDeletedIds.has(acc.id) && !removedIds.has(acc.id)) {
                   map.set(acc.id, acc);
+                } else if (acc && removedIds.has(acc.id)) {
+                  hasNewOrChanged = true;
                 }
               });
 
-              let hasNewOrChanged = false;
               incomingAccounts.forEach((remoteAcc) => {
                 if (currentDeletedIds.has(remoteAcc.id)) return;
                 const existing = map.get(remoteAcc.id);
@@ -1150,8 +1303,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       );
 
-      // Listen to root /users collection so any profile data (e.g. travelHistory, languagesKnown)
-      // saved under /users/{firebaseUid} or /users/{accountId} is automatically merged into registeredAccounts
+      // Listen to root /users collection so any profile data OR newly re-registered user
+      // saved under /users/{firebaseUid} or /users/{accountId} is automatically discovered, merged into registeredAccounts,
       // and healed into /savedAccounts/{accountId}!
       const usersColl = collection(db, 'users');
       unsubscribeUsers = onSnapshot(
@@ -1172,6 +1325,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const accountsToHealInCloud: UserAccount[] = [];
           setRegisteredAccounts((prevAccounts) => {
             let changed = false;
+            const matchedRootDocIds = new Set<string>();
+
             const nextAccounts = prevAccounts.map((acc) => {
               if (!acc || !acc.id || acc.id === 'guest' || currentDeleted.has(acc.id)) {
                 return acc;
@@ -1181,14 +1336,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 const uDocId = String(uDoc._docId || uDoc.id || '').trim();
                 const uActiveAccId = String(uDoc.activeAccountId || '').trim();
                 const uEmailLower = String(uDoc.email || '').trim().toLowerCase();
-                return (
+                const isMatch =
                   uDocId === acc.id ||
                   uActiveAccId === acc.id ||
                   (accEmailLower &&
                     accEmailLower !== 'member@refirely.org' &&
                     uEmailLower === accEmailLower &&
-                    (acc.id === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'))
-                );
+                    (acc.id === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'));
+                if (isMatch) {
+                  matchedRootDocIds.add(uDocId);
+                }
+                return isMatch;
               });
 
               if (matchingUserDocs.length === 0) return acc;
@@ -1257,6 +1415,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
               return acc;
             });
+
+            // Discover any real user documents in /users that are not yet in nextAccounts (e.g. re-signed-up Gmail user!)
+            const existingIds = new Set(nextAccounts.map(a => a.id));
+            const existingEmails = new Set(
+              nextAccounts
+                .map(a => (a.email || '').trim().toLowerCase())
+                .filter(e => e && e !== 'member@refirely.org')
+            );
+            for (const uDoc of rootUserDocs) {
+              const uDocId = String(uDoc._docId || uDoc.id || '').trim();
+              if (!uDocId || matchedRootDocIds.has(uDocId) || currentDeleted.has(uDocId)) continue;
+              const builtAcc = buildAccountFromRootUserDoc(uDocId, uDoc);
+              if (
+                builtAcc &&
+                !currentDeleted.has(builtAcc.id) &&
+                !existingIds.has(builtAcc.id) &&
+                !(builtAcc.email !== 'member@refirely.org' && existingEmails.has(builtAcc.email.toLowerCase()))
+              ) {
+                existingIds.add(builtAcc.id);
+                if (builtAcc.email !== 'member@refirely.org') {
+                  existingEmails.add(builtAcc.email.toLowerCase());
+                }
+                nextAccounts.unshift(builtAcc);
+                accountsToHealInCloud.push(builtAcc);
+                changed = true;
+              }
+            }
 
             if (changed) {
               registeredAccountsRef.current = nextAccounts;
@@ -2823,6 +3008,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const uActiveAccId = String(uData.activeAccountId || '').trim();
               const uEmailLower = String(uData.email || '').trim().toLowerCase();
 
+              let matchedAnyRemote = false;
               for (const [accId, accObj] of Array.from(remoteAccountsMap.entries())) {
                 const accEmailLower = (accObj.email || '').trim().toLowerCase();
                 const isMatch =
@@ -2834,6 +3020,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     (accId === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'));
 
                 if (isMatch) {
+                  matchedAnyRemote = true;
                   const candidateProfile: Partial<UserProfile> = {
                     ...(uData.profile || {}),
                     ...uData,
@@ -2861,6 +3048,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         ? uData.checklist
                         : accObj.checklist,
                   });
+                }
+              }
+
+              // If a real user document exists in /users/{uDocId} but was missing from /savedAccounts, recover it!
+              if (!matchedAnyRemote && uDocId !== 'guest' && uData.id !== 'guest') {
+                const uNameRaw = String(uData.name || uData.profile?.name || '').trim();
+                if (!isGuestPlaceholder(uEmailLower) || !isGuestPlaceholder(uNameRaw)) {
+                  let recoveredId = '';
+                  if (uEmailLower === 'ganesh.indireddy@gmail.com' || uDocId === 'usr-ganesh' || uActiveAccId === 'usr-ganesh') {
+                    recoveredId = 'usr-ganesh';
+                  } else if (uActiveAccId && uActiveAccId !== 'guest') {
+                    recoveredId = sanitizeAccountId(uActiveAccId);
+                  } else if (uDocId.startsWith('usr-')) {
+                    recoveredId = sanitizeAccountId(uDocId);
+                  } else if (uEmailLower && uEmailLower.includes('@')) {
+                    recoveredId = sanitizeAccountId(`usr-${uEmailLower.split('@')[0].replace(/[^a-z0-9]/gi, '-')}`);
+                  } else {
+                    recoveredId = sanitizeAccountId(`usr-${uDocId.slice(0, 10)}`);
+                  }
+                  if (recoveredId && recoveredId !== 'guest' && !currentDeletedUserIds.has(recoveredId)) {
+                    const cleanName = !isGuestPlaceholder(uNameRaw)
+                      ? uNameRaw
+                      : formatNameFromEmail(uData.email || recoveredId);
+                    const cleanEmail = !isGuestPlaceholder(uData.email) ? String(uData.email).trim() : 'member@refirely.org';
+                    const recProfile = mergeUserProfiles(null, {
+                      ...(uData.profile || {}),
+                      ...uData,
+                      id: recoveredId,
+                      name: cleanName,
+                      email: cleanEmail,
+                      role: recoveredId === 'usr-ganesh' || uEmailLower === 'ganesh.indireddy@gmail.com' ? 'admin' : 'member',
+                      finances: uData.finances || uData.profile?.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                    });
+                    remoteAccountsMap.set(recoveredId, {
+                      id: recoveredId,
+                      username: sanitizePublicHandle(uData.username) || recoveredId,
+                      email: cleanEmail,
+                      password: uData.password || 'password123',
+                      name: cleanName,
+                      createdAt: (uData.createdAt || uData.updatedAt || new Date().toISOString()).slice(0, 10),
+                      signupNumber: typeof uData.signupNumber === 'number' ? uData.signupNumber : uData.profile?.signupNumber,
+                      profile: recProfile,
+                      checklist: Array.isArray(uData.checklist) ? uData.checklist : INITIAL_CHECKLIST,
+                      cloudSynced: false,
+                      lastSyncedAt: uData.updatedAt || new Date().toISOString(),
+                    });
+                  }
                 }
               }
             });
@@ -2914,9 +3148,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           });
 
-          // Proactively purge any tombstoned accounts from Firestore
+          // Proactively purge only deleted static demo accounts from Firestore
           for (const deadId of Array.from(currentDeletedUserIds)) {
-            if (deadId === 'usr-ganesh') continue;
+            if (deadId === 'usr-ganesh' || !STATIC_DEMO_ACCOUNT_IDS.has(deadId)) continue;
             const safeDeadId = sanitizeAccountId(deadId);
             try {
               await deleteDoc(doc(db, 'users', user.uid, 'savedAccounts', safeDeadId));
@@ -3600,6 +3834,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
     } catch {}
 
+    unmarkUserAccountIdsDeleted([newId]);
+
     // Immediately persist the newly created User ID to Firestore server so all devices & browsers see it!
     syncSingleAccountToFirestore(newAccount).catch(err => {
       console.warn('Initial cloud sync notice for new account:', err);
@@ -3867,13 +4103,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_explicit_auth_v2`, 'true');
       } catch {}
 
-      if (googleQuizHydration.hydrated) {
-        // Persist hydrated Freedom Map quiz profile immediately to Firestore so no re-entry is ever needed
-        syncSingleAccountToFirestore(googleAcc).catch(() => {});
-        syncProfileToFirestore(googleAcc.profile, googleAcc.checklist || checklistRef.current, googleAcc.id).catch(() => {});
-        if (googleAcc.profile.freedomMapQuiz) {
-          syncWorkspaceToFirestore('freedomMapQuiz', { quiz: googleAcc.profile.freedomMapQuiz }).catch(() => {});
-        }
+      // Clear any previous deletion tombstone for this re-registering/signing-in Google user and sync immediately to Firestore
+      unmarkUserAccountIdsDeleted([googleAcc.id, user.uid]);
+      syncSingleAccountToFirestore(googleAcc).catch(() => {});
+      syncProfileToFirestore(googleAcc.profile, googleAcc.checklist || checklistRef.current, googleAcc.id).catch(() => {});
+      if (googleQuizHydration.hydrated && googleAcc.profile.freedomMapQuiz) {
+        syncWorkspaceToFirestore('freedomMapQuiz', { quiz: googleAcc.profile.freedomMapQuiz }).catch(() => {});
       }
 
       // Load Google user's DM inbox and pop pending notifications
@@ -4246,6 +4481,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const safeId = sanitizeAccountId(userId);
+    const targetEmailLower = (targetAccount?.email || targetAccount?.profile?.email || '').trim().toLowerCase();
     try {
       await deleteDoc(doc(db, 'savedAccounts', safeId));
       if (auth.currentUser) {
@@ -4255,9 +4491,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await deleteDoc(doc(db, 'users', safeId));
       }
       await deleteDoc(doc(db, 'relocationChecklists', safeId));
+
+      // Also delete any root /users/{firebaseAuthUid} or /savedAccounts documents matching this deleted user's activeAccountId or email
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const userDeletePromises: Promise<void>[] = [];
+        usersSnap.forEach(uDoc => {
+          const uData = uDoc.data() as any;
+          const uDocId = uDoc.id;
+          if (uDocId === 'usr-ganesh' || uDocId === auth.currentUser?.uid) return;
+          const uActiveId = String(uData?.activeAccountId || '').trim();
+          const uEmail = String(uData?.email || uData?.profile?.email || '').trim().toLowerCase();
+          if (uEmail === 'ganesh.indireddy@gmail.com') return;
+          if (
+            uDocId === safeId ||
+            uActiveId === safeId ||
+            (targetEmailLower && targetEmailLower !== 'member@refirely.org' && uEmail === targetEmailLower)
+          ) {
+            activelyDeletingIdsRef.current.add(uDocId);
+            userDeletePromises.push(deleteDoc(doc(db, 'users', uDocId)).catch(() => {}));
+          }
+        });
+        await Promise.all(userDeletePromises);
+      } catch {}
+
       recordSyncTimestamp();
     } catch (err) {
       console.warn('Cloud delete notice:', err);
+    } finally {
+      setTimeout(() => {
+        if (!STATIC_DEMO_ACCOUNT_IDS.has(safeId)) {
+          activelyDeletingIdsRef.current.delete(safeId);
+        }
+      }, 4000);
     }
     return { success: true };
   };
@@ -4277,6 +4543,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const testIds = testAccounts.map(a => a.id);
+    const testEmails = new Set(
+      testAccounts
+        .map(a => (a.email || a.profile?.email || '').trim().toLowerCase())
+        .filter(e => e && e !== 'member@refirely.org' && e !== 'ganesh.indireddy@gmail.com')
+    );
     markUserAccountIdsDeleted(testIds);
 
     const remainingAccounts = registeredAccounts.filter(acc => !testIds.includes(acc.id));
@@ -4306,6 +4577,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await deleteDoc(doc(db, 'relocationChecklists', safeId));
       } catch {}
     }
+
+    try {
+      const safeIdSet = new Set(testIds.map(id => sanitizeAccountId(id)));
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const userDeletePromises: Promise<void>[] = [];
+      usersSnap.forEach(uDoc => {
+        const uData = uDoc.data() as any;
+        const uDocId = uDoc.id;
+        if (uDocId === 'usr-ganesh' || uDocId === auth.currentUser?.uid) return;
+        const uActiveId = String(uData?.activeAccountId || '').trim();
+        const uEmail = String(uData?.email || uData?.profile?.email || '').trim().toLowerCase();
+        if (uEmail === 'ganesh.indireddy@gmail.com') return;
+        if (safeIdSet.has(uDocId) || safeIdSet.has(uActiveId) || (uEmail && testEmails.has(uEmail))) {
+          userDeletePromises.push(deleteDoc(doc(db, 'users', uDocId)).catch(() => {}));
+        }
+      });
+      await Promise.all(userDeletePromises);
+    } catch {}
+
+    setTimeout(() => {
+      testIds.forEach(id => {
+        if (!STATIC_DEMO_ACCOUNT_IDS.has(id)) {
+          activelyDeletingIdsRef.current.delete(id);
+        }
+      });
+    }, 4000);
     recordSyncTimestamp();
 
     return { success: true, deletedCount: testIds.length };
@@ -4414,7 +4711,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('top-level savedAccounts fetch notice:', e);
       }
 
-      // 2. Also fetch top-level /users collection so any travelHistory/profile stored under /users/{uid} or /users/{accId} is merged
+      // 2. Also fetch top-level /users collection so any travelHistory/profile OR re-registered user stored under /users/{uid} is discovered and merged
       try {
         const usersSnap = await getDocs(collection(db, 'users'));
         usersSnap.forEach(uDocSnap => {
@@ -4425,6 +4722,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const uActiveAccId = String(uData.activeAccountId || '').trim();
           const uEmailLower = String(uData.email || '').trim().toLowerCase();
 
+          let matchedExisting = false;
           for (const [accId, accObj] of Array.from(mergedMap.entries())) {
             const accEmailLower = (accObj.email || '').trim().toLowerCase();
             const isMatch =
@@ -4436,6 +4734,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 (accId === 'usr-ganesh' || uEmailLower !== 'ganesh.indireddy@gmail.com'));
 
             if (isMatch) {
+              matchedExisting = true;
               const candidateProfile: Partial<UserProfile> = {
                 ...(uData.profile || {}),
                 ...uData,
@@ -4457,6 +4756,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ...accObj,
                 profile: mergedProf,
               });
+            }
+          }
+
+          if (!matchedExisting && uDocId !== 'guest' && uData.id !== 'guest') {
+            const uNameRaw = String(uData.name || uData.profile?.name || '').trim();
+            if (!isGuestPlaceholder(uEmailLower) || !isGuestPlaceholder(uNameRaw)) {
+              let recoveredId = '';
+              if (uEmailLower === 'ganesh.indireddy@gmail.com' || uDocId === 'usr-ganesh' || uActiveAccId === 'usr-ganesh') {
+                recoveredId = 'usr-ganesh';
+              } else if (uActiveAccId && uActiveAccId !== 'guest') {
+                recoveredId = sanitizeAccountId(uActiveAccId);
+              } else if (uDocId.startsWith('usr-')) {
+                recoveredId = sanitizeAccountId(uDocId);
+              } else if (uEmailLower && uEmailLower.includes('@')) {
+                recoveredId = sanitizeAccountId(`usr-${uEmailLower.split('@')[0].replace(/[^a-z0-9]/gi, '-')}`);
+              } else {
+                recoveredId = sanitizeAccountId(`usr-${uDocId.slice(0, 10)}`);
+              }
+              if (recoveredId && recoveredId !== 'guest' && !deletedUserIds.has(recoveredId) && !mergedMap.has(recoveredId)) {
+                const cleanName = !isGuestPlaceholder(uNameRaw)
+                  ? uNameRaw
+                  : formatNameFromEmail(uData.email || recoveredId);
+                const cleanEmail = !isGuestPlaceholder(uData.email) ? String(uData.email).trim() : 'member@refirely.org';
+                const recProfile = mergeUserProfiles(null, {
+                  ...(uData.profile || {}),
+                  ...uData,
+                  id: recoveredId,
+                  name: cleanName,
+                  email: cleanEmail,
+                  role: recoveredId === 'usr-ganesh' || uEmailLower === 'ganesh.indireddy@gmail.com' ? 'admin' : 'member',
+                  finances: uData.finances || uData.profile?.finances || DEFAULT_FINANCIAL_PORTFOLIO,
+                });
+                const recoveredAcc: UserAccount = {
+                  id: recoveredId,
+                  username: sanitizePublicHandle(uData.username) || recoveredId,
+                  email: cleanEmail,
+                  password: uData.password || 'password123',
+                  name: cleanName,
+                  createdAt: (uData.createdAt || uData.updatedAt || new Date().toISOString()).slice(0, 10),
+                  signupNumber: typeof uData.signupNumber === 'number' ? uData.signupNumber : uData.profile?.signupNumber,
+                  profile: recProfile,
+                  checklist: Array.isArray(uData.checklist) ? uData.checklist : INITIAL_CHECKLIST,
+                  cloudSynced: true,
+                  lastSyncedAt: uData.updatedAt || new Date().toISOString(),
+                };
+                mergedMap.set(recoveredId, recoveredAcc);
+                syncSingleAccountToFirestore(recoveredAcc).catch(() => {});
+              }
             }
           }
         });
@@ -5584,6 +5931,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         isAndroidApp,
+        enterAndroidAppPreview,
         exitAndroidAppPreview,
         currentView,
         setCurrentView,
