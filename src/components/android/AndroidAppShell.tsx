@@ -278,9 +278,43 @@ export const AndroidAppShell: React.FC = () => {
     [countries, quiz]
   );
 
-  // Synced Interactive Match Engine scoring (exact same algorithm as LandingPage.tsx)
-  const DEFAULT_RETIREE_BUDGET_REF = 2800;
-  const DEFAULT_NOMAD_BURN_REF = 2200;
+  // Synced Flagship Top 12 Retirement Havens & Top 12 Nomad Countries (exact same algorithm as LandingPage.tsx)
+  const CURATED_TOP_RETIREE_HAVEN_IDS = useMemo(
+    () => [
+      'portugal',
+      'spain',
+      'costa-rica',
+      'panama',
+      'thailand',
+      'malaysia',
+      'mexico',
+      'greece',
+      'italy',
+      'france',
+      'ecuador',
+      'uruguay',
+    ],
+    []
+  );
+
+  const CURATED_TOP_NOMAD_HAVEN_IDS = useMemo(
+    () => [
+      'spain',
+      'portugal',
+      'thailand',
+      'indonesia',
+      'mexico',
+      'malaysia',
+      'costa-rica',
+      'colombia',
+      'croatia',
+      'greece',
+      'vietnam',
+      'united-arab-emirates',
+    ],
+    []
+  );
+
   const matcherResults = useMemo(() => {
     const scored = countries.map(country => {
       const travelScore = getCountryTravelLeisureScore(country);
@@ -291,49 +325,63 @@ export const AndroidAppShell: React.FC = () => {
           : country.costOfLiving.monthlyBudgetCoupleUSD;
 
       if (currentPersona === 'nomad') {
-        let score = 66;
-        const burnDiff = DEFAULT_NOMAD_BURN_REF - nomadProfile.monthlyNomadBurnUSD;
-        if (burnDiff >= 450) score += 14;
-        else if (burnDiff >= 0) score += 11;
-        else if (burnDiff >= -350) score += 5;
-        else score -= 9;
+        const curatedNomadIdx = CURATED_TOP_NOMAD_HAVEN_IDS.indexOf(country.id);
+        if (curatedNomadIdx !== -1) {
+          return {
+            country,
+            nomadProfile,
+            monthlyCost,
+            matchPercent: 98 - Math.floor(curatedNomadIdx / 2),
+            travelScore,
+            curatedRank: curatedNomadIdx,
+          };
+        }
 
-        if (nomadProfile.hasCuratedData) score += 3;
-        if (nomadProfile.coworkingDensity === 'World-Class Nomad Hub') score += 2;
+        let score = 58;
+        if (nomadProfile.hasCuratedData) score += 10;
+        if (nomadProfile.coworkingDensity === 'World-Class Nomad Hub') score += 8;
+        else if (nomadProfile.coworkingDensity === 'Abundant & Vibrant') score += 5;
 
-        const speedPts = Math.min(14, (nomadProfile.verifiedInternetMbps / 270) * 14);
-        const relPts =
-          nomadProfile.internetReliability === 'Ultra-Fast Fiber'
-            ? 4
-            : nomadProfile.internetReliability === 'High-Speed Reliable'
-            ? 2
-            : 0;
-        const gridPts = nomadProfile.powerAndBackupStability.includes('99.9%') ? 2 : 1;
-        score += speedPts + relPts + gridPts;
+        const speedPts = Math.min(12, (nomadProfile.verifiedInternetMbps / 250) * 12);
+        const safetyPts = (country.lifestyle.safetyScore / 100) * 8;
+        score += speedPts + safetyPts;
 
         return {
           country,
           nomadProfile,
           monthlyCost,
-          matchPercent: Math.min(99, Math.max(68, Math.round(score))),
+          matchPercent: Math.min(91, Math.max(65, Math.round(score))),
           travelScore,
+          curatedRank: 999,
         };
       }
 
-      let score = 68;
-      const diff = DEFAULT_RETIREE_BUDGET_REF - country.costOfLiving.monthlyBudgetCoupleUSD;
-      if (diff >= 400) score += 16;
-      else if (diff >= 0) score += 13;
-      else if (diff >= -450) score += 6;
-      else score -= 8;
-      score += (travelScore / 100) * 15;
+      const curatedRetireeIdx = CURATED_TOP_RETIREE_HAVEN_IDS.indexOf(country.id);
+      if (curatedRetireeIdx !== -1) {
+        return {
+          country,
+          nomadProfile,
+          monthlyCost,
+          matchPercent: 98 - Math.floor(curatedRetireeIdx / 2),
+          travelScore,
+          curatedRank: curatedRetireeIdx,
+        };
+      }
+
+      const healthPts = (country.lifestyle.healthcareScore / 100) * 34;
+      const safetyPts = (country.lifestyle.safetyScore / 100) * 28;
+      const leisurePts = (travelScore / 100) * 22;
+      const visaPts =
+        country.visa.difficultyRating <= 2 ? 7 : country.visa.difficultyRating <= 3 ? 4 : 1;
+      const rawScore = healthPts + safetyPts + leisurePts + visaPts;
 
       return {
         country,
         nomadProfile,
         monthlyCost,
-        matchPercent: Math.min(99, Math.max(68, Math.round(score))),
+        matchPercent: Math.min(91, Math.max(65, Math.round(rawScore))),
         travelScore,
+        curatedRank: 999,
       };
     });
 
@@ -353,6 +401,7 @@ export const AndroidAppShell: React.FC = () => {
       : scored;
 
     filtered.sort((a, b) => {
+      if (a.curatedRank !== b.curatedRank) return a.curatedRank - b.curatedRank;
       if (b.matchPercent !== a.matchPercent) return b.matchPercent - a.matchPercent;
       if (currentPersona === 'nomad') {
         return b.nomadProfile.verifiedInternetMbps - a.nomadProfile.verifiedInternetMbps;
@@ -360,8 +409,14 @@ export const AndroidAppShell: React.FC = () => {
       return b.travelScore - a.travelScore;
     });
 
-    return filtered.slice(0, 14);
-  }, [countries, currentPersona, matcherSearch]);
+    return filtered.slice(0, 12);
+  }, [
+    countries,
+    currentPersona,
+    matcherSearch,
+    CURATED_TOP_RETIREE_HAVEN_IDS,
+    CURATED_TOP_NOMAD_HAVEN_IDS,
+  ]);
 
   // ============================================================================
   // TAB 3: SYNCED FIRE CALCULATOR & GEO-ARBITRAGE ENGINE (100% logic parity with FireCalculatorPage.tsx)

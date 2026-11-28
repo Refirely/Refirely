@@ -52,80 +52,128 @@ export const LandingPage: React.FC = () => {
   } = useApp();
 
   // -------------------------------------------------------------
-  // 1. Unified Interactive Match Engine & Curated Haven Showcase State
+  // 1. Flagship Top 12 Retirement Havens & Top 12 Digital Nomad Countries (Independent of Budget)
   // -------------------------------------------------------------
-  const DEFAULT_RETIREE_BUDGET_REF = 2800;
-  const DEFAULT_NOMAD_BURN_REF = 2200;
   const [matchSearchQuery, setMatchSearchQuery] = useState<string>('');
   const [mobileShowMoreMatches, setMobileShowMoreMatches] = useState<boolean>(false);
   const [mobileStickyDismissed, setMobileStickyDismissed] = useState<boolean>(false);
   const isGuestUser = !isAuthenticated || currentUserId === 'guest';
 
-  // Compute curated persona match score and rank destinations for the active persona (or live search query)
+  // Authoritative world-renowned Top 12 Retirement Havens & Top 12 Digital Nomad Countries
+  // Users can filter by budget, region, climate, and 55+ parameters in Explore Havens
+  const CURATED_TOP_RETIREE_HAVEN_IDS = useMemo(
+    () => [
+      'portugal',
+      'spain',
+      'costa-rica',
+      'panama',
+      'thailand',
+      'malaysia',
+      'mexico',
+      'greece',
+      'italy',
+      'france',
+      'ecuador',
+      'uruguay',
+    ],
+    []
+  );
+
+  const CURATED_TOP_NOMAD_HAVEN_IDS = useMemo(
+    () => [
+      'spain',
+      'portugal',
+      'thailand',
+      'indonesia',
+      'mexico',
+      'malaysia',
+      'costa-rica',
+      'colombia',
+      'croatia',
+      'greece',
+      'vietnam',
+      'united-arab-emirates',
+    ],
+    []
+  );
+
+  // Compute quality-of-life & infrastructure scores (independent of budget)
   const sortedMatchedCountries = useMemo(() => {
     const scored = countries.map(country => {
       const travelScore = getCountryTravelLeisureScore(country);
       const nomadProfile = getCountryNomadProfile(country);
 
       if (currentPersona === 'nomad') {
-        let score = 66; // nomad baseline
-
-        // 1. Monthly Turnkey Burn fit (up to 14 pts)
-        const burnDiff = DEFAULT_NOMAD_BURN_REF - nomadProfile.monthlyNomadBurnUSD;
-        if (burnDiff >= 450) {
-          score += 14;
-        } else if (burnDiff >= 0) {
-          score += 11;
-        } else if (burnDiff >= -350) {
-          score += 5;
-        } else {
-          score -= 9;
+        const curatedNomadIdx = CURATED_TOP_NOMAD_HAVEN_IDS.indexOf(country.id);
+        if (curatedNomadIdx !== -1) {
+          // Flagship Top 12 Nomad Countries get top authoritative index (98% down to 92%)
+          const curatedScore = 98 - Math.floor(curatedNomadIdx / 2);
+          return {
+            country,
+            matchScore: curatedScore,
+            travelScore,
+            nomadProfile,
+            curatedRank: curatedNomadIdx,
+          };
         }
 
-        // 2. Verified Nomad Hub Infrastructure baseline (up to 5 pts)
-        if (nomadProfile.hasCuratedData) score += 3;
-        if (nomadProfile.coworkingDensity === 'World-Class Nomad Hub') score += 2;
+        // Non-budget quality scoring for remaining nomad destinations (when searching)
+        let score = 58;
+        if (nomadProfile.hasCuratedData) score += 10;
+        if (nomadProfile.coworkingDensity === 'World-Class Nomad Hub') score += 8;
+        else if (nomadProfile.coworkingDensity === 'Abundant & Vibrant') score += 5;
 
-        // 3. Curated Fiber Speed & Power Reliability Factor (up to 20 pts)
-        const speedPts = Math.min(14, (nomadProfile.verifiedInternetMbps / 270) * 14);
-        const relPts =
-          nomadProfile.internetReliability === 'Ultra-Fast Fiber'
-            ? 4
-            : nomadProfile.internetReliability === 'High-Speed Reliable'
-            ? 2
-            : 0;
-        const gridPts = nomadProfile.powerAndBackupStability.includes('99.9%') ? 2 : 1;
-        score += speedPts + relPts + gridPts;
+        const speedPts = Math.min(12, (nomadProfile.verifiedInternetMbps / 250) * 12);
+        const safetyPts = (country.lifestyle.safetyScore / 100) * 8;
+        score += speedPts + safetyPts;
 
-        const normalizedScore = Math.min(99, Math.max(68, Math.round(score)));
-        return { country, matchScore: normalizedScore, travelScore, nomadProfile };
+        const normalizedScore = Math.min(91, Math.max(65, Math.round(score)));
+        return {
+          country,
+          matchScore: normalizedScore,
+          travelScore,
+          nomadProfile,
+          curatedRank: 999,
+        };
       }
 
-      // Retiree Mode Curated Scoring
-      let score = 68; // baseline
-
-      // Budget fit (up to 16 pts)
-      const diff = DEFAULT_RETIREE_BUDGET_REF - country.costOfLiving.monthlyBudgetCoupleUSD;
-      if (diff >= 400) {
-        score += 16;
-      } else if (diff >= 0) {
-        score += 13;
-      } else if (diff >= -450) {
-        score += 6;
-      } else {
-        score -= 8;
+      // Retiree Mode: Flagship Top 12 Retirement Havens (independent of budget)
+      const curatedRetireeIdx = CURATED_TOP_RETIREE_HAVEN_IDS.indexOf(country.id);
+      if (curatedRetireeIdx !== -1) {
+        const curatedScore = 98 - Math.floor(curatedRetireeIdx / 2);
+        return {
+          country,
+          matchScore: curatedScore,
+          travelScore,
+          nomadProfile,
+          curatedRank: curatedRetireeIdx,
+        };
       }
 
-      // Lifestyle & Leisure Factor (up to 15 pts)
-      score += (travelScore / 100) * 15;
+      // Non-budget quality scoring for remaining retirement destinations (Healthcare, Safety, Leisure, Visa)
+      const healthPts = (country.lifestyle.healthcareScore / 100) * 34;
+      const safetyPts = (country.lifestyle.safetyScore / 100) * 28;
+      const leisurePts = (travelScore / 100) * 22;
+      const visaPts =
+        country.visa.difficultyRating <= 2 ? 7 : country.visa.difficultyRating <= 3 ? 4 : 1;
+      const rawScore = healthPts + safetyPts + leisurePts + visaPts;
+      const normalizedScore = Math.min(91, Math.max(65, Math.round(rawScore)));
 
-      const normalizedScore = Math.min(99, Math.max(68, Math.round(score)));
-      return { country, matchScore: normalizedScore, travelScore, nomadProfile };
+      return {
+        country,
+        matchScore: normalizedScore,
+        travelScore,
+        nomadProfile,
+        curatedRank: 999,
+      };
     });
 
     const normalizedQuery = matchSearchQuery.trim().toLowerCase();
 
-    const getSearchMatchRank = (country: typeof countries[number], nomadProfile: ReturnType<typeof getCountryNomadProfile>): number => {
+    const getSearchMatchRank = (
+      country: typeof countries[number],
+      nomadProfile: ReturnType<typeof getCountryNomadProfile>
+    ): number => {
       if (!normalizedQuery) return 1;
       const nameLower = country.name.toLowerCase();
       if (nameLower === normalizedQuery) return 5;
@@ -134,12 +182,18 @@ export const LandingPage: React.FC = () => {
 
       const capitalMatch = country.capital.toLowerCase().includes(normalizedQuery);
       const codeMatch = country.code.toLowerCase() === normalizedQuery;
-      const topCityMatch = (country.topCities || []).some(c => c.name.toLowerCase().includes(normalizedQuery));
-      const nomadCityMatch = nomadProfile.topNomadCities.some(c => c.toLowerCase().includes(normalizedQuery));
+      const topCityMatch = (country.topCities || []).some(c =>
+        c.name.toLowerCase().includes(normalizedQuery)
+      );
+      const nomadCityMatch = nomadProfile.topNomadCities.some(c =>
+        c.toLowerCase().includes(normalizedQuery)
+      );
       if (capitalMatch || codeMatch || topCityMatch || nomadCityMatch) return 2;
 
       const regionMatch = country.region.toLowerCase().includes(normalizedQuery);
-      const continentMatch = getCountryContinentLabel(country).toLowerCase().includes(normalizedQuery);
+      const continentMatch = getCountryContinentLabel(country)
+        .toLowerCase()
+        .includes(normalizedQuery);
       const taglineMatch = country.tagline.toLowerCase().includes(normalizedQuery);
       const visaMatch =
         country.visa.retirementVisaName.toLowerCase().includes(normalizedQuery) ||
@@ -149,12 +203,10 @@ export const LandingPage: React.FC = () => {
       return 0;
     };
 
-    // Apply Instant Search Query if present
     const filtered = normalizedQuery
       ? scored.filter(({ country, nomadProfile }) => getSearchMatchRank(country, nomadProfile) > 0)
       : scored;
 
-    // Rank by search relevance first (when searching), then by persona curated Match Score
     filtered.sort((a, b) => {
       if (normalizedQuery) {
         const rankA = getSearchMatchRank(a.country, a.nomadProfile);
@@ -162,6 +214,8 @@ export const LandingPage: React.FC = () => {
         if (rankB !== rankA) return rankB - rankA;
       }
 
+      // Keep exact curated Top 12 flagship order when not searching
+      if (a.curatedRank !== b.curatedRank) return a.curatedRank - b.curatedRank;
       if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
 
       if (currentPersona === 'nomad') {
@@ -172,7 +226,13 @@ export const LandingPage: React.FC = () => {
     });
 
     return filtered;
-  }, [countries, currentPersona, matchSearchQuery]);
+  }, [
+    countries,
+    currentPersona,
+    matchSearchQuery,
+    CURATED_TOP_RETIREE_HAVEN_IDS,
+    CURATED_TOP_NOMAD_HAVEN_IDS,
+  ]);
 
   const displayedCountries = sortedMatchedCountries.slice(0, 12);
   const remainingCountriesCount = Math.max(0, sortedMatchedCountries.length - displayedCountries.length);
@@ -301,155 +361,86 @@ export const LandingPage: React.FC = () => {
           <div className="pointer-events-none absolute top-1/3 -right-28 w-96 h-96 rounded-full bg-teal-400/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-28 left-1/3 w-96 h-96 rounded-full bg-amber-300/15 blur-3xl" />
 
-          {/* Header & Multi-Colored Badges + Dual-Persona Switch */}
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-3 md:gap-5 mb-4 md:mb-7">
-            <div className="max-w-3xl space-y-2 md:space-y-3">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 md:px-3.5 md:py-1.5 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-[11px] md:text-xs font-bold shadow-sm shadow-indigo-500/20">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-                  <span>Interactive Match Engine</span>
-                </div>
-                <div className="hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-slate-700 text-xs font-semibold border border-indigo-200/80 shadow-2xs">
-                  <Globe className="w-3.5 h-3.5 text-teal-600" />
-                  <span>
-                    {currentPersona === 'retiree'
-                      ? `Top 12 Curated Matches · ${countries.length} Global Retirement Havens`
-                      : `Top 12 Curated Nomad Hubs · ${countries.length} Global Remote Havens`}
+          {/* Compact, Single-Tier Header + Inline Persona Switch, Quick Search & Explore CTA */}
+          <div className="relative z-10 flex flex-col gap-4 pb-5 mb-5 border-b border-indigo-100/90">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-[11px] font-bold shadow-xs">
+                    <Globe className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {currentPersona === 'retiree'
+                        ? `Top 12 Global Retirement Havens · ${countries.length} Countries Indexed`
+                        : `Top 12 Digital Nomad Countries · ${countries.length} Countries Indexed`}
+                    </span>
                   </span>
                 </div>
-              </div>
-              <h2 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-                {currentPersona === 'retiree' ? (
-                  <>
-                    Find Your{' '}
-                    <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
-                      Ideal Retirement Haven
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Find Your{' '}
-                    <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
-                      Ideal Digital Nomad Haven
-                    </span>
-                  </>
-                )}
-              </h2>
-              <p className="hidden md:block text-sm text-slate-600 leading-relaxed">
-                {currentPersona === 'retiree' ? (
-                  <>
-                    Search any destination or browse our top 12 curated retirement havens—then dive into{' '}
-                    <strong className="text-slate-900 font-semibold">Explore Havens</strong> for budget, region, climate filters, custom sorting, and 55+ deep metrics across all {countries.length} countries.
-                  </>
-                ) : (
-                  <>
-                    Search any remote hub or browse our top 12 curated digital nomad bases—then dive into{' '}
-                    <strong className="text-slate-900 font-semibold">Explore Havens</strong> for fiber speed, coworking, Digital Nomad Visa, region, and climate filters across all {countries.length} destinations.
-                  </>
-                )}
-              </p>
-            </div>
-
-            <div className="hidden md:flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 shrink-0">
-              {/* Dedicated Dual-Persona Mode Switch inside Match Engine Header */}
-              <div className="inline-flex p-1 rounded-2xl bg-slate-900/95 border border-indigo-300/40 shadow-md">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPersona('retiree')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    currentPersona === 'retiree'
-                      ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 text-slate-950 font-black shadow-sm'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <span>🌿 Early Retiree</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPersona('nomad')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    currentPersona === 'nomad'
-                      ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-sm'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <span>⚡ Digital Nomad</span>
-                </button>
-              </div>
-
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleOpenAdvancedExplorer}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-indigo-700 hover:via-violet-700 hover:to-teal-700 text-white shadow-lg shadow-indigo-950/15 text-xs sm:text-sm font-bold transition-all flex items-center gap-2.5 shrink-0 cursor-pointer border border-white/10"
-              >
-                <Compass className="w-4 h-4 text-amber-400" />
-                <span>Explore All {countries.length} Havens</span>
-                <ArrowRight className="w-4 h-4 text-teal-300" />
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Interactive Match Console (Elevated Multi-Color Control Deck) */}
-          <div className="relative z-10 p-3.5 md:p-7 rounded-2xl md:rounded-3xl bg-white/95 backdrop-blur-xl border border-indigo-100/90 shadow-lg shadow-indigo-950/5 mb-5 md:mb-8 space-y-3.5 md:space-y-6">
-            
-            {/* Console Mode Status Bar (Desktop Only) */}
-            <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 border-b border-indigo-100/80">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                  Active Match Lens:
-                </span>
-                {currentPersona === 'retiree' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/90 text-emerald-900 text-xs font-extrabold">
-                    <span>🌿 Long-Term Retirement &amp; FIRE Parameters</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-300/90 text-amber-950 text-xs font-extrabold">
-                    <Zap className="w-3.5 h-3.5 text-amber-600" />
-                    <span>⚡ Digital Nomad, Fiber Internet &amp; Coworking Parameters</span>
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-500 font-medium hidden sm:inline">Switch lens:</span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPersona(currentPersona === 'retiree' ? 'nomad' : 'retiree')}
-                  className="text-xs font-extrabold text-indigo-700 hover:text-teal-700 underline cursor-pointer inline-flex items-center gap-1"
-                >
-                  {currentPersona === 'retiree'
-                    ? 'Switch to Digital Nomad Match Engine →'
-                    : 'Switch to Early Retiree Match Engine →'}
-                </button>
-              </div>
-            </div>
-
-            {/* Row 0: Live Country & Hub Instant Search Bar (Auto-loads country names & cards as you type) */}
-            <div className="p-3 md:p-5 rounded-xl md:rounded-2xl bg-gradient-to-r from-indigo-50/85 via-sky-50/70 to-teal-50/80 border border-indigo-200/80 shadow-xs space-y-2.5 md:space-y-3.5">
-              <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label
-                  htmlFor="match-engine-country-search"
-                  className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-2"
-                >
-                  <span className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-teal-600 text-white shadow-xs">
-                    <Search className="w-3.5 h-3.5" />
-                  </span>
-                  <span>Instant Country &amp; Hub Search</span>
-                </label>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-semibold text-indigo-800 bg-white/90 border border-indigo-200/70 px-2.5 py-0.5 rounded-full">
-                    Auto-loads matching country names &amp; cards below as you type
-                  </span>
-                  {matchSearchQuery.trim() !== '' && (
-                    <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2.5 py-0.5 rounded-full">
-                      {sortedMatchedCountries.length} {sortedMatchedCountries.length === 1 ? 'country' : 'countries'} matched
-                    </span>
+                <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {currentPersona === 'retiree' ? (
+                    <>
+                      World’s Top{' '}
+                      <span className="bg-gradient-to-r from-indigo-600 via-teal-600 to-amber-600 bg-clip-text text-transparent">
+                        Retirement Havens
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      World’s Top{' '}
+                      <span className="bg-gradient-to-r from-teal-600 via-indigo-600 to-amber-600 bg-clip-text text-transparent">
+                        Digital Nomad Countries
+                      </span>
+                    </>
                   )}
-                </div>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  {currentPersona === 'retiree'
+                    ? 'Curated for healthcare, safety, residency visas, and expat quality of life — filter by budget, climate & 55+ metrics in Explore Havens.'
+                    : 'Curated for fiber internet, coworking hubs, Digital Nomad Visas, and community — filter by budget, speed & climate in Explore Havens.'}
+                </p>
               </div>
 
-              <div className="relative flex items-center">
+              {/* Single-Instance Persona Switch + Explore All CTA */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <div className="inline-flex p-1 rounded-xl bg-slate-900/95 border border-indigo-300/40 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPersona('retiree')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentPersona === 'retiree'
+                        ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 text-slate-950 font-black shadow-2xs'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>🌿 Top Retirement</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPersona('nomad')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      currentPersona === 'nomad'
+                        ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 font-black shadow-2xs'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>⚡ Top Nomad</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAdvancedExplorer}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-indigo-700 hover:to-teal-700 text-white shadow-sm text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Filter by Budget &amp; Climate ({countries.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
+                </button>
+              </div>
+            </div>
+
+            {/* Compact Single-Line Instant Country Search Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+              <div className="relative flex-1 flex items-center">
                 <Search className="w-4 h-4 text-indigo-500 absolute left-3.5 pointer-events-none" />
                 <input
                   id="match-engine-country-search"
@@ -458,185 +449,32 @@ export const LandingPage: React.FC = () => {
                   onChange={e => setMatchSearchQuery(e.target.value)}
                   placeholder={
                     currentPersona === 'nomad'
-                      ? 'Search country or nomad hub (Spain, Thailand, Bali)...'
-                      : 'Search country or city (Portugal, Thailand, Mexico)...'
+                      ? `Quick-search any of ${countries.length} countries or nomad hubs (Spain, Thailand, Bali, Croatia)...`
+                      : `Quick-search any of ${countries.length} countries or cities (Portugal, Spain, Costa Rica, Panama)...`
                   }
-                  className="w-full pl-10 pr-24 md:pr-28 py-2.5 md:py-3 rounded-xl bg-white/95 border border-indigo-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-2xs"
+                  className="w-full pl-9 pr-20 py-2 rounded-xl bg-white/95 border border-indigo-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-2xs"
                 />
-                {matchSearchQuery.trim() !== '' ? (
+                {matchSearchQuery.trim() !== '' && (
                   <button
                     type="button"
                     onClick={() => setMatchSearchQuery('')}
-                    className="absolute right-2.5 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                    className="absolute right-2 px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-3 h-3" />
                     <span>Clear</span>
                   </button>
-                ) : (
-                  <span className="hidden sm:inline-flex items-center gap-1 absolute right-3 px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-500 text-[10px] font-bold border border-slate-200/70 pointer-events-none">
-                    {countries.length} Havens Indexed
-                  </span>
                 )}
               </div>
-
-              {/* Auto-Loaded Country Name Pills (Live Matches when typing, or Quick-Pick Spotlight when idle) */}
-              {matchSearchQuery.trim() !== '' ? (
-                <div className="pt-1 space-y-2">
-                  <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="font-extrabold uppercase tracking-wider text-indigo-900">
-                      Auto-Loaded Country Matches ({sortedMatchedCountries.length}):
-                    </span>
-                    <span className="text-slate-500 font-medium hidden sm:inline">
-                      Click any country pill to filter card or open full dossier
-                    </span>
-                  </div>
-                  {sortedMatchedCountries.length > 0 ? (
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
-                      {sortedMatchedCountries.slice(0, 10).map(({ country, matchScore, nomadProfile }) => {
-                        const isExactQuery = matchSearchQuery.trim().toLowerCase() === country.name.toLowerCase();
-                        return (
-                          <div
-                            key={country.id}
-                            className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all shadow-2xs ${
-                              isExactQuery
-                                ? 'bg-gradient-to-r from-indigo-600 to-teal-600 text-white border-indigo-500'
-                                : 'bg-white/95 hover:bg-indigo-50/90 text-slate-800 border-indigo-200/80'
-                            }`}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setMatchSearchQuery(country.name)}
-                              className="inline-flex items-center gap-1.5 cursor-pointer text-left"
-                              title={`Focus ${country.name} card in Match Engine`}
-                            >
-                              <CountryFlag
-                                countryName={country.name}
-                                countryCode={country.code}
-                                fallbackEmoji={country.flag}
-                                className="w-4 h-4 rounded-xs shrink-0"
-                              />
-                              <span>{country.name}</span>
-                              <span
-                                className={`text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-md ${
-                                  isExactQuery
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
-                                }`}
-                              >
-                                {matchScore}%
-                              </span>
-                              <span
-                                className={`text-[10px] font-mono ${
-                                  isExactQuery ? 'text-indigo-100' : 'text-slate-500'
-                                }`}
-                              >
-                                $
-                                {(currentPersona === 'nomad'
-                                  ? nomadProfile.monthlyNomadBurnUSD
-                                  : country.costOfLiving.monthlyBudgetCoupleUSD
-                                ).toLocaleString()}
-                                /mo
-                              </span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => navigateToCountry(country.id)}
-                              className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition-colors cursor-pointer inline-flex items-center gap-0.5 ${
-                                isExactQuery
-                                  ? 'bg-white text-indigo-900 hover:bg-indigo-50'
-                                  : 'bg-indigo-100/90 hover:bg-indigo-600 text-indigo-900 hover:text-white'
-                              }`}
-                              title={`Open full ${country.name} dossier`}
-                            >
-                              <span>Dossier</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-xs font-semibold text-rose-700 bg-rose-50/90 border border-rose-200/80 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
-                      <span>No country or city matches &ldquo;{matchSearchQuery}&rdquo;.</span>
-                      <button
-                        type="button"
-                        onClick={() => setMatchSearchQuery('')}
-                        className="text-[11px] font-extrabold underline cursor-pointer"
-                      >
-                        Reset search
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="hidden md:flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[11px] font-bold text-indigo-900/75 mr-1">Popular Quick-Find:</span>
-                  {['Portugal', 'Spain', 'Thailand', 'Costa Rica', 'Malaysia', 'Mexico', 'Panama', 'Greece'].map(
-                    quickName => (
-                      <button
-                        key={quickName}
-                        type="button"
-                        onClick={() => setMatchSearchQuery(quickName)}
-                        className="px-2.5 py-1 rounded-lg bg-white/90 hover:bg-indigo-600 text-slate-700 hover:text-white border border-indigo-200/70 hover:border-indigo-600 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
-                      >
-                        {quickName}
-                      </button>
-                    )
-                  )}
-                </div>
+              {matchSearchQuery.trim() !== '' && (
+                <span className="text-xs font-extrabold text-indigo-900 bg-indigo-50 border border-indigo-200/80 px-3 py-1.5 rounded-xl shrink-0">
+                  Showing {displayedCountries.length} of {sortedMatchedCountries.length} matches
+                </span>
               )}
             </div>
           </div>
 
-          {/* Results Header Strip */}
+          {/* Country Cards Grid */}
           <div className="relative z-10 space-y-4 md:space-y-6">
-            {/* Mobile-only Clean 1-Line Results Bar (< md) */}
-            <div className="flex md:hidden items-center justify-between gap-2 px-0.5">
-              <span className="text-xs font-extrabold text-indigo-950">
-                Top {Math.min(displayedCountries.length, mobileShowMoreMatches ? 8 : 4)} {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Matches'}{' '}
-                <span className="text-slate-500 font-semibold">(of {sortedMatchedCountries.length})</span>
-              </span>
-              <button
-                type="button"
-                onClick={handleOpenAdvancedExplorer}
-                className="text-xs font-extrabold text-indigo-700 inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>All {countries.length}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Desktop Results Header Strip */}
-            <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-950 bg-indigo-100/80 border border-indigo-200/80 px-3 py-1 rounded-full">
-                  Top {displayedCountries.length} Curated {currentPersona === 'nomad' ? 'Nomad Hubs' : 'Havens'} (of {sortedMatchedCountries.length})
-                </span>
-                {matchSearchQuery.trim() !== '' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold shadow-2xs">
-                    <Search className="w-3 h-3" />
-                    <span>Search: &ldquo;{matchSearchQuery.trim()}&rdquo;</span>
-                    <button
-                      type="button"
-                      onClick={() => setMatchSearchQuery('')}
-                      className="ml-0.5 p-0.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
-                      title="Clear search query"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleOpenAdvancedExplorer}
-                className="text-indigo-700 hover:text-teal-700 text-xs sm:text-sm font-extrabold inline-flex items-center gap-1.5 cursor-pointer self-start sm:self-auto transition-colors group"
-              >
-                <span>Filter by Budget, Region &amp; Climate in Explore Havens</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
 
             {/* Empty State if search returns zero matches */}
             {displayedCountries.length === 0 ? (
@@ -673,10 +511,6 @@ export const LandingPage: React.FC = () => {
                     const saved = isCountrySaved(country.id);
                     const compared = isCountryCompared(country.id);
                     const continentLabel = getCountryContinentLabel(country);
-                    const isUnderBudget =
-                      currentPersona === 'nomad'
-                        ? nomadProfile.monthlyNomadBurnUSD <= DEFAULT_NOMAD_BURN_REF
-                        : country.costOfLiving.monthlyBudgetCoupleUSD <= DEFAULT_RETIREE_BUDGET_REF;
 
                     // Multi-colored top accent bar per card rank/continent
                     const cardAccentGradients = [
@@ -733,7 +567,7 @@ export const LandingPage: React.FC = () => {
                               )}
                             </div>
 
-                            {/* Top-right Match Score & Save Heart */}
+                            {/* Top-right Quality Score & Save Heart */}
                             <div className="absolute top-2.5 md:top-3 right-2.5 md:right-3 flex items-center gap-1.5">
                               <div
                                 className={`px-2.5 py-1 rounded-full backdrop-blur-md text-xs font-black flex items-center gap-1 shadow-md border ${
@@ -745,7 +579,7 @@ export const LandingPage: React.FC = () => {
                                 }`}
                               >
                                 <Sparkles className="w-3 h-3 text-amber-400" />
-                                <span>{matchScore}% Match</span>
+                                <span>{matchScore}% {currentPersona === 'nomad' ? 'Nomad' : 'Haven'}</span>
                               </div>
                               <button
                                 type="button"
@@ -784,25 +618,11 @@ export const LandingPage: React.FC = () => {
                           {currentPersona === 'retiree' ? (
                             <div className="p-3 md:p-4 space-y-2 md:space-y-3">
                               <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div
-                                  className={`p-2 md:p-2.5 rounded-xl border ${
-                                    isUnderBudget
-                                      ? 'bg-emerald-50/70 border-emerald-200/80'
-                                      : 'bg-amber-50/70 border-amber-200/80'
-                                  }`}
-                                >
-                                  <span
-                                    className={`font-semibold block text-[10px] uppercase tracking-wider ${
-                                      isUnderBudget ? 'text-emerald-700' : 'text-amber-700'
-                                    }`}
-                                  >
-                                    Couple Budget
+                                <div className="p-2 md:p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                                  <span className="font-semibold block text-[10px] uppercase tracking-wider text-slate-500">
+                                    Est. Couple Cost
                                   </span>
-                                  <span
-                                    className={`font-mono tabular-nums font-extrabold text-sm ${
-                                      isUnderBudget ? 'text-emerald-950' : 'text-amber-950'
-                                    }`}
-                                  >
+                                  <span className="font-mono tabular-nums font-extrabold text-sm text-slate-900">
                                     ${country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString()}/mo
                                   </span>
                                 </div>
@@ -864,25 +684,11 @@ export const LandingPage: React.FC = () => {
                           ) : (
                             <div className="p-3 md:p-4 space-y-2 md:space-y-3">
                               <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div
-                                  className={`p-2 md:p-2.5 rounded-xl border ${
-                                    isUnderBudget
-                                      ? 'bg-emerald-50/70 border-emerald-200/80'
-                                      : 'bg-amber-50/70 border-amber-200/80'
-                                  }`}
-                                >
-                                  <span
-                                    className={`font-semibold block text-[10px] uppercase tracking-wider ${
-                                      isUnderBudget ? 'text-emerald-700' : 'text-amber-700'
-                                    }`}
-                                  >
-                                    Turnkey Burn
+                                <div className="p-2 md:p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                                  <span className="font-semibold block text-[10px] uppercase tracking-wider text-slate-500">
+                                    Est. Nomad Cost
                                   </span>
-                                  <span
-                                    className={`font-mono tabular-nums font-extrabold text-sm ${
-                                      isUnderBudget ? 'text-emerald-950' : 'text-amber-950'
-                                    }`}
-                                  >
+                                  <span className="font-mono tabular-nums font-extrabold text-sm text-slate-900">
                                     ${nomadProfile.monthlyNomadBurnUSD.toLocaleString()}/mo
                                   </span>
                                 </div>
