@@ -91,6 +91,9 @@ export interface FreedomCountryMatch {
   matchPercent: number;
   monthlyCostUSD: number;
   monthlySavingsVsBudgetUSD: number;
+  requiredFireNestEggUSD: number;
+  fireFundedPercent: number;
+  fireStatus: 'achieved' | 'close' | 'far';
   visaLabel: string;
   visaIncomeReqUSD: number;
   visaQualifies: boolean;
@@ -110,8 +113,12 @@ export interface FreedomMapResults {
   runwayTotalMonths: number;
   qualifyingCount: number;
   topMatch: FreedomCountryMatch | null;
-  topMatches: FreedomCountryMatch[];
-  blurredMatches: FreedomCountryMatch[];
+  topMatches: FreedomCountryMatch[]; // Top 10 ranked suggestions
+  freeTopThreeMatches: FreedomCountryMatch[]; // Top 3 (#1-#3) shown unblurred by default
+  blurredMatches: FreedomCountryMatch[]; // #4-#10 shown blurred before login
+  retireNowCountries: FreedomCountryMatch[]; // 100%+ FIRE funded right now with entered nestEggUSD
+  closeToRetireCountries: FreedomCountryMatch[]; // 70%-99% FIRE funded with entered nestEggUSD
+  farFromRetireCountries: FreedomCountryMatch[]; // <70% FIRE funded
   allRanked: FreedomCountryMatch[];
   safeMonthlyWithdrawalUSD: number;
 }
@@ -597,11 +604,30 @@ export function computeFreedomMapResults(
         : `Higher threshold (${visaIncomeReqUSD > 0 ? `~$${visaIncomeReqUSD.toLocaleString()}/mo income req` : 'requires larger buffer'})`,
     ];
 
+    // 4% SWR FIRE Feasibility for this country using the user's entered nestEggUSD & household mode
+    const householdFireMonthlyCostUSD =
+      quiz.household === 'couple'
+        ? country.costOfLiving.monthlyBudgetCoupleUSD
+        : country.costOfLiving.monthlyBudgetSingleUSD;
+    const requiredFireNestEggUSD = Math.max(
+      50000,
+      Math.round((householdFireMonthlyCostUSD * 12) / 0.04)
+    );
+    const fireFundedPercent = Math.min(
+      999,
+      Math.round((nestEgg / Math.max(1, requiredFireNestEggUSD)) * 100)
+    );
+    const fireStatus: 'achieved' | 'close' | 'far' =
+      fireFundedPercent >= 100 ? 'achieved' : fireFundedPercent >= 70 ? 'close' : 'far';
+
     return {
       country,
       matchPercent,
       monthlyCostUSD,
       monthlySavingsVsBudgetUSD,
+      requiredFireNestEggUSD,
+      fireFundedPercent,
+      fireStatus,
       visaLabel,
       visaIncomeReqUSD,
       visaQualifies,
@@ -637,9 +663,24 @@ export function computeFreedomMapResults(
     evaluated.filter(e => e.monthlyCostUSD <= monthlyBudget * 1.15).length
   );
 
-  const topMatches = evaluated.slice(0, 8);
+  // Top 10 suggestions: Top 3 unblurred by default, #4-#10 blurred for guests
+  const topMatches = evaluated.slice(0, 10);
   const topMatch = topMatches[0] || null;
-  const blurredMatches = topMatches.slice(1, 4);
+  const freeTopThreeMatches = topMatches.slice(0, 3);
+  const blurredMatches = topMatches.slice(3, 10);
+
+  // FIRE Feasibility breakdown across all countries based on entered nestEggUSD
+  const retireNowCountries = [...evaluated]
+    .filter(e => e.fireStatus === 'achieved')
+    .sort((a, b) => b.fireFundedPercent - a.fireFundedPercent || b.matchPercent - a.matchPercent);
+
+  const closeToRetireCountries = [...evaluated]
+    .filter(e => e.fireStatus === 'close')
+    .sort((a, b) => b.fireFundedPercent - a.fireFundedPercent || b.matchPercent - a.matchPercent);
+
+  const farFromRetireCountries = [...evaluated]
+    .filter(e => e.fireStatus === 'far')
+    .sort((a, b) => b.fireFundedPercent - a.fireFundedPercent || b.matchPercent - a.matchPercent);
 
   return {
     runwayLabel,
@@ -650,7 +691,11 @@ export function computeFreedomMapResults(
     qualifyingCount,
     topMatch,
     topMatches,
+    freeTopThreeMatches,
     blurredMatches,
+    retireNowCountries,
+    closeToRetireCountries,
+    farFromRetireCountries,
     allRanked: evaluated,
     safeMonthlyWithdrawalUSD,
   };

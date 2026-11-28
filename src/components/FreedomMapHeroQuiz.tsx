@@ -36,6 +36,9 @@ import {
   Waves,
   Mountain,
   CloudSun,
+  Clock,
+  ChevronDown,
+  ChevronUp,
   type LucideIcon,
 } from 'lucide-react';
 import { useApp, type AppView } from '../context/AppContext';
@@ -403,6 +406,7 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
   const [hasInteractedStep1, setHasInteractedStep1] = useState(false);
   const [calcStage, setCalcStage] = useState(0);
   const [unlockedTab, setUnlockedTab] = useState<'matches' | 'visa' | 'inflation'>('matches');
+  const [showFarFireCountries, setShowFarFireCountries] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -1296,8 +1300,8 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base font-black text-slate-950">
                         <span>
                           {isGuestUser
-                            ? '🎉 Your Freedom Profile is 85% Complete!'
-                            : '🎉 Your Full Freedom Map & Visa Report is Unlocked!'}
+                            ? '🎉 Your Top 3 Matches & Global FIRE Numbers Are Ready!'
+                            : '🎉 Your Full Top 10 Freedom Map, FIRE Lists & Visa Report Are Unlocked!'}
                         </span>
                         {!isGuestUser && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-md">
@@ -1311,7 +1315,11 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                         <strong className="font-mono tabular-nums text-indigo-800">
                           {formatNestEggDisplay(quiz.nestEggUSD)}
                         </strong>{' '}
-                        saved ·{' '}
+                        saved (4% SWR:{' '}
+                        <strong className="font-mono tabular-nums text-emerald-800">
+                          ${results.safeMonthlyWithdrawalUSD.toLocaleString()}/mo
+                        </strong>
+                        ) · Target budget{' '}
                         <strong className="font-mono tabular-nums text-teal-800">
                           ${quiz.monthlyBudgetUSD.toLocaleString()}/mo
                         </strong>{' '}
@@ -1330,12 +1338,12 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                     )}
                   </div>
 
-                  {/* 3 MULTI-COLORED VISIBLE UNBLURRED TEASER METRIC CARDS */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Card 1: Estimated Financial Runway (Indigo / Violet) */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/60 border border-indigo-200/85 flex flex-col justify-between gap-2 shadow-2xs">
-                      <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-indigo-700">
-                        <span>Estimated Financial Runway</span>
+                  {/* 4 LIVE UNBLURRED STATISTICS CARDS (RUNWAY + RETIRE NOW + CLOSE TO RETIRE + VISA QUALIFIERS) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {/* Card 1: Estimated Financial Runway */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/60 border border-indigo-200/85 flex flex-col justify-between gap-2 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-indigo-700">
+                        <span>Financial Runway</span>
                         <span className="p-1.5 rounded-lg bg-indigo-100 text-indigo-600">
                           <TrendingUp className="w-4 h-4" />
                         </span>
@@ -1348,178 +1356,382 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                       </p>
                     </div>
 
-                    {/* Card 2: Countries You Qualify For Today (Teal / Emerald) */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/65 border border-teal-200/85 flex flex-col justify-between gap-2 shadow-2xs">
-                      <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-teal-700">
-                        <span>Countries You Qualify For Today</span>
-                        <span className="p-1.5 rounded-lg bg-teal-100 text-teal-600">
-                          <Globe className="w-4 h-4" />
+                    {/* Card 2: Retire Right Now (100%+ FIRE Funded) */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50/95 via-white to-green-50/65 border border-emerald-200/90 flex flex-col justify-between gap-2 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+                        <span>Retire Right Now</span>
+                        <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
+                          <CheckCircle2 className="w-4 h-4" />
                         </span>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-teal-700">
-                        {results.qualifyingCount}{' '}
-                        <span className="text-base font-extrabold text-slate-700">Countries</span>
+                      <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-emerald-700">
+                        {results.retireNowCountries.length}{' '}
+                        <span className="text-sm font-extrabold text-slate-700">Countries</span>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed">
-                        Out of {countries.length} global havens scanned across visa income &amp; living cost thresholds.
+                        100%+ FIRE funded today with your{' '}
+                        <strong className="font-mono text-slate-800">
+                          {formatNestEggDisplay(quiz.nestEggUSD)}
+                        </strong>{' '}
+                        nest egg at a 4% safe withdrawal rate.
                       </p>
                     </div>
 
-                    {/* Card 3: #1 Top Match (Amber / Rose / Emerald) */}
-                    {results.topMatch && (
-                      <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-rose-50/55 border border-amber-200/90 flex flex-col justify-between gap-2 shadow-2xs">
-                        <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-amber-800">
-                          <span>#1 Top Match</span>
-                          <span className="font-mono tabular-nums text-white bg-gradient-to-r from-emerald-600 to-teal-600 px-2 py-0.5 rounded-md shadow-2xs">
-                            {results.topMatch.matchPercent}% Match
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <CountryFlag
-                            countryName={results.topMatch.country.name}
-                            fallbackEmoji={results.topMatch.country.flag}
-                            size="md"
-                            className="shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <div className="text-lg sm:text-xl font-black text-slate-950 truncate">
-                              {results.topMatch.country.name}
+                    {/* Card 3: Close to Retirement (70% - 99% FIRE Funded) */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-teal-50/90 via-white to-cyan-50/65 border border-teal-200/85 flex flex-col justify-between gap-2 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-teal-800">
+                        <span>Close to Retirement</span>
+                        <span className="p-1.5 rounded-lg bg-teal-100 text-teal-700">
+                          <Clock className="w-4 h-4" />
+                        </span>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-teal-700">
+                        {results.closeToRetireCountries.length}{' '}
+                        <span className="text-sm font-extrabold text-slate-700">Countries</span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        70%–99% FIRE funded right now — reachable with Barista FIRE, part-time remote work, or 1–3 yrs compounding.
+                      </p>
+                    </div>
+
+                    {/* Card 4: Budget & Visa Matches */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-orange-50/60 border border-amber-200/90 flex flex-col justify-between gap-2 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-amber-800">
+                        <span>Budget &amp; Visa Fit</span>
+                        <span className="p-1.5 rounded-lg bg-amber-100 text-amber-700">
+                          <Globe className="w-4 h-4" />
+                        </span>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-amber-700">
+                        {results.qualifyingCount}{' '}
+                        <span className="text-sm font-extrabold text-slate-700">Countries</span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Out of {countries.length} global havens matching your{' '}
+                        <strong className="font-mono text-slate-800">
+                          ${quiz.monthlyBudgetUSD.toLocaleString()}/mo
+                        </strong>{' '}
+                        budget &amp; visa rules.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* TOP 3 SUGGESTIONS SHOWN BY DEFAULT WITHOUT GATING (#1, #2, #3) */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+                          Unlocked Default Preview
+                        </span>
+                        <h3 className="text-sm sm:text-base font-black text-slate-950">
+                          Your Top 3 Matching Havens (#1–#3 of Top 10)
+                        </h3>
+                      </div>
+                      <span className="text-xs font-semibold text-slate-500">
+                        {isGuestUser
+                          ? 'Matches #4–#10 & Full FIRE Country Lists locked below'
+                          : 'Click any country card to open its full Relocation Dossier'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {results.freeTopThreeMatches.map((match, idx) => (
+                        <motion.div
+                          key={match.country.id}
+                          whileHover={{ y: -2 }}
+                          onClick={() => navigateToCountry(match.country.id)}
+                          className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-2xs group ${
+                            idx === 0
+                              ? 'bg-gradient-to-br from-amber-50/90 via-white to-emerald-50/50 border-amber-300/90 hover:border-amber-400'
+                              : idx === 1
+                              ? 'bg-gradient-to-br from-indigo-50/80 via-white to-teal-50/45 border-indigo-200/90 hover:border-indigo-400'
+                              : 'bg-gradient-to-br from-teal-50/80 via-white to-indigo-50/45 border-teal-200/90 hover:border-teal-400'
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-xs font-black px-2.5 py-0.5 rounded-md ${
+                                  idx === 0
+                                    ? 'bg-amber-200/80 text-amber-950'
+                                    : idx === 1
+                                    ? 'bg-indigo-100 text-indigo-900'
+                                    : 'bg-teal-100 text-teal-900'
+                                }`}
+                              >
+                                #{idx + 1} Top Match
+                              </span>
+                              <span className="font-mono text-xs font-extrabold tabular-nums text-white bg-gradient-to-r from-emerald-600 to-teal-600 px-2.5 py-0.5 rounded-md shadow-2xs">
+                                {match.matchPercent}% Match
+                              </span>
                             </div>
-                            <div className="text-xs font-bold text-indigo-700 truncate">
-                              {results.topMatch.visaLabel}
+
+                            <div className="flex items-center gap-3">
+                              <CountryFlag
+                                countryName={match.country.name}
+                                fallbackEmoji={match.country.flag}
+                                size="md"
+                                className="shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <div className="text-lg font-black text-slate-950 truncate group-hover:text-indigo-700 transition-colors">
+                                  {match.country.name}
+                                </div>
+                                <div className="text-xs font-bold text-indigo-700 truncate">
+                                  {match.visaLabel}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-slate-600 pt-1.5 border-t border-amber-200/60">
-                          <span>
-                            Est.{' '}
-                            <strong className="font-mono tabular-nums text-slate-900">
-                              ${results.topMatch.monthlyCostUSD.toLocaleString()}/mo
-                            </strong>
-                          </span>
-                          {!isGuestUser ? (
-                            <button
-                              type="button"
-                              onClick={() => navigateToCountry(results.topMatch!.country.id)}
-                              className="font-extrabold text-indigo-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
-                            >
-                              <span>Open Dossier</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
-                          ) : (
-                            <span className="font-bold text-emerald-700">
-                              {results.topMatch.matchPercent}% Lifestyle Match
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
+
+                          <div className="space-y-2 pt-2.5 border-t border-slate-200/70 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500 font-medium">Est. Living Cost</span>
+                              <strong className="font-mono font-extrabold tabular-nums text-slate-900">
+                                ${match.monthlyCostUSD.toLocaleString()}/mo
+                              </strong>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500 font-medium">Full FIRE Target</span>
+                              <span className="font-mono font-bold tabular-nums text-slate-800">
+                                ${Math.round(match.requiredFireNestEggUSD / 1000)}k{' '}
+                                <span
+                                  className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-black ${
+                                    match.fireStatus === 'achieved'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : match.fireStatus === 'close'
+                                      ? 'bg-teal-100 text-teal-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}
+                                >
+                                  {match.fireFundedPercent}% Funded
+                                </span>
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[11px] font-bold text-teal-700">
+                                {match.monthlySavingsVsBudgetUSD >= 0
+                                  ? `Saves $${match.monthlySavingsVsBudgetUSD.toLocaleString()}/mo vs budget`
+                                  : `+$${Math.abs(match.monthlySavingsVsBudgetUSD).toLocaleString()}/mo over budget`}
+                              </span>
+                              <span className="font-extrabold text-indigo-700 group-hover:underline inline-flex items-center gap-1">
+                                <span>Dossier</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* ======================================================== */}
-                  {/* GUEST VIEW: BLURRED MATCHES #2-#4 + TABS + SIGNUP CARD   */}
+                  {/* GUEST VIEW: SINGLE-PARA PLAIN-ENGLISH SUMMARY MERGED     */}
+                  {/* WITH BLURRED MATCHES #4-#10, FIRE LISTS & GOOGLE SIGNUP  */}
                   {/* ======================================================== */}
                   {isGuestUser ? (
-                    <div className="relative rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/45 via-slate-50/60 to-amber-50/45 p-4 sm:p-6 overflow-hidden">
-                      {/* Blurred Tabs + Match Cards #2, #3, #4 underneath */}
+                    <div className="relative rounded-3xl border-2 border-indigo-200/90 bg-gradient-to-br from-indigo-50/55 via-white to-amber-50/50 p-5 sm:p-7 overflow-hidden shadow-md">
+                      {/* Plain-English Single Paragraph Situation Summary (First Half Clear, Second Half Blurred into the Gated Window) */}
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-100/90 text-indigo-900 text-xs font-black uppercase tracking-wider">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Your Plain-English FIRE &amp; Relocation Situation Summary</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-amber-800 bg-amber-100/80 border border-amber-200 px-2.5 py-1 rounded-lg">
+                            <Lock className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Sign in free to read full analysis &amp; unlock #4–#10</span>
+                          </span>
+                        </div>
+
+                        <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed font-medium bg-white/90 rounded-2xl p-4 sm:p-5 border border-indigo-100 shadow-2xs">
+                          {/* UNBLURRED FIRST HALF OF THE SINGLE PARAGRAPH */}
+                          <span>
+                            In plain English: with a current nest egg of{' '}
+                            <strong className="font-mono font-black text-indigo-950">
+                              {formatNestEggDisplay(quiz.nestEggUSD)}
+                            </strong>{' '}
+                            (generating roughly{' '}
+                            <strong className="font-mono font-black text-emerald-700">
+                              ${results.safeMonthlyWithdrawalUSD.toLocaleString()}/month
+                            </strong>{' '}
+                            in perpetual passive income at a 4% safe withdrawal rate) and a target lifestyle budget of{' '}
+                            <strong className="font-mono font-black text-teal-800">
+                              ${quiz.monthlyBudgetUSD.toLocaleString()}/month
+                            </strong>{' '}
+                            for a{' '}
+                            <strong className="text-slate-900">
+                              {quiz.household === 'couple' ? 'couple or family' : 'solo expat'}
+                            </strong>
+                            , your estimated financial runway is{' '}
+                            <strong className="text-indigo-900">{results.runwayLabel}</strong>. Right now, your capital is already sufficient to{' '}
+                            <strong className="text-emerald-800">
+                              retire 100% full-FIRE today in {results.retireNowCountries.length}{' '}
+                              {results.retireNowCountries.length === 1 ? 'country' : 'countries'}
+                            </strong>{' '}
+                            and puts you{' '}
+                            <strong className="text-teal-800">
+                              close to retirement (70%–99% funded) in {results.closeToRetireCountries.length} additional{' '}
+                              {results.closeToRetireCountries.length === 1 ? 'country' : 'countries'}
+                            </strong>
+                            , led by your top three lifestyle matches in{' '}
+                            <strong className="text-slate-950">
+                              {results.freeTopThreeMatches.map(m => m.country.name).join(', ')}
+                            </strong>
+                            .{' '}
+                          </span>
+                          {/* BLURRED SECOND HALF OF THE SINGLE PARAGRAPH MERGING INTO SIGNUP OVERLAY */}
+                          <span
+                            aria-hidden="true"
+                            className="blur-[4.5px] opacity-75 select-none pointer-events-none"
+                          >
+                            Beyond your top three, your next best-fitting shortlist destinations (#4 through #10) include{' '}
+                            {results.blurredMatches.map(m => m.country.name).join(', ')}, where your monthly cost of living ranges between $
+                            {Math.min(...results.topMatches.map(m => m.monthlyCostUSD)).toLocaleString()}/mo and $
+                            {Math.max(...results.topMatches.map(m => m.monthlyCostUSD)).toLocaleString()}/mo—leaving you with up to $
+                            {Math.max(0, results.topMatch?.monthlySavingsVsBudgetUSD ?? 850).toLocaleString()}/month in unspent surplus buffer while satisfying embassy passive-income and remote-work visa minimums even under a 10-year 3%–5% inflation stress test through 2036.
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* BLURRED PREVIEW OF MATCHES #4-#10 + RETIRE NOW (100%+) & CLOSE TO RETIREMENT (70-99%) COUNTRY LISTS */}
                       <div
                         aria-hidden="true"
-                        className="blur-[6px] opacity-70 pointer-events-none select-none space-y-5"
+                        className="mt-5 blur-[6px] opacity-65 pointer-events-none select-none space-y-5"
                       >
                         <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-slate-200">
                           <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-extrabold">
-                            Top Matches #2–#4
+                            Remaining Top 10 Matches (#4–#10)
                           </div>
-                          <div className="px-4 py-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold flex items-center gap-1.5">
-                            <Stamp className="w-3.5 h-3.5 text-teal-600" />
-                            <span>Visa Income Check</span>
+                          <div className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold">
+                            Retire Right Now List ({results.retireNowCountries.length} Countries)
+                          </div>
+                          <div className="px-4 py-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold">
+                            Close to Retirement List ({results.closeToRetireCountries.length} Countries)
                           </div>
                           <div className="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-extrabold flex items-center gap-1.5">
                             <LineChart className="w-3.5 h-3.5 text-amber-600" />
-                            <span>10-Year Inflation Stress Test</span>
+                            <span>Visa &amp; 10-Yr Inflation Check</span>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Blurred Matches #4 - #10 Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
                           {results.blurredMatches.map((match, idx) => (
                             <div
                               key={match.country.id}
-                              className="p-4 rounded-2xl bg-white border border-indigo-100 space-y-3"
+                              className="p-3.5 rounded-2xl bg-white border border-indigo-100 space-y-2.5"
                             >
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-black text-indigo-700">
-                                  #{idx + 2} Match
+                                  #{idx + 4} Match
                                 </span>
                                 <span className="text-xs font-mono font-bold text-teal-700">
                                   {match.matchPercent}% Fit
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2.5">
+                              <div className="flex items-center gap-2">
                                 <CountryFlag
                                   countryName={match.country.name}
                                   fallbackEmoji={match.country.flag}
                                   size="sm"
                                 />
-                                <div>
-                                  <div className="font-black text-slate-900">
+                                <div className="min-w-0">
+                                  <div className="font-black text-slate-900 truncate">
                                     {match.country.name}
                                   </div>
-                                  <div className="text-xs text-slate-500">
+                                  <div className="text-[11px] text-slate-500 truncate">
                                     {match.visaLabel}
                                   </div>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
-                                <div>
-                                  <div className="text-slate-400">Monthly Cost</div>
-                                  <div className="font-mono font-bold text-slate-900">
-                                    ${match.monthlyCostUSD.toLocaleString()}/mo
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-slate-400">10-Yr Stress</div>
-                                  <div className="font-mono font-bold text-amber-700">
-                                    ${match.inflation10YrLowUSD.toLocaleString()}/mo
-                                  </div>
-                                </div>
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                                <span className="font-mono font-bold text-slate-900">
+                                  ${match.monthlyCostUSD.toLocaleString()}/mo
+                                </span>
+                                <span className="font-mono font-bold text-emerald-700">
+                                  {match.fireFundedPercent}% FIRE
+                                </span>
                               </div>
                             </div>
                           ))}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-1.5">
-                            <div className="text-xs font-black text-teal-900">
-                              Visa Income Check — Official Thresholds
+                        {/* Blurred 2-Column Retire Right Now & Close to Retirement Lists (Like FIRE Page) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-emerald-900 uppercase">
+                                Retire Right Now (100%+ Funded)
+                              </span>
+                              <span className="text-xs font-black text-emerald-700">
+                                {results.retireNowCountries.length} Countries
+                              </span>
                             </div>
-                            <div className="text-xs text-slate-600">
-                              Compares your 4% SWR &amp; monthly budget against embassy income rules for all {results.qualifyingCount} qualifying countries.
+                            <div className="grid grid-cols-2 gap-2">
+                              {results.retireNowCountries.slice(0, 6).map(item => (
+                                <div
+                                  key={item.country.id}
+                                  className="p-2 rounded-xl bg-white border border-emerald-200/80 flex items-center justify-between text-xs"
+                                >
+                                  <span className="font-bold text-slate-800 truncate">
+                                    {item.country.name}
+                                  </span>
+                                  <span className="font-mono font-black text-emerald-700">
+                                    {item.fireFundedPercent}%
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5">
-                            <div className="text-xs font-black text-amber-900">
-                              10-Year Inflation Stress Test (3% vs 5%)
+
+                          <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-teal-900 uppercase">
+                                Close to Retirement (70%–99% Funded)
+                              </span>
+                              <span className="text-xs font-black text-teal-700">
+                                {results.closeToRetireCountries.length} Countries
+                              </span>
                             </div>
-                            <div className="text-xs text-slate-600">
-                              Projects future rent, private healthcare, and grocery burn across your shortlist through 2036.
+                            <div className="grid grid-cols-2 gap-2">
+                              {results.closeToRetireCountries.slice(0, 6).map(item => (
+                                <div
+                                  key={item.country.id}
+                                  className="p-2 rounded-xl bg-white border border-teal-200/80 flex items-center justify-between text-xs"
+                                >
+                                  <span className="font-bold text-slate-800 truncate">
+                                    {item.country.name}
+                                  </span>
+                                  <span className="font-mono font-black text-teal-700">
+                                    {item.fireFundedPercent}%
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* CENTERED SIGNUP OVERLAY CARD */}
-                      <div className="relative z-10 -mt-56 sm:-mt-52 md:-mt-48 mb-2 flex justify-center">
+                      {/* CENTERED GOOGLE SIGNUP OVERLAY CARD MERGED WITH THE BLURRED SUMMARY & LISTS */}
+                      <div className="relative z-10 -mt-72 sm:-mt-64 md:-mt-60 mb-1 flex justify-center">
                         <div className="w-full max-w-xl rounded-3xl bg-white/98 backdrop-blur-md border-2 border-indigo-200 shadow-2xl shadow-indigo-950/15 p-6 sm:p-8 text-center space-y-5">
-                          <div className="w-11 h-11 mx-auto rounded-2xl bg-gradient-to-br from-indigo-600 via-teal-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
-                            <Lock className="w-5 h-5" />
+                          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200/90 text-emerald-900 text-xs font-black">
+                            <Sparkles className="w-4 h-4 text-emerald-600" />
+                            <span>
+                              {results.retireNowCountries.length} Countries 100% FIRE-Ready · {results.closeToRetireCountries.length} Close to FIRE
+                            </span>
                           </div>
 
                           <div className="space-y-2">
                             <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-snug text-balance">
-                              Unlock your full {results.qualifyingCount}-country Freedom Map &amp; Visa Report.
+                              You’re closer to global freedom than you think—unlock your full plain-English verdict &amp; Top 10 list in one click.
                             </h3>
-                            <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-                              Create a free Refirely account in one click to save your runway, compare top destinations side-by-side, and see exact visa income requirements.
+                            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
+                              Sign in free with Google to unblur the rest of your personal situation analysis, reveal Matches{' '}
+                              <strong className="text-slate-900">#4–#10</strong>, and browse every country where you can{' '}
+                              <strong className="text-emerald-700">retire right now</strong> or are{' '}
+                              <strong className="text-teal-700">within striking distance</strong>.
                             </p>
                           </div>
 
@@ -1564,8 +1776,8 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                               )}
                               <span>
                                 {isGoogleLoading
-                                  ? 'Signing in & Unlocking Your Map...'
-                                  : 'Continue with Google'}
+                                  ? 'Signing in & Unlocking Your Full Report...'
+                                  : 'Continue with Google — Unlock Full Top 10 & FIRE Lists'}
                               </span>
                               {!isGoogleLoading && <ArrowRight className="w-4 h-4 text-amber-300" />}
                             </motion.button>
@@ -1583,15 +1795,15 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                           <ul className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2 text-left text-xs font-semibold text-slate-700">
                             <li className="flex items-start gap-1.5">
                               <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                              <span>Save &amp; tweak unlimited FIRE scenarios</span>
+                              <span>Unblur full plain-English verdict &amp; Top 10 matches</span>
                             </li>
                             <li className="flex items-start gap-1.5">
                               <Check className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-                              <span>Unlock full visa &amp; tax checklists for all {countries.length} countries</span>
+                              <span>See all {results.retireNowCountries.length} Retire-Now &amp; {results.closeToRetireCountries.length} Close-to-FIRE countries</span>
                             </li>
                             <li className="flex items-start gap-1.5">
                               <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                              <span>Generate your shareable Freedom Badge</span>
+                              <span>Check visa income floors &amp; 10-yr inflation stress tests</span>
                             </li>
                           </ul>
                         </div>
@@ -1599,186 +1811,215 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                     </div>
                   ) : (
                     /* ======================================================== */
-                    /* AUTHENTICATED VIEW: FULL UNLOCKED REPORT + LIVE TABS     */
+                    /* AUTHENTICATED VIEW: FULL UNBLURRED SINGLE-PARA SUMMARY,  */
+                    /* TOP 10 MATCHES TABS + FIRE PAGE COUNTRY FEASIBILITY LIST */
                     /* ======================================================== */
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setUnlockedTab('matches')}
-                            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                              unlockedTab === 'matches'
-                                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
-                                : 'bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100'
-                            }`}
-                          >
-                            Top Matches (#1–#6)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setUnlockedTab('visa')}
-                            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
-                              unlockedTab === 'visa'
-                                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-sm'
-                                : 'bg-teal-50/70 text-teal-800 hover:bg-teal-100'
-                            }`}
-                          >
-                            <Stamp className="w-3.5 h-3.5" />
-                            <span>Visa Income Check</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setUnlockedTab('inflation')}
-                            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
-                              unlockedTab === 'inflation'
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm'
-                                : 'bg-amber-50/70 text-amber-900 hover:bg-amber-100'
-                            }`}
-                          >
-                            <LineChart className="w-3.5 h-3.5" />
-                            <span>10-Year Inflation Stress Test</span>
-                          </button>
+                    <div className="space-y-6">
+                      {/* Full Unblurred Single-Paragraph Plain-English Situation Summary */}
+                      <div className="rounded-2xl bg-gradient-to-br from-indigo-50/75 via-white to-emerald-50/60 border border-indigo-200/85 p-5 sm:p-6 space-y-2.5 shadow-2xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-black uppercase tracking-wider">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Your Complete Plain-English FIRE &amp; Relocation Analysis</span>
+                          </span>
+                          <span className="text-xs font-bold text-slate-500">
+                            100% Unlocked for {userProfile.name || 'Member'}
+                          </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => openBadgeModal()}
-                          className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Award className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Freedom Badge</span>
-                        </button>
+                        <p className="text-sm sm:text-[15px] text-slate-700 leading-relaxed font-medium">
+                          In plain English: with a current nest egg of{' '}
+                          <strong className="font-mono font-black text-indigo-950">
+                            {formatNestEggDisplay(quiz.nestEggUSD)}
+                          </strong>{' '}
+                          (generating roughly{' '}
+                          <strong className="font-mono font-black text-emerald-700">
+                            ${results.safeMonthlyWithdrawalUSD.toLocaleString()}/month
+                          </strong>{' '}
+                          in perpetual passive income at a 4% safe withdrawal rate) and a target lifestyle budget of{' '}
+                          <strong className="font-mono font-black text-teal-800">
+                            ${quiz.monthlyBudgetUSD.toLocaleString()}/month
+                          </strong>{' '}
+                          for a{' '}
+                          <strong className="text-slate-900">
+                            {quiz.household === 'couple' ? 'couple or family' : 'solo expat'}
+                          </strong>
+                          , your estimated financial runway is{' '}
+                          <strong className="text-indigo-900">{results.runwayLabel}</strong>. Right now, your capital is already sufficient to{' '}
+                          <strong className="text-emerald-800">
+                            retire 100% full-FIRE today in {results.retireNowCountries.length}{' '}
+                            {results.retireNowCountries.length === 1 ? 'country' : 'countries'}
+                          </strong>{' '}
+                          and puts you{' '}
+                          <strong className="text-teal-800">
+                            close to retirement (70%–99% funded) in {results.closeToRetireCountries.length} additional{' '}
+                            {results.closeToRetireCountries.length === 1 ? 'country' : 'countries'}
+                          </strong>
+                          , led by your top three lifestyle matches in{' '}
+                          <strong className="text-slate-950">
+                            {results.freeTopThreeMatches.map(m => m.country.name).join(', ')}
+                          </strong>
+                          . Beyond your top three, your remaining Top 10 destinations (#4 through #10) include{' '}
+                          <strong className="text-indigo-900">
+                            {results.blurredMatches.map(m => m.country.name).join(', ')}
+                          </strong>
+                          , where your monthly cost of living ranges between{' '}
+                          <strong className="font-mono text-slate-900">
+                            ${Math.min(...results.topMatches.map(m => m.monthlyCostUSD)).toLocaleString()}/mo
+                          </strong>{' '}
+                          and{' '}
+                          <strong className="font-mono text-slate-900">
+                            ${Math.max(...results.topMatches.map(m => m.monthlyCostUSD)).toLocaleString()}/mo
+                          </strong>
+                          —leaving you with up to{' '}
+                          <strong className="font-mono text-emerald-700">
+                            ${Math.max(0, results.topMatch?.monthlySavingsVsBudgetUSD ?? 0).toLocaleString()}/month
+                          </strong>{' '}
+                          in unspent budget surplus while meeting official residency or digital-nomad visa thresholds across{' '}
+                          <strong className="text-slate-900">{results.qualifyingCount} qualifying countries</strong>.
+                        </p>
                       </div>
 
-                      {unlockedTab === 'matches' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                          {results.topMatches.slice(0, 6).map((match, idx) => (
-                            <motion.button
-                              key={match.country.id}
+                      {/* Interactive Top 10 Tabs: Top 10 Matches | Visa Income Check | 10-Year Inflation Stress Test */}
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
                               type="button"
-                              whileHover={{ y: -2, scale: 1.01 }}
-                              whileTap={{ scale: 0.99 }}
-                              onClick={() => navigateToCountry(match.country.id)}
-                              className="text-left p-4 rounded-2xl bg-gradient-to-br from-white via-white to-indigo-50/45 hover:to-teal-50/60 border border-indigo-200/80 hover:border-indigo-400 transition-all cursor-pointer space-y-2.5 group shadow-2xs"
+                              onClick={() => setUnlockedTab('matches')}
+                              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                                unlockedTab === 'matches'
+                                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
+                                  : 'bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100'
+                              }`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-black text-indigo-700">
-                                  #{idx + 1} Match
-                                </span>
-                                <span className="text-xs font-mono font-extrabold tabular-nums text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
-                                  {match.matchPercent}% Fit
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2.5">
-                                <CountryFlag
-                                  countryName={match.country.name}
-                                  fallbackEmoji={match.country.flag}
-                                  size="sm"
-                                />
-                                <div className="min-w-0">
-                                  <div className="font-black text-slate-950 truncate group-hover:text-indigo-700 transition-colors">
-                                    {match.country.name}
-                                  </div>
-                                  <div className="text-xs text-slate-500 truncate">
-                                    {match.visaLabel}
+                              All Top 10 Matches (#1–#10)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUnlockedTab('visa')}
+                              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                unlockedTab === 'visa'
+                                  ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-sm'
+                                  : 'bg-teal-50/70 text-teal-800 hover:bg-teal-100'
+                              }`}
+                            >
+                              <Stamp className="w-3.5 h-3.5" />
+                              <span>Visa Income Check (Top 10)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUnlockedTab('inflation')}
+                              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                unlockedTab === 'inflation'
+                                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm'
+                                  : 'bg-amber-50/70 text-amber-900 hover:bg-amber-100'
+                              }`}
+                            >
+                              <LineChart className="w-3.5 h-3.5" />
+                              <span>10-Year Inflation Stress Test</span>
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => openBadgeModal()}
+                            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Award className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Freedom Badge</span>
+                          </button>
+                        </div>
+
+                        {unlockedTab === 'matches' && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                            {results.topMatches.map((match, idx) => (
+                              <motion.button
+                                key={match.country.id}
+                                type="button"
+                                whileHover={{ y: -2, scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                onClick={() => navigateToCountry(match.country.id)}
+                                className={`text-left p-4 rounded-2xl border transition-all cursor-pointer space-y-2.5 group shadow-2xs ${
+                                  idx < 3
+                                    ? 'bg-gradient-to-br from-amber-50/50 via-white to-emerald-50/40 border-amber-200/90 hover:border-amber-400'
+                                    : 'bg-gradient-to-br from-white via-white to-indigo-50/45 hover:to-teal-50/60 border-indigo-200/80 hover:border-indigo-400'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[11px] font-black text-indigo-700">
+                                    #{idx + 1} Match
+                                  </span>
+                                  <span className="text-[11px] font-mono font-extrabold tabular-nums text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
+                                    {match.matchPercent}% Fit
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                  <CountryFlag
+                                    countryName={match.country.name}
+                                    fallbackEmoji={match.country.flag}
+                                    size="sm"
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="font-black text-slate-950 truncate group-hover:text-indigo-700 transition-colors">
+                                      {match.country.name}
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 truncate">
+                                      {match.visaLabel}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                                <span className="font-mono font-extrabold tabular-nums text-slate-900">
-                                  ${match.monthlyCostUSD.toLocaleString()}/mo
-                                </span>
-                                <span className="text-[11px] font-bold text-teal-700">
-                                  {match.monthlySavingsVsBudgetUSD >= 0
-                                    ? `Saves $${match.monthlySavingsVsBudgetUSD.toLocaleString()}/mo`
-                                    : `+$${Math.abs(match.monthlySavingsVsBudgetUSD).toLocaleString()}/mo`}
-                                </span>
-                              </div>
-                            </motion.button>
-                          ))}
-                        </div>
-                      )}
-
-                      {unlockedTab === 'visa' && (
-                        <div className="overflow-x-auto rounded-2xl border border-teal-200/80">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-teal-50/70 text-teal-900 uppercase text-[10px] font-extrabold tracking-wider">
-                              <tr>
-                                <th className="px-4 py-3">Destination</th>
-                                <th className="px-4 py-3">Primary Visa Path</th>
-                                <th className="px-4 py-3">Min Income / Mo</th>
-                                <th className="px-4 py-3">Tax Regime</th>
-                                <th className="px-4 py-3 text-right">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 bg-white">
-                              {results.topMatches.slice(0, 6).map(match => (
-                                <tr
-                                  key={match.country.id}
-                                  onClick={() => navigateToCountry(match.country.id)}
-                                  className="hover:bg-teal-50/40 cursor-pointer"
-                                >
-                                  <td className="px-4 py-3 font-extrabold text-slate-950 flex items-center gap-2">
-                                    <CountryFlag
-                                      countryName={match.country.name}
-                                      fallbackEmoji={match.country.flag}
-                                      size="xs"
-                                    />
-                                    <span>{match.country.name}</span>
-                                  </td>
-                                  <td className="px-4 py-3 font-semibold text-indigo-700">
-                                    {match.visaLabel}
-                                  </td>
-                                  <td className="px-4 py-3 font-mono font-bold tabular-nums text-slate-900">
-                                    {match.visaIncomeReqUSD > 0
-                                      ? `$${match.visaIncomeReqUSD.toLocaleString()}/mo`
-                                      : 'Flexible / Savings'}
-                                  </td>
-                                  <td className="px-4 py-3 text-slate-600 max-w-[180px] truncate">
-                                    {match.taxSummary}
-                                  </td>
-                                  <td className="px-4 py-3 text-right">
+                                <div className="pt-2 border-t border-slate-100 space-y-1 text-xs">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-mono font-extrabold tabular-nums text-slate-900">
+                                      ${match.monthlyCostUSD.toLocaleString()}/mo
+                                    </span>
                                     <span
-                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-extrabold ${
-                                        match.visaQualifies
-                                          ? 'bg-emerald-50 text-emerald-700'
-                                          : 'bg-amber-50 text-amber-800'
+                                      className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                                        match.fireStatus === 'achieved'
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : match.fireStatus === 'close'
+                                          ? 'bg-teal-100 text-teal-800'
+                                          : 'bg-amber-100 text-amber-800'
                                       }`}
                                     >
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      <span>{match.visaQualifies ? 'Qualifies' : 'Stretch'}</span>
+                                      {match.fireFundedPercent}% FIRE
                                     </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                                  </div>
+                                  <div className="text-[11px] font-bold text-teal-700 truncate">
+                                    {match.monthlySavingsVsBudgetUSD >= 0
+                                      ? `Saves $${match.monthlySavingsVsBudgetUSD.toLocaleString()}/mo`
+                                      : `+$${Math.abs(match.monthlySavingsVsBudgetUSD).toLocaleString()}/mo`}
+                                  </div>
+                                </div>
+                              </motion.button>
+                            ))}
+                          </div>
+                        )}
 
-                      {unlockedTab === 'inflation' && (
-                        <div className="overflow-x-auto rounded-2xl border border-amber-200/80">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-amber-50/75 text-amber-900 uppercase text-[10px] font-extrabold tracking-wider">
-                              <tr>
-                                <th className="px-4 py-3">Destination</th>
-                                <th className="px-4 py-3">2026 Cost / Mo</th>
-                                <th className="px-4 py-3">2036 @ 3% Inflation</th>
-                                <th className="px-4 py-3">2036 @ 5% Stress</th>
-                                <th className="px-4 py-3 text-right">Budget Buffer</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 bg-white">
-                              {results.topMatches.slice(0, 6).map(match => {
-                                const stillUnderAt3 = match.inflation10YrLowUSD <= quiz.monthlyBudgetUSD;
-                                return (
+                        {unlockedTab === 'visa' && (
+                          <div className="overflow-x-auto rounded-2xl border border-teal-200/80">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-teal-50/70 text-teal-900 uppercase text-[10px] font-extrabold tracking-wider">
+                                <tr>
+                                  <th className="px-4 py-3">Rank &amp; Destination</th>
+                                  <th className="px-4 py-3">Primary Visa Path</th>
+                                  <th className="px-4 py-3">Min Income / Mo</th>
+                                  <th className="px-4 py-3">Tax Regime</th>
+                                  <th className="px-4 py-3 text-right">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 bg-white">
+                                {results.topMatches.map((match, idx) => (
                                   <tr
                                     key={match.country.id}
                                     onClick={() => navigateToCountry(match.country.id)}
-                                    className="hover:bg-amber-50/40 cursor-pointer"
+                                    className="hover:bg-teal-50/40 cursor-pointer"
                                   >
                                     <td className="px-4 py-3 font-extrabold text-slate-950 flex items-center gap-2">
+                                      <span className="text-[11px] font-mono text-indigo-600 w-5">
+                                        #{idx + 1}
+                                      </span>
                                       <CountryFlag
                                         countryName={match.country.name}
                                         fallbackEmoji={match.country.flag}
@@ -1786,33 +2027,299 @@ export const FreedomMapHeroQuiz: React.FC<FreedomMapHeroQuizProps> = ({
                                       />
                                       <span>{match.country.name}</span>
                                     </td>
+                                    <td className="px-4 py-3 font-semibold text-indigo-700">
+                                      {match.visaLabel}
+                                    </td>
                                     <td className="px-4 py-3 font-mono font-bold tabular-nums text-slate-900">
-                                      ${match.monthlyCostUSD.toLocaleString()}/mo
+                                      {match.visaIncomeReqUSD > 0
+                                        ? `$${match.visaIncomeReqUSD.toLocaleString()}/mo`
+                                        : 'Flexible / Savings'}
                                     </td>
-                                    <td className="px-4 py-3 font-mono font-bold tabular-nums text-teal-700">
-                                      ${match.inflation10YrLowUSD.toLocaleString()}/mo
-                                    </td>
-                                    <td className="px-4 py-3 font-mono font-bold tabular-nums text-amber-700">
-                                      ${match.inflation10YrHighUSD.toLocaleString()}/mo
+                                    <td className="px-4 py-3 text-slate-600 max-w-[180px] truncate">
+                                      {match.taxSummary}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                       <span
-                                        className={`px-2 py-0.5 rounded-md font-extrabold ${
-                                          stillUnderAt3
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-extrabold ${
+                                          match.visaQualifies
                                             ? 'bg-emerald-50 text-emerald-700'
                                             : 'bg-amber-50 text-amber-800'
                                         }`}
                                       >
-                                        {stillUnderAt3 ? 'Resilient' : 'Plan +Buffer'}
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        <span>{match.visaQualifies ? 'Qualifies' : 'Stretch'}</span>
                                       </span>
                                     </td>
                                   </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {unlockedTab === 'inflation' && (
+                          <div className="overflow-x-auto rounded-2xl border border-amber-200/80">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-amber-50/75 text-amber-900 uppercase text-[10px] font-extrabold tracking-wider">
+                                <tr>
+                                  <th className="px-4 py-3">Rank &amp; Destination</th>
+                                  <th className="px-4 py-3">2026 Cost / Mo</th>
+                                  <th className="px-4 py-3">2036 @ 3% Inflation</th>
+                                  <th className="px-4 py-3">2036 @ 5% Stress</th>
+                                  <th className="px-4 py-3 text-right">Budget Buffer</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 bg-white">
+                                {results.topMatches.map((match, idx) => {
+                                  const stillUnderAt3 = match.inflation10YrLowUSD <= quiz.monthlyBudgetUSD;
+                                  return (
+                                    <tr
+                                      key={match.country.id}
+                                      onClick={() => navigateToCountry(match.country.id)}
+                                      className="hover:bg-amber-50/40 cursor-pointer"
+                                    >
+                                      <td className="px-4 py-3 font-extrabold text-slate-950 flex items-center gap-2">
+                                        <span className="text-[11px] font-mono text-indigo-600 w-5">
+                                          #{idx + 1}
+                                        </span>
+                                        <CountryFlag
+                                          countryName={match.country.name}
+                                          fallbackEmoji={match.country.flag}
+                                          size="xs"
+                                        />
+                                        <span>{match.country.name}</span>
+                                      </td>
+                                      <td className="px-4 py-3 font-mono font-bold tabular-nums text-slate-900">
+                                        ${match.monthlyCostUSD.toLocaleString()}/mo
+                                      </td>
+                                      <td className="px-4 py-3 font-mono font-bold tabular-nums text-teal-700">
+                                        ${match.inflation10YrLowUSD.toLocaleString()}/mo
+                                      </td>
+                                      <td className="px-4 py-3 font-mono font-bold tabular-nums text-amber-700">
+                                        ${match.inflation10YrHighUSD.toLocaleString()}/mo
+                                      </td>
+                                      <td className="px-4 py-3 text-right">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-md font-extrabold ${
+                                            stillUnderAt3
+                                              ? 'bg-emerald-50 text-emerald-700'
+                                              : 'bg-amber-50 text-amber-800'
+                                          }`}
+                                        >
+                                          {stillUnderAt3 ? 'Resilient' : 'Plan +Buffer'}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ======================================================== */}
+                      {/* FIRE PAGE STYLE: RETIRE RIGHT NOW (100%+) & CLOSE TO     */}
+                      {/* RETIREMENT (70%-99%) COUNTRY LISTS                       */}
+                      {/* ======================================================== */}
+                      <div className="rounded-3xl bg-slate-50/80 border border-slate-200/90 p-5 sm:p-6 space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80">
+                          <div>
+                            <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-indigo-700">
+                              <Globe className="w-3.5 h-3.5" />
+                              <span>Global FIRE Feasibility Breakdown (4% SWR Rule)</span>
+                            </div>
+                            <h4 className="text-base sm:text-lg font-black text-slate-950">
+                              Where Your {formatNestEggDisplay(quiz.nestEggUSD)} Nest Egg Can Retire You Today
+                            </h4>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => onNavigateView('fire-calculator')}
+                            className="text-xs font-extrabold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                          >
+                            <span>Open Full FIRE Lab</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                      )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                          {/* Column 1: Achieved Freedom / Retire Right Now (100%+ Funded) */}
+                          <div className="rounded-2xl bg-emerald-50/60 border border-emerald-200/90 p-4 sm:p-5 flex flex-col">
+                            <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-emerald-200/80">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <h5 className="text-xs font-black text-slate-950 uppercase tracking-wider">
+                                    Retire Right Now
+                                  </h5>
+                                  <p className="text-[11px] text-emerald-800 font-semibold">
+                                    Achieved Freedom (100%+ Funded)
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-xl font-black font-mono text-emerald-700">
+                                {results.retireNowCountries.length}
+                              </span>
+                            </div>
+
+                            {results.retireNowCountries.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+                                {results.retireNowCountries.map(item => (
+                                  <button
+                                    key={item.country.id}
+                                    type="button"
+                                    onClick={() => navigateToCountry(item.country.id)}
+                                    className="text-left p-2.5 rounded-xl bg-white hover:bg-emerald-50/70 border border-emerald-200/80 hover:border-emerald-400 transition-all flex items-center justify-between gap-2 cursor-pointer group shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <CountryFlag
+                                        countryName={item.country.name}
+                                        fallbackEmoji={item.country.flag}
+                                        size="sm"
+                                        className="shrink-0"
+                                      />
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-extrabold text-slate-900 group-hover:text-emerald-700 truncate">
+                                          {item.country.name}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-mono truncate">
+                                          ${item.monthlyCostUSD.toLocaleString()}/mo · FIRE: $
+                                          {Math.round(item.requiredFireNestEggUSD / 1000)}k
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <span className="text-[10px] font-black font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 shrink-0">
+                                      {item.fireFundedPercent}%
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-8 text-center text-xs text-slate-500">
+                                Increase your current nest egg slider or switch to Solo to see 100%+ funded countries.
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Column 2: Close to Retirement (70% - 99% Funded) */}
+                          <div className="rounded-2xl bg-teal-50/60 border border-teal-200/90 p-4 sm:p-5 flex flex-col">
+                            <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-teal-200/80">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center text-teal-700">
+                                  <Clock className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <h5 className="text-xs font-black text-slate-950 uppercase tracking-wider">
+                                    Close to Retirement
+                                  </h5>
+                                  <p className="text-[11px] text-teal-800 font-semibold">
+                                    Within Striking Distance (70%–99% Funded)
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-xl font-black font-mono text-teal-700">
+                                {results.closeToRetireCountries.length}
+                              </span>
+                            </div>
+
+                            {results.closeToRetireCountries.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+                                {results.closeToRetireCountries.map(item => (
+                                  <button
+                                    key={item.country.id}
+                                    type="button"
+                                    onClick={() => navigateToCountry(item.country.id)}
+                                    className="text-left p-2.5 rounded-xl bg-white hover:bg-teal-50/70 border border-teal-200/80 hover:border-teal-400 transition-all flex items-center justify-between gap-2 cursor-pointer group shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <CountryFlag
+                                        countryName={item.country.name}
+                                        fallbackEmoji={item.country.flag}
+                                        size="sm"
+                                        className="shrink-0"
+                                      />
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-extrabold text-slate-900 group-hover:text-teal-700 truncate">
+                                          {item.country.name}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-mono truncate">
+                                          ${item.monthlyCostUSD.toLocaleString()}/mo · FIRE: $
+                                          {Math.round(item.requiredFireNestEggUSD / 1000)}k
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <span className="text-[10px] font-black font-mono px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 shrink-0">
+                                      {item.fireFundedPercent}%
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-8 text-center text-xs text-slate-500">
+                                No countries currently sit in the 70%–99% funding band for this nest egg.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expandable Long-Term Horizon (<70% Funded) Toggle like on the FIRE page */}
+                        {results.farFromRetireCountries.length > 0 && (
+                          <div className="pt-2 border-t border-slate-200/80">
+                            <button
+                              type="button"
+                              onClick={() => setShowFarFireCountries(prev => !prev)}
+                              className="w-full flex items-center justify-between text-xs font-extrabold text-slate-600 hover:text-slate-900 py-1.5 cursor-pointer"
+                            >
+                              <span>
+                                {showFarFireCountries ? 'Hide' : 'Show'} Long-Term Horizon Countries (&lt;70% Funded ·{' '}
+                                {results.farFromRetireCountries.length} Countries)
+                              </span>
+                              {showFarFireCountries ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </button>
+
+                            {showFarFireCountries && (
+                              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[240px] overflow-y-auto pr-1">
+                                {results.farFromRetireCountries.map(item => (
+                                  <button
+                                    key={item.country.id}
+                                    type="button"
+                                    onClick={() => navigateToCountry(item.country.id)}
+                                    className="text-left p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200/90 transition-all flex items-center justify-between gap-1.5 cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <CountryFlag
+                                        countryName={item.country.name}
+                                        fallbackEmoji={item.country.flag}
+                                        size="xs"
+                                        className="shrink-0"
+                                      />
+                                      <div className="min-w-0">
+                                        <div className="text-[11px] font-bold text-slate-800 truncate">
+                                          {item.country.name}
+                                        </div>
+                                        <div className="text-[9px] text-slate-500 font-mono truncate">
+                                          ${item.monthlyCostUSD.toLocaleString()}/mo · $
+                                          {Math.round(item.requiredFireNestEggUSD / 1000)}k
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 shrink-0">
+                                      {item.fireFundedPercent}%
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </motion.div>

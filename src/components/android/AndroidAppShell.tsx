@@ -1141,29 +1141,37 @@ export const AndroidAppShell: React.FC = () => {
 
                 {/* LIVE SYNCED FREEDOM MAP KPI STRIP */}
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-teal-950 text-white space-y-2.5">
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-4 gap-1.5 text-center">
+                    <div className="p-2 rounded-xl bg-white/10">
+                      <span className="text-[9px] uppercase font-bold text-emerald-200 block">
+                        Retire Now
+                      </span>
+                      <span className="text-sm font-black font-mono text-emerald-300">
+                        {freedomResults.retireNowCountries.length}
+                      </span>
+                    </div>
                     <div className="p-2 rounded-xl bg-white/10">
                       <span className="text-[9px] uppercase font-bold text-teal-200 block">
-                        Havens Unlocked
+                        Close FIRE
                       </span>
-                      <span className="text-base font-black font-mono text-emerald-300">
-                        {freedomResults.qualifyingCount}
+                      <span className="text-sm font-black font-mono text-teal-300">
+                        {freedomResults.closeToRetireCountries.length}
                       </span>
                     </div>
                     <div className="p-2 rounded-xl bg-white/10">
                       <span className="text-[9px] uppercase font-bold text-amber-200 block">
-                        Freedom Runway
+                        Runway
                       </span>
-                      <span className="text-base font-black font-mono text-amber-300">
+                      <span className="text-sm font-black font-mono text-amber-300">
                         {freedomResults.runwayShortLabel}
                       </span>
                     </div>
                     <div className="p-2 rounded-xl bg-white/10">
                       <span className="text-[9px] uppercase font-bold text-indigo-200 block">
-                        4% Safe Income
+                        4% Income
                       </span>
-                      <span className="text-base font-black font-mono text-white">
-                        ${freedomResults.safeMonthlyWithdrawalUSD.toLocaleString()}/mo
+                      <span className="text-sm font-black font-mono text-white">
+                        ${freedomResults.safeMonthlyWithdrawalUSD.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1171,7 +1179,7 @@ export const AndroidAppShell: React.FC = () => {
                   {/* 3 Result Sub-Tabs: Top Matches / Visa Matrix / 10-Yr Inflation */}
                   <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-white/10 text-[10px] font-extrabold">
                     {[
-                      { id: 'matches' as const, label: 'Top Matches' },
+                      { id: 'matches' as const, label: isGuestUser ? 'Top 3 (of 10)' : 'Top 10 Matches' },
                       { id: 'visa' as const, label: 'Visa Matrix' },
                       { id: 'inflation' as const, label: '10-Yr Cost' },
                     ].map(t => (
@@ -1190,42 +1198,57 @@ export const AndroidAppShell: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Top 3 Synced Freedom Quiz Matches */}
-                  <div className="space-y-1.5">
-                    {freedomResults.topMatches.slice(0, 3).map((item, idx) => (
-                      <div
-                        key={item.country.id}
-                        onClick={() => openCountryDossierSheet(item.country)}
-                        className="p-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-between gap-2 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shrink-0">
-                            #{idx + 1}
-                          </span>
-                          <CountryFlag
-                            countryCode={item.country.code}
-                            countryName={item.country.name}
-                            fallbackEmoji={item.country.flag}
-                            className="w-5 h-3.5 rounded-xs shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <span className="text-xs font-extrabold text-white block truncate">
-                              {item.country.name}
+                  {/* Top 3 Synced Freedom Quiz Matches (Default Ungated) + #4-#10 Unlocked for Members */}
+                  <div className="space-y-1.5 max-h-60 overflow-y-auto pr-0.5">
+                    {(isGuestUser ? freedomResults.freeTopThreeMatches : freedomResults.topMatches).map(
+                      (item, idx) => (
+                        <div
+                          key={item.country.id}
+                          onClick={() => openCountryDossierSheet(item.country)}
+                          className="p-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-between gap-2 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shrink-0">
+                              #{idx + 1}
                             </span>
-                            <span className="text-[10px] text-slate-300 block truncate">
-                              {quizResultTab === 'matches' &&
-                                `${item.matchPercent}% Match · $${item.monthlyCostUSD.toLocaleString()}/mo`}
-                              {quizResultTab === 'visa' &&
-                                `${item.visaLabel} · Min $${item.visaIncomeReqUSD.toLocaleString()}/mo`}
-                              {quizResultTab === 'inflation' &&
-                                `10-Yr Projected: $${item.inflation10YrLowUSD.toLocaleString()}–$${item.inflation10YrHighUSD.toLocaleString()}/mo`}
-                            </span>
+                            <CountryFlag
+                              countryCode={item.country.code}
+                              countryName={item.country.name}
+                              fallbackEmoji={item.country.flag}
+                              className="w-5 h-3.5 rounded-xs shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-extrabold text-white block truncate">
+                                {item.country.name}
+                              </span>
+                              <span className="text-[10px] text-slate-300 block truncate">
+                                {quizResultTab === 'matches' &&
+                                  `${item.matchPercent}% Fit · $${item.monthlyCostUSD.toLocaleString()}/mo · ${item.fireFundedPercent}% FIRE`}
+                                {quizResultTab === 'visa' &&
+                                  `${item.visaLabel} · Min $${item.visaIncomeReqUSD.toLocaleString()}/mo`}
+                                {quizResultTab === 'inflation' &&
+                                  `10-Yr Projected: $${item.inflation10YrLowUSD.toLocaleString()}–$${item.inflation10YrHighUSD.toLocaleString()}/mo`}
+                              </span>
+                            </div>
                           </div>
+                          <ChevronRight className="w-4 h-4 text-teal-300 shrink-0" />
                         </div>
-                        <ChevronRight className="w-4 h-4 text-teal-300 shrink-0" />
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
+
+                  {isGuestUser && (
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('signup')}
+                      className="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>
+                        Unlock Matches #4–#10 &amp; All {freedomResults.retireNowCountries.length} Retire-Now Countries
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
 
