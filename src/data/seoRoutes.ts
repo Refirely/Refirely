@@ -23,9 +23,9 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     path: '/',
     title: 'ReFirely – Retire Early Abroad (FIRE), Nomad Cost & Global Visa Check',
     description:
-      'Compare 209 countries for FIRE retirement & digital nomads, check global visa rules by passport type & US/Schengen visas, plan Scout & Hop trips & meet expats.',
+      'Find where you can retire early (FIRE) or work remotely across 209 countries. Calculate 4% SWR nest eggs, check global visa rules by passport & connect with expats.',
     keywords:
-      'retire early abroad calculator, FIRE calculator by country, global visa checker 2026, do I need a visa, visa free countries with US B1 B2 visa, visa free countries with Schengen visa, Indian diplomatic official passport visa free countries, MEA bilateral visa waiver agreement, diplomatic vs official passport visa rules, Turkey green passport visa free countries, digital nomad cost of living 2026, nomad cash burn calculator, digital nomad runway simulator, best countries to retire 2026, geoarbitrage calculator, Portugal D7 passive income visa, Spain Non-Lucrative Visa NLV, Thailand DTV visa 5 year, Scout and Hop sabbatical trip planner, expat meetups worldwide',
+      'where can I retire abroad calculator, retire early abroad (FIRE), FIRE calculator by country, where can I retire with 250k, where can I retire with 500k, 4 percent rule retirement countries, top 12 retirement havens 2026, top 12 digital nomad countries 2026, global visa checker 2026, do I need a visa, visa free countries with US B1 B2 visa, visa free countries with Schengen visa, Indian diplomatic official passport visa free countries, MEA bilateral visa waiver agreement, Turkey green passport visa free countries, digital nomad cost of living 2026, nomad cash burn calculator, digital nomad runway simulator, geoarbitrage calculator, Portugal D7 passive income visa, Portugal D8 digital nomad visa, Spain Non-Lucrative Visa NLV, Spain digital nomad visa Beckham law, Thailand DTV visa 5 year, Costa Rica Pensionado visa, Panama Pensionado visa, Malaysia MM2H DE Rantau visa, Greece FIP 7 percent tax retirement, Italy 7 percent flat tax retiree, France long stay visitor visa retirement, Ecuador Jubilado visa, Uruguay Rentista visa, Bali E33G remote worker visa, Croatia digital nomad visa, Colombia digital nomad visa, Scout and Hop sabbatical trip planner, expat meetups worldwide',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/explore-havens.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1408',
@@ -39,7 +39,7 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     path: '/visa-check',
     title: 'Global Visa Check 2026: Check Visa Rules by Passport & Country Access | ReFirely',
     description:
-      'Check visa requirements for any destination by entering your nationality, passport type (Ordinary, Official, Diplomatic, Special) & US/Schengen visas—plus see how many countries you can visit visa-free with 155+ official government links.',
+      'Check visa requirements for 205+ destinations by nationality, passport class (Ordinary, Official, Diplomatic, Special) & US/Schengen visas with 155+ official embassy links.',
     keywords:
       'global visa checker 2026, do I need a visa, check visa requirement by nationality and destination, how many countries can I visit visa free, visa free countries with US B1 B2 visa, visa free countries with Schengen visa, Indian diplomatic official passport visa free countries, MEA bilateral visa waiver agreement, diplomatic vs official passport visa rules, Turkey green passport visa free countries, UK visa Ireland exemption, passport mobility explorer, official embassy visa portal, ReFirely visa check',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/visa-check.jpg`,
@@ -55,9 +55,9 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     path: '/explore',
     title: 'Explore 209 Global Retirement (FIRE) & Digital Nomad Havens | ReFirely',
     description:
-      'Search and filter 209 verified global havens for early retirement and digital nomads. Compare monthly budgets, nomad cash burn, D7 & DNV visas, fiber internet speeds, healthcare, safety & climate.',
+      'Filter and rank 209 verified countries by monthly retirement budget, nomad cash burn, 4% FIRE nest egg, D7 & DNV visa income thresholds, fiber internet speed, healthcare & safety.',
     keywords:
-      'explore retirement havens, best countries to retire abroad 2026, digital nomad countries ranked, lowest cost of living countries, fiber internet speeds by country, retirement visa directory, digital nomad visa directory, ReFirely explore',
+      'explore retirement havens, best countries to retire abroad 2026, digital nomad countries ranked, filter countries by monthly budget, lowest cost of living countries, fiber internet speeds by country, retirement visa income requirements, digital nomad visa directory, ReFirely explore',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/explore-havens.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1408',
@@ -73,7 +73,7 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     description:
       'Compare countries head-to-head across monthly couple budgets, digital nomad cash burn, retirement & remote work visas, fiber speeds, apartment rents, food, taxes & healthcare.',
     keywords:
-      'compare countries to retire abroad, side by side cost of living comparison, Portugal vs Spain retirement, Thailand vs Vietnam digital nomad, compare retirement visas, compare nomad cash burn, ReFirely compare',
+      'compare countries to retire abroad, side by side cost of living comparison, Portugal vs Spain retirement, Costa Rica vs Panama retirement, Thailand vs Malaysia retirement, Spain vs Portugal digital nomad, compare retirement visas, compare nomad cash burn, ReFirely compare',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/compare-havens.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1408',
@@ -119,9 +119,9 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     path: '/meetups',
     title: 'Worldwide Expat, Retiree & Digital Nomad Meetups & Socials | ReFirely',
     description:
-      'Discover and RSVP to local expat coffee socials, scouting dinners & online meetups in Portugal, Spain, Thailand, Costa Rica, Mexico and top relocation havens worldwide.',
+      'Discover and RSVP to local expat coffee socials, scouting dinners & online meetups in Portugal, Spain, Thailand, Costa Rica, Panama, Malaysia, Mexico and top havens worldwide.',
     keywords:
-      'expat meetups worldwide, digital nomad meetups, early retiree coffee socials, expat events Portugal Spain Thailand, relocation networking, ReFirely meetups',
+      'expat meetups worldwide, digital nomad meetups, early retiree coffee socials, expat events Portugal Spain Thailand Costa Rica, relocation networking, ReFirely meetups',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/expats-meetups.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1280',
@@ -133,11 +133,11 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
   'fire-calculator': {
     view: 'fire-calculator',
     path: '/fire-calculator',
-    title: 'FIRE Calculator Abroad & Nomad Runway Simulator | ReFirely',
+    title: 'FIRE Calculator Abroad: See Where You Can Retire Right Now | ReFirely',
     description:
-      'Calculate your FIRE number abroad with our International Geo-Arbitrage Engine. Compare 3%–5% SWR nest eggs, years saved & digital nomad runway across 209 countries.',
+      'Calculate your FIRE number abroad with our International Geo-Arbitrage Engine. See how many countries you can retire in today (100%+ funded) vs close to retirement (70–99%) across 209 havens.',
     keywords:
-      'FIRE calculator abroad, international FIRE calculator, geoarbitrage calculator, 4 percent rule retirement abroad, retire early abroad calculator, FIRE number by country, digital nomad runway calculator, monthly cash burn simulator, safe withdrawal rate SWR calculator, early retirement overseas, ReFirely FIRE calculator',
+      'FIRE calculator abroad, international FIRE calculator, where can I retire right now calculator, geoarbitrage calculator, 4 percent rule retirement abroad, retire early abroad calculator, FIRE number by country, countries close to FIRE retirement, 10 year inflation stress test retirement, digital nomad runway calculator, monthly cash burn simulator, safe withdrawal rate SWR calculator, early retirement overseas, ReFirely FIRE calculator',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/fire-calculator.jpg`,
     ogImageType: 'image/jpeg',
     ogImageWidth: '1280',
@@ -151,7 +151,7 @@ export const STATIC_PAGE_SEO: Record<StaticPageSeoConfig['view'], StaticPageSeoC
     path: '/dashboard',
     title: 'Member Relocation Dashboard, Saved Havens & FIRE Hub | ReFirely',
     description:
-      'Manage your saved retirement havens, personal relocation checklist, country research journal, multi-asset portfolio tracker & earned expat badges on ReFirely.',
+      'Manage your saved retirement havens, Top 10 Freedom Map matches, personal relocation checklist, country research journal, multi-asset portfolio tracker & earned expat badges.',
     keywords:
       'expat relocation dashboard, saved retirement countries, relocation checklist tracker, personal FIRE portfolio hub, country research journal, ReFirely member dashboard',
     ogImage: `${PUBLIC_SITE_ORIGIN}/assets/og/fire-calculator.jpg`,
@@ -189,7 +189,7 @@ export interface FeaturedVisaCorridor {
 }
 
 export const FEATURED_VISA_CORRIDORS: FeaturedVisaCorridor[] = [
-  // Popular ordinary passport travel & relocation corridors
+  // Popular ordinary passport travel, Top 12 Retirement Haven & Top 12 Nomad corridors
   { slug: 'in-to-pt', originCode: 'IN', destinationCode: 'PT', priority: '0.85' },
   { slug: 'in-to-th', originCode: 'IN', destinationCode: 'TH', priority: '0.85' },
   { slug: 'in-to-ae', originCode: 'IN', destinationCode: 'AE', priority: '0.85' },
@@ -199,21 +199,45 @@ export const FEATURED_VISA_CORRIDORS: FeaturedVisaCorridor[] = [
   { slug: 'in-to-vn', originCode: 'IN', destinationCode: 'VN', priority: '0.85' },
   { slug: 'in-to-my', originCode: 'IN', destinationCode: 'MY', priority: '0.85' },
   { slug: 'in-to-id', originCode: 'IN', destinationCode: 'ID', priority: '0.85' },
-  { slug: 'us-to-pt', originCode: 'US', destinationCode: 'PT', priority: '0.85' },
-  { slug: 'us-to-es', originCode: 'US', destinationCode: 'ES', priority: '0.85' },
-  { slug: 'us-to-th', originCode: 'US', destinationCode: 'TH', priority: '0.85' },
-  { slug: 'us-to-mx', originCode: 'US', destinationCode: 'MX', priority: '0.85' },
+  { slug: 'in-to-cr', originCode: 'IN', destinationCode: 'CR', priority: '0.85' },
+  { slug: 'in-to-pa', originCode: 'IN', destinationCode: 'PA', priority: '0.85' },
+  { slug: 'in-to-gr', originCode: 'IN', destinationCode: 'GR', priority: '0.85' },
+  { slug: 'in-to-it', originCode: 'IN', destinationCode: 'IT', priority: '0.85' },
+  { slug: 'us-to-pt', originCode: 'US', destinationCode: 'PT', priority: '0.9' },
+  { slug: 'us-to-es', originCode: 'US', destinationCode: 'ES', priority: '0.9' },
+  { slug: 'us-to-th', originCode: 'US', destinationCode: 'TH', priority: '0.9' },
+  { slug: 'us-to-mx', originCode: 'US', destinationCode: 'MX', priority: '0.9' },
   { slug: 'us-to-jp', originCode: 'US', destinationCode: 'JP', priority: '0.85' },
-  { slug: 'us-to-cr', originCode: 'US', destinationCode: 'CR', priority: '0.85' },
+  { slug: 'us-to-cr', originCode: 'US', destinationCode: 'CR', priority: '0.9' },
+  { slug: 'us-to-pa', originCode: 'US', destinationCode: 'PA', priority: '0.9' },
+  { slug: 'us-to-my', originCode: 'US', destinationCode: 'MY', priority: '0.9' },
+  { slug: 'us-to-gr', originCode: 'US', destinationCode: 'GR', priority: '0.9' },
+  { slug: 'us-to-it', originCode: 'US', destinationCode: 'IT', priority: '0.9' },
+  { slug: 'us-to-fr', originCode: 'US', destinationCode: 'FR', priority: '0.9' },
+  { slug: 'us-to-ec', originCode: 'US', destinationCode: 'EC', priority: '0.85' },
+  { slug: 'us-to-uy', originCode: 'US', destinationCode: 'UY', priority: '0.85' },
+  { slug: 'us-to-id', originCode: 'US', destinationCode: 'ID', priority: '0.9' },
+  { slug: 'us-to-co', originCode: 'US', destinationCode: 'CO', priority: '0.85' },
+  { slug: 'us-to-hr', originCode: 'US', destinationCode: 'HR', priority: '0.85' },
+  { slug: 'us-to-vn', originCode: 'US', destinationCode: 'VN', priority: '0.85' },
+  { slug: 'us-to-ae', originCode: 'US', destinationCode: 'AE', priority: '0.85' },
   { slug: 'gb-to-pt', originCode: 'GB', destinationCode: 'PT', priority: '0.85' },
   { slug: 'gb-to-es', originCode: 'GB', destinationCode: 'ES', priority: '0.85' },
   { slug: 'gb-to-th', originCode: 'GB', destinationCode: 'TH', priority: '0.85' },
+  { slug: 'gb-to-cr', originCode: 'GB', destinationCode: 'CR', priority: '0.85' },
+  { slug: 'gb-to-my', originCode: 'GB', destinationCode: 'MY', priority: '0.85' },
   { slug: 'ca-to-pt', originCode: 'CA', destinationCode: 'PT', priority: '0.85' },
+  { slug: 'ca-to-mx', originCode: 'CA', destinationCode: 'MX', priority: '0.85' },
+  { slug: 'ca-to-cr', originCode: 'CA', destinationCode: 'CR', priority: '0.85' },
+  { slug: 'au-to-id', originCode: 'AU', destinationCode: 'ID', priority: '0.85' },
+  { slug: 'au-to-th', originCode: 'AU', destinationCode: 'TH', priority: '0.85' },
   { slug: 'ph-to-jp', originCode: 'PH', destinationCode: 'JP', priority: '0.85' },
   { slug: 'ph-to-th', originCode: 'PH', destinationCode: 'TH', priority: '0.85' },
   // High-intent US B1/B2 & Schengen third-country visa exemption corridors
   { slug: 'in-to-mx-us-visa', originCode: 'IN', destinationCode: 'MX', heldVisas: ['us_visa'], priority: '0.9' },
   { slug: 'in-to-cr-us-visa', originCode: 'IN', destinationCode: 'CR', heldVisas: ['us_visa'], priority: '0.9' },
+  { slug: 'in-to-pa-us-visa', originCode: 'IN', destinationCode: 'PA', heldVisas: ['us_visa'], priority: '0.9' },
+  { slug: 'in-to-co-us-visa', originCode: 'IN', destinationCode: 'CO', heldVisas: ['us_visa'], priority: '0.9' },
   { slug: 'in-to-ae-us-visa', originCode: 'IN', destinationCode: 'AE', heldVisas: ['us_visa'], priority: '0.9' },
   { slug: 'in-to-ph-us-visa', originCode: 'IN', destinationCode: 'PH', heldVisas: ['us_visa'], priority: '0.9' },
   { slug: 'in-to-ge-schengen-visa', originCode: 'IN', destinationCode: 'GE', heldVisas: ['schengen_visa'], priority: '0.9' },

@@ -1,7 +1,7 @@
 {
   "name": "ReFirely - Where Your Freedom Goes Further",
   "short_name": "ReFirely",
-  "description": "Compare 209 countries for FIRE retirement & digital nomads, check global visa rules by passport type & US/Schengen visas, plan Scout & Hop trips & meet expats.",
+  "description": "Find where you can retire early (FIRE) or work remotely across 209 countries. Calculate 4% SWR nest eggs, check global visa rules by passport & connect with expats.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

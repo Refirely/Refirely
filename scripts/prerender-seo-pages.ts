@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { INITIAL_COUNTRIES } from '../src/data/countries';
+import { COUNTRY_LANDMARK_PHOTOS } from '../src/data/countryLandmarkPhotos';
 import { getCountryGastronomyProfile } from '../src/data/countryFoodAndGastronomy';
 import { getCountryNomadProfile } from '../src/data/countryNomadProfiles';
 import {
@@ -296,7 +297,7 @@ function main() {
     }
   }
 
-  // 2. Prerender all 40 featured Visa Check corridor pages (/visa-check/<slug>) with live verdict + exact accessible countries count!
+  // 2. Prerender all featured Visa Check corridor pages (/visa-check/<slug>) with live verdict + exact accessible countries count!
   for (const corridor of FEATURED_VISA_CORRIDORS) {
     const originPassports = getPassportTypesForCountry(corridor.originCode);
     const passportObj =
@@ -400,6 +401,8 @@ function main() {
     const canonicalUrl = `${PUBLIC_SITE_ORIGIN}/country/${encodeURIComponent(id)}`;
     const singleBudget = country.costOfLiving.monthlyBudgetSingleUSD.toLocaleString();
     const coupleBudget = country.costOfLiving.monthlyBudgetCoupleUSD.toLocaleString();
+    const fireNestEggSingle = Math.round((country.costOfLiving.monthlyBudgetSingleUSD * 12) / 0.04).toLocaleString();
+    const fireNestEggCouple = Math.round((country.costOfLiving.monthlyBudgetCoupleUSD * 12) / 0.04).toLocaleString();
     const visaName = country.visa.retirementVisaName;
     const nomadProfile = getCountryNomadProfile(country);
     const nomadBurn = nomadProfile.monthlyNomadBurnUSD.toLocaleString();
@@ -410,10 +413,13 @@ function main() {
     const title = `${country.name} Retirement (FIRE) & Digital Nomad Guide: $${singleBudget}/mo Cost, Visas & Rents | ReFirely`;
     const description = `Retire or work remotely in ${country.name}: $${singleBudget}/mo solo ($${coupleBudget}/mo couple), $${nomadBurn}/mo nomad burn, ${fiberMbps} Mbps fiber, ${visaName} & ${dnvName}, healthcare ${country.lifestyle.healthcareScore}/100 & safety ${country.lifestyle.safetyScore}/100.`;
     const keywords = `retire in ${country.name}, ${country.name} retirement visa, ${visaName}, digital nomad ${country.name}, ${dnvName}, ${country.name} cost of living, ${country.name} monthly cash burn, ${country.name} internet speed Mbps, ${country.name} apartment rent, ${country.name} expat healthcare, ReFirely ${country.name}`;
+    const landmarkPhoto = COUNTRY_LANDMARK_PHOTOS[country.id]?.photoUrl;
     const ogImage =
-      country.imageUrl && country.imageUrl.startsWith('https://')
-        ? country.imageUrl
-        : `${PUBLIC_SITE_ORIGIN}/assets/og/explore-havens.jpg`;
+      landmarkPhoto && landmarkPhoto.startsWith('https://')
+        ? landmarkPhoto
+        : country.imageUrl && country.imageUrl.startsWith('https://')
+          ? country.imageUrl
+          : `${PUBLIC_SITE_ORIGIN}/assets/og/explore-havens.jpg`;
 
     const countryJsonLd = {
       '@context': 'https://schema.org',
@@ -439,6 +445,8 @@ function main() {
           additionalProperty: [
             { '@type': 'PropertyValue', name: 'Monthly Cost of Living (Single Retiree USD)', value: country.costOfLiving.monthlyBudgetSingleUSD, unitText: 'USD/month' },
             { '@type': 'PropertyValue', name: 'Monthly Cost of Living (Retiree Couple USD)', value: country.costOfLiving.monthlyBudgetCoupleUSD, unitText: 'USD/month' },
+            { '@type': 'PropertyValue', name: 'Required 4% SWR FIRE Nest Egg (Single USD)', value: Math.round((country.costOfLiving.monthlyBudgetSingleUSD * 12) / 0.04), unitText: 'USD' },
+            { '@type': 'PropertyValue', name: 'Required 4% SWR FIRE Nest Egg (Couple USD)', value: Math.round((country.costOfLiving.monthlyBudgetCoupleUSD * 12) / 0.04), unitText: 'USD' },
             { '@type': 'PropertyValue', name: 'Monthly Digital Nomad Cash Burn (USD)', value: nomadProfile.monthlyNomadBurnUSD, unitText: 'USD/month' },
             { '@type': 'PropertyValue', name: 'Verified Fiber Internet Speed (Mbps)', value: fiberMbps, unitText: 'Mbps' },
             { '@type': 'PropertyValue', name: 'Primary Passive Retirement Visa Pathway', value: visaName },
@@ -448,10 +456,31 @@ function main() {
             { '@type': 'PropertyValue', name: 'Drinking Tap Water Safety', value: foodProfile.costsAndHygiene.waterSafety },
           ],
         },
+        {
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: `How much does it cost to retire or live as a digital nomad in ${country.name}?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `A single retiree in ${country.name} spends roughly $${singleBudget}/month (requiring a $${fireNestEggSingle} FIRE nest egg at a 4% Safe Withdrawal Rate), while a retired couple spends about $${coupleBudget}/month ($${fireNestEggCouple} FIRE nest egg). Digital nomads living in turnkey furnished accommodations with coworking spend approximately $${nomadBurn}/month with ${fiberMbps} Mbps average fiber internet.`,
+              },
+            },
+            {
+              '@type': 'Question',
+              name: `What retirement and digital nomad visas are available for ${country.name}?`,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: `Retirees relocating to ${country.name} typically use the ${visaName}${country.visa.minimumIncomeUSD > 0 ? ` (minimum passive income ~$${country.visa.minimumIncomeUSD.toLocaleString()}/month)` : ''}, while remote workers and creators use the ${dnvName} (${nomadProfile.remoteWorkVisaStay}).`,
+              },
+            },
+          ],
+        },
       ],
     };
 
-    const hasCustomHttpsImage = Boolean(country.imageUrl && country.imageUrl.startsWith('https://'));
+    const hasCustomHttpsImage = Boolean((landmarkPhoto && landmarkPhoto.startsWith('https://')) || (country.imageUrl && country.imageUrl.startsWith('https://')));
     const pageHtml = injectPageMetadata(templateHtml, {
       outputRelativeDir: `country/${id}`,
       canonicalUrl,
