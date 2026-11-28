@@ -52,6 +52,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
 
   const totalUnreadDms = dmThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
   const canAccessAdmin = isOwnerAdmin || userProfile.role === 'admin';
+  const isPreviewHost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname.includes('run.app') ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1');
+  const showAndroidPreviewToggle = canAccessAdmin || isPreviewHost;
 
   const handleNav = (view: typeof currentView) => {
     if (view === 'admin' && userProfile.role !== 'admin' && isOwnerAdmin) {
@@ -139,6 +145,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
 
         {/* Zone 3: Compact Right Utility & Account Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Instant 1-Click Switch to Android App Mode (Preview & Admin Only — Hidden from Public on Live Domain) */}
+          {showAndroidPreviewToggle && (
+            <button
+              type="button"
+              onClick={enterAndroidAppPreview}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-extrabold rounded-xl bg-indigo-50/90 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/90 transition-all cursor-pointer shrink-0 shadow-2xs"
+              title="Switch Preview to Android App Mode (Visible in Preview & to Admin only)"
+            >
+              <span>📱</span>
+              <span className="hidden xl:inline">Android</span>
+              <span>App</span>
+            </button>
+          )}
+
           {/* Single Canonical Admin Console Button (Admin Only) */}
           {canAccessAdmin && (
             <button
@@ -618,6 +638,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                   ) : null}
                 </button>
               </>
+            )}
+
+            {showAndroidPreviewToggle && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  enterAndroidAppPreview();
+                }}
+                className="text-left px-3 py-2 rounded-lg text-sm font-bold flex items-center justify-between bg-indigo-50 text-indigo-900 border border-indigo-200 cursor-pointer mt-1"
+              >
+                <span className="flex items-center gap-2">
+                  <span>📱</span>
+                  <span>Open Android App Mode</span>
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-600 text-white">
+                  Preview
+                </span>
+              </button>
             )}
           </div>
 
