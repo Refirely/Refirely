@@ -10,6 +10,7 @@ import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
 import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { FireProgressChart, FireTrajectoryPoint } from './FireProgressChart';
 import { CurrencyAmountInput } from './CurrencyAmountInput';
+import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   DEFAULT_FINANCIAL_PORTFOLIO,
   WORLD_COUNTRIES,
@@ -5319,6 +5320,247 @@ export const FireCalculatorPage: React.FC<FireCalculatorPageProps> = ({
               </>
             )}
           </div>
+        </section>
+
+        {/* ============================================================ */}
+        {/* 1B. SHAREABLE FIRE MILESTONES & FREEDOM CARDS (GATED GUEST)  */}
+        {/* ============================================================ */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {(() => {
+            const unified = calculateUnifiedFireMetrics(userProfile, countries);
+            const estBurn = unified.monthlyBurnUSD;
+            const fireTarget = unified.targetFireNestEggUSD;
+            const firePct = unified.fireProgressPercent;
+            const uncappedPct = unified.uncappedFireProgressPct;
+            const yearsSaved = unified.yearsSaved;
+            const runwayMonths = unified.nomadRunwayMonths;
+            const havenCity = unified.targetCityName;
+            const havenCountry = unified.targetCountryName;
+            const havenFlag = unified.targetCountryFlag;
+
+            const fireMilestones = [
+              {
+                id: 'arbitrage-architect',
+                title: 'Arbitrage Architect',
+                icon: '⚡',
+                subtitle: `Retiring ${yearsSaved} Years Earlier via Geoarbitrage`,
+                description: `Target haven ${havenCity}, ${havenCountry} cuts monthly burn to $${estBurn.toLocaleString()}/mo.`,
+                cardBg: 'from-indigo-50/90 via-white to-violet-50/80',
+                cardBorder: 'border-indigo-200/90 hover:border-indigo-400',
+                pillBg: 'bg-indigo-100/80 border-indigo-200 text-indigo-800',
+                subtitleColor: 'text-indigo-700',
+                buttonGradient: 'from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white',
+                pill: 'Geoarbitrage Unlocked',
+                headlineMode: 'years-saved' as const,
+              },
+              {
+                id: 'coast-fire-nomad',
+                title: 'Coast FIRE Nomad',
+                icon: '🌊',
+                subtitle:
+                  firePct >= 100
+                    ? `100% Complete FIRE in ${havenCountry} (${uncappedPct}% Funded)`
+                    : `${firePct}% to Full Financial Independence`,
+                description: `Live FIRE corpus ($${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k) vs $${Math.round(fireTarget / 1000).toLocaleString()}k target for ${havenCountry}.`,
+                cardBg: 'from-sky-50/90 via-white to-cyan-50/80',
+                cardBorder: 'border-sky-200/90 hover:border-sky-400',
+                pillBg: 'bg-sky-100/80 border-sky-200 text-sky-800',
+                subtitleColor: 'text-sky-700',
+                buttonGradient: 'from-sky-600 via-cyan-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white',
+                pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Progress`,
+                headlineMode: 'fi-percent' as const,
+              },
+              {
+                id: 'runway-sovereign',
+                title: 'Runway Sovereign',
+                icon: '👑',
+                subtitle: `${runwayMonths}+ Months Global Freedom Runway`,
+                description: `Self-funded slow-travel & remote living runway in ${havenCity}, ${havenCountry}.`,
+                cardBg: 'from-rose-50/90 via-white to-pink-50/80',
+                cardBorder: 'border-rose-200/90 hover:border-rose-400',
+                pillBg: 'bg-rose-100/80 border-rose-200 text-rose-800',
+                subtitleColor: 'text-rose-700',
+                buttonGradient: 'from-rose-500 via-pink-600 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white',
+                pill: `${runwayMonths} Mo Runway`,
+                headlineMode: 'nomad-runway' as const,
+              },
+              {
+                id: '100-fi',
+                title: '100% FI',
+                icon: '🔥',
+                subtitle:
+                  firePct >= 100
+                    ? `100% Financial Independence Unlocked (${uncappedPct}% Funded)`
+                    : `${firePct}% of ${unified.swrPercent}% SWR Target`,
+                description: `${unified.swrPercent}% SWR portfolio covers $${estBurn.toLocaleString()}/mo ${havenCountry} lifestyle.`,
+                cardBg: 'from-purple-50/90 via-white to-fuchsia-50/80',
+                cardBorder: 'border-purple-200/90 hover:border-purple-400',
+                pillBg: 'bg-purple-100/80 border-purple-200 text-purple-800',
+                subtitleColor: 'text-purple-700',
+                buttonGradient: 'from-purple-600 via-fuchsia-600 to-rose-500 hover:from-purple-700 hover:to-rose-600 text-white',
+                pill: firePct >= 100 ? '🔥 100% FI Achieved' : `${firePct}% FI Milestone`,
+                headlineMode: 'fi-percent' as const,
+              },
+            ];
+
+            return (
+              <div className="relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-50/80 via-white to-rose-50/80 text-slate-900 border border-indigo-200/85 space-y-4 shadow-sm overflow-hidden">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
+                        🏅 Shareable FIRE Milestones &amp; Freedom Cards
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-[10px] font-bold text-slate-700 shadow-2xs">
+                        <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
+                        <span>{havenCity}, {havenCountry}</span>
+                      </span>
+                      {!isGuestUser && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-mono font-bold text-emerald-900 shadow-2xs tabular-nums">
+                          <span>
+                            FIRE Corpus: ${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k / Target: ${Math.round(fireTarget / 1000).toLocaleString()}k ({firePct}% FI)
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mt-1">
+                      Personalized Financial Independence &amp; Geoarbitrage Freedom Cards
+                    </h3>
+                  </div>
+
+                  {!isGuestUser && (
+                    <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+                      <div className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-indigo-200 shadow-2xs text-xs">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Target Country:</span>
+                        <select
+                          value={havenCountry}
+                          onChange={e => {
+                            const nextCountry = e.target.value;
+                            const matched = countries.find(
+                              c => c.name.toLowerCase() === nextCountry.toLowerCase()
+                            );
+                            updateUserProfile({
+                              targetCountry: nextCountry,
+                              ...(matched
+                                ? { monthlyBudgetUSD: matched.costOfLiving.monthlyBudgetSingleUSD }
+                                : {}),
+                            });
+                          }}
+                          className="font-bold text-indigo-950 bg-transparent focus:outline-none cursor-pointer text-xs"
+                        >
+                          {!countries.some(c => c.name === havenCountry) && havenCountry && (
+                            <option value={havenCountry}>
+                              {havenFlag} {havenCountry}
+                            </option>
+                          )}
+                          {countries.map(c => (
+                            <option key={`fire-page-milestone-haven-${c.id}`} value={c.name}>
+                              {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <div
+                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 ${
+                      isGuestUser ? 'blur-[5px] pointer-events-none select-none opacity-75' : ''
+                    }`}
+                  >
+                    {fireMilestones.map(m => (
+                      <div
+                        key={m.id}
+                        className={`rounded-2xl bg-gradient-to-br ${m.cardBg} border ${m.cardBorder} p-4 flex flex-col justify-between gap-3 transition-all shadow-2xs`}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-lg">{m.icon}</span>
+                            <span className={`px-2 py-0.5 rounded-full border ${m.pillBg} text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap`}>
+                              {m.pill}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-1.5">
+                            <h4 className="text-xs font-extrabold text-slate-900 truncate">{m.title}</h4>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/90 border border-slate-200/80 text-[10px] font-bold text-slate-700 shrink-0">
+                              <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
+                              <span>{havenCountry}</span>
+                            </span>
+                          </div>
+                          <p className={`text-[11px] font-extrabold ${m.subtitleColor} leading-snug`}>{m.subtitle}</p>
+                          <p className="text-[10px] text-slate-600 leading-relaxed">{m.description}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openShareFireCardModal({
+                              persona: m.id === 'coast-fire-nomad' || m.id === 'runway-sovereign' ? 'nomad' : currentPersona === 'nomad' ? 'nomad' : 'retiree',
+                              badgeTitle: m.title,
+                              badgeEmoji: m.icon,
+                              headlineMode: m.headlineMode,
+                              topCountry: havenCountry,
+                              topCountryFlag: havenFlag,
+                              topCity: havenCity,
+                              yearsSaved,
+                              nomadRunwayMonths: runwayMonths,
+                              fireProgressPercent: firePct,
+                              monthlyBurnUSD: estBurn,
+                              domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
+                              currentNetWorthUSD: unified.effectiveFireCorpusUSD,
+                              targetFireNestEggUSD: fireTarget,
+                              swrPercent: unified.swrPercent,
+                            })
+                          }
+                          className={`w-full py-2 px-3 rounded-xl bg-gradient-to-r ${m.buttonGradient} font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap`}
+                        >
+                          <span>Share My FIRE Badge</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {isGuestUser && (
+                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                      <div className="max-w-md w-full rounded-2xl bg-white/95 backdrop-blur-md border border-indigo-200 p-5 text-center shadow-xl space-y-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto">
+                          <Lock className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-extrabold text-slate-900">
+                            Unlock Your Personalized FIRE Milestones &amp; Shareable Cards
+                          </h4>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Sign in or create a free account to sync your 5-Scheme Financial Ledger, calculate live Geoarbitrage Years Saved, and export privacy-safe FIRE Milestone Cards.
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal('signup')}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white text-xs font-extrabold hover:from-indigo-700 hover:to-teal-700 transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Sign Up Free</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal('login')}
+                            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            <LogIn className="w-3.5 h-3.5" />
+                            <span>Log In</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* ============================================================ */}

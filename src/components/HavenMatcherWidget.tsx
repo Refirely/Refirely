@@ -790,7 +790,7 @@ export const HavenMatcherWidget: React.FC = () => {
 
       if (scopeTab === 'shortlist') {
         const saved = list.filter(item => userProfile.savedCountryIds.includes(item.baseMatch.country.id));
-        list = saved.length > 0 ? saved : list.slice(0, 6);
+        list = saved.length > 0 ? saved : list.slice(0, 10);
       } else if (scopeTab === 'target') {
         const target = list.filter(
           item => item.baseMatch.country.name.toLowerCase() === userProfile.targetCountry.toLowerCase()
@@ -836,7 +836,7 @@ export const HavenMatcherWidget: React.FC = () => {
     }
 
     if (scopeTab === 'top' && !searchQuery.trim() && selectedRegion === 'All' && (!enableAdvancedFinancialRules || nomadWorkspaceFilter === 'any')) {
-      return list.slice(0, 6);
+      return list.slice(0, 10);
     }
 
     return list;
@@ -1530,7 +1530,7 @@ export const HavenMatcherWidget: React.FC = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Top 6 Matches
+            Top 10 Matches
           </button>
           <button
             type="button"

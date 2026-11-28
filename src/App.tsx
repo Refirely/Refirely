@@ -142,13 +142,7 @@ const MainContent: React.FC = () => {
                 <DirectMessagesAuthGate />
               )
             )}
-            {currentView === 'dashboard' && (
-              isOwnerAdmin ? (
-                <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />
-              ) : (
-                <UserDashboard />
-              )
-            )}
+            {currentView === 'dashboard' && <UserDashboard />}
             {currentView === 'admin' && (
               isOwnerAdmin ? (
                 <AdminDashboard onOpenBrandKit={() => setBrandKitOpen(true)} />

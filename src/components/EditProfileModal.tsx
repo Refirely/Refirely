@@ -36,6 +36,7 @@ export const EditProfileModal: React.FC = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'about' | 'picture' | 'finances' | 'travel' | 'languages' | 'interests'>('about');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   // Finances form state
   const [financesForm, setFinancesForm] = useState<UserFinancialPortfolio>(() => {
@@ -109,7 +110,9 @@ export const EditProfileModal: React.FC = () => {
       const tabChanged = lastInitialTabRef.current !== editProfileInitialTab;
 
       if (justOpened || tabChanged) {
-        setActiveTab(editProfileInitialTab || 'about');
+        const requestedTab = editProfileInitialTab || 'about';
+        setActiveTab(requestedTab === 'picture' ? 'about' : requestedTab === 'interests' ? 'languages' : requestedTab);
+        setShowAvatarPicker(requestedTab === 'picture');
         setFormData({
           name: userProfile.name,
           email: userProfile.email,
@@ -359,23 +362,23 @@ export const EditProfileModal: React.FC = () => {
         initial={{ opacity: 0, scale: 0.94, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 310, damping: 28 }}
-        className="relative overflow-hidden bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-indigo-200/80 flex flex-col max-h-[92vh] my-4"
+        className="relative overflow-hidden bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-indigo-200/80 flex flex-col max-h-[92vh] my-3"
       >
         {/* Top Multi-Color Gradient Ribbon */}
-        <div className="h-2 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-teal-400 via-indigo-500 to-amber-500 shrink-0" />
 
-        {/* Top Header */}
-        <div className="p-5 sm:p-6 pb-4 bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-amber-50/60 border-b border-indigo-100/80 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 via-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-sm">
-              <User className="w-5 h-5" />
+        {/* Compact Top Header */}
+        <div className="px-5 py-3.5 bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-amber-50/60 border-b border-indigo-100/80 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-2xs">
+              <User className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                Update Expat Profile &amp; Travel Journal
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
+                Expat Profile &amp; Travel Journal
               </h2>
-              <p className="text-xs text-slate-600">
-                Personalize your retirement profile, travel history, languages, and interests
+              <p className="text-[11px] text-slate-600">
+                Update your photo, relocation vision, financial ledger, visited countries, languages &amp; interests
               </p>
             </div>
           </div>
@@ -383,29 +386,49 @@ export const EditProfileModal: React.FC = () => {
             whileHover={{ scale: 1.08, rotate: 90 }}
             whileTap={{ scale: 0.92 }}
             onClick={handleCloseModal}
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </motion.button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 px-5 sm:px-6 py-2.5 bg-slate-50/90 border-b border-slate-200/80 overflow-x-auto text-xs font-bold">
+        {/* 4-Tab Non-Scrolling Grid Navigation (100% visible on desktop & mobile, zero horizontal scroll) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-5 py-2.5 bg-slate-50/90 border-b border-slate-200/80 text-xs font-bold shrink-0">
           {[
-            { id: 'about', label: 'About & Vision', icon: User, activeClass: 'from-teal-600 to-indigo-600 text-white shadow-xs' },
-            { id: 'picture', label: 'Profile Picture', icon: Image, activeClass: 'from-indigo-600 to-violet-600 text-white shadow-xs' },
-            { id: 'finances', label: 'Salary & Net Worth', icon: DollarSign, activeClass: 'from-emerald-600 to-teal-600 text-white shadow-xs' },
-            { id: 'travel', label: `Travel History (${userProfile.travelHistory?.length || 0})`, icon: Globe, activeClass: 'from-amber-500 to-orange-600 text-white shadow-xs' },
-            { id: 'languages', label: `Languages (${userProfile.languagesKnown?.length || 0})`, icon: Languages, activeClass: 'from-violet-600 to-purple-600 text-white shadow-xs' },
-            { id: 'interests', label: `Interests (${userProfile.interests?.length || 0})`, icon: Heart, activeClass: 'from-rose-500 to-pink-600 text-white shadow-xs' },
+            {
+              id: 'about',
+              label: 'Profile & Photo',
+              icon: User,
+              activeClass: 'from-teal-600 to-indigo-600 text-white shadow-xs',
+              isActive: activeTab === 'about' || activeTab === 'picture',
+            },
+            {
+              id: 'finances',
+              label: 'Financials & Assets',
+              icon: DollarSign,
+              activeClass: 'from-emerald-600 to-teal-600 text-white shadow-xs',
+              isActive: activeTab === 'finances',
+            },
+            {
+              id: 'travel',
+              label: `Travel Log (${userProfile.travelHistory?.length || 0})`,
+              icon: Globe,
+              activeClass: 'from-amber-500 to-orange-600 text-white shadow-xs',
+              isActive: activeTab === 'travel',
+            },
+            {
+              id: 'languages',
+              label: `Langs (${userProfile.languagesKnown?.length || 0}) & Interests (${userProfile.interests?.length || 0})`,
+              icon: Languages,
+              activeClass: 'from-violet-600 to-rose-600 text-white shadow-xs',
+              isActive: activeTab === 'languages' || activeTab === 'interests',
+            },
           ].map(tab => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
             return (
-              <motion.button
+              <button
                 key={tab.id}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.97 }}
+                type="button"
                 onClick={() => {
                   if (formData.name.trim() && formData.name.trim() !== userProfile.name) {
                     updateUserProfile({
@@ -416,15 +439,15 @@ export const EditProfileModal: React.FC = () => {
                   }
                   setActiveTab(tab.id as any);
                 }}
-                className={`py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
-                  isActive
+                className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 truncate cursor-pointer ${
+                  tab.isActive
                     ? `bg-gradient-to-r ${tab.activeClass}`
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900 bg-white/80 hover:bg-white border border-slate-200/80'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </motion.button>
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{tab.label}</span>
+              </button>
             );
           })}
         </div>
@@ -434,7 +457,7 @@ export const EditProfileModal: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mx-6 mt-3 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center gap-2 shadow-2xs"
+            className="mx-5 mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center gap-2 shadow-2xs shrink-0"
           >
             <Check className="w-4 h-4 text-emerald-600" />
             <span>Profile updates saved successfully!</span>
@@ -442,14 +465,143 @@ export const EditProfileModal: React.FC = () => {
         )}
 
         {/* Tab Content Area */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
           
-          {/* TAB 1: ABOUT & VISION */}
-          {activeTab === 'about' && (
-            <form noValidate onSubmit={handleSaveAboutChanges} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* TAB 1: PROFILE, PHOTO & VISION (Unified & Compact) */}
+          {(activeTab === 'about' || activeTab === 'picture') && (
+            <form noValidate onSubmit={handleSaveAboutChanges} className="space-y-3.5">
+              {/* Compact Inline Avatar & Photo Picker Bar */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      {formData.avatarUrl ? (
+                        <img
+                          src={formData.avatarUrl}
+                          alt={formData.name}
+                          className="w-14 h-14 rounded-full object-cover ring-2 ring-teal-600/30 border-2 border-white shadow-2xs"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-teal-800 text-white text-lg font-bold flex items-center justify-center ring-2 ring-teal-600/30">
+                          {formData.name.charAt(0)}
+                        </div>
+                      )}
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-900">{formData.name}</h4>
+                      <p className="text-[11px] text-slate-500">
+                        {formData.relocationStatus} · Target: <strong className="text-teal-800">{formData.targetCountry}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <Image className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>{showAvatarPicker ? 'Hide Avatar Gallery' : 'Choose Avatar / URL'}</span>
+                    </button>
+                    <label className="cursor-pointer px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs">
+                      <Upload className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Upload Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {formData.avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, avatarUrl: '' }));
+                          updateUserProfile({ avatarUrl: '' });
+                          setSavedNotice(true);
+                          setTimeout(() => setSavedNotice(false), 3000);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {avatarError && (
+                  <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>{avatarError}</span>
+                  </div>
+                )}
+
+                {showAvatarPicker && (
+                  <div className="pt-2.5 border-t border-slate-200/80 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                      {AVATAR_PRESETS.map(preset => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, avatarUrl: preset.url }));
+                            updateUserProfile({ avatarUrl: preset.url });
+                            setSavedNotice(true);
+                            setTimeout(() => setSavedNotice(false), 3000);
+                          }}
+                          className={`relative p-1 rounded-xl border text-center transition-all cursor-pointer ${
+                            formData.avatarUrl === preset.url
+                              ? 'border-teal-700 bg-teal-50/50 ring-2 ring-teal-600'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                          title={preset.label}
+                        >
+                          <img
+                            src={preset.url}
+                            alt={preset.label}
+                            className="w-full h-12 rounded-lg object-cover"
+                          />
+                          <span className="text-[9px] text-slate-600 font-medium mt-0.5 block truncate">
+                            {preset.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="Or paste custom image URL (https://...)"
+                        value={customAvatarUrl}
+                        onChange={e => setCustomAvatarUrl(e.target.value)}
+                        className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!customAvatarUrl.trim()) return;
+                          setFormData(prev => ({ ...prev, avatarUrl: customAvatarUrl.trim() }));
+                          updateUserProfile({ avatarUrl: customAvatarUrl.trim() });
+                          setCustomAvatarUrl('');
+                          setSavedNotice(true);
+                          setTimeout(() => setSavedNotice(false), 3000);
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors cursor-pointer"
+                      >
+                        Apply URL
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Compact Row 1: Name, Email, Occupation */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Display Name
                   </label>
                   <input
@@ -457,11 +609,11 @@ export const EditProfileModal: React.FC = () => {
                     required
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Email Address
                   </label>
                   <input
@@ -469,20 +621,33 @@ export const EditProfileModal: React.FC = () => {
                     required
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Occupation / Background
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.occupationOrBackground}
+                    onChange={e => setFormData({ ...formData, occupationOrBackground: e.target.value })}
+                    placeholder="e.g. Architect, Engineer, Creator"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Compact Row 2: Origin, Residing, Home City, Relocation Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Origin Country / Nationality
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Origin / Nationality
                   </label>
                   <select
                     value={formData.originCountry}
                     onChange={e => setFormData({ ...formData, originCountry: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                   >
                     {!WORLD_COUNTRIES.some(c => c.name === formData.originCountry) && formData.originCountry && (
                       <option value={formData.originCountry}>🌍 {formData.originCountry}</option>
@@ -495,13 +660,13 @@ export const EditProfileModal: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Residing Country
                   </label>
                   <select
                     value={formData.residingCountry}
                     onChange={e => setFormData({ ...formData, residingCountry: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                   >
                     {!WORLD_COUNTRIES.some(c => c.name === formData.residingCountry) && formData.residingCountry && (
                       <option value={formData.residingCountry}>🌍 {formData.residingCountry}</option>
@@ -514,25 +679,25 @@ export const EditProfileModal: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Home / Residing City (Optional)
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Residing City
                   </label>
                   <input
                     type="text"
                     value={formData.originCity}
                     onChange={e => setFormData({ ...formData, originCity: e.target.value })}
                     placeholder="e.g. Austin, TX"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Relocation Status
                   </label>
                   <select
                     value={formData.relocationStatus}
                     onChange={e => setFormData({ ...formData, relocationStatus: e.target.value as any })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                   >
                     <option value="Exploring Options">Exploring Options</option>
                     <option value="Scouting In-Person">Scouting In-Person</option>
@@ -543,15 +708,16 @@ export const EditProfileModal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Compact Row 3: Target Haven, Departure Year, Monthly Budget, Climate */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Target Haven Country
                   </label>
                   <select
                     value={formData.targetCountry}
                     onChange={e => setFormData({ ...formData, targetCountry: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                   >
                     {countries.map(c => (
                       <option key={c.id} value={c.name}>
@@ -561,7 +727,7 @@ export const EditProfileModal: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Target Departure Year
                   </label>
                   <input
@@ -570,12 +736,12 @@ export const EditProfileModal: React.FC = () => {
                     max={2040}
                     value={formData.retirementTimelineYear}
                     onChange={e => setFormData({ ...formData, retirementTimelineYear: Number(e.target.value) })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-700">
+                    <label className="text-[11px] font-semibold text-slate-700">
                       Monthly Budget ({inputCurrencyMode === 'LOCAL' && countryMacro.currencyCode !== 'USD' ? countryMacro.currencyCode : 'USD'})
                     </label>
                     {countryMacro.currencyCode !== 'USD' && (
@@ -584,7 +750,7 @@ export const EditProfileModal: React.FC = () => {
                         onClick={() => setInputCurrencyMode(prev => (prev === 'LOCAL' ? 'USD' : 'LOCAL'))}
                         className="text-[10px] font-bold text-orange-700 hover:underline cursor-pointer"
                       >
-                        Switch to {inputCurrencyMode === 'LOCAL' ? '$ USD' : countryMacro.currencyCode}
+                        {inputCurrencyMode === 'LOCAL' ? '$ USD' : countryMacro.currencyCode}
                       </button>
                     )}
                   </div>
@@ -598,230 +764,70 @@ export const EditProfileModal: React.FC = () => {
                     helperSuffix="/mo"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                     Preferred Climate
                   </label>
                   <select
                     value={formData.preferredClimate}
                     onChange={e => setFormData({ ...formData, preferredClimate: e.target.value as any })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                   >
-                    <option value="Mediterranean">Mediterranean (Sunny, warm summers, mild winters)</option>
-                    <option value="Tropical">Tropical (Lush, warm all year)</option>
-                    <option value="Subtropical">Subtropical (Pleasant, balanced humidity)</option>
-                    <option value="Temperate">Temperate (Four distinct seasons)</option>
-                    <option value="Highlands / Mild">Highlands / Eternal Spring (Cool mountain breeze)</option>
+                    <option value="Mediterranean">Mediterranean</option>
+                    <option value="Tropical">Tropical</option>
+                    <option value="Subtropical">Subtropical</option>
+                    <option value="Temperate">Temperate</option>
+                    <option value="Highlands / Mild">Highlands / Eternal Spring</option>
                     <option value="Any">Any Climate</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Compact Row 4: Short Headline & Vision Bio side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Professional Background / Occupation
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Headline / Short Bio
                   </label>
-                  <input
-                    type="text"
-                    value={formData.occupationOrBackground}
-                    onChange={e => setFormData({ ...formData, occupationOrBackground: e.target.value })}
-                    placeholder="e.g. Systems Architect, Educator, Physician, Artist"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  <textarea
+                    rows={2}
+                    value={formData.bio}
+                    onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                    placeholder="One-sentence summary for your profile card..."
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    About Me &amp; Retirement Vision
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.aboutMe}
+                    onChange={e => setFormData({ ...formData, aboutMe: e.target.value })}
+                    placeholder="What motivates you to relocate or retire abroad..."
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Headline / Short Bio
-                </label>
-                <input
-                  type="text"
-                  value={formData.bio}
-                  onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="A quick one-sentence summary for your profile cards..."
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  About Me & International Retirement Vision
-                </label>
-                <textarea
-                  rows={4}
-                  value={formData.aboutMe}
-                  onChange={e => setFormData({ ...formData, aboutMe: e.target.value })}
-                  placeholder="Share your background, what motivated you to look abroad, your ideal day, and what you look for in your retirement haven..."
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-200 flex justify-end gap-3">
+              <div className="pt-2.5 border-t border-slate-200 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                  className="px-4 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-1.5 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Save About Information</span>
+                  <span>Save Profile &amp; Vision</span>
                 </button>
               </div>
             </form>
-          )}
-
-          {/* TAB 2: PROFILE PICTURE */}
-          {activeTab === 'picture' && (
-            <div className="space-y-6">
-              {/* Current Avatar Card */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center gap-5">
-                <div className="relative">
-                  {formData.avatarUrl ? (
-                    <img
-                      src={formData.avatarUrl}
-                      alt={formData.name}
-                      className="w-20 h-20 rounded-full object-cover ring-4 ring-teal-600/30 border-2 border-white shadow-sm"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-teal-800 text-white text-2xl font-bold flex items-center justify-center ring-4 ring-teal-600/30">
-                      {formData.name.charAt(0)}
-                    </div>
-                  )}
-                  <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white" title="Active" />
-                </div>
-
-                <div className="text-center sm:text-left">
-                  <h4 className="text-sm font-bold text-slate-900">{formData.name}</h4>
-                  <p className="text-xs text-slate-500">{formData.email}</p>
-                  <p className="text-[11px] text-teal-700 font-medium mt-1">
-                    {formData.relocationStatus} · Target: {formData.targetCountry}
-                  </p>
-                </div>
-              </div>
-
-              {avatarError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-500" />
-                  <span>{avatarError}</span>
-                </div>
-              )}
-
-              {/* Preset Avatars */}
-              <div>
-                <label className="text-xs font-bold text-slate-900 block mb-2">
-                  Choose from Curated Expat Avatar Presets
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {AVATAR_PRESETS.map(preset => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, avatarUrl: preset.url }));
-                        updateUserProfile({ avatarUrl: preset.url });
-                        setSavedNotice(true);
-                        setTimeout(() => setSavedNotice(false), 3000);
-                      }}
-                      className={`relative p-1.5 rounded-xl border text-left transition-all ${
-                        formData.avatarUrl === preset.url
-                          ? 'border-teal-700 bg-teal-50/50 ring-2 ring-teal-600'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <img
-                        src={preset.url}
-                        alt={preset.label}
-                        className="w-full h-24 rounded-lg object-cover"
-                      />
-                      <span className="text-[10px] text-slate-600 font-medium mt-1 block truncate">
-                        {preset.label}
-                      </span>
-                      {formData.avatarUrl === preset.url && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Upload from Local Device */}
-              <div className="pt-4 border-t border-slate-200">
-                <label className="text-xs font-bold text-slate-900 block mb-1">
-                  Upload Photo from Computer
-                </label>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  Select any PNG or JPG from your hard drive (max 2MB).
-                </p>
-                <div className="flex items-center gap-3">
-                  <label className="cursor-pointer px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-2 transition-colors">
-                    <Upload className="w-4 h-4 text-teal-700" />
-                    <span>Choose File...</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <span className="text-xs text-slate-400">or enter image URL below</span>
-                </div>
-              </div>
-
-              {/* Custom Image URL */}
-              <div>
-                <label className="text-xs font-bold text-slate-900 block mb-1">
-                  Or Paste Custom Image URL
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://example.com/my-photo.jpg"
-                    value={customAvatarUrl}
-                    onChange={e => setCustomAvatarUrl(e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!customAvatarUrl.trim()) return;
-                      setFormData(prev => ({ ...prev, avatarUrl: customAvatarUrl.trim() }));
-                      updateUserProfile({ avatarUrl: customAvatarUrl.trim() });
-                      setCustomAvatarUrl('');
-                      setSavedNotice(true);
-                      setTimeout(() => setSavedNotice(false), 3000);
-                    }}
-                    className="px-4 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors"
-                  >
-                    Apply URL
-                  </button>
-                </div>
-              </div>
-
-              {/* Clear / Reset to initials */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, avatarUrl: '' }));
-                    updateUserProfile({ avatarUrl: '' });
-                    setSavedNotice(true);
-                    setTimeout(() => setSavedNotice(false), 3000);
-                  }}
-                  className="text-xs text-slate-500 hover:text-slate-800 underline"
-                >
-                  Remove picture and use initials badge
-                </button>
-              </div>
-            </div>
           )}
 
           {/* TAB: SALARY & INVESTMENT SCHEMES (FINANCES) */}
@@ -1570,92 +1576,82 @@ export const EditProfileModal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 4: LANGUAGES KNOWN */}
-          {activeTab === 'languages' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">
-                  Languages Known & Proficiency
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Language capability directly influences day-to-day integration, lease signing, and local friendships.
-                </p>
-              </div>
-
-              {/* Add Language Form */}
-              <form onSubmit={handleAddLanguageSubmit} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
-                <span className="text-xs font-bold text-slate-800 block">Add a Language</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* TAB 4: LANGUAGES KNOWN & LIFESTYLE INTERESTS (UNIFIED) */}
+          {(activeTab === 'languages' || activeTab === 'interests') && (
+            <div className="space-y-5">
+              {/* SECTION A: LANGUAGES KNOWN */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">Language</label>
-                    <select
-                      value={newLangName}
-                      onChange={e => setNewLangName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      {POPULAR_LANGUAGES.map(lang => (
-                        <option key={lang} value={lang}>{lang}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">Proficiency Level</label>
-                    <select
-                      value={newLangProficiency}
-                      onChange={e => setNewLangProficiency(e.target.value as any)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      <option value="Native">Native / Mother Tongue</option>
-                      <option value="Fluent">Fluent (C1-C2)</option>
-                      <option value="Conversational">Conversational (B1-B2)</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Beginner / Learning">Beginner / Learning</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      type="submit"
-                      className="w-full py-2 px-3 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Language</span>
-                    </button>
+                    <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Languages className="w-4 h-4 text-teal-700" />
+                      <span>Languages Known ({userProfile.languagesKnown?.length || 0})</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Spoken languages unlock Polyglot badges and improve local integration scores.
+                    </p>
                   </div>
                 </div>
-              </form>
 
-              {/* Current Languages List */}
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-800 block">Your Current Languages:</span>
+                {/* Add Language Form */}
+                <form onSubmit={handleAddLanguageSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <select
+                    value={newLangName}
+                    onChange={e => setNewLangName(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    {POPULAR_LANGUAGES.map(lang => (
+                      <option key={lang} value={lang}>{lang}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={newLangProficiency}
+                    onChange={e => setNewLangProficiency(e.target.value as any)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="Native">Native / Mother Tongue</option>
+                    <option value="Fluent">Fluent (C1-C2)</option>
+                    <option value="Conversational">Conversational (B1-B2)</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Beginner / Learning">Beginner / Learning</option>
+                  </select>
+
+                  <button
+                    type="submit"
+                    className="w-full py-1.5 px-3 rounded-lg bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Language</span>
+                  </button>
+                </form>
+
+                {/* Current Languages Pills */}
                 {(!userProfile.languagesKnown || userProfile.languagesKnown.length === 0) ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">No languages added yet.</p>
+                  <p className="text-xs text-slate-400 py-2">No languages added yet.</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {userProfile.languagesKnown.map(lang => (
                       <div
                         key={lang.id}
-                        className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between shadow-2xs"
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white flex items-center gap-2 shadow-2xs text-xs"
                       >
-                        <div>
-                          <span className="text-xs font-bold text-slate-900 block">{lang.language}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-block mt-0.5 ${
-                            lang.proficiency === 'Native'
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : lang.proficiency === 'Fluent'
-                              ? 'bg-teal-50 text-teal-800 border border-teal-200'
-                              : lang.proficiency === 'Conversational'
-                              ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}>
-                            {lang.proficiency}
-                          </span>
-                        </div>
+                        <span className="font-bold text-slate-900">{lang.language}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          lang.proficiency === 'Native'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : lang.proficiency === 'Fluent'
+                            ? 'bg-teal-50 text-teal-800 border border-teal-200'
+                            : lang.proficiency === 'Conversational'
+                            ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200'
+                        }`}>
+                          {lang.proficiency}
+                        </span>
                         <button
                           type="button"
                           onClick={() => removeLanguage(lang.id)}
-                          className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"
+                          className="p-0.5 rounded text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                           title="Remove language"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1665,229 +1661,182 @@ export const EditProfileModal: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* TAB 5: INTERESTS & HOBBIES */}
-          {activeTab === 'interests' && (() => {
-            const currentInterests = userProfile.interests || [];
-            const customInterests = currentInterests.filter(
-              interest => !ALL_INTEREST_SUGGESTIONS.includes(interest)
-            );
+              {/* SECTION B: INTERESTS & HOBBIES */}
+              {(() => {
+                const currentInterests = userProfile.interests || [];
+                const customInterests = currentInterests.filter(
+                  interest => !ALL_INTEREST_SUGGESTIONS.includes(interest)
+                );
 
-            return (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      Lifestyle &amp; Retirement Interests ({currentInterests.length})
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Select curated priorities or add, modify, and manage your own custom hobbies.
-                    </p>
-                  </div>
-                  {customInterests.length > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800 self-start sm:self-auto">
-                      <Sparkles className="w-3 h-3 text-rose-600" />
-                      <span>{customInterests.length} Custom {customInterests.length === 1 ? 'Hobby' : 'Hobbies'}</span>
-                    </span>
-                  )}
-                </div>
-
-                {/* Feedback Notice */}
-                {interestNotice && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-2.5 px-3.5 rounded-xl bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-900 flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>{interestNotice}</span>
+                return (
+                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Heart className="w-4 h-4 text-rose-600" />
+                          <span>Lifestyle &amp; Retirement Interests ({currentInterests.length})</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-500">
+                          Select curated priorities or add your own custom hobbies.
+                        </p>
+                      </div>
+                      {customInterests.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-800 self-start sm:self-auto">
+                          <Sparkles className="w-3 h-3 text-rose-600" />
+                          <span>{customInterests.length} Custom</span>
+                        </span>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setInterestNotice(null)}
-                      className="text-teal-600 hover:text-teal-900 p-0.5"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
-                )}
 
-                {/* Add Custom Interest Form */}
-                <form
-                  onSubmit={handleAddCustomInterest}
-                  className="p-4 rounded-2xl bg-gradient-to-r from-teal-50/70 via-indigo-50/40 to-rose-50/50 border border-teal-200/80 space-y-2.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-teal-700" />
-                      <span>Add a Custom Interest / Hobby</span>
-                    </label>
-                    <span className="text-[11px] text-slate-500">Press Enter or click Add Tag</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Scuba diving, Woodworking, Classical piano, Pickleball..."
-                      value={customInterestInput}
-                      onChange={e => setCustomInterestInput(e.target.value)}
-                      className="flex-1 px-3.5 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!customInterestInput.trim()}
-                      className="px-4 py-2 rounded-xl bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Tag</span>
-                    </button>
-                  </div>
-                </form>
+                    {interestNotice && (
+                      <div className="p-2 px-3 rounded-xl bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-900 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-teal-600 shrink-0" />
+                          <span>{interestNotice}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setInterestNotice(null)}
+                          className="text-teal-600 hover:text-teal-900 p-0.5"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
 
-                {/* Live Preview & Manager of All Selected Interests (Custom + Curated) */}
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Heart className="w-3.5 h-3.5 text-rose-600" />
-                      <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                        Your Active Interests Preview ({currentInterests.length})
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">
-                      Click <Pencil className="w-3 h-3 inline text-slate-600" /> to modify or <Trash2 className="w-3 h-3 inline text-rose-600" /> to delete
-                    </span>
-                  </div>
+                    {/* Add Custom Interest Form */}
+                    <form onSubmit={handleAddCustomInterest} className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add custom interest (e.g. Scuba diving, Woodworking, Pickleball)..."
+                        value={customInterestInput}
+                        onChange={e => setCustomInterestInput(e.target.value)}
+                        className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!customInterestInput.trim()}
+                        className="px-4 py-1.5 rounded-xl bg-teal-800 text-white font-semibold text-xs hover:bg-teal-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Hobby</span>
+                      </button>
+                    </form>
 
-                  {currentInterests.length === 0 ? (
-                    <div className="p-4 rounded-xl border border-dashed border-slate-300 bg-white text-center">
-                      <p className="text-xs text-slate-500">
-                        No interests selected yet. Add a custom hobby above or select from the suggestions below.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {currentInterests.map(interest => {
-                        const isCustom = !ALL_INTEREST_SUGGESTIONS.includes(interest);
-                        const isEditingThis = editingInterest === interest;
+                    {/* Active Interests Chips */}
+                    {currentInterests.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {currentInterests.map(interest => {
+                          const isCustom = !ALL_INTEREST_SUGGESTIONS.includes(interest);
+                          const isEditingThis = editingInterest === interest;
 
-                        if (isEditingThis) {
+                          if (isEditingThis) {
+                            return (
+                              <div
+                                key={`edit-${interest}`}
+                                className="flex items-center gap-1.5 p-1 pl-2.5 rounded-xl border-2 border-teal-600 bg-white shadow-sm"
+                              >
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={editingInterestValue}
+                                  onChange={e => setEditingInterestValue(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleSaveEditedInterest(interest);
+                                    } else if (e.key === 'Escape') {
+                                      handleCancelEditInterest();
+                                    }
+                                  }}
+                                  className="text-xs font-semibold text-slate-900 bg-transparent focus:outline-none min-w-[120px]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveEditedInterest(interest)}
+                                  className="px-2 py-0.5 rounded-lg bg-teal-700 text-white text-[10px] font-bold hover:bg-teal-800 cursor-pointer"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleCancelEditInterest}
+                                  className="p-0.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          }
+
                           return (
                             <div
-                              key={`edit-${interest}`}
-                              className="flex items-center gap-1.5 p-1 pl-2.5 rounded-xl border-2 border-teal-600 bg-white shadow-sm"
+                              key={`active-${interest}`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold shadow-2xs ${
+                                isCustom
+                                  ? 'bg-gradient-to-r from-indigo-50 to-teal-50 text-slate-900 border border-teal-300'
+                                  : 'bg-white text-slate-800 border border-slate-200'
+                              }`}
                             >
-                              <input
-                                type="text"
-                                autoFocus
-                                value={editingInterestValue}
-                                onChange={e => setEditingInterestValue(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleSaveEditedInterest(interest);
-                                  } else if (e.key === 'Escape') {
-                                    handleCancelEditInterest();
-                                  }
-                                }}
-                                className="text-xs font-semibold text-slate-900 bg-transparent focus:outline-none min-w-[140px]"
-                              />
+                              <span>{interest}</span>
                               <button
                                 type="button"
-                                onClick={() => handleSaveEditedInterest(interest)}
-                                className="px-2 py-1 rounded-lg bg-teal-700 text-white text-[11px] font-bold hover:bg-teal-800 transition-colors flex items-center gap-1 cursor-pointer"
-                                title="Save modified interest"
+                                onClick={() => handleStartEditInterest(interest)}
+                                className="p-0.5 rounded text-slate-400 hover:text-teal-700 cursor-pointer"
+                                title={`Edit "${interest}"`}
                               >
-                                <Check className="w-3 h-3" />
-                                <span>Save</span>
+                                <Pencil className="w-3 h-3" />
                               </button>
                               <button
                                 type="button"
-                                onClick={handleCancelEditInterest}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                                title="Cancel editing"
+                                onClick={() => handleRemoveInterest(interest)}
+                                className="p-0.5 rounded text-slate-400 hover:text-rose-600 cursor-pointer"
+                                title={`Delete "${interest}"`}
                               >
-                                <X className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             </div>
                           );
-                        }
+                        })}
+                      </div>
+                    )}
 
-                        return (
-                          <div
-                            key={`active-${interest}`}
-                            className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-2xs ${
-                              isCustom
-                                ? 'bg-gradient-to-r from-indigo-50 to-teal-50 text-slate-900 border border-teal-300'
-                                : 'bg-white text-slate-800 border border-slate-200'
-                            }`}
-                          >
-                            {isCustom && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-700 text-white uppercase tracking-wider">
-                                Custom
-                              </span>
-                            )}
-                            <span>{interest}</span>
+                    {/* Curated Tag Cloud */}
+                    <div className="space-y-2 pt-2 border-t border-slate-200/80">
+                      <span className="text-[11px] font-bold text-slate-700 block">
+                        Quick-Toggle Curated Suggestions:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ALL_INTEREST_SUGGESTIONS.map(interest => {
+                          const isSelected = currentInterests.includes(interest);
+                          return (
                             <button
+                              key={interest}
                               type="button"
-                              onClick={() => handleStartEditInterest(interest)}
-                              className="p-1 rounded-md text-slate-400 hover:text-teal-700 hover:bg-teal-100/70 transition-colors cursor-pointer"
-                              title={`Edit "${interest}"`}
+                              onClick={() => toggleInterest(interest)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                                isSelected
+                                  ? 'bg-teal-800 text-white shadow-2xs'
+                                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                              }`}
                             >
-                              <Pencil className="w-3 h-3" />
+                              {isSelected ? (
+                                <Check className="w-3 h-3 text-teal-300" />
+                              ) : (
+                                <Plus className="w-3 h-3 text-slate-400" />
+                              )}
+                              <span>{interest}</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveInterest(interest)}
-                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              title={`Delete "${interest}"`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Curated Tag Cloud */}
-                <div className="space-y-2.5 pt-2 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">
-                      Popular Expat &amp; Retirement Lifestyle Suggestions
-                    </span>
-                    <span className="text-[11px] text-slate-500">Click to select or deselect</span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_INTEREST_SUGGESTIONS.map(interest => {
-                      const isSelected = currentInterests.includes(interest);
-                      return (
-                        <button
-                          key={interest}
-                          type="button"
-                          onClick={() => toggleInterest(interest)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                            isSelected
-                              ? 'bg-teal-800 text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                          }`}
-                        >
-                          {isSelected ? (
-                            <Check className="w-3.5 h-3.5 text-teal-300" />
-                          ) : (
-                            <Plus className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                          <span>{interest}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+                );
+              })()}
+            </div>
+          )}
 
         </div>
 

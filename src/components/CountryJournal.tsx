@@ -93,12 +93,12 @@ export const CountryJournal: React.FC = () => {
     firebaseUser,
     isFirebaseSyncing,
     toggleSaveCountry,
-    openEditProfile,
+    currentUserId,
   } = useApp();
 
-  // Search and filter state
+  // Search and filter state — default to 'journal' so the count matches the Country Journal tab badge
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'favorited' | 'visited' | InterestLevel>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'journal' | 'all' | 'favorited' | 'visited' | InterestLevel>('journal');
   
   // Modal state for adding/editing entry
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,24 +111,90 @@ export const CountryJournal: React.FC = () => {
   const [customTagInput, setCustomTagInput] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  // Compute union of countries: favorited, visited, or existing journal entries
+  // Track countries explicitly deleted/removed from the Country Journal so favorited or visited countries don't stay stuck on the page after deletion
+  const dismissedStorageKey = `refirely_dismissed_journal_candidates_${currentUserId || 'guest'}`;
+  const [dismissedCountryIds, setDismissedCountryIds] = useState<string[]>(() => {
+    const initialSet = new Set<string>();
+    try {
+      const savedDismissed = localStorage.getItem(dismissedStorageKey);
+      if (savedDismissed) {
+        const parsed = JSON.parse(savedDismissed);
+        if (Array.isArray(parsed)) parsed.forEach(id => initialSet.add(id));
+      }
+      // Also include any country IDs already deleted via deleteJournalEntry
+      const deletedJournalRaw = localStorage.getItem('refirely_app_state_v1_deleted_journal_ids');
+      if (deletedJournalRaw) {
+        const parsedDeleted = JSON.parse(deletedJournalRaw);
+        if (Array.isArray(parsedDeleted)) parsedDeleted.forEach(id => initialSet.add(id));
+      }
+    } catch {}
+    return Array.from(initialSet);
+  });
+
+  const markCountryDismissedFromJournal = (countryId: string) => {
+    setDismissedCountryIds(prev => {
+      const next = Array.from(new Set([...prev, countryId]));
+      try {
+        localStorage.setItem(dismissedStorageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const unmarkCountryDismissedFromJournal = (countryId: string) => {
+    setDismissedCountryIds(prev => {
+      if (!prev.includes(countryId)) return prev;
+      const next = prev.filter(id => id !== countryId);
+      try {
+        localStorage.setItem(dismissedStorageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleDeleteCountryFromJournal = async (country: Country) => {
+    markCountryDismissedFromJournal(country.id);
+    if (journalEntries[country.id]) {
+      await deleteJournalEntry(country.id);
+    }
+    setSaveSuccessMsg(`Removed ${country.name} from your Country Journal.`);
+    setTimeout(() => setSaveSuccessMsg(null), 3000);
+  };
+
+  // Compute union of countries: active journal entries + non-dismissed favorited/visited countries
   const candidateCountryMap = useMemo(() => {
     const map = new Map<string, { country: Country; isFavorited: boolean; isVisited: boolean }>();
+    const dismissedSet = new Set(dismissedCountryIds);
 
-    // 1. Favorited countries
-    userProfile.savedCountryIds.forEach(id => {
-      const c = countries.find(item => item.id === id);
+    // 1. Any country with an active journal entry always shows
+    Object.keys(journalEntries).forEach(cid => {
+      const c = countries.find(item => item.id === cid);
       if (c) {
+        map.set(c.id, {
+          country: c,
+          isFavorited: userProfile.savedCountryIds.includes(c.id),
+          isVisited:
+            userProfile.travelHistory?.some(t => t.countryName.toLowerCase() === c.name.toLowerCase()) || false,
+        });
+      }
+    });
+
+    // 2. Favorited countries (unless explicitly deleted from the journal)
+    userProfile.savedCountryIds.forEach(id => {
+      if (dismissedSet.has(id) && !journalEntries[id]) return;
+      const c = countries.find(item => item.id === id);
+      if (c && !map.has(c.id)) {
         map.set(c.id, { country: c, isFavorited: true, isVisited: false });
       }
     });
 
-    // 2. Visited countries from travel history
+    // 3. Visited countries from travel history (unless explicitly deleted from the journal)
     userProfile.travelHistory?.forEach(t => {
       const matched = countries.find(
         c => c.name.toLowerCase() === t.countryName.toLowerCase() || c.id === t.countryCode?.toLowerCase()
       );
       if (matched) {
+        if (dismissedSet.has(matched.id) && !journalEntries[matched.id]) return;
         const existing = map.get(matched.id);
         map.set(matched.id, {
           country: matched,
@@ -138,24 +204,16 @@ export const CountryJournal: React.FC = () => {
       }
     });
 
-    // 3. Any country with an active journal entry
-    Object.keys(journalEntries).forEach(cid => {
-      const c = countries.find(item => item.id === cid);
-      if (c && !map.has(c.id)) {
-        map.set(c.id, {
-          country: c,
-          isFavorited: userProfile.savedCountryIds.includes(c.id),
-          isVisited: userProfile.travelHistory?.some(t => t.countryName.toLowerCase() === c.name.toLowerCase()) || false,
-        });
-      }
-    });
-
     return map;
-  }, [userProfile.savedCountryIds, userProfile.travelHistory, journalEntries, countries]);
+  }, [userProfile.savedCountryIds, userProfile.travelHistory, journalEntries, countries, dismissedCountryIds]);
 
   const candidateList = useMemo(() => {
     return Array.from(candidateCountryMap.values());
   }, [candidateCountryMap]);
+
+  const journalNotesCount = useMemo(() => {
+    return candidateList.filter(({ country }) => Boolean(journalEntries[country.id])).length;
+  }, [candidateList, journalEntries]);
 
   // Filtered candidate list based on search and selected filter
   const filteredCandidates = useMemo(() => {
@@ -163,9 +221,11 @@ export const CountryJournal: React.FC = () => {
       const entry = journalEntries[country.id];
 
       // Filter check
+      if (selectedFilter === 'journal' && !entry) return false;
       if (selectedFilter === 'favorited' && !isFavorited) return false;
       if (selectedFilter === 'visited' && !isVisited) return false;
       if (
+        selectedFilter !== 'journal' &&
         selectedFilter !== 'all' &&
         selectedFilter !== 'favorited' &&
         selectedFilter !== 'visited'
@@ -207,6 +267,8 @@ export const CountryJournal: React.FC = () => {
     const c = countries.find(item => item.id === editingCountryId);
     if (!c) return;
 
+    unmarkCountryDismissedFromJournal(c.id);
+
     const isVisited = userProfile.travelHistory?.some(
       t => t.countryName.toLowerCase() === c.name.toLowerCase()
     ) || false;
@@ -231,6 +293,7 @@ export const CountryJournal: React.FC = () => {
   };
 
   const handleQuickInterestChange = async (country: Country, newInterest: InterestLevel) => {
+    unmarkCountryDismissedFromJournal(country.id);
     const existing = journalEntries[country.id];
     const isVisited = userProfile.travelHistory?.some(
       t => t.countryName.toLowerCase() === country.name.toLowerCase()
@@ -332,36 +395,15 @@ export const CountryJournal: React.FC = () => {
         {/* Filter Pills */}
         <div className="flex flex-wrap items-center gap-1.5">
           <button
-            onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              selectedFilter === 'all'
+            onClick={() => setSelectedFilter('journal')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              selectedFilter === 'journal'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            All Candidates ({candidateList.length})
-          </button>
-          <button
-            onClick={() => setSelectedFilter('favorited')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-              selectedFilter === 'favorited'
-                ? 'bg-rose-700 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <Bookmark className="w-3 h-3" />
-            <span>Favorited ({candidateList.filter(c => c.isFavorited).length})</span>
-          </button>
-          <button
-            onClick={() => setSelectedFilter('visited')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-              selectedFilter === 'visited'
-                ? 'bg-teal-700 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <Globe className="w-3 h-3" />
-            <span>Visited ({candidateList.filter(c => c.isVisited).length})</span>
+            <BookOpen className="w-3 h-3" />
+            <span>Journal Notes ({journalNotesCount})</span>
           </button>
           <button
             onClick={() => setSelectedFilter('Top Contender')}
@@ -393,6 +435,39 @@ export const CountryJournal: React.FC = () => {
           >
             <span>⛔ Ruled Out</span>
           </button>
+          <button
+            onClick={() => setSelectedFilter('favorited')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+              selectedFilter === 'favorited'
+                ? 'bg-rose-700 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Bookmark className="w-3 h-3" />
+            <span>Favorited ({candidateList.filter(c => c.isFavorited).length})</span>
+          </button>
+          <button
+            onClick={() => setSelectedFilter('visited')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+              selectedFilter === 'visited'
+                ? 'bg-teal-700 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Globe className="w-3 h-3" />
+            <span>Visited Travel Log ({candidateList.filter(c => c.isVisited).length})</span>
+          </button>
+          <button
+            onClick={() => setSelectedFilter('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              selectedFilter === 'all'
+                ? 'bg-indigo-700 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            title="Combines your saved Journal Notes, Favorited countries, and Visited Travel History"
+          >
+            All Combined ({candidateList.length})
+          </button>
         </div>
 
         {/* Search */}
@@ -416,17 +491,28 @@ export const CountryJournal: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             {searchQuery
               ? `No countries or notes match "${searchQuery}". Try a different keyword or reset filters.`
-              : 'Add countries to your favorited shortlist or log your travel history to begin writing your private retirement journal.'}
+              : 'You have no saved journal entries in this view yet. Log a country note or switch to Favorited / Visited Travel Log to write notes for your saved destinations.'}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedFilter('all');
-            }}
-            className="mt-4 px-4 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs"
-          >
-            <span>Show All Candidates</span>
-          </button>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedFilter('journal');
+              }}
+              className="px-4 py-2 rounded-lg bg-teal-800 text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs"
+            >
+              <span>Show Saved Journal Notes ({journalNotesCount})</span>
+            </button>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedFilter('all');
+              }}
+              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs"
+            >
+              <span>Browse All Combined ({candidateList.length})</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -590,15 +676,15 @@ export const CountryJournal: React.FC = () => {
                       <span>{isFavorited ? 'Saved' : 'Save'}</span>
                     </button>
 
-                    {entry && (
-                      <button
-                        onClick={() => deleteJournalEntry(country.id)}
-                        className="text-xs p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                        title="Delete this journal record"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCountryFromJournal(country)}
+                      className="text-xs px-2 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                      title={`Remove ${country.name} from Country Journal`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
                   </div>
 
                   <button

@@ -7,14 +7,11 @@ import { doc, setDoc, getDocs, deleteDoc, collection } from 'firebase/firestore'
 import { HavenMatcherWidget } from './HavenMatcherWidget';
 import { CountryJournal } from './CountryJournal';
 import { UserFinancialsDashboard } from './UserFinancialsDashboard';
-import { FireCalculatorPage } from './FireCalculatorPage';
 import { WORLD_COUNTRIES, getWorldCountryFlag, ALL_INTEREST_SUGGESTIONS } from '../data/userAccounts';
 import { getUserEarnedBadges, getAllBadgesProgress } from '../data/badgeDefinitions';
 import { BadgePill } from './BadgePill';
 import { BadgeShowcaseCard, BadgeProgressRow } from './BadgeShowcase';
 import { CountryFlag } from './CountryFlag';
-import { GlobalHavenFeasibilityWidget } from './GlobalHavenFeasibilityWidget';
-import { NomadHavenRunwayWidget } from './NomadHavenRunwayWidget';
 import { calculateUnifiedFireMetrics } from '../utils/fireCalculations';
 import {
   FREEDOM_QUIZ_UPDATED_EVENT,
@@ -27,16 +24,15 @@ import {
   DollarSign, ArrowRight, Plus, Heart, Edit3, Save, X, Sparkles, FileText,
   Globe, Languages, Star, MapPin, Camera, Check, Trash2, ExternalLink, BookOpen,
   TrendingUp, ShieldCheck, Lock, LogIn, UserPlus, Shield, Coins, LayoutDashboard, Layers,
-  Award, Stamp, LineChart, CheckCircle2
+  Award, Stamp, LineChart, CheckCircle2, Flame
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export type UserDashboardTab =
   | 'overview'
-  | 'scout'
-  | 'matcher'
   | 'financials'
-  | 'fire'
+  | 'matcher'
+  | 'scout'
   | 'profile'
   | 'journal'
   | 'checklist'
@@ -117,16 +113,33 @@ export const UserDashboard: React.FC = () => {
   // Active dashboard module tab (persisted for smooth navigation)
   const [activeTab, setActiveTab] = useState<UserDashboardTab>(() => {
     try {
-      const saved = localStorage.getItem('refirely_user_dashboard_tab') as UserDashboardTab | null;
+      const saved = localStorage.getItem('refirely_user_dashboard_tab') as string | null;
       if (
         saved &&
-        ['overview', 'scout', 'matcher', 'financials', 'fire', 'profile', 'journal', 'checklist', 'all'].includes(saved)
+        ['overview', 'financials', 'matcher', 'scout', 'profile', 'journal', 'checklist', 'all'].includes(saved)
       ) {
-        return saved;
+        return saved as UserDashboardTab;
       }
     } catch {}
     return 'overview';
   });
+
+  useEffect(() => {
+    const handleExternalTabSwitch = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+      const requestedTab = customEvent.detail;
+      if (
+        requestedTab &&
+        ['overview', 'financials', 'matcher', 'scout', 'profile', 'journal', 'checklist', 'all'].includes(
+          requestedTab
+        )
+      ) {
+        setActiveTab(requestedTab as UserDashboardTab);
+      }
+    };
+    window.addEventListener('refirely-dashboard-tab', handleExternalTabSwitch);
+    return () => window.removeEventListener('refirely-dashboard-tab', handleExternalTabSwitch);
+  }, []);
 
   const handleSelectTab = (tab: UserDashboardTab) => {
     setActiveTab(tab);
@@ -510,50 +523,42 @@ export const UserDashboard: React.FC = () => {
   }[] = [
     {
       id: 'overview',
-      label: 'All-Modules Overview',
+      label: 'Overview',
       shortLabel: 'Overview',
-      badge: '7 Modules',
-      icon: <LayoutDashboard className="w-3.5 h-3.5" />,
+      badge: 'Hub',
+      icon: <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />,
       activeClass: 'bg-slate-900 text-white shadow-sm',
     },
     {
-      id: 'scout',
-      label: 'Scout & Hop Itineraries',
-      shortLabel: 'Scout & Hop',
-      badge: `${savedScoutTrips.length} Saved`,
-      icon: <Compass className="w-3.5 h-3.5" />,
-      activeClass: 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-sm',
-    },
-    {
-      id: 'matcher',
-      label: 'Haven Matcher AI',
-      shortLabel: 'Haven Matcher',
-      badge: `${countries.length} Havens`,
-      icon: <Sparkles className="w-3.5 h-3.5" />,
-      activeClass: 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm',
-    },
-    {
       id: 'financials',
-      label: '5-Scheme Financials',
+      label: 'Financials',
       shortLabel: 'Financials',
       badge: `$${Math.round(userNetWorthUSD / 1000)}k`,
-      icon: <Coins className="w-3.5 h-3.5" />,
+      icon: <Coins className="w-3.5 h-3.5 shrink-0" />,
       activeClass: 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white shadow-sm',
     },
     {
-      id: 'fire',
-      label: 'FIRE & Runway Calc',
-      shortLabel: 'FIRE & Runway',
-      badge: `${userProfile.retirementTimelineYear}`,
-      icon: <TrendingUp className="w-3.5 h-3.5" />,
-      activeClass: 'bg-gradient-to-r from-teal-600 via-emerald-600 to-indigo-600 text-white shadow-sm',
+      id: 'matcher',
+      label: 'Haven Matcher',
+      shortLabel: 'Matcher',
+      badge: 'Top 10',
+      icon: <Sparkles className="w-3.5 h-3.5 shrink-0" />,
+      activeClass: 'bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 text-white shadow-sm',
+    },
+    {
+      id: 'scout',
+      label: 'Scout & Hop',
+      shortLabel: 'Scout & Hop',
+      badge: `${savedScoutTrips.length}`,
+      icon: <Compass className="w-3.5 h-3.5 shrink-0" />,
+      activeClass: 'bg-gradient-to-r from-teal-600 via-indigo-600 to-violet-600 text-white shadow-sm',
     },
     {
       id: 'profile',
-      label: 'Expat Profile & Travel',
-      shortLabel: 'Profile & Trips',
+      label: 'Profile & Travel',
+      shortLabel: 'Profile',
       badge: `${userProfile.travelHistory?.length || 0} Trips`,
-      icon: <Globe className="w-3.5 h-3.5" />,
+      icon: <Globe className="w-3.5 h-3.5 shrink-0" />,
       activeClass: 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white shadow-sm',
     },
     {
@@ -561,45 +566,42 @@ export const UserDashboard: React.FC = () => {
       label: 'Country Journal',
       shortLabel: 'Journal',
       badge: `${journalEntryList.length}`,
-      icon: <BookOpen className="w-3.5 h-3.5" />,
+      icon: <BookOpen className="w-3.5 h-3.5 shrink-0" />,
       activeClass: 'bg-gradient-to-r from-amber-600 to-teal-600 text-white shadow-sm',
     },
     {
       id: 'checklist',
-      label: 'Checklist, Visas & Meetups',
-      shortLabel: 'Checklist & Visas',
+      label: 'Checklist & Visas',
+      shortLabel: 'Checklist',
       badge: `${progressPercent}%`,
-      icon: <CheckSquare className="w-3.5 h-3.5" />,
+      icon: <CheckSquare className="w-3.5 h-3.5 shrink-0" />,
       activeClass: 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white shadow-sm',
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       
-      {/* Top Banner & Profile Overview - Multi-Colored Luminous Header */}
+      {/* Top Banner & Profile Overview - Clean, De-cluttered Header */}
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-        className="relative overflow-hidden bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 rounded-3xl border border-indigo-200/80 p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-md shadow-indigo-950/5"
+        className="relative overflow-hidden bg-gradient-to-br from-indigo-50/90 via-white to-teal-50/85 rounded-3xl border border-indigo-200/80 p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-sm"
       >
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
-        <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-teal-400/15 blur-3xl" />
 
-        <div className="relative flex items-start sm:items-center gap-5 flex-1 min-w-0">
-          
+        <div className="relative flex items-start sm:items-center gap-4 flex-1 min-w-0">
           {/* Avatar with Click-to-update */}
           <div className="relative group shrink-0">
             {userProfile.avatarUrl ? (
               <img
                 src={userProfile.avatarUrl}
                 alt={userProfile.name}
-                className="w-20 h-20 rounded-full object-cover ring-4 ring-indigo-500/25 shadow-md"
+                className="w-16 h-16 sm:w-18 sm:h-18 rounded-full object-cover ring-4 ring-indigo-500/20 shadow-sm"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-600 via-violet-600 to-teal-500 text-white flex items-center justify-center font-bold text-2xl shadow-md ring-4 ring-indigo-500/25">
+              <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-br from-indigo-600 via-violet-600 to-teal-500 text-white flex items-center justify-center font-bold text-xl shadow-sm ring-4 ring-indigo-500/20">
                 {userProfile.name.charAt(0)}
               </div>
             )}
@@ -608,8 +610,8 @@ export const UserDashboard: React.FC = () => {
               title="Change profile picture"
               className="absolute inset-0 rounded-full bg-slate-900/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-semibold cursor-pointer"
             >
-              <Camera className="w-4 h-4 mb-0.5" />
-              <span>Change</span>
+              <Camera className="w-3.5 h-3.5 mb-0.5" />
+              <span>Photo</span>
             </button>
           </div>
 
@@ -656,7 +658,7 @@ export const UserDashboard: React.FC = () => {
                 </form>
               ) : (
                 <div className="inline-flex items-center gap-1.5">
-                  <h1 className="text-2xl font-extrabold text-slate-900">{userProfile.name}</h1>
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">{userProfile.name}</h1>
                   <button
                     type="button"
                     onClick={() => {
@@ -666,145 +668,99 @@ export const UserDashboard: React.FC = () => {
                     title="Edit Display Name"
                     className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
-              <code className="text-xs font-mono font-bold bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded">
-                ID: {currentUserId}
-              </code>
-              <span className="text-xs bg-orange-50 text-orange-900 border border-orange-200 px-2.5 py-0.5 rounded font-medium">
+              <span className="text-[11px] bg-orange-50 text-orange-900 border border-orange-200 px-2 py-0.5 rounded-full font-semibold">
                 {userProfile.role === 'admin'
-                  ? 'Platform Administrator'
+                  ? 'Platform Admin'
                   : currentPersona === 'nomad'
-                  ? '⚡ Nomad & Creator Member'
-                  : '🌿 Retiree Member'}
+                  ? '⚡ Nomad Mode'
+                  : '🌿 Retiree Mode'}
               </span>
               {userProfile.relocationStatus && (
-                <span className="text-xs bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="text-[11px] bg-indigo-50 text-indigo-900 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">
                   {userProfile.relocationStatus}
                 </span>
               )}
             </div>
 
-            {/* Clean unboxed metadata with typographic separators */}
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-2">
-              <span className="inline-flex items-center gap-1.5">
-                <span>Origin Country / Nationality:</span>
-                <strong className="text-slate-800 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.originCountry} size="xs" className="rounded-xs" />
-                  <span>{userProfile.originCountry}</span>
-                </strong>
+            {/* Concise 1-line summary */}
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-600 mt-1.5">
+              <span className="inline-flex items-center gap-1">
+                <CountryFlag countryName={userProfile.originCountry} size="xs" className="rounded-xs" />
+                <strong className="text-slate-800">{userProfile.originCountry}</strong>
+              </span>
+              <span aria-hidden="true" className="text-slate-300">→</span>
+              <span className="inline-flex items-center gap-1">
+                <span>Target:</span>
+                <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-xs" />
+                <strong className="text-slate-900">{userProfile.targetCountry}</strong>
+                <span className="font-mono text-slate-500">({userProfile.retirementTimelineYear})</span>
               </span>
               <span aria-hidden="true" className="text-slate-300">·</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span>Residing Country:</span>
-                <strong className="text-slate-800 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.residingCountry || userProfile.originCountry} size="xs" className="rounded-xs" />
-                  <span>
-                    {userProfile.originCity ? `${userProfile.originCity}, ` : ''}
-                    {userProfile.residingCountry || userProfile.originCountry}
-                  </span>
-                </strong>
+              <span>
+                Net Worth: <strong className="font-mono text-emerald-900 font-bold">${userNetWorthUSD.toLocaleString()}</strong>
               </span>
               <span aria-hidden="true" className="text-slate-300">·</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span>Target Haven:</span>
-                <strong className="text-slate-900 inline-flex items-center gap-1">
-                  <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-xs" />
-                  <span>{userProfile.targetCountry}</span>
-                </strong>
+              <span>
+                Budget: <strong className="font-mono text-slate-900">${userProfile.monthlyBudgetUSD.toLocaleString()}/mo</strong>
               </span>
-              <span aria-hidden="true" className="text-slate-300">·</span>
-              <span>Departure: <strong className="font-mono text-slate-900">{userProfile.retirementTimelineYear}</strong></span>
-              <span aria-hidden="true" className="text-slate-300">·</span>
-              <span>Current Salary: <strong className="font-mono text-slate-900">${userSalaryUSD.toLocaleString()} / yr</strong> (${userMonthlySalaryUSD.toLocaleString()}/mo)</span>
-              <span aria-hidden="true" className="text-slate-300">·</span>
-              <span>Total Net Worth: <strong className="font-mono text-orange-950 font-bold">${userNetWorthUSD.toLocaleString()}</strong></span>
-              {userProfile.occupationOrBackground && (
-                <>
-                  <span aria-hidden="true" className="text-slate-300">·</span>
-                  <span className="text-slate-600 italic">{userProfile.occupationOrBackground}</span>
-                </>
-              )}
             </div>
-
-            {userProfile.bio && (
-              <p className="text-xs text-slate-600 mt-2 max-w-3xl leading-relaxed">
-                {userProfile.bio}
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
-          {userProfile.role !== 'admin' && currentUserId !== 'usr-ganesh' && (
-            <button
-              onClick={() => openPublicProfile(currentUserId)}
-              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-teal-50 text-teal-900 border border-teal-200 hover:bg-teal-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-teal-700" />
-              <span>My Public Profile</span>
-            </button>
-          )}
-          <button
-            onClick={() => openEditProfile('finances')}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
-          >
-            <DollarSign className="w-3.5 h-3.5 text-orange-600" />
-            <span>Edit Financials</span>
-          </button>
+        {/* Streamlined Non-Duplicated Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start lg:self-center">
           <button
             onClick={() => openEditProfile('about')}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-purple-600 text-white hover:from-orange-700 hover:to-purple-700 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Edit Profile</span>
+            <span>Edit Profile &amp; Log</span>
           </button>
           <button
-            onClick={openFirebaseModal}
-            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              firebaseUser
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100'
-                : 'bg-purple-50 border-purple-200 text-purple-900 hover:bg-purple-100'
-            }`}
+            onClick={() => openPublicProfile(currentUserId)}
+            className="px-3 py-2 text-xs font-semibold rounded-xl bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
           >
-            <ShieldCheck className={`w-3.5 h-3.5 ${firebaseUser ? 'text-emerald-600' : 'text-purple-600'}`} />
-            <span>{firebaseUser ? 'Cloud DB Synced' : 'Firebase DB & Hosting'}</span>
+            <ExternalLink className="w-3.5 h-3.5 text-teal-700" />
+            <span>Public Card</span>
           </button>
           <button
-            onClick={() => openEditProfile('travel')}
-            className="px-3 py-2 text-xs font-semibold rounded-xl border border-indigo-200 bg-white/90 text-indigo-900 hover:bg-indigo-50 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+            onClick={() => {
+              setCurrentView('fire-calculator');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-teal-50 text-teal-950 border border-teal-200 hover:bg-teal-100 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
           >
-            <Globe className="w-3.5 h-3.5 text-indigo-600" />
-            <span>+ Add Visited Country</span>
+            <Flame className="w-3.5 h-3.5 text-orange-600" />
+            <span>FIRE &amp; Runway Calc →</span>
           </button>
         </div>
       </motion.div>
 
-      {/* STICKY MODULE NAVIGATION BAR (Admin-Style Modular Tabs) */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-2.5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-100 px-1">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="font-bold uppercase tracking-wider text-[11px] text-slate-400">
+      {/* STICKY MODULE NAVIGATION BAR — Always-Visible Responsive Grid (No Horizontal Scrolling Needed) */}
+      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-2.5 shadow-sm space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-100 px-1">
+          <div className="flex items-center gap-2 text-xs text-slate-500 min-w-0">
+            <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 shrink-0">
               Member Workspace
             </span>
             <span aria-hidden="true">/</span>
-            <span className="text-slate-900 font-bold">
-              {activeTab === 'overview' && 'All-Modules Executive Overview'}
-              {activeTab === 'scout' && `Saved Scout & Hop Roadmaps & Itineraries (${savedScoutTrips.length})`}
-              {activeTab === 'matcher' && 'Haven Matcher AI & Visa Eligibility Engine'}
+            <span className="text-slate-900 font-bold truncate">
+              {activeTab === 'overview' && 'Executive Overview'}
               {activeTab === 'financials' && '5-Scheme Financial Portfolio & Net Worth Ledger'}
-              {activeTab === 'fire' && 'Unified FIRE Target & Nomad Runway Calculator'}
-              {activeTab === 'profile' && 'Expat Profile, Travel History & Lifestyle Readiness'}
-              {activeTab === 'journal' && `Confidential Country Journal (${journalEntryList.length})`}
+              {activeTab === 'matcher' && 'Haven Matcher AI & Visa Eligibility'}
+              {activeTab === 'scout' && `Saved Scout & Hop Roadmaps (${savedScoutTrips.length})`}
+              {activeTab === 'profile' && 'Expat Profile, Travel Log & Languages'}
+              {activeTab === 'journal' && `Country Journal (${journalEntryList.length})`}
               {activeTab === 'checklist' && `Relocation Checklist (${progressPercent}%), Visas & Meetups`}
-              {activeTab === 'all' && 'Full-Scroll View (All Modules Expanded)'}
+              {activeTab === 'all' && 'All Modules Expanded'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Dual-Persona Quick Switch */}
             <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/80 text-[11px]">
               <button
@@ -831,17 +787,6 @@ export const UserDashboard: React.FC = () => {
               </button>
             </div>
 
-            {activeTab !== 'overview' && (
-              <button
-                type="button"
-                onClick={() => handleSelectTab('overview')}
-                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <LayoutDashboard className="w-3 h-3" />
-                <span>Overview</span>
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => handleSelectTab(activeTab === 'all' ? 'overview' : 'all')}
@@ -853,13 +798,13 @@ export const UserDashboard: React.FC = () => {
               title="Toggle between single-module tabs and full-page scroll view"
             >
               <Layers className="w-3 h-3" />
-              <span>{activeTab === 'all' ? 'Tabbed View' : 'Show All'}</span>
+              <span>{activeTab === 'all' ? 'Tabbed View' : 'Expand All'}</span>
             </button>
           </div>
         </div>
 
-        {/* Module Tab Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        {/* All 7 Module Tabs Visible simultaneously in a responsive grid (No clipping, no horizontal scroll) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
           {moduleTabs.map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -867,17 +812,18 @@ export const UserDashboard: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-2.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-1.5 cursor-pointer min-w-0 ${
                   isActive
                     ? tab.activeClass
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 bg-slate-50/70 border border-slate-200/60'
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 bg-slate-50/80 border border-slate-200/70'
                 }`}
               >
-                {tab.icon}
-                <span className="hidden md:inline">{tab.label}</span>
-                <span className="md:hidden">{tab.shortLabel}</span>
+                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                  {tab.icon}
+                  <span className="truncate">{tab.label}</span>
+                </span>
                 <span
-                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded-md font-bold shrink-0 ${
                     isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
                   }`}
                 >
@@ -931,7 +877,7 @@ export const UserDashboard: React.FC = () => {
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                     >
-                      Top Matches (#1–#4)
+                      Top 10 Matches (#1–#10)
                     </button>
                     <button
                       type="button"
@@ -969,8 +915,8 @@ export const UserDashboard: React.FC = () => {
                 </div>
 
                 {freedomReportTab === 'matches' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                    {freedomMapResults.topMatches.slice(0, 4).map((match, idx) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {freedomMapResults.topMatches.slice(0, 10).map((match, idx) => (
                       <button
                         key={match.country.id}
                         type="button"
@@ -1023,7 +969,7 @@ export const UserDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
-                        {freedomMapResults.topMatches.slice(0, 6).map(match => (
+                        {freedomMapResults.topMatches.slice(0, 10).map(match => (
                           <tr
                             key={match.country.id}
                             onClick={() => navigateToCountry(match.country.id)}
@@ -1072,7 +1018,7 @@ export const UserDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
-                        {freedomMapResults.topMatches.slice(0, 6).map(match => {
+                        {freedomMapResults.topMatches.slice(0, 10).map(match => {
                           const resilient = match.inflation10YrLowUSD <= savedFreedomQuiz.monthlyBudgetUSD;
                           return (
                             <tr
@@ -1129,10 +1075,10 @@ export const UserDashboard: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
               </div>
               <p className="text-lg font-extrabold text-slate-900 font-mono">
-                {countries.length} Havens
+                Top 10 Matches
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                {currentPersona === 'nomad' ? '⚡ Nomad & DNV Lens' : '🌿 Early Retiree Lens'}
+                {countries.length} Havens · {currentPersona === 'nomad' ? '⚡ Nomad Lens' : '🌿 Retiree Lens'}
               </p>
             </button>
 
@@ -1155,35 +1101,38 @@ export const UserDashboard: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => handleSelectTab('fire')}
+              onClick={() => {
+                setCurrentView('fire-calculator');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="p-4 rounded-2xl bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/70 border border-teal-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-xs text-teal-800 font-bold mb-1">
-                <span>FIRE &amp; Runway</span>
+                <span>FIRE &amp; Runway Page</span>
                 <TrendingUp className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
               </div>
               <p className="text-lg font-extrabold text-slate-900 font-mono">
                 {userProfile.retirementTimelineYear}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                Target budget ${userProfile.monthlyBudgetUSD.toLocaleString()}/mo
+                Open dedicated FIRE suite →
               </p>
             </button>
 
             <button
               type="button"
-              onClick={() => openBadgeModal('all')}
-              className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-rose-50/70 border border-amber-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
+              onClick={() => handleSelectTab('scout')}
+              className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/70 border border-indigo-200/80 text-left hover:shadow-md transition-all cursor-pointer group"
             >
-              <div className="flex items-center justify-between text-xs text-amber-900 font-bold mb-1">
-                <span>Honors &amp; Badges</span>
-                <Award className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+              <div className="flex items-center justify-between text-xs text-indigo-800 font-bold mb-1">
+                <span>Scout &amp; Hop Trips</span>
+                <Compass className="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition-transform" />
               </div>
               <p className="text-lg font-extrabold text-slate-900 font-mono">
-                {earnedBadges.length} Badges
+                {savedScoutTrips.length} Saved
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                {earnedBadges[0]?.tierName || `${userProfile.travelHistory?.length || 0} Trips · ${userProfile.languagesKnown?.length || 1} Langs`}
+                {savedScoutTrips[0]?.title || 'Plan multi-stop scouting trips'}
               </p>
             </button>
 
@@ -1222,97 +1171,39 @@ export const UserDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Scout & Hop Planner Quick-Launch Banner */}
-          <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 rounded-3xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-                  ✨ New Module
-                </span>
-                <span className="text-xs text-teal-300 font-semibold">Cloud-Synced to Your Account</span>
-              </div>
-              <h3 className="text-base sm:text-lg font-extrabold tracking-tight font-display">
-                Scout &amp; Hop: Sabbatical &amp; Visa Route Planner
-              </h3>
-              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                Map multi-stop scouting itineraries, track your live Schengen 90/180-day allowance, calculate monthly living burn across stops, and manage your relocation tasks &amp; packing vault.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setCurrentView('scout')}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-teal-500 hover:from-indigo-600 hover:to-teal-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Compass className="w-4 h-4" />
-              <span>Open Scout &amp; Hop Planner</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Expat Honors & Profile Badges Portfolio */}
-          <div className="bg-white rounded-3xl border border-amber-200/90 p-5 sm:p-7 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-              <div className="space-y-1">
+          {/* Expat Honors & Profile Badges Portfolio (Compact & Clean) */}
+          <div className="bg-white rounded-3xl border border-amber-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-2xs">
-                    <Award className="w-4 h-4" />
+                    <Award className="w-3.5 h-3.5" />
                   </span>
                   <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800">
-                    Community Identity &amp; Prestige Portfolio
+                    Expat Honors &amp; Profile Badges
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[11px] font-extrabold">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[10px] font-extrabold">
                     {earnedBadges.length} Earned
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
-                  Your Expat Honors &amp; Profile Badges
-                </h3>
-                <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
-                  Badges celebrate your authentic international tenure, visited countries, and multilingual versatility. Your unlocked badges appear on your public directory card and discussion posts.
+                <p className="text-xs text-slate-600">
+                  Unlocked badges appear on your public expat directory card. View your FIRE Freedom Cards on the dedicated{' '}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentView('fire-calculator')}
+                    className="font-bold text-indigo-700 hover:underline cursor-pointer"
+                  >
+                    FIRE &amp; Runway page
+                  </button>
+                  .
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    const unified = calculateUnifiedFireMetrics(userProfile, countries);
-                    openShareFireCardModal({
-                      persona: currentPersona === 'nomad' ? 'nomad' : 'retiree',
-                      badgeTitle:
-                        unified.isCompleteFire
-                          ? '100% FI'
-                          : currentPersona === 'nomad'
-                          ? 'Coast FIRE Nomad'
-                          : 'Arbitrage Architect',
-                      badgeEmoji:
-                        unified.isCompleteFire
-                          ? '🔥'
-                          : currentPersona === 'nomad'
-                          ? '🌊'
-                          : '⚡',
-                      headlineMode: unified.isCompleteFire ? 'fi-percent' : undefined,
-                      topCountry: unified.targetCountryName,
-                      topCountryFlag: unified.targetCountryFlag,
-                      topCity: unified.targetCityName,
-                      yearsSaved: unified.yearsSaved,
-                      nomadRunwayMonths: unified.nomadRunwayMonths,
-                      fireProgressPercent: unified.fireProgressPercent,
-                      monthlyBurnUSD: unified.monthlyBurnUSD,
-                      domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
-                      currentNetWorthUSD: unified.effectiveFireCorpusUSD,
-                      targetFireNestEggUSD: unified.targetFireNestEggUSD,
-                      swrPercent: unified.swrPercent,
-                    });
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-rose-50 hover:from-indigo-100 hover:to-rose-100 text-indigo-950 border border-indigo-200/90 text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
-                >
-                  <span>🏅 Create Shareable FIRE Card</span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => openBadgeModal('all')}
-                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>Open Honors Codex</span>
@@ -1320,253 +1211,26 @@ export const UserDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => openEditProfile('travel')}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white text-xs font-bold hover:from-teal-700 hover:to-indigo-700 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Log Countries / Langs</span>
+                  <span>Log Countries &amp; Languages</span>
                 </button>
               </div>
             </div>
 
-            {/* Unlocked FIRE & Geoarbitrage Milestones (Shareable Freedom Cards — Light Multi-Colored Style) */}
-            {(() => {
-              const unified = calculateUnifiedFireMetrics(userProfile, countries);
-              const estBurn = unified.monthlyBurnUSD;
-              const fireTarget = unified.targetFireNestEggUSD;
-              const firePct = unified.fireProgressPercent;
-              const uncappedPct = unified.uncappedFireProgressPct;
-              const yearsSaved = unified.yearsSaved;
-              const runwayMonths = unified.nomadRunwayMonths;
-              const havenCity = unified.targetCityName;
-              const havenCountry = unified.targetCountryName;
-              const havenFlag = unified.targetCountryFlag;
-
-              const fireMilestones: {
-                id: string;
-                title: string;
-                icon: string;
-                subtitle: string;
-                description: string;
-                unlocked: boolean;
-                cardBg: string;
-                cardBorder: string;
-                pillBg: string;
-                subtitleColor: string;
-                buttonGradient: string;
-                pill: string;
-                showCountryBadge: boolean;
-                headlineMode: 'years-saved' | 'fi-percent' | 'nomad-runway';
-              }[] = [
-                {
-                  id: 'arbitrage-architect',
-                  title: 'Arbitrage Architect',
-                  icon: '⚡',
-                  subtitle: `Retiring ${yearsSaved} Years Earlier via Geoarbitrage`,
-                  description: `Target haven ${havenCity}, ${havenCountry} cuts monthly burn to $${estBurn.toLocaleString()}/mo.`,
-                  unlocked: true,
-                  cardBg: 'from-indigo-50/90 via-white to-violet-50/80',
-                  cardBorder: 'border-indigo-200/90 hover:border-indigo-400',
-                  pillBg: 'bg-indigo-100/80 border-indigo-200 text-indigo-800',
-                  subtitleColor: 'text-indigo-700',
-                  buttonGradient: 'from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white',
-                  pill: 'Geoarbitrage Unlocked',
-                  showCountryBadge: true,
-                  headlineMode: 'years-saved',
-                },
-                {
-                  id: 'coast-fire-nomad',
-                  title: 'Coast FIRE Nomad',
-                  icon: '🌊',
-                  subtitle:
-                    firePct >= 100
-                      ? `100% Complete FIRE in ${havenCountry} (${uncappedPct}% Funded)`
-                      : `${firePct}% to Full Financial Independence`,
-                  description: `Live FIRE corpus ($${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k) vs $${Math.round(fireTarget / 1000).toLocaleString()}k target for ${havenCountry}.`,
-                  unlocked: firePct >= 25,
-                  cardBg: 'from-sky-50/90 via-white to-cyan-50/80',
-                  cardBorder: 'border-sky-200/90 hover:border-sky-400',
-                  pillBg: 'bg-sky-100/80 border-sky-200 text-sky-800',
-                  subtitleColor: 'text-sky-700',
-                  buttonGradient: 'from-sky-600 via-cyan-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white',
-                  pill: firePct >= 100 ? '100% FI Achieved' : `${firePct}% FI Progress`,
-                  showCountryBadge: true,
-                  headlineMode: 'fi-percent',
-                },
-                {
-                  id: 'runway-sovereign',
-                  title: 'Runway Sovereign',
-                  icon: '👑',
-                  subtitle: `${runwayMonths}+ Months Global Freedom Runway`,
-                  description: `Self-funded slow-travel & remote living runway in ${havenCity}, ${havenCountry}.`,
-                  unlocked: runwayMonths >= 18,
-                  cardBg: 'from-rose-50/90 via-white to-pink-50/80',
-                  cardBorder: 'border-rose-200/90 hover:border-rose-400',
-                  pillBg: 'bg-rose-100/80 border-rose-200 text-rose-800',
-                  subtitleColor: 'text-rose-700',
-                  buttonGradient: 'from-rose-500 via-pink-600 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white',
-                  pill: `${runwayMonths} Mo Runway`,
-                  showCountryBadge: true,
-                  headlineMode: 'nomad-runway',
-                },
-                {
-                  id: '100-fi',
-                  title: '100% FI',
-                  icon: '🔥',
-                  subtitle:
-                    firePct >= 100
-                      ? `100% Financial Independence Unlocked (${uncappedPct}% Funded)`
-                      : `${firePct}% of ${unified.swrPercent}% SWR Target`,
-                  description: `${unified.swrPercent}% SWR portfolio${unified.includePrimaryHome ? ' (incl. Real Estate' : ''}${unified.includeGold ? (unified.includePrimaryHome ? ' & Gold)' : ' (incl. Gold)') : unified.includePrimaryHome ? ')' : ''} covers $${estBurn.toLocaleString()}/mo ${havenCountry} lifestyle.`,
-                  unlocked: true,
-                  cardBg: 'from-purple-50/90 via-white to-fuchsia-50/80',
-                  cardBorder: 'border-purple-200/90 hover:border-purple-400',
-                  pillBg: 'bg-purple-100/80 border-purple-200 text-purple-800',
-                  subtitleColor: 'text-purple-700',
-                  buttonGradient: 'from-purple-600 via-fuchsia-600 to-rose-500 hover:from-purple-700 hover:to-rose-600 text-white',
-                  pill: firePct >= 100 ? '🔥 100% FI Achieved' : `${firePct}% FI Milestone`,
-                  showCountryBadge: true,
-                  headlineMode: 'fi-percent',
-                },
-              ];
-
-              return (
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-rose-50/80 text-slate-900 border border-indigo-200/85 space-y-3.5 shadow-xs">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 block">
-                          🏅 Shareable FIRE Milestones &amp; Freedom Cards
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-[10px] font-bold text-slate-700 shadow-2xs">
-                          <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
-                          <span>{havenCity}, {havenCountry}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-mono font-bold text-emerald-900 shadow-2xs tabular-nums">
-                          <span>
-                            FIRE Corpus: ${Math.round(unified.effectiveFireCorpusUSD / 1000).toLocaleString()}k / Target: ${Math.round(fireTarget / 1000).toLocaleString()}k ({firePct}% FI)
-                          </span>
-                        </span>
-                      </div>
-                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
-                        Your Unlocked Financial Independence &amp; Geoarbitrage Badges
-                      </h4>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
-                      <div className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-indigo-200 shadow-2xs text-xs">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Target Country:</span>
-                        <select
-                          value={havenCountry}
-                          onChange={e => {
-                            const nextCountry = e.target.value;
-                            const matched = countries.find(
-                              c => c.name.toLowerCase() === nextCountry.toLowerCase()
-                            );
-                            updateUserProfile({
-                              targetCountry: nextCountry,
-                              ...(matched
-                                ? { monthlyBudgetUSD: matched.costOfLiving.monthlyBudgetSingleUSD }
-                                : {}),
-                            });
-                          }}
-                          className="font-bold text-indigo-950 bg-transparent focus:outline-none cursor-pointer text-xs"
-                        >
-                          {!countries.some(c => c.name === havenCountry) && havenCountry && (
-                            <option value={havenCountry}>
-                              {havenFlag} {havenCountry}
-                            </option>
-                          )}
-                          {countries.map(c => (
-                            <option key={`milestone-haven-${c.id}`} value={c.name}>
-                              {c.flag} {c.name} (${c.costOfLiving.monthlyBudgetSingleUSD.toLocaleString()}/mo)
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <span className="text-[11px] text-indigo-900 font-semibold bg-white/90 px-3 py-1 rounded-full border border-indigo-200/80 shadow-2xs">
-                        Export 9:16 Story or 1:1 Post • Privacy Mode Built-In
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {fireMilestones.map(m => (
-                      <div
-                        key={m.id}
-                        className={`rounded-xl bg-gradient-to-br ${m.cardBg} border ${m.cardBorder} p-3.5 flex flex-col justify-between gap-3 transition-all shadow-2xs`}
-                      >
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-lg">{m.icon}</span>
-                            <span className={`px-2 py-0.5 rounded-full border ${m.pillBg} text-[9px] font-extrabold uppercase tracking-wider whitespace-nowrap`}>
-                              {m.pill}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-1.5">
-                            <h5 className="text-xs font-extrabold text-slate-900 truncate">{m.title}</h5>
-                            {m.showCountryBadge && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/90 border border-slate-200/80 text-[10px] font-bold text-slate-700 shrink-0">
-                                <CountryFlag countryName={havenCountry} size="xs" className="rounded-xs" />
-                                <span>{havenCountry}</span>
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-[11px] font-extrabold ${m.subtitleColor} leading-snug`}>{m.subtitle}</p>
-                          <p className="text-[10px] text-slate-600 leading-relaxed">{m.description}</p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openShareFireCardModal({
-                              persona: m.id === 'coast-fire-nomad' || m.id === 'runway-sovereign' ? 'nomad' : currentPersona === 'nomad' ? 'nomad' : 'retiree',
-                              badgeTitle: m.title,
-                              badgeEmoji: m.icon,
-                              headlineMode: m.headlineMode,
-                              topCountry: havenCountry,
-                              topCountryFlag: havenFlag,
-                              topCity: havenCity,
-                              yearsSaved,
-                              nomadRunwayMonths: runwayMonths,
-                              fireProgressPercent: firePct,
-                              monthlyBurnUSD: estBurn,
-                              domesticMonthlyBurnUSD: unified.domesticMonthlyBurnUSD,
-                              currentNetWorthUSD: unified.effectiveFireCorpusUSD,
-                              targetFireNestEggUSD: fireTarget,
-                              swrPercent: unified.swrPercent,
-                            })
-                          }
-                          className={`w-full py-2 px-3 rounded-lg bg-gradient-to-r ${m.buttonGradient} font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap`}
-                        >
-                          <span>Share My FIRE Badge</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Showcase Grid of Earned Badges */}
             {earnedBadges.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center space-y-2">
-                <Award className="w-8 h-8 text-amber-500 mx-auto" />
-                <h4 className="text-sm font-extrabold text-slate-900">
+              <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-center space-y-2">
+                <Award className="w-7 h-7 text-amber-500 mx-auto" />
+                <h4 className="text-xs font-extrabold text-slate-900">
                   Ready to unlock your first Expat Honor?
                 </h4>
                 <p className="text-xs text-slate-600 max-w-md mx-auto">
-                  Log at least 5 visited countries to earn <strong>Bronze Globetrotter</strong>, or add 2 languages to your profile to unlock <strong>Bilingual Polyglot</strong>!
+                  Log visited countries to earn <strong>Bronze Globetrotter</strong>, or add 2 languages to unlock <strong>Bilingual Polyglot</strong>.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => openEditProfile('travel')}
-                  className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-all cursor-pointer shadow-2xs mt-2"
-                >
-                  Log Scouting Trips
-                </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {earnedBadges.map(badge => (
                   <BadgeShowcaseCard
                     key={badge.tierId}
@@ -1596,290 +1260,6 @@ export const UserDashboard: React.FC = () => {
                 ))}
               </div>
             )}
-
-            {/* Active Progression to Next Tiers */}
-            <div className="pt-2 border-t border-slate-100 space-y-2.5">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Next Tier Milestones &amp; Progression
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {badgesProgress
-                  .filter(p => !p.badge.comingSoon && p.nextTier)
-                  .map(p => (
-                    <BadgeProgressRow
-                      key={p.badge.id}
-                      progress={p}
-                      onOpenCodex={() => openBadgeModal(p.badge.category)}
-                    />
-                  ))}
-              </div>
-            </div>
-
-            {/* Global Haven FIRE / Nomad Runway Feasibility Matrix (Dual Persona) */}
-            <div className="pt-2 space-y-4">
-              <NomadHavenRunwayWidget
-                userProfile={userProfile}
-                countries={countries}
-                liquidSavingsUSD={
-                  (userProfile.finances?.investments?.savingsUSD || 0) ||
-                  36000
-                }
-                personaMode={currentPersona}
-                onSelectCountry={(cName) => {
-                  updateUserProfile({ targetCountry: cName });
-                  setActiveTab('financials');
-                }}
-              />
-              {currentPersona !== 'nomad' && (
-                <GlobalHavenFeasibilityWidget
-                  userProfile={userProfile}
-                  countries={countries}
-                  onSelectCountry={(cName) => {
-                    updateUserProfile({ targetCountry: cName });
-                    setActiveTab('financials');
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* 6 Interactive Module Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Module 1: Haven Matcher AI */}
-            <div className="bg-white rounded-3xl border border-indigo-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-indigo-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Haven Matcher AI Engine</h3>
-                      <p className="text-[11px] text-slate-500">Retiree &amp; Digital Nomad Visa Matching</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
-                    {currentPersona === 'nomad' ? '⚡ Nomad Mode' : '🌿 Retiree Mode'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Rank all {countries.length} global havens by your monthly remote income, DNV visa threshold, fiber internet Mbps, coworking density, or 4% SWR retirement portfolio.
-                </p>
-                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Primary Target Haven:</span>
-                  <strong className="text-slate-900 inline-flex items-center gap-1.5">
-                    <CountryFlag countryName={userProfile.targetCountry} size="xs" className="rounded-xs" />
-                    <span>{userProfile.targetCountry}</span>
-                  </strong>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('matcher')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open Haven Matcher AI</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Module 2: 5-Scheme Financial Portfolio */}
-            <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-2xs">
-                      <Coins className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">5-Scheme Financial Portfolio</h3>
-                      <p className="text-[11px] text-slate-500">Salary, Assets &amp; Net Worth Ledger</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                    ${userNetWorthUSD.toLocaleString()}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Manage your liquid savings, stocks &amp; mutual funds, real estate equity, physical gold, and alternative investments alongside your current annual salary.
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/60">
-                    <span className="text-[10px] text-slate-500 block">Monthly Income</span>
-                    <strong className="font-mono text-slate-900">${userMonthlySalaryUSD.toLocaleString()}/mo</strong>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/60">
-                    <span className="text-[10px] text-slate-500 block">4% SWR Passive Yield</span>
-                    <strong className="font-mono text-emerald-900">${Math.round((userNetWorthUSD * 0.04) / 12).toLocaleString()}/mo</strong>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('financials')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open Financial Portfolio</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Module 3: FIRE & Runway Calculator */}
-            <div className="bg-white rounded-3xl border border-teal-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-teal-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white flex items-center justify-center shadow-2xs">
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">FIRE &amp; Runway Calculator</h3>
-                      <p className="text-[11px] text-slate-500">Compound Trajectory &amp; Geoarbitrage</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-50 text-teal-900 border border-teal-200">
-                    Target {userProfile.retirementTimelineYear}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Simulate compound portfolio growth, safe withdrawal rates, and geoarbitrage purchasing power across global retirement and slow-travel hubs.
-                </p>
-                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Target Monthly Spend:</span>
-                  <strong className="font-mono text-teal-900">${userProfile.monthlyBudgetUSD.toLocaleString()} / mo</strong>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('fire')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open FIRE &amp; Runway Calculator</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Module 4: Expat Identity & Travel History */}
-            <div className="bg-white rounded-3xl border border-violet-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-violet-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-2xs">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Expat Profile &amp; Travel Log</h3>
-                      <p className="text-[11px] text-slate-500">Scouting Trips, Languages &amp; Interests</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-violet-50 text-violet-900 border border-violet-200">
-                    {userProfile.travelHistory?.length || 0} Visited
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Track visited countries, scouting trip ratings, spoken languages, and lifestyle hobbies that shape your ideal overseas community.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {(userProfile.languagesKnown || []).slice(0, 3).map(l => (
-                    <span key={l.id} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
-                      {l.language} ({l.proficiency})
-                    </span>
-                  ))}
-                  {knowsTargetLanguage && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
-                      ✓ Speaks {targetLanguage}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('profile')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open Expat Profile &amp; Travel Log</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Module 5: Confidential Country Journal */}
-            <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Country Journal &amp; Candidacy</h3>
-                      <p className="text-[11px] text-slate-500">Private Scouting Notes &amp; Pros/Cons</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                    {journalEntryList.length} Entries
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Record detailed personal observations, neighborhood impressions, target budgets, and pros/cons for every country you are evaluating.
-                </p>
-                <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 truncate">
-                  {journalEntryList.length > 0
-                    ? `Latest: ${countries.find(c => c.id === journalEntryList[0].countryId)?.name || journalEntryList[0].countryId} (${journalEntryList[0].interestLevel})`
-                    : 'No journal entries yet — start logging your impressions!'}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('journal')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-teal-600 hover:from-amber-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open Country Journal</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Module 6: Relocation Checklist, Visas & Meetups */}
-            <div className="bg-white rounded-3xl border border-emerald-200/80 p-6 shadow-xs flex flex-col justify-between hover:border-emerald-400 transition-all">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-2xs">
-                      <CheckSquare className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Checklist, Visas &amp; Meetups</h3>
-                      <p className="text-[11px] text-slate-500">Milestones, Consular Files &amp; Events</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-900 border border-emerald-200">
-                    {progressPercent}% Ready
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Complete pre-departure legal, tax, healthcare, and housing milestones, monitor consular visa applications, and manage your RSVP'd expat meetups.
-                </p>
-                <div className="mt-4 space-y-2">
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>{completedTasks}/{checklist.length} Milestones</span>
-                    <span>{userProfile.appliedVisas.length} Active Visas · {rsvpedMeetups.length} Meetups</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('checklist')}
-                className="mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <span>Open Checklist, Visas &amp; Meetups</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -1887,7 +1267,7 @@ export const UserDashboard: React.FC = () => {
       {/* ===================================================================== */}
       {/* TAB: SAVED SCOUT & HOP ROADMAPS & COMPLETE CHOSEN ITINERARY EDITOR    */}
       {/* ===================================================================== */}
-      {(activeTab === 'scout' || activeTab === 'overview' || activeTab === 'all') && (
+      {(activeTab === 'scout' || activeTab === 'all') && (
         <div className="bg-white rounded-3xl border-2 border-indigo-200/90 p-6 sm:p-8 shadow-md space-y-6 animate-in fade-in duration-200">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div className="space-y-1">
@@ -2376,15 +1756,6 @@ export const UserDashboard: React.FC = () => {
       {(activeTab === 'financials' || activeTab === 'all') && (
         <div className="animate-in fade-in duration-200">
           <UserFinancialsDashboard />
-        </div>
-      )}
-
-      {/* ===================================================================== */}
-      {/* TAB: UNIFIED FIRE & RUNWAY CALCULATOR                                 */}
-      {/* ===================================================================== */}
-      {(activeTab === 'fire' || activeTab === 'all') && (
-        <div className="animate-in fade-in duration-200">
-          <FireCalculatorPage isEmbeddedInDashboard />
         </div>
       )}
 

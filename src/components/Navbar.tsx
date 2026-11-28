@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { getViewUrl } from '../utils/seo';
 import {
-  User, Shield, Bookmark, MessageCircle, Menu, X, SlidersHorizontal,
-  LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe, Camera,
-  BookOpen, Database, LayoutDashboard, Download
+  User, Shield, MessageCircle, Menu, X,
+  LogIn, UserPlus, LogOut, ChevronDown, Settings, Globe,
+  BookOpen, LayoutDashboard, Download, Flame, Compass, Wallet, CheckCircle2, Eye
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
@@ -19,15 +19,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     setCurrentView,
     userProfile,
     isOwnerAdmin,
-    toggleRole,
     updateUserProfile,
     savedCountryIds,
     dmThreads,
     isAuthenticated,
     currentUserId,
     openAuthModal,
-    openFirebaseModal,
     openEditProfile,
+    openPublicProfile,
     logout,
     journalEntries,
     firebaseUser,
@@ -69,6 +68,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const navigateToDashboardTab = (tab: string) => {
+    try {
+      localStorage.setItem('refirely_user_dashboard_tab', tab);
+      window.dispatchEvent(new CustomEvent('refirely-dashboard-tab', { detail: tab }));
+    } catch {
+      // ignore storage errors
+    }
+    setCurrentView('dashboard');
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleAnchorNav = (e: React.MouseEvent<HTMLAnchorElement>, view: typeof currentView) => {
     if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.button) {
       e.preventDefault();
@@ -92,14 +104,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
       {/* Multi-Colored Top Accent Line */}
       <div className="h-1 w-full bg-gradient-to-r from-teal-500 via-indigo-500 via-50% to-amber-500" />
 
-      {/* Responsive 3-zone Top Bar — engineered to never overflow horizontally */}
+      {/* Responsive 3-zone Top Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 h-16 flex items-center justify-between gap-2 lg:gap-4">
         
-        {/* Zone 1: Multi-Colored Animated Brand Wordmark */}
+        {/* Zone 1: Brand Wordmark */}
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href={getViewUrl(canAccessAdmin ? 'admin' : 'landing')}
-            onClick={(e) => handleAnchorNav(e, canAccessAdmin ? 'admin' : 'landing')}
+            href={getViewUrl('landing')}
+            onClick={(e) => handleAnchorNav(e, 'landing')}
             className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group shrink-0 py-1"
             aria-label="ReFIREly Home"
           >
@@ -145,33 +157,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
 
         {/* Zone 3: Compact Right Utility & Account Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Instant 1-Click Switch to Android App Mode (Preview & Admin Only — Hidden from Public on Live Domain) */}
+          {/* Instant 1-Click Switch to Android App Mode (Preview & Admin Only) */}
           {showAndroidPreviewToggle && (
             <button
               type="button"
               onClick={enterAndroidAppPreview}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-extrabold rounded-xl bg-indigo-50/90 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/90 transition-all cursor-pointer shrink-0 shadow-2xs"
-              title="Switch Preview to Android App Mode (Visible in Preview & to Admin only)"
+              title="Switch Preview to Android App Mode"
             >
               <span>📱</span>
               <span className="hidden xl:inline">Android</span>
               <span>App</span>
-            </button>
-          )}
-
-          {/* Single Canonical Admin Console Button (Admin Only) */}
-          {canAccessAdmin && (
-            <button
-              onClick={() => handleNav('admin')}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer shrink-0 ${
-                currentView === 'admin'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                  : 'bg-amber-50/90 text-amber-950 border-amber-300 hover:bg-amber-100'
-              }`}
-              title="Open Admin CMS & Executive Overview"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-amber-500" />
-              <span>Admin Console</span>
             </button>
           )}
 
@@ -205,28 +201,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             )}
           </button>
 
-          {/* Saved Shortlist button (Logged-in Normal users only) */}
-          {isAuthenticated && !canAccessAdmin && (
-            <button
-              onClick={() => handleNav('dashboard')}
-              className="inline-flex relative p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-orange-800 hover:bg-orange-50/60 transition-colors cursor-pointer"
-              title="My Saved Havens & Tracker"
-            >
-              <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
-              {savedCountryIds.length > 0 && (
-                <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-orange-600 text-white text-[10px] font-bold rounded-full font-mono shadow-2xs">
-                  {savedCountryIds.length}
-                </span>
-              )}
-            </button>
-          )}
-
           {/* User Account / Profile dropdown or Login/Signup buttons */}
           {isAuthenticated ? (
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-1.5 p-1 pl-1.5 pr-2.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs cursor-pointer"
+                className={`flex items-center gap-1.5 p-1 pl-1.5 pr-2.5 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs cursor-pointer ${
+                  currentView === 'dashboard'
+                    ? 'bg-orange-50 border-orange-300 text-orange-950'
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                }`}
               >
                 <div className="relative">
                   {(() => {
@@ -249,7 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                     );
                   })()}
                 </div>
-                <span className="hidden sm:inline text-xs font-semibold text-slate-800 max-w-[85px] truncate">
+                <span className="hidden sm:inline text-xs font-semibold max-w-[85px] truncate">
                   {userProfile.name.split(' ')[0]}
                 </span>
                 {canAccessAdmin && (
@@ -260,9 +244,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 
-              {/* Dropdown Menu — Account-Level Actions Only (No Redundant Module Links) */}
+              {/* Unified, De-duplicated User Profile Dropdown Menu */}
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-68 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-150">
                   {/* User info banner */}
                   <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/70">
                     <div className="flex items-center justify-between gap-2">
@@ -275,21 +259,145 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                     </div>
                     <p className="text-[11px] text-slate-500 truncate">{userProfile.email}</p>
                     <p className="text-[11px] text-slate-600 font-medium mt-1">
-                      {canAccessAdmin
-                        ? `Platform Administrator · ID: ${currentUserId}`
-                        : `Target: ${userProfile.targetCountry} · ${userProfile.relocationStatus || 'Exploring'}`}
+                      Target: <strong className="text-slate-900">{userProfile.targetCountry}</strong> · {userProfile.relocationStatus || 'Exploring'}
                     </p>
                   </div>
 
-                  {canAccessAdmin ? (
-                    <div className="py-1">
+                  {/* Member Workspace & Dashboard Shortcuts */}
+                  <div className="py-1">
+                    <p className="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Member Workspace
+                    </p>
+                    <button
+                      onClick={() => navigateToDashboardTab('overview')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 font-semibold text-slate-800">
+                        <LayoutDashboard className="w-3.5 h-3.5 text-orange-600" />
+                        <span>My Relocation Dashboard</span>
+                      </span>
+                      {savedCountryIds.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-100 text-orange-800 font-bold font-mono">
+                          {savedCountryIds.length} saved
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => navigateToDashboardTab('financials')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>5-Scheme Financial Ledger</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleNav('fire-calculator')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Flame className="w-3.5 h-3.5 text-orange-600" />
+                        <span>FIRE &amp; Runway Calculator</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-bold">
+                        Full Suite
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateToDashboardTab('scout')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Saved Scout &amp; Hop Roadmaps</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateToDashboardTab('journal')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                        <span>Country Journal &amp; Notes</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-bold font-mono">
+                        {Object.keys(journalEntries).length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateToDashboardTab('checklist')}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Checklist, Visas &amp; Meetups</span>
+                    </button>
+                  </div>
+
+                  {/* Expat Profile & Public Dossier Actions */}
+                  <div className="py-1 border-t border-slate-100">
+                    <p className="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Profile &amp; Travel Log
+                    </p>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        openEditProfile('about');
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Settings className="w-3.5 h-3.5 text-orange-600" />
+                        <span>Edit Expat Profile &amp; Photo</span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        openEditProfile('travel');
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Travel History &amp; Languages</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-bold font-mono">
+                        {userProfile.travelHistory?.length || 0}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        openPublicProfile(currentUserId);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>View My Public Profile Card</span>
+                    </button>
+                  </div>
+
+                  {/* Admin Tools (if Admin) */}
+                  {canAccessAdmin && (
+                    <div className="py-1 border-t border-slate-100 bg-amber-50/40">
+                      <p className="px-3.5 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                        Admin Tools
+                      </p>
+                      <button
+                        onClick={() => handleNav('admin')}
+                        className="w-full text-left px-3.5 py-2 hover:bg-amber-100/70 text-amber-950 font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Admin CMS Console</span>
+                      </button>
                       {onOpenBrandKit && (
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);
                             onOpenBrandKit();
                           }}
-                          className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
+                          className="w-full text-left px-3.5 py-2 hover:bg-amber-100/70 text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
                         >
                           <span className="flex items-center gap-2 font-medium">
                             <Download className="w-3.5 h-3.5 text-indigo-600" />
@@ -299,73 +407,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                         </button>
                       )}
                     </div>
-                  ) : (
-                    /* Normal User Actions list */
-                    <div className="py-1">
-                      <button
-                        onClick={() => handleNav('dashboard')}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <User className="w-3.5 h-3.5 text-orange-600" />
-                        <span>My Dashboard & Relocation Hub</span>
-                      </button>
-                      <button
-                        onClick={() => handleNav('dashboard')}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="w-3.5 h-3.5 text-purple-600" />
-                          <span>Country Journal & Notes</span>
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-bold font-mono">
-                          {Object.keys(journalEntries).length}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          openEditProfile('about');
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-orange-600" />
-                        <span>Edit Profile & About</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          openEditProfile('picture');
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-purple-600" />
-                        <span>Change Profile Picture</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          openEditProfile('travel');
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-orange-50/70 hover:text-orange-950 flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Travel History ({userProfile.travelHistory?.length || 0})</span>
-                      </button>
-                    </div>
                   )}
 
                   {/* Session & Logout Controls */}
                   <div className="pt-1 border-t border-slate-100">
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        openAuthModal('login');
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <LogIn className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Sign In Another User</span>
-                    </button>
                     <button
                       onClick={() => {
                         logout();
@@ -398,7 +443,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 </button>
               </div>
 
-              {/* Desktop / Tablet Log In & Sign Up buttons (unchanged >= sm) */}
+              {/* Desktop / Tablet Log In & Sign Up buttons (>= sm) */}
               <div className="hidden sm:flex items-center gap-2">
                 <button
                   onClick={() => openAuthModal('login')}
@@ -418,7 +463,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             </>
           )}
 
-          {/* Mobile hamburger - styled with border and background for clear mobile visibility */}
+          {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-xl text-slate-800 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-200/90 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-2xs"
@@ -429,118 +474,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
         </div>
       </div>
 
-      {/* Dedicated Admin Command Sub-Bar (Below Main Top Menu Bar so Top Menu Bar stays intact) */}
-      {canAccessAdmin && (
-        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-teal-950 text-white border-t border-indigo-800/60">
-          <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-1.5 flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-indigo-200">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold uppercase tracking-wider text-[10px]">
-                <Shield className="w-3 h-3 text-amber-400" />
-                <span>Admin Workspace</span>
-              </span>
-              <span className="hidden sm:inline text-slate-300">
-                Top menu bar active for site preview • Use quick-access modules on the right
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                onClick={() => handleNav('admin')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  currentView === 'admin'
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs'
-                    : 'bg-white/10 hover:bg-white/20 text-amber-200 border border-white/15'
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Admin CMS Console</span>
-              </button>
-
-              <button
-                onClick={enterAndroidAppPreview}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Preview Native Android App Mode (?app=android)"
-              >
-                <span>📱 Android App</span>
-              </button>
-
-              <button
-                onClick={() => handleNav('messages')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  currentView === 'messages'
-                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-xs'
-                    : 'bg-white/10 hover:bg-white/20 text-teal-200 border border-white/15'
-                }`}
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>Direct Messages</span>
-                {totalUnreadDms > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-orange-500 text-white text-[10px] font-extrabold">
-                    {totalUnreadDms}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  logout();
-                  setUserMenuOpen(false);
-                }}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 border border-rose-400/30 flex items-center gap-1 transition-colors cursor-pointer"
-                title="End Admin Session and return to Sign In"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-300" />
-                <span>Log Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden px-4 pt-2 pb-6 bg-white border-b border-slate-200 shadow-xl space-y-3">
+        <div className="md:hidden px-4 pt-2 pb-6 bg-white border-b border-slate-200 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto">
           <div className="flex flex-col space-y-1">
-            {canAccessAdmin && (
-              <div className="mb-2 pb-2 border-b border-amber-100 space-y-1.5">
-                <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
-                  Admin Quick Modules
-                </p>
-                <button
-                  onClick={() => handleNav('admin')}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold flex items-center justify-between ${
-                    currentView === 'admin'
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-amber-50 text-amber-900 border border-amber-200'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    <span>Admin CMS Console</span>
-                  </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-white/20">Open</span>
-                </button>
-                <button
-                  onClick={() => handleNav('messages')}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-bold flex items-center justify-between cursor-pointer ${
-                    currentView === 'messages'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-teal-50 text-teal-900 border border-teal-200'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Direct Messages</span>
-                  </span>
-                  {totalUnreadDms > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shadow-2xs">
-                      {totalUnreadDms} new
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
-
             <button
               onClick={() => handleNav('landing')}
               className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
@@ -571,7 +508,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                 currentView === 'fire-calculator' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              FIRE Calculator
+              FIRE &amp; Runway Calculator
             </button>
             <button
               onClick={() => handleNav('scout')}
@@ -608,37 +545,33 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
             >
               Expat Meetups
             </button>
-            {!canAccessAdmin && (
-              <>
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      setMobileMenuOpen(false);
-                      openAuthModal('login');
-                      return;
-                    }
-                    handleNav('messages');
-                  }}
-                  className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between cursor-pointer ${
-                    currentView === 'messages' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-orange-600" />
-                    <span>Direct Messages</span>
-                  </span>
-                  {!isAuthenticated ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                      Members Only
-                    </span>
-                  ) : totalUnreadDms > 0 ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shadow-2xs">
-                      {totalUnreadDms} new
-                    </span>
-                  ) : null}
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setMobileMenuOpen(false);
+                  openAuthModal('login');
+                  return;
+                }
+                handleNav('messages');
+              }}
+              className={`text-left px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-between cursor-pointer ${
+                currentView === 'messages' ? 'bg-orange-50 text-orange-950 font-bold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-orange-600" />
+                <span>Direct Messages</span>
+              </span>
+              {!isAuthenticated ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                  Members Only
+                </span>
+              ) : totalUnreadDms > 0 ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shadow-2xs">
+                  {totalUnreadDms} new
+                </span>
+              ) : null}
+            </button>
 
             {showAndroidPreviewToggle && (
               <button
@@ -680,48 +613,69 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBrandKit }) => {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 truncate">{userProfile.name}</p>
                     <p className="text-[10px] text-orange-800 font-medium truncate">
-                      {canAccessAdmin ? 'Platform Administrator' : `Target: ${userProfile.targetCountry}`}
+                      Target: {userProfile.targetCountry} · {userProfile.relocationStatus || 'Exploring'}
                     </p>
                   </div>
                 </div>
 
-                {!canAccessAdmin && (
-                  <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => navigateToDashboardTab('overview')}
+                    className={`w-full px-3 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 cursor-pointer ${
+                      currentView === 'dashboard'
+                        ? 'bg-orange-600 text-white border-orange-600'
+                        : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border-orange-200'
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>My Relocation Dashboard</span>
+                  </button>
+                  <div className="grid grid-cols-2 gap-1.5">
                     <button
-                      onClick={() => handleNav('dashboard')}
-                      className={`w-full px-3 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 cursor-pointer ${
-                        currentView === 'dashboard'
-                          ? 'bg-orange-600 text-white border-orange-600'
-                          : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border-orange-200'
-                      }`}
+                      onClick={() => navigateToDashboardTab('financials')}
+                      className="px-2.5 py-2 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5 font-medium"
                     >
-                      <User className="w-3.5 h-3.5" />
-                      <span>My Dashboard &amp; Relocation Hub</span>
+                      <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Financials</span>
                     </button>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          openEditProfile('about');
-                        }}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-orange-600" />
-                        <span>Edit Profile</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          openEditProfile('travel');
-                        }}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Travel Log</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => navigateToDashboardTab('journal')}
+                      className="px-2.5 py-2 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5 font-medium"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Journal ({Object.keys(journalEntries).length})</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        openEditProfile('about');
+                      }}
+                      className="px-2.5 py-2 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5 font-medium"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-orange-600" />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        openEditProfile('travel');
+                      }}
+                      className="px-2.5 py-2 text-xs rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center gap-1.5 font-medium"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Travel Log</span>
+                    </button>
                   </div>
-                )}
+                  {canAccessAdmin && (
+                    <button
+                      onClick={() => handleNav('admin')}
+                      className="w-full px-3 py-2 text-xs font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 flex items-center justify-center gap-1.5"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Admin CMS Console</span>
+                    </button>
+                  )}
+                </div>
 
                 <button
                   onClick={() => {

@@ -1806,13 +1806,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return dmThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
   }, [dmThreads, isAuthenticated, currentUserId]);
 
+  const getDeletedJournalIds = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_deleted_journal_ids`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch {}
+    return new Set();
+  };
+
   // Country Journal state with local storage fallback
   const [journalEntries, setJournalEntries] = useState<Record<string, CountryJournalEntry>>(() => {
+    const deletedIds = getDeletedJournalIds();
     try {
       const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_journal_entries`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          const filtered: Record<string, CountryJournalEntry> = {};
+          Object.entries(parsed).forEach(([k, v]) => {
+            if (!deletedIds.has(k) && v) {
+              filtered[k] = v as CountryJournalEntry;
+            }
+          });
+          return filtered;
+        }
+      }
     } catch {}
-    return INITIAL_JOURNAL_ENTRIES;
+    const seeded: Record<string, CountryJournalEntry> = {};
+    Object.entries(INITIAL_JOURNAL_ENTRIES).forEach(([k, v]) => {
+      if (!deletedIds.has(k)) seeded[k] = v;
+    });
+    return seeded;
   });
 
   // Persistent tombstone set of deleted feedback report IDs so deleted sample/testing tickets never reload
@@ -3316,13 +3343,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // 4. Fetch user's journal entries from Firestore and sync all entries to top-level /countryJournals
           const journalCollRef = collection(db, 'users', user.uid, 'journalEntries');
           const journalSnap = await getDocs(journalCollRef);
-          const mergedJournal: Record<string, CountryJournalEntry> = {
+          const deletedJournalIds = getDeletedJournalIds();
+          const mergedJournal: Record<string, CountryJournalEntry> = {};
+          Object.entries({
             ...INITIAL_JOURNAL_ENTRIES,
             ...journalEntriesRef.current,
-          };
+          }).forEach(([k, v]) => {
+            if (!deletedJournalIds.has(k) && v) {
+              mergedJournal[k] = v;
+            }
+          });
           if (!journalSnap.empty) {
             journalSnap.forEach(d => {
-              mergedJournal[d.id] = d.data() as CountryJournalEntry;
+              if (!deletedJournalIds.has(d.id)) {
+                mergedJournal[d.id] = d.data() as CountryJournalEntry;
+              }
             });
           }
           setJournalEntries(mergedJournal);
@@ -4172,12 +4207,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: now,
     };
 
+    // Un-tombstone if previously deleted
+    try {
+      const deletedIds = getDeletedJournalIds();
+      if (deletedIds.has(entry.countryId)) {
+        deletedIds.delete(entry.countryId);
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_journal_ids`, JSON.stringify(Array.from(deletedIds)));
+      }
+    } catch {}
+
     // Immediate local update
     setJournalEntries(prev => {
       const next = {
         ...prev,
         [entry.countryId]: updatedEntry,
       };
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_journal_entries`, JSON.stringify(next));
+      } catch {}
       // Also attach to active account in registeredAccounts
       setRegisteredAccounts(accs =>
         accs.map(a => (a.id === currentUserId ? { ...a, journalEntries: next } : a))
@@ -4209,9 +4256,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteJournalEntry = async (countryId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const deletedIds = getDeletedJournalIds();
+      deletedIds.add(countryId);
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_deleted_journal_ids`, JSON.stringify(Array.from(deletedIds)));
+    } catch {}
+
     setJournalEntries(prev => {
       const copy = { ...prev };
       delete copy[countryId];
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_journal_entries`, JSON.stringify(copy));
+      } catch {}
       setRegisteredAccounts(accs =>
         accs.map(a => (a.id === currentUserId ? { ...a, journalEntries: copy } : a))
       );
